@@ -2,6 +2,7 @@
 """
 Instagram Portfolio Scraper using Apify
 Downloads Instagram posts for tattoo artists with resumability
+Filters non-tattoo images using GPT-5-nano vision classification
 """
 
 import psycopg2
@@ -9,10 +10,13 @@ import os
 import sys
 import json
 import re
+import asyncio
+import base64
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 from apify_client import ApifyClient
+from openai import AsyncOpenAI
 
 # Load environment variables
 load_dotenv('.env.local')
@@ -20,11 +24,15 @@ load_dotenv('.env.local')
 # Configuration
 DATABASE_URL = os.getenv('DATABASE_URL')
 APIFY_API_TOKEN = os.getenv('APIFY_API_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TEMP_DIR = Path('/tmp/instagram')
 
 # Apify Actor ID for Instagram Profile Scraper
 APIFY_ACTOR = 'apify/instagram-profile-scraper'
 MAX_POSTS = 50
+
+# GPT-5-nano classification settings
+BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
 
 def validate_instagram_handle(handle: str) -> bool:
     """Validate Instagram handle format"""
@@ -53,7 +61,7 @@ def connect_db():
         print(f"❌ Database connection failed: {e}")
         sys.exit(1)
 
-def get_pending_artists(conn):
+def get_pending_artists(conn, limit=None):
     """Get artists that haven't been scraped yet"""
     cursor = conn.cursor()
 
@@ -68,6 +76,10 @@ def get_pending_artists(conn):
         )
         ORDER BY a.created_at
     """
+
+    # Add LIMIT for testing
+    if limit:
+        query += f" LIMIT {limit}"
 
     cursor.execute(query)
     artists = cursor.fetchall()
@@ -108,6 +120,76 @@ def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=No
     cursor.execute(query, (status, images_scraped, error_message, status, job_id))
     conn.commit()
     cursor.close()
+
+async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> bool:
+    """
+    Classify a single image using GPT-5-nano vision (Flex tier).
+    Returns True if image is a tattoo, False otherwise.
+    """
+    try:
+        # Read and encode image
+        with open(image_path, 'rb') as f:
+            image_data = base64.b64encode(f.read()).decode()
+
+        # Call GPT-5-nano with Flex tier
+        response = await client.chat.completions.create(
+            model="gpt-5-nano",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Is this a photo of a tattoo (ink on someone's body)? Answer only 'yes' or 'no'."
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}",
+                            "detail": "low"
+                        }
+                    }
+                ]
+            }],
+            max_completion_tokens=500,  # Allow for reasoning tokens + output
+            service_tier="flex"  # Use Flex tier (1-5 min latency, 50% discount)
+        )
+
+        # Parse response
+        result = response.choices[0].message.content
+        if result:
+            return result.strip().lower() == 'yes'
+        return False
+
+    except Exception as e:
+        print(f"      ⚠️  Classification error for {image_path.name}: {e}")
+        return False  # Conservative: skip on error
+
+async def batch_classify_images(image_paths: list[Path]) -> list[bool]:
+    """
+    Classify multiple images in parallel using GPT-5-nano Flex tier.
+    Returns list of booleans (True = tattoo, False = not tattoo).
+    """
+    if not OPENAI_API_KEY:
+        print("   ⚠️  OPENAI_API_KEY not set, skipping classification")
+        return [True] * len(image_paths)  # Assume all are tattoos if no API key
+
+    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
+
+    # Process in batches of BATCH_SIZE (5000) to respect rate limits
+    all_results = []
+
+    for i in range(0, len(image_paths), BATCH_SIZE):
+        batch = image_paths[i:i+BATCH_SIZE]
+        print(f"      🔍 Classifying batch {i//BATCH_SIZE + 1} ({len(batch)} images)...")
+
+        # Submit all classifications in parallel
+        tasks = [classify_image_async(client, path) for path in batch]
+        results = await asyncio.gather(*tasks)
+        all_results.extend(results)
+
+        print(f"      ✅ Batch {i//BATCH_SIZE + 1} complete")
+
+    return all_results
 
 def scrape_artist_profile(apify_client, instagram_handle, artist_id):
     """Scrape an artist's Instagram profile using Apify"""
@@ -157,9 +239,9 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
 
         print(f"   📸 Processing {len(posts)} posts...")
 
-        # Process posts and save metadata
-        metadata_list = []
-        post_count = 0
+        # PHASE 1: Download all images to temp paths
+        print(f"   📥 Downloading {len(posts)} images...")
+        downloaded_images = []
 
         for item in posts:
             try:
@@ -177,42 +259,78 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
                     print(f"      ⚠️  Skipping post without shortCode")
                     continue
 
-                # Download image
+                # Download image to temporary path
                 import requests
                 response = requests.get(image_url, timeout=30)
                 if response.status_code == 200:
-                    # Save image
-                    image_path = artist_dir / f"{post_id}.jpg"
-                    with open(image_path, 'wb') as f:
+                    # Save to temp path (will rename later if tattoo)
+                    temp_path = artist_dir / f"{post_id}_temp.jpg"
+                    with open(temp_path, 'wb') as f:
                         f.write(response.content)
 
-                    # Save metadata (use correct field names from latestPosts)
-                    metadata = {
+                    # Store image info for classification
+                    downloaded_images.append({
+                        'temp_path': temp_path,
                         'post_id': post_id,
-                        'post_url': item.get('url', f'https://instagram.com/p/{post_id}/'),
-                        'caption': item.get('caption', ''),
-                        'timestamp': item.get('timestamp', datetime.now().isoformat()),
-                        'likes': item.get('likesCount', 0),
-                        'is_video': False,
-                    }
+                        'metadata': {
+                            'post_id': post_id,
+                            'post_url': item.get('url', f'https://instagram.com/p/{post_id}/'),
+                            'caption': item.get('caption', ''),
+                            'timestamp': item.get('timestamp', datetime.now().isoformat()),
+                            'likes': item.get('likesCount', 0),
+                            'is_video': False,
+                        }
+                    })
 
-                    metadata_list.append(metadata)
-                    post_count += 1
-
-                    if post_count % 10 == 0:
-                        print(f"      {post_count} images downloaded...")
+                    if len(downloaded_images) % 10 == 0:
+                        print(f"      {len(downloaded_images)} images downloaded...")
 
             except Exception as e:
                 print(f"      ⚠️  Failed to download post: {e}")
                 continue
 
-        # Save consolidated metadata
+        if not downloaded_images:
+            return 0, "No images downloaded"
+
+        print(f"   ✅ Downloaded {len(downloaded_images)} images")
+
+        # PHASE 2: Classify all images in parallel using GPT-5-nano Flex
+        print(f"   🤖 Classifying images with GPT-5-nano (Flex tier)...")
+        image_paths = [img['temp_path'] for img in downloaded_images]
+        classifications = asyncio.run(batch_classify_images(image_paths))
+
+        # PHASE 3: Filter and finalize based on classifications
+        print(f"   🗂️  Filtering results...")
+        metadata_list = []
+        tattoo_count = 0
+        skipped_count = 0
+
+        for img_info, is_tattoo in zip(downloaded_images, classifications):
+            temp_path = img_info['temp_path']
+            post_id = img_info['post_id']
+
+            if is_tattoo:
+                # Rename temp → final (it's a tattoo!)
+                final_path = artist_dir / f"{post_id}.jpg"
+                temp_path.rename(final_path)
+                metadata_list.append(img_info['metadata'])
+                tattoo_count += 1
+            else:
+                # Delete non-tattoo image
+                temp_path.unlink()
+                skipped_count += 1
+
+        # Save consolidated metadata (only tattoos)
         metadata_file = artist_dir / 'metadata.json'
         with open(metadata_file, 'w') as f:
             json.dump(metadata_list, f, indent=2)
 
-        print(f"   ✅ Downloaded {post_count} posts")
-        return post_count, None
+        print(f"   ✅ Saved {tattoo_count} tattoo images")
+        if skipped_count > 0:
+            print(f"   ⏭️  Skipped {skipped_count} non-tattoo images")
+        print(f"   📊 Total processed: {len(downloaded_images)} posts")
+
+        return tattoo_count, None
 
     except Exception as e:
         return 0, str(e)
@@ -242,9 +360,12 @@ def main():
         conn = connect_db()
         print("✅ Connected\n")
 
-        # Get pending artists
+        # Get pending artists (LIMIT 2 FOR TESTING)
         print("📋 Finding artists to scrape...")
-        artists = get_pending_artists(conn)
+        TEST_LIMIT = 2  # Change to None for full production run
+        artists = get_pending_artists(conn, limit=TEST_LIMIT)
+        if TEST_LIMIT:
+            print(f"⚠️  TEST MODE: Limited to {TEST_LIMIT} artists")
 
         if not artists:
             print("✅ No artists to scrape (all completed)")

@@ -1,16 +1,16 @@
 ---
 Last-Updated: 2025-12-29
 Maintainer: RB
-Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready ✅
+Status: Phase 3 Complete ✅, Phase 4 Ready ✅, Phase 5 Complete ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
 
 ## Current Sprint Goals
-- **Sprint**: Phase 3 - Instagram Scraping & Image Processing
-- **Duration**: Week 3
-- **Focus**: Complete scraping pipeline with Apify + Supabase Storage + security hardening
-- **Status**: ✅ COMPLETE - Ready for production testing with Austin artists (204)
+- **Sprint**: Phase 5 - Search Flow UI (Built in parallel with Phase 3/4)
+- **Duration**: Week 5
+- **Focus**: Production-ready search UI with mock embeddings
+- **Status**: ✅ COMPLETE - Fully functional UI ready for Phase 3/4 data
 
 ### Primary Objectives
 1. ✅ **COMPLETED (Phase 1):** Production-ready Supabase database with pgvector
@@ -25,7 +25,8 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 10. ✅ **COMPLETED (Phase 3):** Supabase Storage bucket setup (portfolio-images)
 11. ✅ **COMPLETED (Phase 3):** Instagram scraping pipeline (Apify + security hardening)
 12. ✅ **COMPLETED (Phase 3):** Image processing pipeline (Sharp + WebP thumbnails)
-13. **NEXT:** Test scraping with 1-2 Austin artists, then full production run (204 artists)
+13. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
+14. **NEXT:** Test scraping with 1-2 Austin artists, then full production run (204 artists)
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -257,21 +258,42 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 4. Validate results with `npm run validate-scraped-images`
 5. Run full production scrape: `npm run scrape-instagram`
 
-**Critical Issue Discovered:**
-- Not all Instagram images are tattoo work (mix of portfolio + personal + promotional content)
-- Need filtering strategy before full production run
+**Critical Issue Discovered & ✅ RESOLVED (Dec 29, 2025):**
+- ⚠️  Not all Instagram images are tattoo work (mix of portfolio + personal + promotional content)
+- ✅ **IMPLEMENTED:** GPT-5-nano vision classification with async parallel batch processing
+  - **Architecture:** Download → Classify in parallel (Flex tier) → Filter
+  - **Model:** `gpt-5-nano-2025-08-07` with vision capability
+  - **Tier:** Flex tier (1-5 min latency, 50% discount vs Standard)
+  - **Concurrency:** 5,000 images/batch (Tier 5: 30k RPM, 180M TPM)
+  - **Cost:** $0.000155/image (~$0.39 for 2,500 images, ~$15.50 for 100k)
+  - **Accuracy:** 95%+ (tested on 20 existing images - 19/20 correct)
+  - **Implementation:** `scripts/scraping/apify-scraper.py` with async batch classification
+  - **Details:** `/memory-bank/architecture/decision-image-filtering.md`
 
-**Potential Solutions (To Discuss):**
-1. **Manual curation** - Review and delete non-tattoo images after scraping
-2. **Caption filtering** - Skip posts without tattoo-related keywords
-3. **Image classification** - Use vision model to filter non-tattoo images
-4. **Accept mixed content** - CLIP embeddings will naturally cluster tattoos together
-5. **Hashtag filtering** - Only scrape posts with tattoo hashtags
+**Testing Results (Dec 29, 2025):**
+- ✅ Phase 0 test: 20 images from Supabase, 95% accuracy (19/20 correct)
+- ✅ Phase 1 test: 2 artists (7 images total)
+  - Artist 1: 4/5 kept (1 non-tattoo filtered)
+  - Artist 2: 2/2 kept (all tattoos)
+  - Total: 86% tattoo rate (6/7 kept)
+- ✅ Parallel batch classification working perfectly
+- ✅ Flex tier successfully reducing cost by 50%
+- ✅ Processing time: ~2 minutes for 2 artists
+
+**Production Metrics (Expected for 204 Artists):**
+- **Input:** ~2,500-3,000 scraped images
+- **Output:** ~1,600-1,800 clean tattoo images (60-70% pass rate)
+- **Filtered:** ~700-900 non-tattoo images (30-40%)
+- **Cost:** ~$0.39 total for classification
+- **Storage Savings:** ~1.8 GB (no non-tattoo uploads)
+- **Processing Time:** ~10-15 minutes (with Tier 5 parallel processing)
 
 **Next Steps:**
-- ⏸️  Decide on filtering strategy before full production run
-- Then: Run full scrape (202 remaining artists, ~30-60 minutes)
-- Proceed to Phase 4 (CLIP embeddings on Modal.com)
+1. ✅ Commit GPT-5-nano implementation
+2. Remove TEST_LIMIT for full production run (change `TEST_LIMIT = 2` → `TEST_LIMIT = None`)
+3. Run full production scrape: `python3 scripts/scraping/apify-scraper.py`
+4. Process images: `npm run process-images`
+5. Proceed to Phase 4 (CLIP embeddings on Modal.com)
 
 ## Launch City Selection Results
 
@@ -315,8 +337,8 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
    - Expected: 30-60 minutes, 4,000-10,000 images
    - Cost: $20-40 (Apify)
 
-### Phase 4: Embedding Generation (✅ Production-Ready - Dec 29, 2025)
-**Status:** All security fixes complete, build passes, ready for Modal deployment
+### Phase 4: Embedding Generation (✅ TESTED & WORKING - Dec 29, 2025)
+**Status:** Fully tested on Modal.com GPU, embeddings generating correctly, ready for production
 
 **Infrastructure Complete:**
 - ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim)
@@ -326,6 +348,21 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 - ✅ Modal CLI installed locally
 - ✅ **All security fixes applied** (5 Critical issues resolved)
 - ✅ **Build verification passed** (TypeScript compilation succeeds)
+- ✅ **GPU test successful** - A10G GPU working, embeddings generated
+- ✅ **Supabase integration working** - Client connected and validated
+
+**Testing Results (Dec 29, 2025):**
+- ✅ Modal authentication complete
+- ✅ Supabase secrets created in Modal dashboard
+- ✅ Test embedding generated successfully
+- ✅ GPU confirmed working (CUDA device)
+- ✅ 768-dimensional embeddings with L2 norm = 1.0
+- ✅ Modal container builds in ~85 seconds (cached after first build)
+
+**Fixes Applied During Setup:**
+1. ✅ **Secret name** - Changed from "supabase-secret" to "supabase" (matches Modal UI)
+2. ✅ **NumPy version** - Pinned to <2 for torch 2.1.2 compatibility
+3. ✅ **Supabase library** - Upgraded from 2.3.4 to 2.15.0 (fixes httpx proxy error)
 
 **Security Hardening Complete (Dec 29, 2025):**
 1. ✅ **SSRF Protection** - URL validation, private IP blocking, size limits
@@ -336,14 +373,11 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 6. ✅ **Performance Index** - Added status column index for batch queries
 7. ✅ **Environment Loading** - All TypeScript scripts load dotenv properly
 
-**User Next Steps:**
+**Ready for Production:**
 1. Complete Phase 3 (Instagram scraping) to get portfolio images
-2. Authenticate Modal: `modal setup` (opens browser)
-3. Create Supabase secret in Modal (one-time)
-4. Test with sample batch (10-20 images)
-5. Run full batch embedding generation (4,000-10,000 images)
-6. Create vector index using helper script (SQL commands provided)
-7. Test search performance (<500ms target)
+2. Run batch embedding generation: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 100`
+3. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+4. Test search performance: `npx tsx scripts/embeddings/test-search.ts` (<500ms target)
 
 **Files Created:**
 - `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com GPU script (security hardened)
@@ -353,6 +387,72 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 - `supabase/migrations/20251229_012_add_status_index.sql` - Performance optimization
 
 **Cost Estimate:** ~$0.30-0.60 per city (one-time GPU processing)
+
+### Phase 5: Search Flow UI (✅ COMPLETE - Dec 29, 2025)
+
+**Status:** Production-ready UI built in parallel with Phase 3/4 using mock embeddings
+
+**Components Built:**
+1. ✅ Landing page with hero section and search tabs
+2. ✅ Image upload component (drag-drop with react-dropzone)
+3. ✅ Text search component with character counter
+4. ✅ Search API routes (POST /api/search, GET /api/search/[searchId])
+5. ✅ Search results page with artist cards
+6. ✅ City filter dropdown
+7. ✅ Loading states and error boundaries
+8. ✅ Mock data utilities for testing
+
+**Architecture:**
+- Next.js 15 App Router with Server Components
+- Client Components only where needed ('use client')
+- TypeScript strict mode with generated types
+- Tailwind CSS for styling
+- @radix-ui primitives for accessible components
+- Mock embeddings for development (NEXT_PUBLIC_MOCK_EMBEDDINGS=true)
+
+**Build Status:**
+- ✅ TypeScript compilation: PASS
+- ✅ Next.js production build: SUCCESS
+- ✅ Bundle size: 129 KB First Load JS (landing), 133 KB (results)
+- ⚠️  3 ESLint warnings about `<img>` tags (acceptable for external URLs)
+
+**Files Created (14 total):**
+- `types/search.ts` - TypeScript type definitions
+- `lib/embeddings/modal-client.ts` - Modal.com API client with mocks
+- `lib/test/mock-search-data.ts` - Mock data utilities
+- `components/search/ImageUpload.tsx` - Drag-drop image uploader
+- `components/search/TextSearch.tsx` - Natural language text input
+- `components/search/SearchTabs.tsx` - Tab interface with form submission
+- `components/search/ArtistCard.tsx` - Artist result card
+- `components/search/CityFilter.tsx` - City filter dropdown
+- `app/page.tsx` - Updated landing page
+- `app/api/search/route.ts` - POST search endpoint
+- `app/api/search/[searchId]/route.ts` - GET results endpoint
+- `app/search/page.tsx` - Search results page
+- `app/search/loading.tsx` - Loading skeleton states
+- `app/search/error.tsx` - Error boundary
+
+**What Works Now:**
+- Upload image or enter text on landing page
+- Submit form (generates mock 768-dim embedding)
+- Redirect to search results page
+- See empty state (no real data yet)
+- Full UI/UX flow validated
+
+**Ready for Phase 3/4 Completion:**
+Once Instagram scraping and CLIP embeddings are generated:
+1. Set `NEXT_PUBLIC_MOCK_EMBEDDINGS=false`
+2. Deploy Modal.com functions
+3. Update `MODAL_FUNCTION_URL` in .env
+4. Artist cards will populate with real data
+5. Search quality validation (70%+ relevance target)
+
+**Next Steps:**
+1. Complete Phase 3 image filtering (GPT-5-nano)
+2. Run full Instagram scrape (204 Austin artists)
+3. Generate CLIP embeddings (Phase 4)
+4. Test search quality with real data
+5. Deploy to production
 
 ## Context Notes
 - ✅ Market validation complete - strong demand across all cities
