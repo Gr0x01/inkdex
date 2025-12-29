@@ -299,17 +299,29 @@ After initial infrastructure setup, comprehensive code review identified and fix
    - Mix of portfolio, personal photos, promotional content
    - Need filtering strategy before full production run
 
-**Next Steps:**
-1. ⏸️  **PAUSED**: Decide on filtering approach
-   - Option A: Accept mixed content (CLIP will cluster tattoos naturally)
-   - Option B: Caption/hashtag filtering during scraping
-   - Option C: Post-scrape manual curation
-   - Option D: Vision model classification filter
-2. Then run full scrape: `npm run scrape-instagram` (202 artists, 30-60 min)
-3. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+**Architecture Decision Made (Dec 29, 2025):**
+✅ **Selected: GPT-5-nano vision classification for image filtering**
+- Cost: ~$0.01-0.02 for 2,500 images (essentially free)
+- Accuracy: ~95-98% expected
+- Implementation: Filter during download phase
+- Full decision doc: `/memory-bank/architecture/decision-image-filtering.md`
 
-### Phase 4: Embedding Generation Infrastructure (✅ Production-Ready - Dec 29, 2025)
-**Status**: All security fixes complete, build passes, ready for Modal deployment
+**Filtering Rationale:**
+- Manual curation: $70-140 (human time) - rejected
+- Caption filtering: $0 but only ~60% accuracy - rejected
+- Accept mixed content: $0 but poor UX - rejected
+- CLIP classification: ~$0.60 (doubles GPU cost) - rejected
+- GPT-5-nano: **$0.01** + 95%+ accuracy - **SELECTED** ✅
+
+**Next Steps:**
+1. Implement GPT-5-nano filtering in `apify-scraper.py` (~30 min)
+2. Test filtering accuracy with 2-3 artists
+3. Run full production scrape: `npm run scrape-instagram` (202 artists, 30-60 min)
+4. Expected: ~1,600-1,800 clean tattoo images (vs 2,500 unfiltered)
+5. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+
+### Phase 4: Embedding Generation Infrastructure (✅ TESTED & WORKING - Dec 29, 2025)
+**Status**: Fully tested on Modal.com GPU, embeddings generating correctly, ready for production
 
 **Completed:**
 - ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim embeddings)
@@ -318,9 +330,24 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - ✅ Helper scripts: check-embeddings.ts, create-vector-index.ts, test-search.ts
 - ✅ Automatic index type selection (HNSW <1k images, IVFFlat 1k-100k+)
 - ✅ Modal CLI installed locally
-- ✅ Setup guides: SETUP.md (detailed) + QUICKSTART.md (quick reference)
 - ✅ **All security fixes applied** (5 Critical, 2 Warnings)
 - ✅ **Build verification passed** (TypeScript compilation succeeds)
+- ✅ **GPU test successful** - A10G working, embeddings generated
+- ✅ **Supabase integration verified** - Client connection working
+
+**Testing Results (Dec 29, 2025):**
+- ✅ Modal authentication complete (`modal setup`)
+- ✅ Supabase secrets created in Modal dashboard
+- ✅ Test embedding generated successfully
+- ✅ GPU confirmed working (CUDA device detected)
+- ✅ 768-dimensional embeddings with L2 norm = 1.0 (properly normalized)
+- ✅ Modal container builds in ~85 seconds (cached after first build)
+- ✅ Test output: `[-0.0183, 0.1240, -0.0037, 0.0206, 0.0302, ...]`
+
+**Fixes Applied During Setup:**
+1. ✅ **Secret name** - Changed from "supabase-secret" to "supabase" (matches Modal UI convention)
+2. ✅ **NumPy version** - Pinned to <2 for torch 2.1.2 compatibility (prevents module errors)
+3. ✅ **Supabase library** - Upgraded from 2.3.4 to 2.15.0 (fixes httpx proxy TypeError)
 
 **Architecture:**
 - Model: OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - industry-proven multimodal
@@ -329,13 +356,11 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - Batch processing: 100 images/batch, auto-retry failed images
 - Error handling: Failed images marked in DB, detailed error logs
 
-**User Next Steps:**
-1. Run `modal setup` to authenticate (one-time, opens browser)
-2. Create Supabase secret: `modal secret create supabase-secret SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...`
-3. Test with sample: `modal run scripts/embeddings/modal_clip_embeddings.py::generate_single_embedding --image-url "..."`
-4. After Phase 3: Run batch generation for all images
-5. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
-6. Test search: `npx tsx scripts/embeddings/test-search.ts`
+**Ready for Production:**
+1. Complete Phase 3 (Instagram scraping with GPT-5-nano filtering)
+2. Run batch embeddings: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 100`
+3. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+4. Test search: `npx tsx scripts/embeddings/test-search.ts` (target <500ms)
 
 **Cost Estimate:**
 - Model download: Free (cached in container, 1.5GB)
@@ -375,3 +400,6 @@ After initial infrastructure setup, comprehensive code review identified and fix
 13. **Apify over Instaloader:** Paid service ($20-40 per city) beats free tool for 10x speed + reliability (30-60 min vs 3-5 hours)
 14. **Supabase Storage over R2:** Simpler integration, already have Pro tier (100GB + 200GB bandwidth)
 15. **Security-first scraping:** 2 code review rounds, 9 critical fixes (path traversal, rollback, validation)
+16. **NumPy version pinning:** Pin to <2 for torch 2.1.2 compatibility (prevents "module compiled with NumPy 1.x" errors)
+17. **Supabase library upgrade:** Use 2.15.0+ to fix httpx proxy parameter incompatibility in Modal containers
+18. **GPT-5-nano image filtering:** $0.01 per 2,500 images with 95%+ accuracy beats manual curation ($70-140) and caption filtering (60% accuracy)

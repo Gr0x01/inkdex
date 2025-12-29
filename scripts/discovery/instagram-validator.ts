@@ -60,7 +60,7 @@ async function fetchInstagramProfile(handle: string): Promise<InstagramProfile> 
 
     // Extract JSON data from script tag
     const scriptMatch = response.data.match(
-      /<script type="application\/ld\+json">(.*?)<\/script>/s
+      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/
     );
 
     if (scriptMatch) {

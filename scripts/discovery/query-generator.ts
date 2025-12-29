@@ -124,6 +124,39 @@ export function generateQueriesForCity(
     category: 'demographic',
   });
 
+  // ========================================================================
+  // 6. Additional Niche/Specialty Queries (Final Push)
+  // ========================================================================
+  const nicheSpecialties = [
+    'color tattoo',
+    'sleeve tattoo specialist',
+    'small tattoo',
+    'first tattoo friendly',
+    'walk in tattoo',
+    'custom design tattoo',
+    'coverup tattoo specialist',
+    'fine art tattoo',
+    'unique tattoo',
+    'contemporary tattoo',
+    'handpoke tattoo',
+    'stick and poke tattoo',
+    'mandala tattoo',
+    'nature tattoo',
+    'wildlife tattoo',
+    'botanical tattoo',
+    'text tattoo',
+    'quote tattoo',
+    'symbol tattoo',
+    'spiritual tattoo',
+  ];
+
+  nicheSpecialties.forEach((specialty) => {
+    queries.push({
+      query: `${specialty} artist ${cityName} Instagram`,
+      category: 'niche_specialty',
+    });
+  });
+
   return queries;
 }
 
