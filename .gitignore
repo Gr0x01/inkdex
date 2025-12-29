@@ -76,4 +76,4 @@ Dockerfile.dev
 docker-compose.override.yml
 
 # Local development
-.local/
+.local/supabase/.temp/

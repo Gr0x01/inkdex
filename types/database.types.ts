@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -109,6 +129,39 @@ export type Database = {
           },
         ]
       }
+      discovery_queries: {
+        Row: {
+          api_cost_estimate: number | null
+          artists_found: string[] | null
+          city: string
+          created_at: string | null
+          id: string
+          query: string
+          results_count: number | null
+          source: string
+        }
+        Insert: {
+          api_cost_estimate?: number | null
+          artists_found?: string[] | null
+          city: string
+          created_at?: string | null
+          id?: string
+          query: string
+          results_count?: number | null
+          source: string
+        }
+        Update: {
+          api_cost_estimate?: number | null
+          artists_found?: string[] | null
+          city?: string
+          created_at?: string | null
+          id?: string
+          query?: string
+          results_count?: number | null
+          source?: string
+        }
+        Relationships: []
+      }
       portfolio_images: {
         Row: {
           artist_id: string
@@ -121,11 +174,11 @@ export type Database = {
           likes_count: number | null
           post_caption: string | null
           post_timestamp: string | null
-          r2_original_path: string | null
-          r2_thumbnail_large: string | null
-          r2_thumbnail_medium: string | null
-          r2_thumbnail_small: string | null
           status: string
+          storage_original_path: string | null
+          storage_thumb_1280: string | null
+          storage_thumb_320: string | null
+          storage_thumb_640: string | null
         }
         Insert: {
           artist_id: string
@@ -138,11 +191,11 @@ export type Database = {
           likes_count?: number | null
           post_caption?: string | null
           post_timestamp?: string | null
-          r2_original_path?: string | null
-          r2_thumbnail_large?: string | null
-          r2_thumbnail_medium?: string | null
-          r2_thumbnail_small?: string | null
           status?: string
+          storage_original_path?: string | null
+          storage_thumb_1280?: string | null
+          storage_thumb_320?: string | null
+          storage_thumb_640?: string | null
         }
         Update: {
           artist_id?: string
@@ -155,11 +208,11 @@ export type Database = {
           likes_count?: number | null
           post_caption?: string | null
           post_timestamp?: string | null
-          r2_original_path?: string | null
-          r2_thumbnail_large?: string | null
-          r2_thumbnail_medium?: string | null
-          r2_thumbnail_small?: string | null
           status?: string
+          storage_original_path?: string | null
+          storage_thumb_1280?: string | null
+          storage_thumb_320?: string | null
+          storage_thumb_640?: string | null
         }
         Relationships: [
           {
@@ -502,7 +555,11 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
 } as const
+

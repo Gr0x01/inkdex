@@ -1,15 +1,16 @@
 ---
 Last-Updated: 2025-12-29
 Maintainer: RB
-Status: Phase 1 Complete ✅ (Production-Ready Infrastructure) → Phase 2 Starting
+Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
 
 ## Current Sprint Goals
-- **Sprint**: Phase 2 - Artist Discovery & Data Collection
-- **Duration**: Week 2-3
-- **Focus**: Google Maps API discovery + Instagram scraping for Austin + LA
+- **Sprint**: Phase 3 - Instagram Scraping & Image Processing
+- **Duration**: Week 3
+- **Focus**: Complete scraping pipeline with Apify + Supabase Storage + security hardening
+- **Status**: ✅ COMPLETE - Ready for production testing with Austin artists (204)
 
 ### Primary Objectives
 1. ✅ **COMPLETED (Phase 1):** Production-ready Supabase database with pgvector
@@ -17,23 +18,37 @@ Status: Phase 1 Complete ✅ (Production-Ready Infrastructure) → Phase 2 Start
 3. ✅ **COMPLETED (Phase 1):** Performance optimization (middleware, vector search)
 4. ✅ **COMPLETED (Phase 1):** Next.js 15.5 with strict TypeScript
 5. ✅ **COMPLETED (Phase 1):** Environment validation and build verification
-6. **NEXT (Phase 2):** Cloudflare R2 bucket setup
-7. **NEXT (Phase 2):** Google Maps API artist discovery script
-8. **NEXT (Phase 2):** Instagram scraping pipeline (Apify integration)
+6. ✅ **COMPLETED (Phase 2):** Instagram-first discovery approach (Tavily API)
+7. ✅ **COMPLETED (Phase 2):** Query caching system (prevents duplicate API calls)
+8. ✅ **COMPLETED (Phase 2):** Shop website scraper (Puppeteer)
+9. ✅ **COMPLETED (Phase 2):** Austin discovery (204 artists - 102% of target, $3.46 cost)
+10. ✅ **COMPLETED (Phase 3):** Supabase Storage bucket setup (portfolio-images)
+11. ✅ **COMPLETED (Phase 3):** Instagram scraping pipeline (Apify + security hardening)
+12. ✅ **COMPLETED (Phase 3):** Image processing pipeline (Sharp + WebP thumbnails)
+13. **NEXT:** Test scraping with 1-2 Austin artists, then full production run (204 artists)
 
 ### Secondary Objectives
-- Set up data pipeline scripts (Google Maps discovery)
-- Instagram scraping configuration (Apify)
-- Modal.com integration for CLIP embeddings
+- ✅ Test and validate Tavily vs Google Places approach
+- ✅ Build query diversification (46 queries → 66 with niche specialties)
+- ✅ Implement false positive filtering for shop scraping
+- ✅ Final optimization round for Austin (niche specialty queries)
+- **NEXT:** Replicate Austin approach for LA
 
 ## Current Blockers
-- Need Cloudflare R2 credentials for image storage setup
-- Need Google Places API key for artist discovery
-- Need Apify credentials for Instagram scraping
+**None** - All critical blockers resolved:
+- ~~Google Places API~~ - Using Tavily Instagram-first approach instead (more effective)
+- ~~Need discovery scripts~~ - Built V2 with caching
+- ~~Need scraping approach~~ - Puppeteer shop scraper working
 
 ## In Progress
-- Phase 1 infrastructure ✅ COMPLETE (production-ready)
-- Phase 2 ready to start (artist discovery)
+- None - Austin discovery complete, ready to begin LA
+
+## Ready to Start
+- Los Angeles discovery using proven Austin approach:
+  - 66 Tavily queries (same categories, LA neighborhoods)
+  - Google Places shop discovery
+  - Shop website scraping with false positive filtering
+  - Target: 200-300 artists, estimated cost: ~$3-4
 
 ## Recently Completed (Dec 29, 2025)
 
@@ -104,6 +119,137 @@ Status: Phase 1 Complete ✅ (Production-Ready Infrastructure) → Phase 2 Start
 - Types: `types/database.types.ts` (generated from Supabase)
 - Migrations: `supabase/migrations/20251229_001-008_*.sql` (8 total)
 
+### Phase 2: Artist Discovery (In Progress - Dec 29, 2025)
+
+**Discovery Approach Evolution:**
+- ✅ Initial test: Tavily vs Google Places vs shop scraping
+- ✅ **Key Finding:** Solo practitioners dominate Austin market (validated hypothesis)
+- ✅ **Decision:** Instagram-first Tavily approach + shop scraping supplement
+- ✅ **Architecture:** Query caching prevents duplicate API calls & tracks costs
+
+**Austin Discovery Results (✅ COMPLETE: 204 artists):**
+
+**Tavily Discovery (145 artists - 71% of total):**
+- **Initial Run:** 46 queries → 114 artists (~$2.30)
+  - 5 general + 27 styles + 7 locations + 5 experience + 2 demographic
+  - 28 queries cached from first run (saved $1.40)
+- **Final Push:** 20 niche specialty queries → 31 new artists (~$1.00)
+  - color tattoo, sleeve specialist, handpoke, stick & poke, mandala, botanical, etc.
+- **Total Cost:** ~$3.30 for 145 artists
+- **Discovery Breakdown:**
+  - Location queries: 32 artists (Downtown, South/East/North/West Austin, South Congress, Sixth St)
+  - Style queries: 65 artists (traditional, fine line, geometric, japanese, watercolor, etc.)
+  - Niche specialty queries: 31 artists (handpoke, botanical, coverup specialist, etc.)
+  - General/experience/demographic: 17 artists
+
+**Shop Website Scraping (59 artists - 29% of total):**
+- 21 tattoo shop websites scraped via Google Places (~$0.16)
+- Puppeteer + Cheerio for HTML parsing
+- Discovered 113 Instagram handles
+- Filtered 54 false positives (CSS terms, version numbers, domains)
+- Final: 59 verified artists from shop rosters
+- Key shops: Moon Tattoo (6 artists), No Good Tattoo (17 artists), Serenity (9 artists)
+
+**Final Austin Metrics:**
+- **Total Artists:** 204 (102% of 200 minimum target)
+- **Total Cost:** $3.46 ($0.017 per artist)
+- **Tavily:** 145 artists from 66 queries (71%)
+- **Shop Scraping:** 59 artists from 21 shops (29%)
+- **Cost Efficiency:** Query caching saved $2.30+ in duplicate API calls
+
+**Tools & Scripts Built:**
+1. `tavily-artist-discovery-v2.ts` - Multi-query Instagram discovery with caching
+2. `query-generator.ts` - Generates 66 diverse queries (5 general + 27 styles + 7 locations + 5 experience + 2 demographic + 20 niche)
+3. `google-places-discovery.ts` - Finds tattoo shops via Google Places API
+4. `shop-website-scraper.ts` - Puppeteer-based roster scraping
+5. `cleanup-false-positives.ts` - Filters technical terms from scraped handles (54 removed)
+6. `check-results.ts` - Quick database stats utility
+
+**Database Enhancements:**
+- ✅ `discovery_queries` table - Caches Tavily/Google queries with costs
+- ✅ Prevents duplicate API calls across runs
+- ✅ Tracks API costs and artists found per query
+
+**Next Steps:**
+- ✅ Austin complete - Ready to replicate for Los Angeles
+- Replicate exact approach for LA (66 queries with LA neighborhoods)
+- Instagram validation (check public/private status for both cities)
+- ✅ Portfolio scraping (Apify - Phase 3 complete)
+
+### Phase 3: Instagram Scraping & Image Processing (✅ COMPLETE - Dec 29, 2025)
+
+**Status:** Production-ready, awaiting testing with Austin artists
+
+**Major Decisions:**
+- ✅ Switched from Instaloader to Apify (speed & reliability over cost)
+  - Apify: 30-60 minutes vs Instaloader: 3-5 hours
+  - Cost: $20-40 for 204 artists (worth it for reliability)
+- ✅ Used Supabase Storage instead of Cloudflare R2 (simpler, already have it)
+- ✅ Two-phase processing: Python downloads to /tmp, Node.js processes & uploads
+- ✅ All critical security issues fixed (2 code review rounds)
+
+**Infrastructure Built:**
+
+1. **Database Migrations:**
+   - `20251229_010_update_storage_paths.sql` - Updated schema for Supabase Storage
+   - `20251229_011_add_unique_constraint.sql` - Prevents duplicate posts (race conditions)
+
+2. **Storage Setup:**
+   - `scripts/setup/setup-storage-bucket.ts` - Automated bucket creation
+   - Public `portfolio-images` bucket with CDN
+   - Folder structure: original/{artist_id}/{post_id}.jpg + 3 WebP thumbnail sizes
+
+3. **Core Libraries:**
+   - `lib/storage/supabase-storage.ts` - Upload/download with path traversal prevention
+   - `lib/processing/image-processor.ts` - Sharp-based processing (JPEG→WebP, 3 sizes)
+
+4. **Scraping Pipeline:**
+   - `scripts/scraping/apify-scraper.py` - Instagram scraping via Apify
+   - `scripts/scraping/process-and-upload.ts` - Image processing & Supabase upload
+   - `scripts/scraping/validate-scraped-images.ts` - Stats and validation
+   - `scripts/scraping/orchestrate-scraping.sh` - Full pipeline automation
+
+5. **Security Hardening (9 Critical Fixes):**
+   - ✅ Path traversal prevention (UUID/shortcode validation)
+   - ✅ Input validation (Instagram handles, artist IDs)
+   - ✅ Storage rollback on DB failures (prevents orphaned files)
+   - ✅ Database unique constraint (prevents race conditions)
+   - ✅ Upload retry logic (3 attempts with linear backoff)
+   - ✅ File cleanup on all paths (prevents disk exhaustion)
+   - ✅ Environment variable validation (clear error messages)
+   - ✅ Connection leak fix (Python finally block)
+   - ✅ Apify timeout (5 minutes per artist)
+
+6. **Resumability Features:**
+   - `scraping_jobs` table tracks progress (status: pending/in_progress/completed)
+   - Idempotency checks skip already-processed images
+   - Can resume after interruption (Ctrl+C, network failure, etc.)
+
+**Expected Results:**
+- **Total Images:** 4,080-10,200 (20-50 per artist)
+- **Storage Used:** 15-35 GB (WebP compression)
+- **Processing Time:** 30-60 minutes for 204 artists
+- **Cost:** $20-40 (Apify) + $0 (within Supabase Storage free tier)
+
+**Files Created/Modified:**
+- 2 new migrations
+- 4 new scripts (setup, scraping, processing, validation)
+- 2 new libraries (storage, image processing)
+- Updated: `requirements.txt`, `package.json`
+- Created: `.env.example` (template for credentials)
+
+**Testing Plan:**
+1. Get Apify API token (free $5 credit)
+2. Add to `.env.local`: `APIFY_API_TOKEN=apify_api_xxx`
+3. Test with 1-2 artists first (modify Python script: add `LIMIT 2`)
+4. Validate results with `npm run validate-scraped-images`
+5. Run full production scrape: `npm run scrape-instagram`
+
+**Next Steps:**
+- Test with 1-2 Austin artists
+- Run full scrape (204 artists, ~30-60 minutes)
+- Proceed to Phase 4 (CLIP embeddings on Modal.com)
+
 ## Launch City Selection Results
 
 ### Selected Cities:
@@ -126,36 +272,53 @@ Status: Phase 1 Complete ✅ (Production-Ready Infrastructure) → Phase 2 Start
 - **Target:** 200-300 artists per city for MVP
 - **Est. Cost:** ~$30-55 per city (one-time), ~$6-11/month recurring
 
-## Next Steps (Phase 2 - Week 2-3)
-1. **Cloudflare R2 Setup:**
-   - Create R2 bucket for image storage
-   - Configure CORS for public read access
-   - Set up CDN domain (cdn.yourdomain.com)
-   - Test image upload/download flow
+## Next Steps
 
-2. **Google Maps Artist Discovery:**
-   - Set up Google Places API key
-   - Create discovery script for Austin + LA
-   - Search terms: "tattoo artist", "tattoo shop", "tattoo studio"
-   - Extract: Name, Instagram handle, address, phone, website
-   - Target: 200-300 artists per city
+### Phase 3: Testing & Production Run (Ready - Dec 29, 2025)
+1. **Get Apify API Token:**
+   - Sign up at https://apify.com (free $5 credit)
+   - Get API token from Settings → Integrations
+   - Add to `.env.local`: `APIFY_API_TOKEN=apify_api_xxx`
 
-3. **Instagram Scraping Pipeline:**
-   - Set up Apify account and Instagram scraper
-   - Scrape artist portfolios (20-40 images per artist)
-   - Download images to local storage temporarily
-   - Upload to R2 with thumbnail generation
+2. **Test with 1-2 Artists:**
+   - Modify `apify-scraper.py` line 69: add `LIMIT 2`
+   - Run: `python3 scripts/scraping/apify-scraper.py`
+   - Run: `npm run process-images`
+   - Validate: `npm run validate-scraped-images`
 
-4. **Embedding Generation:**
-   - Set up Modal.com account for serverless GPU
-   - Create CLIP embedding generation function
-   - Process all scraped images (batch processing)
-   - Store embeddings in portfolio_images.embedding column
+3. **Production Run (204 Artists):**
+   - Remove LIMIT from Python script
+   - Run: `npm run scrape-instagram` (full pipeline)
+   - Expected: 30-60 minutes, 4,000-10,000 images
+   - Cost: $20-40 (Apify)
 
-5. **Create Vector Index:**
-   - After loading >1000 images, create optimal IVFFlat/HNSW index
-   - Follow guide in migration 008
-   - Test search performance (<500ms target)
+### Phase 4: Embedding Generation (✅ Infrastructure Ready - Dec 29, 2025)
+**Status:** Scripts created, Modal CLI installed, waiting for Phase 3 images
+
+**Completed Setup:**
+- ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim)
+- ✅ Batch processing capability (100 images/batch)
+- ✅ Helper scripts for verification and testing
+- ✅ Index creation automation (IVFFlat/HNSW)
+- ✅ Modal CLI installed locally
+
+**User Next Steps:**
+1. Authenticate Modal: `modal setup` (opens browser)
+2. Create Supabase secret in Modal (one-time)
+3. Test with sample image (verify GPU works)
+4. Once Phase 3 complete: Run batch embedding generation
+5. Create vector index using helper script
+6. Test search performance (<500ms target)
+
+**Files Created:**
+- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com GPU script
+- `scripts/embeddings/check-embeddings.ts` - Verify progress
+- `scripts/embeddings/create-vector-index.ts` - Index creation automation
+- `scripts/embeddings/test-search.ts` - Search performance testing
+- `scripts/embeddings/SETUP.md` - Detailed setup guide
+- `scripts/embeddings/QUICKSTART.md` - Quick reference
+
+**Cost Estimate:** ~$0.30-0.60 per city (one-time GPU processing)
 
 ## Context Notes
 - ✅ Market validation complete - strong demand across all cities

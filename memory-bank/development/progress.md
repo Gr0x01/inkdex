@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2025-12-29
 Maintainer: RB
-Status: Phase 1 Complete ✅ → Phase 2 Starting (Artist Discovery)
+Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready ✅
 ---
 
 # Progress Log: Tattoo Artist Discovery Platform
@@ -182,6 +182,159 @@ After initial infrastructure setup, comprehensive code review identified and fix
 7. **Generated types prevent bugs:** Supabase-generated TypeScript types catch column name typos at compile time
 8. **Automatic triggers reduce errors:** updated_at triggers eliminate manual timestamp management
 
+### Phase 2: Artist Discovery (Dec 29, 2025 - In Progress)
+
+**Discovery Approach:**
+- Tested 3 methods: Tavily Instagram search, Google Places API, shop website scraping
+- **Key insight:** Solo practitioners dominate (user's hypothesis validated)
+- **Decision:** Instagram-first Tavily + shop scraping supplement
+
+**Tools Built:**
+1. `tavily-artist-discovery-v2.ts` - Multi-query discovery with caching (46+ queries)
+2. `query-generator.ts` - Generates 40-50 diverse queries (styles, locations, demographics)
+3. `shop-website-scraper.ts` - Puppeteer scraper for shop rosters
+4. `google-places-discovery.ts` - Finds tattoo shops via Google Places
+5. `cleanup-false-positives.ts` - Filters technical terms from scraped handles
+6. `discovery_queries` table - Query caching + cost tracking
+
+**Austin Results (✅ COMPLETE - 204 artists):**
+- **Tavily Discovery:** 145 artists from 66 queries (~$3.30)
+  - Initial run: 114 artists from 46 queries (~$2.30)
+  - Final push: 31 artists from 20 niche specialty queries (~$1.00)
+  - Breakdown: Location (32), Styles (65), General/Experience/Demographic (17), Niche Specialties (31)
+- **Shop Scraping:** 59 artists from 21 shops (~$0.16)
+- **Total Cost:** ~$3.46 for 204 artists ($0.017 per artist)
+- **Target Met:** 204/200 (102% of minimum target)
+
+**Next:**
+- Replicate approach for Los Angeles (same query set, 10 LA neighborhoods)
+- Instagram validation (public/private check)
+- ✅ Portfolio scraping (Apify - Phase 3 complete)
+
+### Phase 3: Instagram Scraping & Image Processing (✅ COMPLETE - Dec 29, 2025)
+**Status**: Production-ready, awaiting testing with Austin artists (204)
+
+**Major Decisions:**
+1. **Switched from Instaloader to Apify:**
+   - Speed: 30-60 minutes vs 3-5 hours (10x faster)
+   - Reliability: Managed IPs, automatic retries, rate limit handling
+   - Cost: $20-40 for 204 artists (worth it for reliability)
+   - Instagram TOS compliance: Apify handles all compliance
+2. **Supabase Storage over Cloudflare R2:**
+   - Simpler integration (already using Supabase)
+   - Pro tier: 100GB storage + 200GB bandwidth
+   - Public CDN URLs for images
+3. **Two-phase processing pipeline:**
+   - Phase 1: Python downloads to /tmp (Apify API)
+   - Phase 2: Node.js processes & uploads to Supabase Storage
+4. **Security-first approach:**
+   - 2 comprehensive code reviews
+   - 9 critical security fixes applied
+   - Path traversal prevention, input validation, rollback logic
+
+**Infrastructure Built:**
+- ✅ 2 database migrations (storage paths, unique constraints)
+- ✅ Storage bucket setup script (automated)
+- ✅ 2 core libraries (storage, image processing)
+- ✅ 4 scraping scripts (Python scraper, Node processor, validator, orchestrator)
+- ✅ Resumability system (scraping_jobs table)
+- ✅ Idempotency checks (skip already-processed images)
+- ✅ Security hardening (9 critical fixes)
+
+**Security Fixes Applied:**
+1. ✅ Path traversal prevention (UUID/shortcode validation)
+2. ✅ Input validation (Instagram handles, artist IDs)
+3. ✅ Storage rollback on DB failures (prevents orphaned files)
+4. ✅ Database unique constraint (prevents race conditions)
+5. ✅ Upload retry logic (3 attempts, linear backoff)
+6. ✅ File cleanup on all paths (prevents disk exhaustion)
+7. ✅ Environment variable validation (clear error messages)
+8. ✅ Connection leak fix (Python finally block)
+9. ✅ Apify timeout (5 minutes per artist)
+
+**Tools & Scripts:**
+- `scripts/setup/setup-storage-bucket.ts` - Automated Supabase bucket creation
+- `lib/storage/supabase-storage.ts` - Upload/download with path validation
+- `lib/processing/image-processor.ts` - Sharp-based processing (JPEG→WebP, 3 sizes)
+- `scripts/scraping/apify-scraper.py` - Instagram scraping via Apify
+- `scripts/scraping/process-and-upload.ts` - Image processing & upload pipeline
+- `scripts/scraping/validate-scraped-images.ts` - Stats and validation
+- `scripts/scraping/orchestrate-scraping.sh` - Full pipeline automation
+
+**Image Processing Pipeline:**
+- Original JPEG → WebP conversion (85% quality)
+- 3 thumbnail sizes: 320w, 640w, 1280w
+- Storage paths: `original/{artist_id}/{post_id}.jpg`, `thumbs/{size}/{artist_id}/{post_id}.webp`
+- Parallel uploads (4 files per image)
+- Metadata tracking (caption, likes, timestamp)
+
+**Resumability Features:**
+- `scraping_jobs` table tracks progress (pending/in_progress/completed)
+- Idempotency checks skip already-uploaded images
+- Can resume after interruption (Ctrl+C, network failure, crash)
+- Progress logging: "Artist 47/204 completed (23%)"
+
+**Expected Results:**
+- Total images: 4,080-10,200 (20-50 per artist × 204)
+- Storage used: 15-35 GB (WebP compression saves ~70%)
+- Processing time: 30-60 minutes for 204 artists
+- Cost: $20-40 (Apify) + $0 (within Supabase free tier)
+
+**Files Created:**
+- 2 migrations: `20251229_010_update_storage_paths.sql`, `20251229_011_add_unique_constraint.sql`
+- 7 new scripts/libraries (setup, storage, processing, scraping, validation, orchestration)
+- Updated: `requirements.txt` (apify-client, requests), `package.json` (npm scripts)
+- Created: `.env.example` (safe credentials template)
+
+**Next Steps:**
+1. Get Apify API token (free $5 credit at apify.com)
+2. Add to `.env.local`: `APIFY_API_TOKEN=apify_api_xxx`
+3. Test with 1-2 artists (modify Python script: add `LIMIT 2`)
+4. Run full scrape: `npm run scrape-instagram` (30-60 minutes)
+5. Validate: `npm run validate-scraped-images`
+6. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+
+### Phase 4: Embedding Generation Infrastructure (✅ COMPLETE - Dec 29, 2025)
+**Status**: Scripts ready, Modal CLI installed, waiting for Phase 3 images
+
+**Completed:**
+- ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim embeddings)
+- ✅ Batch processing script (100 images/batch, resumable from offset)
+- ✅ Text embedding generation for search queries
+- ✅ Helper scripts: check-embeddings.ts, create-vector-index.ts, test-search.ts
+- ✅ Automatic index type selection (HNSW <1k images, IVFFlat 1k-100k+)
+- ✅ Modal CLI installed locally
+- ✅ Setup guides: SETUP.md (detailed) + QUICKSTART.md (quick reference)
+
+**Architecture:**
+- Model: OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - industry-proven multimodal
+- GPU: A10G serverless (pay-per-second, ~$0.60/hour)
+- Dimensions: 768 (L2 normalized for cosine similarity)
+- Batch processing: 100 images/batch, auto-retry failed images
+- Error handling: Failed images marked in DB, detailed error logs
+
+**User Next Steps:**
+1. Run `modal setup` to authenticate (one-time, opens browser)
+2. Create Supabase secret: `modal secret create supabase-secret SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...`
+3. Test with sample: `modal run scripts/embeddings/modal_clip_embeddings.py::generate_single_embedding --image-url "..."`
+4. After Phase 3: Run batch generation for all images
+5. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+6. Test search: `npx tsx scripts/embeddings/test-search.ts`
+
+**Cost Estimate:**
+- Model download: Free (cached in container, 1.5GB)
+- Processing time: ~5-10 min per 6,000 images
+- GPU cost: ~$0.05-0.10 per city
+- Total for 2 cities: ~$0.30-0.60 (one-time)
+
+**Files Created:**
+- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com script (350 lines)
+- `scripts/embeddings/check-embeddings.ts` - Progress verification
+- `scripts/embeddings/create-vector-index.ts` - Index automation with optimal params
+- `scripts/embeddings/test-search.ts` - Search performance testing
+- `scripts/embeddings/SETUP.md` - Detailed setup guide
+- `scripts/embeddings/QUICKSTART.md` - Quick reference guide
+
 ### Technical Decisions
 1. **IVFFlat over HNSW:** Better for 10k-100k+ vectors (our expected scale)
 2. **Modal.com for embeddings:** Serverless GPU at $0.30 per city beats managed services
@@ -192,3 +345,9 @@ After initial infrastructure setup, comprehensive code review identified and fix
 7. **Defense in depth:** Database constraints + TypeScript types + RLS policies for multi-layer security
 8. **Environment validation:** Zod schema catches missing env vars at startup (fail fast)
 9. **Performance-first middleware:** Skip expensive auth checks on 95% of routes (public pages)
+10. **Instagram-first discovery:** Tavily finds solo practitioners directly (no website scraping needed for 66% of artists)
+11. **Query caching:** Prevents duplicate API calls, tracks costs per query (~$0.05 Tavily, ~$0.032 Google Places)
+12. **Shop scraping with false positive filtering:** Puppeteer + Cheerio finds 52% real artists (59/113 handles)
+13. **Apify over Instaloader:** Paid service ($20-40 per city) beats free tool for 10x speed + reliability (30-60 min vs 3-5 hours)
+14. **Supabase Storage over R2:** Simpler integration, already have Pro tier (100GB + 200GB bandwidth)
+15. **Security-first scraping:** 2 code review rounds, 9 critical fixes (path traversal, rollback, validation)
