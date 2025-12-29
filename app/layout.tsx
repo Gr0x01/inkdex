@@ -1,8 +1,15 @@
 import type { Metadata } from 'next'
-import { Space_Grotesk, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
+import { Playfair_Display, Space_Grotesk, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 
-// Font configurations
+// Font configurations for "SKIN & PAPER" design system
+const playfairDisplay = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['900'],
+  variable: '--font-playfair-display',
+  display: 'swap',
+})
+
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   weight: ['700'],
@@ -12,14 +19,14 @@ const spaceGrotesk = Space_Grotesk({
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
+  weight: ['100', '200', '300', '400', '500'],
   variable: '--font-jetbrains-mono',
   display: 'swap',
 })
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
-  weight: ['200', '300'],
+  weight: ['300', '400', '600'],
   style: ['normal', 'italic'],
   variable: '--font-crimson-pro',
   display: 'swap',
@@ -38,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
+      className={`${playfairDisplay.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <body>{children}</body>
     </html>

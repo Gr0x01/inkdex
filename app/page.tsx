@@ -1,131 +1,196 @@
-import SearchTabs from '@/components/search/SearchTabs'
+import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
+import VisualTeaserStrip from '@/components/home/VisualTeaserStrip'
+import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
+import { getFeaturedImages, getFeaturedArtists } from '@/lib/supabase/queries'
+import type { FeaturedImage, FeaturedArtist } from '@/lib/mock/featured-data'
 
-export default function Home() {
+export default async function Home() {
+  // Fetch featured content (with fallback to empty arrays)
+  let featuredImages: FeaturedImage[] = []
+  let featuredArtists: FeaturedArtist[] = []
+
+  try {
+    featuredImages = await getFeaturedImages(30) as FeaturedImage[]
+  } catch (error) {
+    console.error('Failed to fetch featured images:', error)
+  }
+
+  try {
+    featuredArtists = await getFeaturedArtists('Austin', 12) as FeaturedArtist[]
+  } catch (error) {
+    console.error('Failed to fetch featured artists:', error)
+  }
+
   return (
-    <main className="min-h-screen bg-gradient-hero relative noise-overlay">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 md:px-8 py-12 md:py-24 relative z-10">
-        <div className="max-w-5xl mx-auto">
-          {/* Hero Content - Staggered Animation */}
-          <div className="text-center mb-16 md:mb-20 stagger-fade-up">
-            {/* Main Headline */}
-            <h1 className="font-display text-4xl md:text-6xl lg:text-display font-[900] text-text-primary mb-6 leading-tight">
-              Find Your Tattoo Artist
-              <br />
-              <span className="text-gradient-accent glow-accent">by Vibe</span>
-            </h1>
+    <main className="min-h-screen bg-light">
+      {/* ═══════════════════════════════════════════════════════════════
+          HERO SECTION - Mobile-First Editorial Layout
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative grain-overlay py-8 md:py-16 lg:py-20 overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Oversized Editorial Headline */}
+            <div className="mb-6 md:mb-10 stagger-children">
+              <h1 className="font-display leading-none mb-3 md:mb-4" style={{ fontSize: 'clamp(2.5rem, 12vw, 6rem)' }}>
+                FIND YOUR
+                <br />
+                ARTIST
+              </h1>
+              <p className="font-mono text-tiny text-gray-600 tracking-wider">
+                BY VIBE, NOT VOCABULARY
+              </p>
+            </div>
 
-            {/* Subtitle */}
-            <p className="font-body text-base md:text-lg text-text-secondary mb-6 max-w-2xl mx-auto leading-relaxed">
-              Upload an image or describe what you&apos;re looking for.
-              <br className="hidden md:block" />
-              We&apos;ll find artists whose style matches your vision.
+            {/* Subheading */}
+            <p className="font-body text-base md:text-xl lg:text-2xl text-gray-700 mb-8 md:mb-12 px-4 leading-relaxed animate-fade-up" style={{ animationDelay: '200ms' }}>
+              Upload an image or describe your style. Our AI matches you with artists in Austin whose work fits your aesthetic.
             </p>
 
-            {/* Trust Signal */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-mid/50 border border-border-subtle rounded-full backdrop-blur-sm">
-              <svg
-                className="w-4 h-4 text-status-success"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span className="font-body text-tiny text-text-secondary uppercase tracking-wide">
-                <strong className="text-text-primary font-medium">204 Artists</strong> in Austin, TX
-              </span>
+            {/* Unified Search Bar - Editorial Card Style */}
+            <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
+              <UnifiedSearchBar />
+            </div>
+
+            {/* Stats Bar */}
+            <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-300 grid grid-cols-3 gap-4 md:gap-6 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '600ms' }}>
+              <div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">188</div>
+                <div className="font-mono text-tiny text-gray-600">ARTISTS</div>
+              </div>
+              <div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">1.2K</div>
+                <div className="font-mono text-tiny text-gray-600">ARTWORKS</div>
+              </div>
+              <div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">ATX</div>
+                <div className="font-mono text-tiny text-gray-600">AUSTIN</div>
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Search Interface */}
-          <div className="max-w-3xl mx-auto mb-20 md:mb-32">
-            <SearchTabs />
+        {/* Background Decorative Element - Subtle Gold Accent */}
+        <div
+          className="absolute top-0 right-0 w-[600px] h-[600px] opacity-5 pointer-events-none hidden md:block"
+          style={{
+            background: 'radial-gradient(circle, var(--gold-vibrant) 0%, transparent 70%)',
+            transform: 'translate(30%, -30%)',
+          }}
+          aria-hidden="true"
+        />
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          VISUAL GALLERY STRIP - Dark Section with Torn Edge
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="bg-dark torn-edge-top py-16 md:py-20 relative">
+        <div className="container mx-auto relative z-10">
+          {/* Section Label */}
+          <div className="mb-12">
+            <h2 className="font-mono text-tiny text-gray-400 tracking-widest text-center">
+              AUSTIN ARTISTS
+            </h2>
           </div>
 
-          {/* How It Works Section */}
+          {/* Visual Strip */}
+          <VisualTeaserStrip images={featuredImages} />
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          FEATURED ARTISTS GRID - Light Section with Torn Edge
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="bg-light torn-edge-top py-16 md:py-24">
+        <div className="container mx-auto">
+          <FeaturedArtistsGrid artists={featuredArtists} city="Austin" />
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          HOW IT WORKS - Gold Accent Section
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="bg-accent torn-edge-top py-16 md:py-24 relative grain-overlay">
+        <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto">
-            <h2 className="font-display text-h2 font-[800] text-text-primary text-center mb-12 md:mb-16">
+            {/* Section Header */}
+            <h2 className="font-heading text-h1 text-center mb-16">
               How It Works
             </h2>
 
             {/* Steps Grid */}
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            <div className="grid md:grid-cols-3 gap-12 md:gap-8">
               {/* Step 1 */}
-              <div className="text-center group">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-accent text-text-primary font-display text-xl font-[800] mb-6 shadow-glow-accent group-hover:shadow-glow-accent-strong transition-all duration-medium">
-                  1
+              <div className="text-center stagger-children">
+                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                  01
                 </div>
-                <h3 className="font-display text-h3 font-[700] text-text-primary mb-3">
-                  Share Your Vision
-                </h3>
-                <p className="font-body text-small text-text-secondary leading-relaxed">
-                  Upload a reference image or describe the vibe you&apos;re looking for in your own words
+                <h3 className="font-heading text-h3 mb-4">Upload or Describe</h3>
+                <p className="font-body text-gray-700 leading-relaxed">
+                  Share a reference image or describe your tattoo style in your own words
                 </p>
               </div>
 
               {/* Step 2 */}
-              <div className="text-center group">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-accent text-text-primary font-display text-xl font-[800] mb-6 shadow-glow-accent group-hover:shadow-glow-accent-strong transition-all duration-medium">
-                  2
+              <div className="text-center stagger-children" style={{ animationDelay: '100ms' }}>
+                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                  02
                 </div>
-                <h3 className="font-display text-h3 font-[700] text-text-primary mb-3">
-                  AI Matches Artists
-                </h3>
-                <p className="font-body text-small text-text-secondary leading-relaxed">
-                  Our AI analyzes thousands of portfolio images to find artists whose style matches your aesthetic
+                <h3 className="font-heading text-h3 mb-4">AI Matches</h3>
+                <p className="font-body text-gray-700 leading-relaxed">
+                  Our AI analyzes visual style and finds artists whose work matches your aesthetic
                 </p>
               </div>
 
               {/* Step 3 */}
-              <div className="text-center group">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-accent text-text-primary font-display text-xl font-[800] mb-6 shadow-glow-accent group-hover:shadow-glow-accent-strong transition-all duration-medium">
-                  3
+              <div className="text-center stagger-children" style={{ animationDelay: '200ms' }}>
+                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                  03
                 </div>
-                <h3 className="font-display text-h3 font-[700] text-text-primary mb-3">
-                  Browse & Connect
-                </h3>
-                <p className="font-body text-small text-text-secondary leading-relaxed">
-                  Explore matched artists&apos; portfolios and reach out directly via Instagram to book your session
+                <h3 className="font-heading text-h3 mb-4">Connect & Book</h3>
+                <p className="font-body text-gray-700 leading-relaxed">
+                  Browse portfolios, visit their Instagram, and reach out to book your appointment
                 </p>
               </div>
             </div>
-          </div>
 
-          {/* Value Proposition Card */}
-          <div className="max-w-2xl mx-auto mt-16 md:mt-24">
-            <div className="relative overflow-hidden rounded-xl bg-surface-low border border-border-subtle p-8 md:p-10 shadow-lg">
-              {/* Decorative gradient */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-accent opacity-10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2" />
-
-              <div className="relative z-10">
-                <h3 className="font-display text-h2 font-[700] text-text-primary mb-4 text-center">
-                  No tattoo terminology required
-                </h3>
-                <p className="font-body text-body text-text-secondary text-center leading-relaxed">
-                  Don&apos;t know the difference between &ldquo;traditional&rdquo; and &ldquo;neo-traditional&rdquo;?
-                  That&apos;s okay. Just show us what you like, and we&apos;ll find artists who can bring your vision to life.
-                </p>
-              </div>
+            {/* CTA */}
+            <div className="text-center mt-16">
+              <a href="#search" className="btn btn-primary scale-hover">
+                Start Searching
+              </a>
             </div>
           </div>
-
-          {/* Footer Spacer */}
-          <div className="h-16 md:h-24" />
         </div>
-      </div>
+      </section>
 
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        {/* Top gradient orb */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-accent-primary opacity-5 rounded-full blur-3xl" />
-        {/* Bottom gradient orb */}
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-secondary opacity-5 rounded-full blur-3xl" />
-      </div>
+      {/* ═══════════════════════════════════════════════════════════════
+          FOOTER CTA - Dark Section
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="bg-dark torn-edge-top py-20 md:py-32 text-center">
+        <div className="container mx-auto">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="font-display text-display text-white-pure mb-8 leading-none">
+              YOUR NEXT
+              <br />
+              <span className="text-gradient-gold">TATTOO AWAITS</span>
+            </h2>
+            <p className="font-body text-xl text-gray-300 mb-12 leading-relaxed">
+              Join hundreds of Austin locals who found their perfect artist through visual search
+            </p>
+            <a href="#search" className="btn btn-primary scale-hover gold-glow-hover">
+              Find Your Artist
+            </a>
+          </div>
+        </div>
+
+        {/* Footer Info */}
+        <div className="mt-20 pt-12 border-t border-gray-800">
+          <div className="font-mono text-tiny text-gray-500 space-y-2">
+            <p>AUSTIN, TEXAS</p>
+            <p className="text-gray-600">Powered by AI Visual Search</p>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
