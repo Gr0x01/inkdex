@@ -286,16 +286,30 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - Updated: `requirements.txt` (apify-client, requests), `package.json` (npm scripts)
 - Created: `.env.example` (safe credentials template)
 
-**Next Steps:**
-1. Get Apify API token (free $5 credit at apify.com)
-2. Add to `.env.local`: `APIFY_API_TOKEN=apify_api_xxx`
-3. Test with 1-2 artists (modify Python script: add `LIMIT 2`)
-4. Run full scrape: `npm run scrape-instagram` (30-60 minutes)
-5. Validate: `npm run validate-scraped-images`
-6. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+**Testing Complete (Dec 29, 2025):**
+1. ✅ Got Apify API token
+2. ✅ Added to `.env.local`
+3. ✅ Tested with 2 artists - **SUCCESSFUL**
+   - Downloaded 22 actual JPEG images
+   - Fixed Apify integration (latestPosts array)
+   - Fixed environment loading (dotenv)
+   - Fixed database status values
+   - All uploads and processing successful
+4. ⚠️  **Issue Discovered**: Not all images are tattoo work
+   - Mix of portfolio, personal photos, promotional content
+   - Need filtering strategy before full production run
 
-### Phase 4: Embedding Generation Infrastructure (✅ COMPLETE - Dec 29, 2025)
-**Status**: Scripts ready, Modal CLI installed, waiting for Phase 3 images
+**Next Steps:**
+1. ⏸️  **PAUSED**: Decide on filtering approach
+   - Option A: Accept mixed content (CLIP will cluster tattoos naturally)
+   - Option B: Caption/hashtag filtering during scraping
+   - Option C: Post-scrape manual curation
+   - Option D: Vision model classification filter
+2. Then run full scrape: `npm run scrape-instagram` (202 artists, 30-60 min)
+3. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+
+### Phase 4: Embedding Generation Infrastructure (✅ Production-Ready - Dec 29, 2025)
+**Status**: All security fixes complete, build passes, ready for Modal deployment
 
 **Completed:**
 - ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim embeddings)
@@ -305,6 +319,8 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - ✅ Automatic index type selection (HNSW <1k images, IVFFlat 1k-100k+)
 - ✅ Modal CLI installed locally
 - ✅ Setup guides: SETUP.md (detailed) + QUICKSTART.md (quick reference)
+- ✅ **All security fixes applied** (5 Critical, 2 Warnings)
+- ✅ **Build verification passed** (TypeScript compilation succeeds)
 
 **Architecture:**
 - Model: OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - industry-proven multimodal
@@ -327,13 +343,21 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - GPU cost: ~$0.05-0.10 per city
 - Total for 2 cities: ~$0.30-0.60 (one-time)
 
+**Security Hardening Complete (Dec 29, 2025 - Code Review Round 2):**
+1. ✅ **SSRF Protection** - URL validation, DNS resolution, private IP blocking, size limits
+2. ✅ **Credential Validation** - Environment variable validation, no exposure in error messages
+3. ✅ **SQL Injection Prevention** - Parameter validation before string interpolation in index creation
+4. ✅ **Transaction Safety** - Batch processing collects results before DB updates (atomic per record)
+5. ✅ **Type Safety** - Removed unsafe 'as any' casts, proper RPC type handling ('as unknown as Type')
+6. ✅ **Performance Index** - Added `idx_portfolio_images_status_pending` for batch queries (partial index)
+7. ✅ **Environment Loading** - All TypeScript scripts load dotenv properly
+
 **Files Created:**
-- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com script (350 lines)
-- `scripts/embeddings/check-embeddings.ts` - Progress verification
-- `scripts/embeddings/create-vector-index.ts` - Index automation with optimal params
-- `scripts/embeddings/test-search.ts` - Search performance testing
-- `scripts/embeddings/SETUP.md` - Detailed setup guide
-- `scripts/embeddings/QUICKSTART.md` - Quick reference guide
+- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com script (security hardened)
+- `scripts/embeddings/check-embeddings.ts` - Progress verification (type-safe)
+- `scripts/embeddings/create-vector-index.ts` - Index automation (SQL injection protected)
+- `scripts/embeddings/test-search.ts` - Search performance testing (type-safe RPC calls)
+- `supabase/migrations/20251229_012_add_status_index.sql` - Performance optimization
 
 ### Technical Decisions
 1. **IVFFlat over HNSW:** Better for 10k-100k+ vectors (our expected scale)

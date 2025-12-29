@@ -176,9 +176,21 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 - Instagram validation (check public/private status for both cities)
 - ✅ Portfolio scraping (Apify - Phase 3 complete)
 
-### Phase 3: Instagram Scraping & Image Processing (✅ COMPLETE - Dec 29, 2025)
+### Phase 3: Instagram Scraping & Image Processing (✅ COMPLETE & TESTED - Dec 29, 2025)
 
-**Status:** Production-ready, awaiting testing with Austin artists
+**Status:** ✅ Fully working, tested with real artists, ready for production
+
+**Testing Results (Dec 29, 2025):**
+- ✅ Scraped 2 artists successfully (22 images total)
+- ✅ Fixed Apify integration (was downloading HTML, now downloads actual JPEGs)
+- ✅ Fixed environment loading (dotenv now loads before imports)
+- ✅ Fixed database status values ('running' instead of 'in_progress')
+- ✅ All images processed and uploaded to Supabase Storage
+- ✅ All 3 thumbnail sizes generated (320w, 640w, 1280w WebP)
+- ✅ Database metadata inserts successful
+- ✅ Temp file cleanup working
+- ✅ Storage: 0.06 GB used (0.1% of 100 GB limit)
+- ⚠️  **Known Issue**: Not all scraped images are tattoo work (includes personal photos, promotions, etc.)
 
 **Major Decisions:**
 - ✅ Switched from Instaloader to Apify (speed & reliability over cost)
@@ -245,9 +257,20 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
 4. Validate results with `npm run validate-scraped-images`
 5. Run full production scrape: `npm run scrape-instagram`
 
+**Critical Issue Discovered:**
+- Not all Instagram images are tattoo work (mix of portfolio + personal + promotional content)
+- Need filtering strategy before full production run
+
+**Potential Solutions (To Discuss):**
+1. **Manual curation** - Review and delete non-tattoo images after scraping
+2. **Caption filtering** - Skip posts without tattoo-related keywords
+3. **Image classification** - Use vision model to filter non-tattoo images
+4. **Accept mixed content** - CLIP embeddings will naturally cluster tattoos together
+5. **Hashtag filtering** - Only scrape posts with tattoo hashtags
+
 **Next Steps:**
-- Test with 1-2 Austin artists
-- Run full scrape (204 artists, ~30-60 minutes)
+- ⏸️  Decide on filtering strategy before full production run
+- Then: Run full scrape (202 remaining artists, ~30-60 minutes)
 - Proceed to Phase 4 (CLIP embeddings on Modal.com)
 
 ## Launch City Selection Results
@@ -292,31 +315,42 @@ Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready �
    - Expected: 30-60 minutes, 4,000-10,000 images
    - Cost: $20-40 (Apify)
 
-### Phase 4: Embedding Generation (✅ Infrastructure Ready - Dec 29, 2025)
-**Status:** Scripts created, Modal CLI installed, waiting for Phase 3 images
+### Phase 4: Embedding Generation (✅ Production-Ready - Dec 29, 2025)
+**Status:** All security fixes complete, build passes, ready for Modal deployment
 
-**Completed Setup:**
+**Infrastructure Complete:**
 - ✅ Modal.com Python script with OpenCLIP ViT-L-14 (768-dim)
 - ✅ Batch processing capability (100 images/batch)
 - ✅ Helper scripts for verification and testing
 - ✅ Index creation automation (IVFFlat/HNSW)
 - ✅ Modal CLI installed locally
+- ✅ **All security fixes applied** (5 Critical issues resolved)
+- ✅ **Build verification passed** (TypeScript compilation succeeds)
+
+**Security Hardening Complete (Dec 29, 2025):**
+1. ✅ **SSRF Protection** - URL validation, private IP blocking, size limits
+2. ✅ **Credential Validation** - Environment variable validation, no exposure in errors
+3. ✅ **SQL Injection Prevention** - Parameter validation in index creation
+4. ✅ **Transaction Safety** - Batch processing with proper error handling
+5. ✅ **Type Safety** - Removed unsafe 'as any' casts, proper RPC type handling
+6. ✅ **Performance Index** - Added status column index for batch queries
+7. ✅ **Environment Loading** - All TypeScript scripts load dotenv properly
 
 **User Next Steps:**
-1. Authenticate Modal: `modal setup` (opens browser)
-2. Create Supabase secret in Modal (one-time)
-3. Test with sample image (verify GPU works)
-4. Once Phase 3 complete: Run batch embedding generation
-5. Create vector index using helper script
-6. Test search performance (<500ms target)
+1. Complete Phase 3 (Instagram scraping) to get portfolio images
+2. Authenticate Modal: `modal setup` (opens browser)
+3. Create Supabase secret in Modal (one-time)
+4. Test with sample batch (10-20 images)
+5. Run full batch embedding generation (4,000-10,000 images)
+6. Create vector index using helper script (SQL commands provided)
+7. Test search performance (<500ms target)
 
 **Files Created:**
-- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com GPU script
-- `scripts/embeddings/check-embeddings.ts` - Verify progress
-- `scripts/embeddings/create-vector-index.ts` - Index creation automation
-- `scripts/embeddings/test-search.ts` - Search performance testing
-- `scripts/embeddings/SETUP.md` - Detailed setup guide
-- `scripts/embeddings/QUICKSTART.md` - Quick reference
+- `scripts/embeddings/modal_clip_embeddings.py` - Main Modal.com GPU script (security hardened)
+- `scripts/embeddings/check-embeddings.ts` - Verify progress (type-safe)
+- `scripts/embeddings/create-vector-index.ts` - Index creation (SQL injection protected)
+- `scripts/embeddings/test-search.ts` - Search performance testing (type-safe RPC calls)
+- `supabase/migrations/20251229_012_add_status_index.sql` - Performance optimization
 
 **Cost Estimate:** ~$0.30-0.60 per city (one-time GPU processing)
 
