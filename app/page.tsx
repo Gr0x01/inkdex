@@ -77,28 +77,12 @@ export default async function Home() {
 
             {/* Subheading - Bright White */}
             <p className="font-body text-base md:text-xl lg:text-2xl mb-8 md:mb-10 px-4 leading-relaxed animate-fade-up drop-shadow-lg" style={{ animationDelay: '200ms', color: '#FFFFFF', textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)' }}>
-              Upload an image or describe your style. Our AI matches you with artists in Austin whose work fits your aesthetic.
+              Upload an image or describe your style. We'll match you with artists whose work fits your aesthetic.
             </p>
 
             {/* Unified Search Bar - White Card Floats on Dark */}
             <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
               <UnifiedSearchBar />
-            </div>
-
-            {/* Stats Bar - Bright White */}
-            <div className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-white/20 grid grid-cols-3 gap-4 md:gap-6 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '600ms' }}>
-              <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>188</div>
-                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>ARTISTS</div>
-              </div>
-              <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>1.2K</div>
-                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>ARTWORKS</div>
-              </div>
-              <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#F59E0B', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>ATX</div>
-                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>AUSTIN</div>
-              </div>
             </div>
           </div>
         </div>
@@ -112,7 +96,7 @@ export default async function Home() {
           {/* Section Label */}
           <div className="mb-12">
             <h2 className="font-mono text-tiny text-gray-600 tracking-widest text-center">
-              AUSTIN ARTISTS
+              FEATURED ARTISTS
             </h2>
           </div>
 
@@ -159,9 +143,9 @@ export default async function Home() {
                 <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
                   02
                 </div>
-                <h3 className="font-heading text-h3 mb-4">AI Matches</h3>
+                <h3 className="font-heading text-h3 mb-4">Visual Matching</h3>
                 <p className="font-body text-gray-700 leading-relaxed">
-                  Our AI analyzes visual style and finds artists whose work matches your aesthetic
+                  We analyze visual style and find artists whose work matches your aesthetic
                 </p>
               </div>
 
@@ -199,7 +183,7 @@ export default async function Home() {
               <span className="text-gradient-gold">TATTOO AWAITS</span>
             </h2>
             <p className="font-body text-xl text-gray-300 mb-12 leading-relaxed">
-              Join hundreds of Austin locals who found their perfect artist through visual search
+              Join hundreds who found their perfect artist through visual search
             </p>
             <a href="#search" className="btn btn-primary scale-hover gold-glow-hover">
               Find Your Artist
@@ -209,9 +193,8 @@ export default async function Home() {
 
         {/* Footer Info */}
         <div className="mt-20 pt-12 border-t border-gray-800">
-          <div className="font-mono text-tiny text-gray-500 space-y-2">
-            <p>AUSTIN, TEXAS</p>
-            <p className="text-gray-600">Powered by AI Visual Search</p>
+          <div className="font-mono text-tiny text-gray-500">
+            <p className="text-gray-600">Visual Search Platform</p>
           </div>
         </div>
       </section>
