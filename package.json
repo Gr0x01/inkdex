@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.490.0",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.39.3",
     "@types/pg": "^8.16.0",
@@ -32,10 +34,12 @@
     "cheerio": "^1.1.2",
     "dotenv": "^16.6.1",
     "next": "^15.1.4",
+    "openai": "^6.15.0",
     "pg": "^8.16.3",
     "puppeteer": "^24.34.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
     "sharp": "^0.33.1",
     "zod": "^3.22.4"
   },
