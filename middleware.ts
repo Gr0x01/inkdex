@@ -1,7 +1,15 @@
-import { type NextRequest } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // Redirect /artists/* to /artist/* (route standardization)
+  if (pathname.startsWith('/artists/')) {
+    const slug = pathname.replace('/artists/', '')
+    return NextResponse.redirect(new URL(`/artist/${slug}`, request.url), 301)
+  }
+
   return await updateSession(request)
 }
 

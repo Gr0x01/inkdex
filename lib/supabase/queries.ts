@@ -1,4 +1,48 @@
 import { createClient } from '@/lib/supabase/server'
+import { getImageUrl } from '@/lib/utils/images'
+
+/**
+ * Validation helpers
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const SLUG_REGEX = /^[a-z0-9._-]+$/
+const STATE_CODE_REGEX = /^[A-Z]{2}$/
+
+function validateUUID(id: string, fieldName: string = 'ID'): void {
+  if (typeof id !== 'string' || !UUID_REGEX.test(id)) {
+    throw new Error(`Invalid ${fieldName}: must be a valid UUID`)
+  }
+}
+
+function validateSlug(slug: string): void {
+  if (typeof slug !== 'string' || !SLUG_REGEX.test(slug) || slug.length === 0 || slug.length > 100) {
+    throw new Error('Invalid slug: must be lowercase alphanumeric with hyphens, periods, or underscores, max 100 characters')
+  }
+}
+
+function validateString(str: string, fieldName: string, maxLength: number = 100): void {
+  if (typeof str !== 'string' || str.length === 0 || str.length > maxLength) {
+    throw new Error(`Invalid ${fieldName}: must be a non-empty string with max ${maxLength} characters`)
+  }
+}
+
+function validateStateCode(state: string): void {
+  if (typeof state !== 'string' || !STATE_CODE_REGEX.test(state)) {
+    throw new Error('Invalid state code: must be a 2-letter uppercase code (e.g., TX, CA)')
+  }
+}
+
+function validateInteger(num: number, fieldName: string, min: number, max: number): void {
+  if (!Number.isInteger(num) || num < min || num > max) {
+    throw new Error(`Invalid ${fieldName}: must be an integer between ${min} and ${max}`)
+  }
+}
+
+function validateFloat(num: number, fieldName: string, min: number, max: number): void {
+  if (typeof num !== 'number' || isNaN(num) || num < min || num > max) {
+    throw new Error(`Invalid ${fieldName}: must be a number between ${min} and ${max}`)
+  }
+}
 
 /**
  * Search artists by CLIP embedding vector
@@ -15,6 +59,14 @@ export async function searchArtistsByEmbedding(
     offset?: number
   } = {}
 ) {
+  // Validate embedding
+  if (!Array.isArray(embedding) || embedding.length !== 768) {
+    throw new Error('Invalid embedding: must be an array of 768 numbers')
+  }
+  if (!embedding.every(n => typeof n === 'number' && !isNaN(n))) {
+    throw new Error('Invalid embedding: all elements must be valid numbers')
+  }
+
   const supabase = await createClient()
 
   const {
@@ -23,6 +75,14 @@ export async function searchArtistsByEmbedding(
     city = null,
     offset = 0,
   } = options
+
+  // Validate options
+  validateFloat(threshold, 'threshold', 0, 1)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+  if (city !== null) {
+    validateString(city, 'city', 100)
+  }
 
   const { data, error } = await supabase.rpc('search_artists_by_embedding', {
     query_embedding: `[${embedding.join(',')}]`,
@@ -44,6 +104,9 @@ export async function searchArtistsByEmbedding(
  * Get artist by slug
  */
 export async function getArtistBySlug(slug: string) {
+  // Validate slug
+  validateSlug(slug)
+
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -76,6 +139,9 @@ export async function getArtistBySlug(slug: string) {
  * Get artists by city
  */
 export async function getArtistsByCity(city: string) {
+  // Validate city
+  validateString(city, 'city', 100)
+
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -109,4 +175,333 @@ export async function getStyleSeeds() {
   }
 
   return data
+}
+
+/**
+ * Get featured portfolio images for homepage teaser strip
+ * @param limit - Number of images to fetch (default 30)
+ */
+export async function getFeaturedImages(limit: number = 30) {
+  // Validate inputs
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new Error('Invalid limit parameter: must be an integer between 1 and 100')
+  }
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('portfolio_images')
+    .select(`
+      id,
+      storage_thumb_640,
+      artists!inner (
+        id,
+        name,
+        slug,
+        verification_status
+      )
+    `)
+    .eq('featured', true)
+    .eq('status', 'active')
+    .not('storage_thumb_640', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    console.error('Error fetching featured images:', error)
+    return []
+  }
+
+  // Transform to match FeaturedImage interface and generate public URLs
+  return data.map((item: any) => {
+    const artist = Array.isArray(item.artists) ? item.artists[0] : item.artists
+    const publicUrl = getImageUrl(item.storage_thumb_640)
+
+    return {
+      id: item.id,
+      url: publicUrl,
+      artist_name: artist?.name || 'Unknown Artist',
+      artist_slug: artist?.slug || '',
+      verified: artist?.verification_status === 'verified',
+    }
+  })
+}
+
+/**
+ * Get featured artists with portfolios for homepage grid
+ * @param city - City to filter by
+ * @param limit - Number of artists to fetch (default 12)
+ */
+export async function getFeaturedArtists(city: string, limit: number = 12) {
+  // Validate inputs
+  if (typeof city !== 'string' || city.length === 0 || city.length > 100) {
+    throw new Error('Invalid city parameter: must be a non-empty string with max 100 characters')
+  }
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new Error('Invalid limit parameter: must be an integer between 1 and 100')
+  }
+
+  const supabase = await createClient()
+
+  // First, get artists with their image counts
+  const { data, error } = await supabase
+    .from('artists')
+    .select(`
+      id,
+      name,
+      slug,
+      shop_name,
+      verification_status,
+      portfolio_images!inner (
+        id,
+        storage_thumb_640,
+        status
+      )
+    `)
+    .eq('city', city)
+    .eq('portfolio_images.status', 'active')
+    .not('portfolio_images.storage_thumb_640', 'is', null)
+    .order('verification_status', { ascending: false })
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching featured artists:', error)
+    return []
+  }
+
+  // Group images by artist and filter those with 4+ images
+  const artistsMap = new Map()
+
+  data.forEach((row: any) => {
+    if (!artistsMap.has(row.id)) {
+      artistsMap.set(row.id, {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        shop_name: row.shop_name,
+        verification_status: row.verification_status,
+        portfolio_images: [],
+      })
+    }
+
+    const artist = artistsMap.get(row.id)
+    if (row.portfolio_images && row.portfolio_images.id) {
+      const publicUrl = getImageUrl(row.portfolio_images.storage_thumb_640)
+
+      artist.portfolio_images.push({
+        id: row.portfolio_images.id,
+        url: publicUrl,
+      })
+    }
+  })
+
+  // Filter artists with 4+ images and limit results
+  const filteredArtists = Array.from(artistsMap.values())
+    .filter((artist: any) => artist.portfolio_images.length >= 4)
+    .slice(0, limit)
+
+  return filteredArtists
+}
+
+/**
+ * Get related artists using vector similarity search
+ * Uses the artist's first portfolio image embedding to find similar artists
+ * @param artistId - Artist ID to find similar artists for
+ * @param city - City to filter by
+ * @param limit - Number of related artists to return (default 3)
+ */
+export async function getRelatedArtists(
+  artistId: string,
+  city: string,
+  limit: number = 3
+) {
+  // Validate inputs
+  validateUUID(artistId, 'artistId')
+  validateString(city, 'city', 100)
+  validateInteger(limit, 'limit', 1, 10)
+
+  const supabase = await createClient()
+
+  // 1. Get the artist's first portfolio image embedding
+  const { data: firstImage, error: imageError } = await supabase
+    .from('portfolio_images')
+    .select('embedding')
+    .eq('artist_id', artistId)
+    .eq('status', 'active')
+    .not('embedding', 'is', null)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (imageError || !firstImage?.embedding) {
+    console.error('Error fetching artist embedding:', imageError)
+    return []
+  }
+
+  // 2. Use RPC function to find similar artists in same city
+  const { data: similarArtists, error: searchError } = await supabase.rpc(
+    'search_artists_by_embedding',
+    {
+      query_embedding: `[${firstImage.embedding.join(',')}]`,
+      match_threshold: 0.5, // Lower threshold for same-city artists
+      match_count: limit + 1, // +1 to account for filtering out current artist
+      city_filter: city,
+      offset_param: 0,
+    }
+  )
+
+  if (searchError) {
+    console.error('Error searching similar artists:', searchError)
+    return []
+  }
+
+  // 3. Filter out current artist and limit results
+  const filtered = similarArtists
+    ?.filter((artist: any) => artist.artist_id !== artistId)
+    .slice(0, limit)
+    .map((artist: any) => ({
+      id: artist.artist_id,
+      name: artist.artist_name,
+      slug: artist.artist_slug,
+      city: artist.city,
+      profile_image_url: artist.profile_image_url,
+      instagram_url: artist.instagram_url,
+      shop_name: artist.shop_name || null,
+      verification_status: artist.is_verified ? 'verified' : 'unclaimed',
+    }))
+
+  return filtered || []
+}
+
+/**
+ * Get state with cities and artist counts
+ * @param state - State code (e.g., 'TX', 'CA')
+ */
+export async function getStateWithCities(state: string) {
+  // Validate state code
+  validateStateCode(state)
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select('city')
+    .eq('state', state)
+
+  if (error) {
+    console.error('Error fetching state cities:', error)
+    return { cities: [], total: 0 }
+  }
+
+  // Group by city and count artists
+  const cityMap = new Map<string, number>()
+  data.forEach((row) => {
+    const city = row.city
+    cityMap.set(city, (cityMap.get(city) || 0) + 1)
+  })
+
+  const cities = Array.from(cityMap.entries()).map(([name, count]) => ({
+    name,
+    slug: name.toLowerCase().replace(/\s+/g, '-'),
+    artistCount: count,
+  }))
+
+  // Sort by artist count (descending)
+  cities.sort((a, b) => b.artistCount - a.artistCount)
+
+  return {
+    cities,
+    total: data.length,
+  }
+}
+
+/**
+ * Get artists in a city with portfolio images
+ * @param state - State code (e.g., 'TX', 'CA')
+ * @param city - City name (e.g., 'Austin', 'Los Angeles')
+ * @param limit - Number of artists to return (default 50)
+ * @param offset - Pagination offset (default 0)
+ */
+export async function getCityArtists(
+  state: string,
+  city: string,
+  limit: number = 50,
+  offset: number = 0
+) {
+  // Validate inputs
+  validateStateCode(state)
+  validateString(city, 'city', 100)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+
+  const supabase = await createClient()
+
+  const { data, error, count } = await supabase
+    .from('artists')
+    .select(
+      `
+      id,
+      name,
+      slug,
+      shop_name,
+      verification_status,
+      profile_image_url,
+      instagram_handle,
+      portfolio_images!inner (
+        id,
+        storage_thumb_640
+      )
+    `,
+      { count: 'exact' }
+    )
+    .eq('state', state)
+    .eq('city', city)
+    .eq('portfolio_images.status', 'active')
+    .not('portfolio_images.storage_thumb_640', 'is', null)
+    .order('verification_status', { ascending: false })
+    .order('name', { ascending: true })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching city artists:', error)
+    return { artists: [], total: 0 }
+  }
+
+  // Transform data to group portfolio images by artist
+  const artistsMap = new Map()
+
+  data.forEach((row: any) => {
+    if (!artistsMap.has(row.id)) {
+      artistsMap.set(row.id, {
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        shop_name: row.shop_name,
+        verification_status: row.verification_status,
+        profile_image_url: row.profile_image_url,
+        instagram_handle: row.instagram_handle,
+        portfolio_images: [],
+      })
+    }
+
+    const artist = artistsMap.get(row.id)
+    if (row.portfolio_images && row.portfolio_images.id) {
+      const publicUrl = getImageUrl(row.portfolio_images.storage_thumb_640)
+
+      artist.portfolio_images.push({
+        id: row.portfolio_images.id,
+        url: publicUrl,
+      })
+    }
+  })
+
+  const artists = Array.from(artistsMap.values()).filter(
+    (artist: any) => artist.portfolio_images.length >= 4
+  )
+
+  return {
+    artists,
+    total: count ?? 0,
+  }
 }

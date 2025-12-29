@@ -24,5 +24,22 @@ export const CITIES = [
   },
 ] as const
 
+export const STATES = [
+  {
+    name: 'Texas',
+    code: 'TX',
+    slug: 'texas',
+    cities: ['austin'],
+  },
+  {
+    name: 'California',
+    code: 'CA',
+    slug: 'california',
+    cities: ['los-angeles'],
+  },
+] as const
+
 export type City = typeof CITIES[number]
 export type CitySlug = City['slug']
+export type State = typeof STATES[number]
+export type StateSlug = State['slug']
