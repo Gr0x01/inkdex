@@ -208,12 +208,12 @@ export default function UnifiedSearchBar() {
               placeholder="dark floral sketchy, geometric minimal, fine line botanical..."
               rows={1}
               maxLength={200}
-              className="w-full px-4 md:px-8 py-4 md:py-6 bg-transparent font-body text-base md:text-lg text-black-warm placeholder:text-gray-500 placeholder:italic resize-none focus:outline-none"
+              className="w-full px-4 md:px-6 py-3 md:py-4 bg-transparent font-body text-base md:text-lg text-black-warm placeholder:text-gray-500 placeholder:italic resize-none focus:outline-none"
               style={{ minHeight: '80px', maxHeight: '200px' }}
             />
 
             {/* Bottom Action Bar */}
-            <div className="px-4 md:px-8 pb-4 md:pb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 border-t border-gray-200 pt-4">
+            <div className="px-4 md:px-6 pb-3 md:pb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 border-t border-gray-200 pt-3 md:pt-4">
               {/* Left: Image Upload Button */}
               <div className="flex items-center gap-3 justify-center sm:justify-start">
                 <input

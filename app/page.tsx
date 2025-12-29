@@ -24,70 +24,94 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-light">
       {/* ═══════════════════════════════════════════════════════════════
-          HERO SECTION - Mobile-First Editorial Layout
+          HERO SECTION - Dark Cinematic Video Background
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative grain-overlay py-8 md:py-16 lg:py-20 overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden py-20 md:py-24">
+        {/* Video Background Layer - Full Opacity */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          aria-hidden="true"
+        >
+          <source src="/videos/hero-tattoo.mp4" type="video/mp4" />
+        </video>
+
+        {/* Dark Gradient Vignette Overlay - Creates Depth & Ensures Readability */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `
+              radial-gradient(ellipse at center, rgba(15, 15, 15, 0.5) 0%, rgba(15, 15, 15, 0.7) 40%, rgba(15, 15, 15, 0.9) 100%),
+              linear-gradient(to bottom, rgba(15, 15, 15, 0.4) 0%, rgba(15, 15, 15, 0.7) 100%)
+            `
+          }}
+        />
+
+        {/* Grain Texture for Editorial Feel */}
+        <div className="absolute inset-0 grain-overlay pointer-events-none" />
+
+        {/* Content Layer */}
+        <div className="container mx-auto px-4 relative z-20">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Oversized Editorial Headline */}
-            <div className="mb-6 md:mb-10 stagger-children">
-              <h1 className="font-display leading-none mb-3 md:mb-4" style={{ fontSize: 'clamp(2.5rem, 12vw, 6rem)' }}>
+            {/* Oversized Editorial Headline - Bright White */}
+            <div className="mb-6 md:mb-8 stagger-children">
+              <h1
+                className="font-display leading-none mb-3 md:mb-4 drop-shadow-2xl"
+                style={{
+                  fontSize: 'clamp(2.5rem, 12vw, 7rem)',
+                  color: '#FFFFFF',
+                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.9)'
+                }}
+              >
                 FIND YOUR
                 <br />
                 ARTIST
               </h1>
-              <p className="font-mono text-tiny text-gray-600 tracking-wider">
+              <p className="font-mono text-tiny md:text-small tracking-[0.2em] uppercase drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
                 BY VIBE, NOT VOCABULARY
               </p>
             </div>
 
-            {/* Subheading */}
-            <p className="font-body text-base md:text-xl lg:text-2xl text-gray-700 mb-8 md:mb-12 px-4 leading-relaxed animate-fade-up" style={{ animationDelay: '200ms' }}>
+            {/* Subheading - Bright White */}
+            <p className="font-body text-base md:text-xl lg:text-2xl mb-8 md:mb-10 px-4 leading-relaxed animate-fade-up drop-shadow-lg" style={{ animationDelay: '200ms', color: '#FFFFFF', textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)' }}>
               Upload an image or describe your style. Our AI matches you with artists in Austin whose work fits your aesthetic.
             </p>
 
-            {/* Unified Search Bar - Editorial Card Style */}
+            {/* Unified Search Bar - White Card Floats on Dark */}
             <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
               <UnifiedSearchBar />
             </div>
 
-            {/* Stats Bar */}
-            <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-gray-300 grid grid-cols-3 gap-4 md:gap-6 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '600ms' }}>
+            {/* Stats Bar - Bright White */}
+            <div className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-white/20 grid grid-cols-3 gap-4 md:gap-6 max-w-xl mx-auto animate-fade-up" style={{ animationDelay: '600ms' }}>
               <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">188</div>
-                <div className="font-mono text-tiny text-gray-600">ARTISTS</div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>188</div>
+                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>ARTISTS</div>
               </div>
               <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">1.2K</div>
-                <div className="font-mono text-tiny text-gray-600">ARTWORKS</div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>1.2K</div>
+                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>ARTWORKS</div>
               </div>
               <div>
-                <div className="font-heading text-2xl md:text-3xl lg:text-4xl text-black-warm mb-1">ATX</div>
-                <div className="font-mono text-tiny text-gray-600">AUSTIN</div>
+                <div className="font-heading text-2xl md:text-3xl lg:text-5xl mb-1 drop-shadow-lg" style={{ color: '#F59E0B', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>ATX</div>
+                <div className="font-mono text-tiny" style={{ color: '#FFFFFF', opacity: 0.8 }}>AUSTIN</div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Background Decorative Element - Subtle Gold Accent */}
-        <div
-          className="absolute top-0 right-0 w-[600px] h-[600px] opacity-5 pointer-events-none hidden md:block"
-          style={{
-            background: 'radial-gradient(circle, var(--gold-vibrant) 0%, transparent 70%)',
-            transform: 'translate(30%, -30%)',
-          }}
-          aria-hidden="true"
-        />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          VISUAL GALLERY STRIP - Dark Section with Torn Edge
+          VISUAL GALLERY STRIP - Light Section (Inverted Rhythm)
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-dark torn-edge-top py-16 md:py-20 relative">
+      <section className="bg-light py-16 md:py-20 relative">
         <div className="container mx-auto relative z-10">
           {/* Section Label */}
           <div className="mb-12">
-            <h2 className="font-mono text-tiny text-gray-400 tracking-widest text-center">
+            <h2 className="font-mono text-tiny text-gray-600 tracking-widest text-center">
               AUSTIN ARTISTS
             </h2>
           </div>
@@ -98,9 +122,9 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          FEATURED ARTISTS GRID - Light Section with Torn Edge
+          FEATURED ARTISTS GRID - Dark Section with Torn Edge
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-light torn-edge-top py-16 md:py-24">
+      <section className="bg-dark torn-edge-top py-16 md:py-24">
         <div className="container mx-auto">
           <FeaturedArtistsGrid artists={featuredArtists} city="Austin" />
         </div>
