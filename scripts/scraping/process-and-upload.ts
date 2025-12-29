@@ -4,6 +4,10 @@
  * Includes idempotency checks to avoid re-processing
  */
 
+// IMPORTANT: Load environment variables FIRST, before any imports
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
 import { readdirSync, readFileSync, unlinkSync, statSync, rmSync } from 'fs';
 import { join, basename } from 'path';
 import { createClient } from '@supabase/supabase-js';
@@ -39,10 +43,6 @@ async function uploadWithRetry(
 
   return { success: false, error: 'Max retries exceeded' };
 }
-import * as dotenv from 'dotenv';
-
-// Load environment variables
-dotenv.config({ path: '.env.local' });
 
 // Validate environment variables
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;

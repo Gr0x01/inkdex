@@ -3,6 +3,12 @@
  * Handles image uploads, downloads, and management for portfolio images
  */
 
+// Load environment variables for Node.js scripts (no-op in Next.js)
+import * as dotenv from 'dotenv';
+if (typeof window === 'undefined') {
+  dotenv.config({ path: '.env.local' });
+}
+
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 

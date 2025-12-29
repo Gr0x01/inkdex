@@ -81,7 +81,7 @@ def create_scraping_job(conn, artist_id):
 
     query = """
         INSERT INTO scraping_jobs (artist_id, status, started_at)
-        VALUES (%s, 'in_progress', NOW())
+        VALUES (%s, 'running', NOW())
         RETURNING id
     """
 
@@ -148,26 +148,33 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
         if not results:
             return 0, "No posts found (private or invalid profile)"
 
-        print(f"   📸 Processing {len(results)} posts...")
+        # Extract profile data and latestPosts
+        profile = results[0]
+        posts = profile.get('latestPosts', [])
 
-        # Process results and save metadata
+        if not posts:
+            return 0, "No posts found in profile"
+
+        print(f"   📸 Processing {len(posts)} posts...")
+
+        # Process posts and save metadata
         metadata_list = []
         post_count = 0
 
-        for item in results:
+        for item in posts:
             try:
                 # Skip videos
                 if item.get('type') == 'Video':
                     continue
 
-                # Get image URLs (Apify returns display URL)
-                image_url = item.get('displayUrl') or item.get('url')
+                # Get image URL from displayUrl field
+                image_url = item.get('displayUrl')
                 if not image_url:
                     continue
 
-                post_id = item.get('shortCode') or item.get('id')
+                post_id = item.get('shortCode')
                 if not post_id:
-                    print(f"      ⚠️  Skipping post without ID")
+                    print(f"      ⚠️  Skipping post without shortCode")
                     continue
 
                 # Download image
@@ -179,7 +186,7 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
                     with open(image_path, 'wb') as f:
                         f.write(response.content)
 
-                    # Save metadata
+                    # Save metadata (use correct field names from latestPosts)
                     metadata = {
                         'post_id': post_id,
                         'post_url': item.get('url', f'https://instagram.com/p/{post_id}/'),
