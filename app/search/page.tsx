@@ -54,19 +54,27 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const hasResults = artists.length > 0
   const totalPages = Math.ceil(total / limit)
 
+  // Build pagination URLs with proper sanitization
+  const buildSearchUrl = (pageNum: number) => {
+    const params = new URLSearchParams({ id })
+    if (city) params.set('city', city)
+    params.set('page', pageNum.toString())
+    return `/search?${params.toString()}`
+  }
+
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-bg-primary relative noise-overlay">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-surface-low/80 border-b border-border-subtle backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             {/* Back Link */}
             <Link
               href="/"
-              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center gap-2 font-body text-sm font-medium text-text-secondary hover:text-accent-primary transition-colors duration-fast group"
             >
               <svg
-                className="w-5 h-5"
+                className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-fast"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -79,7 +87,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
               </svg>
-              <span className="font-medium">New Search</span>
+              <span>New Search</span>
             </Link>
 
             {/* City Filter */}
@@ -88,9 +96,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
           {/* Query Type Indicator */}
           {queryType === 'text' && queryText && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
+            <div className="mt-4 flex items-center gap-2 font-body text-sm text-text-secondary">
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5 text-text-tertiary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -103,17 +111,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <span className="text-gray-600">
+              <span>
                 Searched for:{' '}
-                <span className="font-medium text-gray-900">&ldquo;{queryText}&rdquo;</span>
+                <span className="font-medium text-text-primary">&ldquo;{queryText}&rdquo;</span>
               </span>
             </div>
           )}
 
           {queryType === 'image' && (
-            <div className="mt-4 flex items-center gap-2 text-sm">
+            <div className="mt-4 flex items-center gap-2 font-body text-sm text-text-secondary">
               <svg
-                className="w-5 h-5 text-gray-400"
+                className="w-5 h-5 text-text-tertiary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -126,28 +134,28 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <span className="text-gray-600">Image search</span>
+              <span>Image search</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Results */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 md:py-12 relative z-10">
         {hasResults ? (
           <>
             {/* Results Count */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">
+            <div className="mb-8 md:mb-12">
+              <h1 className="font-display text-3xl md:text-4xl font-[800] text-text-primary mb-2">
                 {total} {total === 1 ? 'Artist' : 'Artists'} Found
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="font-body text-base text-text-secondary">
                 Showing results ranked by style similarity
               </p>
             </div>
 
             {/* Artist Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12 stagger-fade-up">
               {artists.map((artist) => (
                 <ArtistCard key={artist.artist_id} artist={artist} />
               ))}
@@ -155,37 +163,94 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-4 flex-wrap">
                 {/* Previous Button */}
                 {currentPage > 1 ? (
                   <Link
-                    href={`/search?id=${id}${city ? `&city=${city}` : ''}&page=${currentPage - 1}`}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    href={buildSearchUrl(currentPage - 1)}
+                    className="btn btn-secondary py-2.5"
                   >
-                    ← Previous
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    Previous
                   </Link>
                 ) : (
-                  <div className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg font-medium text-gray-400 cursor-not-allowed">
-                    ← Previous
+                  <div className="px-6 py-2.5 bg-surface-mid/50 border border-border-subtle rounded-lg font-body text-sm font-medium text-text-tertiary uppercase tracking-wide cursor-not-allowed opacity-50">
+                    <svg
+                      className="w-4 h-4 inline-block mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                    Previous
                   </div>
                 )}
 
                 {/* Page Indicator */}
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
+                <span className="font-body text-sm text-text-secondary px-4">
+                  Page <span className="text-text-primary font-medium">{currentPage}</span> of{' '}
+                  <span className="text-text-primary font-medium">{totalPages}</span>
                 </span>
 
                 {/* Next Button */}
                 {currentPage < totalPages ? (
                   <Link
-                    href={`/search?id=${id}${city ? `&city=${city}` : ''}&page=${currentPage + 1}`}
-                    className="px-4 py-2 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    href={buildSearchUrl(currentPage + 1)}
+                    className="btn btn-secondary py-2.5"
                   >
-                    Next →
+                    Next
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </Link>
                 ) : (
-                  <div className="px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg font-medium text-gray-400 cursor-not-allowed">
-                    Next →
+                  <div className="px-6 py-2.5 bg-surface-mid/50 border border-border-subtle rounded-lg font-body text-sm font-medium text-text-tertiary uppercase tracking-wide cursor-not-allowed opacity-50">
+                    Next
+                    <svg
+                      className="w-4 h-4 inline-block ml-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
                   </div>
                 )}
               </div>
@@ -193,10 +258,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           </>
         ) : (
           // Empty State
-          <div className="max-w-md mx-auto text-center py-16">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-6">
+          <div className="max-w-md mx-auto text-center py-16 md:py-24">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-surface-mid mb-8">
               <svg
-                className="w-8 h-8 text-gray-400"
+                className="w-10 h-10 text-text-tertiary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -211,10 +276,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </svg>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+            <h2 className="font-display text-3xl font-[800] text-text-primary mb-4">
               No Artists Found
             </h2>
-            <p className="text-gray-600 mb-8">
+            <p className="font-body text-base text-text-secondary mb-8 leading-relaxed">
               We couldn&apos;t find any artists matching your search.
               {city && ' Try expanding your search to all cities.'}
             </p>
@@ -222,21 +287,29 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {city && (
                 <Link
-                  href={`/search?id=${id}`}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  href={buildSearchUrl(1)}
+                  className="btn btn-primary py-3 px-6"
                 >
                   View All Cities
                 </Link>
               )}
               <Link
                 href="/"
-                className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                className="btn btn-secondary py-3 px-6"
               >
                 New Search
               </Link>
             </div>
           </div>
         )}
+      </div>
+
+      {/* Background Decorative Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Top gradient orb */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-accent-primary opacity-5 rounded-full blur-3xl" />
+        {/* Bottom gradient orb */}
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-secondary opacity-5 rounded-full blur-3xl" />
       </div>
     </main>
   )

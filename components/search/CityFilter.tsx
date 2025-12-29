@@ -33,20 +33,20 @@ export default function CityFilter() {
 
   return (
     <div className="flex items-center gap-3">
-      <label htmlFor="city-filter" className="text-sm font-medium text-gray-700">
+      <label htmlFor="city-filter" className="font-body text-sm font-medium text-text-secondary">
         City:
       </label>
 
       <Select.Root value={currentCity} onValueChange={handleCityChange}>
         <Select.Trigger
           id="city-filter"
-          className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-[180px]"
+          className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-surface-mid border border-border-medium rounded-lg font-body text-sm font-medium text-text-primary hover:bg-surface-high hover:border-border-strong focus:outline-none focus:border-accent-primary focus:shadow-glow-accent transition-all duration-fast min-w-[180px]"
           aria-label="Filter by city"
         >
           <Select.Value />
           <Select.Icon>
             <svg
-              className="w-4 h-4 text-gray-500"
+              className="w-4 h-4 text-text-tertiary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -64,7 +64,7 @@ export default function CityFilter() {
 
         <Select.Portal>
           <Select.Content
-            className="overflow-hidden bg-white rounded-lg shadow-lg border border-gray-200"
+            className="overflow-hidden bg-surface-low rounded-lg shadow-xl border border-border-medium z-50"
             position="popper"
             sideOffset={5}
           >
@@ -73,12 +73,12 @@ export default function CityFilter() {
                 <Select.Item
                   key={city.value}
                   value={city.value}
-                  className="relative flex items-center px-8 py-2 text-sm text-gray-700 rounded cursor-pointer hover:bg-blue-50 hover:text-blue-900 focus:bg-blue-50 focus:text-blue-900 focus:outline-none data-[highlighted]:bg-blue-50 data-[highlighted]:text-blue-900"
+                  className="relative flex items-center px-8 py-2 font-body text-sm text-text-primary rounded cursor-pointer hover:bg-accent-primary/10 hover:text-accent-primary focus:bg-accent-primary/10 focus:text-accent-primary focus:outline-none data-[highlighted]:bg-accent-primary/10 data-[highlighted]:text-accent-primary transition-colors duration-fast"
                 >
                   <Select.ItemText>{city.label}</Select.ItemText>
                   <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
                     <svg
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-accent-primary"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                       aria-hidden="true"

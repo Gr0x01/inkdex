@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 
 interface ImageUploadProps {
-  onImageSelect: (file: File, preview: string) => void
+  onImageSelect: (file: File | null, preview: string) => void
   currentImage?: File | null
   currentPreview?: string | null
 }
@@ -63,7 +63,7 @@ export default function ImageUpload({
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
     setError(null)
-    onImageSelect(null as any, '')
+    onImageSelect(null, '')
   }
 
   return (
@@ -71,14 +71,16 @@ export default function ImageUpload({
       <div
         {...getRootProps()}
         className={`
-          relative border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-          transition-colors duration-200
+          relative border-2 border-dashed rounded-lg p-8 md:p-12 text-center cursor-pointer
+          transition-all duration-medium ease-smooth
           ${
             isDragActive
-              ? 'border-blue-500 bg-blue-50'
-              : 'border-gray-300 hover:border-gray-400 bg-white'
+              ? 'border-accent-primary bg-accent-primary/10 shadow-glow-accent-strong'
+              : currentPreview
+              ? 'border-border-medium bg-surface-low hover:border-border-strong'
+              : 'border-border-medium bg-surface-mid hover:border-accent-primary hover:shadow-glow-accent'
           }
-          ${error ? 'border-red-400' : ''}
+          ${error ? 'border-status-error bg-status-error/5' : ''}
         `}
         role="button"
         aria-label="Upload image"
@@ -93,36 +95,35 @@ export default function ImageUpload({
         <input {...getInputProps()} aria-label="File upload input" />
 
         {currentPreview ? (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-scale-in">
+            {/* Image Preview */}
             <div className="relative inline-block">
               <img
                 src={currentPreview}
                 alt="Upload preview"
-                className="max-h-64 max-w-full rounded-lg shadow-md mx-auto"
+                className="max-h-80 max-w-full rounded-lg shadow-lg mx-auto border border-border-subtle"
               />
             </div>
-            <div className="text-sm text-gray-600">
-              <p className="font-medium">{currentImage?.name}</p>
-              <p className="text-gray-400">
+
+            {/* File Info */}
+            <div className="font-body text-small text-text-secondary">
+              <p className="font-medium text-text-primary">{currentImage?.name}</p>
+              <p className="text-text-tertiary mt-1">
                 {currentImage
                   ? `${(currentImage.size / 1024 / 1024).toFixed(2)} MB`
                   : ''}
               </p>
             </div>
+
+            {/* Clear Button */}
             <button
               type="button"
               onClick={handleClear}
-              className="text-sm text-red-600 hover:text-red-700 font-medium"
+              className="inline-flex items-center gap-2 font-body text-small text-status-error hover:text-status-error/80 font-medium transition-colors duration-fast uppercase tracking-wide"
               aria-label="Clear selected image"
             >
-              Remove and choose different image
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex justify-center">
               <svg
-                className="w-16 h-16 text-gray-400"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -131,26 +132,54 @@ export default function ImageUpload({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
+              Remove & choose different
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Upload Icon */}
+            <div className="flex justify-center">
+              <div className={`
+                w-20 h-20 rounded-xl flex items-center justify-center
+                ${isDragActive ? 'bg-accent-primary/20' : 'bg-surface-high'}
+                transition-colors duration-medium
+              `}>
+                <svg
+                  className={`w-10 h-10 ${isDragActive ? 'text-accent-primary' : 'text-text-tertiary'}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
             </div>
 
+            {/* Upload Text */}
             <div>
-              <p className="text-base font-medium text-gray-700">
+              <p className="font-body text-base font-medium text-text-primary mb-1">
                 {isDragActive ? (
                   'Drop your image here'
                 ) : (
                   <>
-                    <span className="text-blue-600 hover:text-blue-700">
+                    <span className="text-accent-primary hover:text-accent-primary-hover transition-colors">
                       Click to upload
-                    </span>{' '}
-                    or drag and drop
+                    </span>
+                    {' '}or drag and drop
                   </>
                 )}
               </p>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="font-body text-small text-text-tertiary uppercase tracking-wide">
                 JPEG, PNG, or WebP (max 10MB)
               </p>
             </div>
@@ -158,13 +187,14 @@ export default function ImageUpload({
         )}
       </div>
 
+      {/* Error Message */}
       {error && (
-        <p
-          className="mt-2 text-sm text-red-600 flex items-center gap-1"
+        <div
+          className="mt-3 flex items-center gap-2 font-body text-small text-status-error animate-fade-in"
           role="alert"
         >
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 flex-shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"
@@ -176,13 +206,15 @@ export default function ImageUpload({
             />
           </svg>
           {error}
-        </p>
+        </div>
       )}
 
-      <p className="mt-3 text-xs text-gray-500">
-        Upload a reference image of tattoos you like. We&apos;ll find artists with
-        similar styles.
-      </p>
+      {/* Helper Text */}
+      {!currentPreview && !error && (
+        <p className="mt-3 font-body text-tiny text-text-tertiary leading-relaxed">
+          Upload a reference image of tattoos you like. We&apos;ll find artists with similar styles.
+        </p>
+      )}
     </div>
   )
 }

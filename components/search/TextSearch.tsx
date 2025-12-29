@@ -61,16 +61,19 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
 
   return (
     <div className="w-full space-y-3">
+      {/* Textarea Container */}
       <div className="relative">
         <textarea
           value={value}
           onChange={handleChange}
           placeholder={EXAMPLE_QUERIES[currentExample]}
           className={`
-            w-full px-4 py-3 rounded-lg border-2 resize-none
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-            transition-colors duration-200
-            ${error ? 'border-red-400' : 'border-gray-300'}
+            w-full px-4 py-4 rounded-lg border-2 resize-none
+            bg-surface-mid text-text-primary font-body
+            placeholder:text-text-tertiary placeholder:italic
+            focus:outline-none focus:border-accent-primary focus:shadow-glow-accent
+            transition-all duration-fast ease-smooth
+            ${error ? 'border-status-error' : 'border-border-medium hover:border-border-strong'}
           `}
           rows={4}
           aria-label="Describe the tattoo style you're looking for"
@@ -78,14 +81,15 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
           aria-invalid={!!error}
         />
 
+        {/* Character Count */}
         <div
           id="char-count"
           className={`
-            absolute bottom-3 right-3 text-xs
+            absolute bottom-3 right-3 font-body text-tiny uppercase tracking-wide
             ${
               value.length > MAX_CHARS * 0.9
-                ? 'text-red-500 font-medium'
-                : 'text-gray-400'
+                ? 'text-status-error font-medium'
+                : 'text-text-tertiary'
             }
           `}
           aria-live="polite"
@@ -94,10 +98,11 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
         </div>
       </div>
 
+      {/* Error Message */}
       {error && (
-        <p className="text-sm text-red-600 flex items-center gap-1" role="alert">
+        <div className="flex items-center gap-2 font-body text-small text-status-error animate-fade-in" role="alert">
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 flex-shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"
@@ -109,23 +114,30 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
             />
           </svg>
           {error}
-        </p>
+        </div>
       )}
 
-      <div id="helper-text" className="space-y-2">
-        <p className="text-xs text-gray-500">
-          Describe the vibe, style, or aesthetic you&apos;re looking for in your own
-          words
+      {/* Helper Text & Examples */}
+      <div id="helper-text" className="space-y-3">
+        <p className="font-body text-tiny text-text-tertiary leading-relaxed">
+          Describe the vibe, style, or aesthetic you&apos;re looking for in your own words
         </p>
 
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs text-gray-600">Try:</span>
+        {/* Example Pills */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="font-body text-tiny text-text-secondary uppercase tracking-wide">Try:</span>
           {EXAMPLE_QUERIES.slice(0, 4).map((example) => (
             <button
               key={example}
               type="button"
               onClick={() => handleExampleClick(example)}
-              className="text-xs px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+              className="
+                font-body text-tiny px-3 py-1.5 rounded-full
+                bg-surface-high border border-border-subtle
+                text-text-secondary hover:text-text-primary hover:border-border-strong
+                transition-all duration-fast ease-smooth
+                hover:scale-105
+              "
               aria-label={`Use example: ${example}`}
             >
               {example}
@@ -134,13 +146,14 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
         </div>
       </div>
 
+      {/* Success State */}
       {isValid && (
         <div
-          className="flex items-start gap-2 p-3 bg-green-50 rounded-lg"
+          className="flex items-start gap-3 p-4 bg-status-success/10 border border-status-success/30 rounded-lg backdrop-blur-sm animate-scale-in"
           role="status"
         >
           <svg
-            className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+            className="w-5 h-5 text-status-success flex-shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"
@@ -151,7 +164,7 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
               clipRule="evenodd"
             />
           </svg>
-          <p className="text-sm text-green-800">
+          <p className="font-body text-small text-status-success">
             Great description! We&apos;ll search for artists who match this vibe.
           </p>
         </div>

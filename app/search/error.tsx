@@ -15,12 +15,12 @@ export default function SearchError({ error, reset }: ErrorPageProps) {
   }, [error])
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
+    <main className="min-h-screen bg-bg-primary relative noise-overlay flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center relative z-10">
         {/* Error Icon */}
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 mb-6">
+        <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-status-error/20 mb-8 border border-status-error/30">
           <svg
-            className="w-10 h-10 text-red-600"
+            className="w-10 h-10 text-status-error"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -36,22 +36,22 @@ export default function SearchError({ error, reset }: ErrorPageProps) {
         </div>
 
         {/* Error Message */}
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+        <h1 className="font-display text-3xl md:text-4xl font-[800] text-text-primary mb-4">
           Something Went Wrong
         </h1>
-        <p className="text-gray-600 mb-8">
+        <p className="font-body text-base text-text-secondary mb-8 leading-relaxed">
           We encountered an error while loading your search results. This has
           been logged and we&apos;ll look into it.
         </p>
 
         {/* Error Details (Development Only) */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="mb-8 p-4 bg-gray-100 rounded-lg text-left">
-            <p className="text-xs font-mono text-gray-700 break-all">
+          <div className="mb-8 p-4 bg-surface-mid border border-border-medium rounded-lg text-left">
+            <p className="font-body text-xs text-status-error break-all">
               {error.message}
             </p>
             {error.digest && (
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="font-body text-xs text-text-tertiary mt-2">
                 Error ID: {error.digest}
               </p>
             )}
@@ -62,17 +62,25 @@ export default function SearchError({ error, reset }: ErrorPageProps) {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+            className="btn btn-primary py-3 px-6"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            className="btn btn-secondary py-3 px-6"
           >
             New Search
           </Link>
         </div>
+      </div>
+
+      {/* Background Decorative Elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Top gradient orb */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-accent-primary opacity-5 rounded-full blur-3xl" />
+        {/* Bottom gradient orb */}
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent-secondary opacity-5 rounded-full blur-3xl" />
       </div>
     </main>
   )

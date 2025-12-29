@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import * as Tabs from '@radix-ui/react-tabs'
 import ImageUpload from './ImageUpload'
@@ -21,7 +21,21 @@ export default function SearchTabs() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Cleanup blob URL on unmount or preview change to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview)
+      }
+    }
+  }, [imagePreview])
+
   const handleImageSelect = (file: File | null, preview: string) => {
+    // Revoke previous blob URL if it exists
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview)
+    }
+
     setImageFile(file)
     setImagePreview(preview)
     setError(null)
@@ -100,22 +114,22 @@ export default function SearchTabs() {
   const canSubmit = (isImageValid || isTextValid) && !isSubmitting
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-3xl mx-auto">
       <Tabs.Root value={activeTab} onValueChange={(v) => setActiveTab(v as 'image' | 'text')}>
         {/* Tab List */}
         <Tabs.List
-          className="flex border-b border-gray-200 mb-8"
+          className="flex border-b border-border-medium mb-8"
           aria-label="Search method"
         >
           <Tabs.Trigger
             value="image"
             className={`
-              flex-1 px-6 py-3 text-sm font-medium transition-colors
-              border-b-2 -mb-px
+              flex-1 px-6 py-4 font-body text-sm font-medium transition-all duration-medium ease-smooth
+              border-b-2 -mb-px uppercase tracking-wide
               ${
                 activeTab === 'image'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-accent-primary text-accent-primary shadow-glow-accent'
+                  : 'border-transparent text-text-tertiary hover:text-text-secondary hover:border-border-strong'
               }
             `}
           >
@@ -141,12 +155,12 @@ export default function SearchTabs() {
           <Tabs.Trigger
             value="text"
             className={`
-              flex-1 px-6 py-3 text-sm font-medium transition-colors
-              border-b-2 -mb-px
+              flex-1 px-6 py-4 font-body text-sm font-medium transition-all duration-medium ease-smooth
+              border-b-2 -mb-px uppercase tracking-wide
               ${
                 activeTab === 'text'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-accent-primary text-accent-primary shadow-glow-accent'
+                  : 'border-transparent text-text-tertiary hover:text-text-secondary hover:border-border-strong'
               }
             `}
           >
@@ -187,12 +201,12 @@ export default function SearchTabs() {
           {/* Error Message */}
           {error && (
             <div
-              className="p-4 bg-red-50 border border-red-200 rounded-lg"
+              className="p-4 bg-status-error/10 border border-status-error/30 rounded-lg backdrop-blur-sm animate-fade-in"
               role="alert"
             >
               <div className="flex items-start gap-3">
                 <svg
-                  className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5"
+                  className="w-5 h-5 text-status-error flex-shrink-0 mt-0.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   aria-hidden="true"
@@ -203,7 +217,7 @@ export default function SearchTabs() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="font-body text-sm text-status-error">{error}</p>
               </div>
             </div>
           )}
@@ -213,12 +227,12 @@ export default function SearchTabs() {
             type="submit"
             disabled={!canSubmit}
             className={`
-              w-full py-4 px-6 rounded-lg font-medium text-white
-              transition-all duration-200
+              w-full py-5 px-6 rounded-lg font-body font-medium text-text-primary uppercase tracking-wide
+              transition-all duration-medium ease-smooth
               ${
                 canSubmit
-                  ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-lg hover:shadow-xl'
-                  : 'bg-gray-300 cursor-not-allowed'
+                  ? 'bg-gradient-accent shadow-lg hover:shadow-glow-accent-strong hover:-translate-y-0.5 active:translate-y-0'
+                  : 'bg-surface-high text-text-tertiary cursor-not-allowed opacity-50'
               }
             `}
             aria-label={
@@ -228,7 +242,7 @@ export default function SearchTabs() {
             {isSubmitting ? (
               <div className="flex items-center justify-center gap-3">
                 <svg
-                  className="animate-spin h-5 w-5 text-white"
+                  className="animate-spin h-5 w-5 text-text-primary"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
