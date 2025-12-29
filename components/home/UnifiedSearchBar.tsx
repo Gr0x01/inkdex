@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 export default function UnifiedSearchBar() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   // Form state
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -26,14 +26,6 @@ export default function UnifiedSearchBar() {
       }
     }
   }, [imagePreview])
-
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
-  }, [textQuery])
 
   const handleImageSelect = (file: File) => {
     // Revoke previous blob URL if it exists
@@ -152,164 +144,137 @@ export default function UnifiedSearchBar() {
   return (
     <div className="w-full max-w-3xl mx-auto px-2 sm:px-0" id="search">
       <form onSubmit={handleSubmit}>
-        {/* Main Search Container - Editorial Card */}
+        {/* Clean Search Bar */}
         <div
           className={`
-            relative rounded-xl border-2 bg-white shadow-xl transition-all duration-medium
-            ${isDragging
-              ? 'border-gold-vibrant shadow-gold-strong scale-[1.02]'
-              : 'border-gray-300 hover:border-gray-400 hover:shadow-lifted'
-            }
+            relative flex items-center gap-2 sm:gap-3
+            bg-white rounded-full shadow-2xl
+            transition-all duration-300
+            ${isDragging ? 'ring-4 ring-gold-vibrant/50 scale-[1.02]' : ''}
+            ${error ? 'ring-2 ring-red-500/50' : ''}
           `}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
         >
-          {/* Image Preview (if uploaded) */}
+          {/* Image Preview Thumbnail (if uploaded) */}
           {imagePreview && (
-            <div className="p-6 border-b border-gray-200 bg-gray-50 animate-scale-in">
-              <div className="flex items-start gap-4">
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Reference tattoo"
-                    className="h-32 w-32 rounded-lg object-cover shadow-md border-2 border-gold-vibrant"
-                  />
-                  <button
-                    type="button"
-                    onClick={removeImage}
-                    className="absolute -top-2 -right-2 w-7 h-7 bg-black-warm text-white-pure rounded-full flex items-center justify-center hover:bg-error hover:scale-110 transition-all shadow-lg"
-                    aria-label="Remove image"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="flex-1 pt-2">
-                  <p className="font-body-medium text-small text-black-warm mb-1">{imageFile?.name}</p>
-                  <p className="font-mono text-tiny text-gray-600">
-                    {imageFile ? `${(imageFile.size / 1024 / 1024).toFixed(2)} MB` : ''}
-                  </p>
-                </div>
+            <div className="flex-shrink-0 pl-2 sm:pl-3 py-2">
+              <div className="relative group">
+                <img
+                  src={imagePreview}
+                  alt="Reference"
+                  className="h-12 w-12 rounded-full object-cover ring-2 ring-gold-vibrant"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-black text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors text-xs"
+                  aria-label="Remove image"
+                >
+                  ×
+                </button>
               </div>
             </div>
           )}
 
-          {/* Text Input Area */}
-          <div className="relative">
-            <textarea
-              ref={textareaRef}
-              value={textQuery}
-              onChange={(e) => {
-                setTextQuery(e.target.value)
-                setError(null)
-              }}
-              placeholder="dark floral sketchy, geometric minimal, fine line botanical..."
-              rows={1}
-              maxLength={200}
-              className="w-full px-4 md:px-6 py-3 md:py-4 bg-transparent font-body text-base md:text-lg text-black-warm placeholder:text-gray-500 placeholder:italic resize-none focus:outline-none"
-              style={{ minHeight: '80px', maxHeight: '200px' }}
-            />
-
-            {/* Bottom Action Bar */}
-            <div className="px-4 md:px-6 pb-3 md:pb-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 border-t border-gray-200 pt-3 md:pt-4">
-              {/* Left: Image Upload Button */}
-              <div className="flex items-center gap-3 justify-center sm:justify-start">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileInputChange}
-                  className="hidden"
-                  aria-label="Upload reference image"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg border-2 border-gray-300 hover:border-gold-vibrant hover:bg-gold-pale transition-all text-gray-700 hover:text-black-warm font-body-medium text-small flex-shrink-0"
-                  aria-label="Upload image"
-                >
-                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="whitespace-nowrap">Upload Image</span>
-                </button>
-
-                {isDragging && (
-                  <span className="hidden sm:inline text-small text-gold-deep font-body-medium animate-fade-in">
-                    Drop your image here
-                  </span>
-                )}
-              </div>
-
-              {/* Right: Submit Button */}
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={`
-                  flex items-center justify-center gap-2 px-6 py-3 rounded-lg
-                  font-mono text-xs font-medium uppercase tracking-wide
-                  transition-all duration-300
-                  ${
-                    canSubmit
-                      ? 'bg-gradient-to-r from-gold-vibrant to-gold-deep text-white-pure shadow-gold hover:shadow-gold-strong hover:-translate-y-0.5'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }
-                `}
-              >
-                {isSubmitting ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4 flex-shrink-0"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span className="whitespace-nowrap">Searching</span>
-                  </>
-                ) : (
-                  <span className="whitespace-nowrap">Find Artists</span>
-                )}
-              </button>
-            </div>
+          {/* Search Icon */}
+          <div className="flex-shrink-0 pl-5 sm:pl-6 text-gray-400">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
+
+          {/* Input Field */}
+          <input
+            ref={inputRef}
+            type="text"
+            value={textQuery}
+            onChange={(e) => {
+              setTextQuery(e.target.value)
+              setError(null)
+            }}
+            placeholder="Describe your style or upload an image..."
+            maxLength={200}
+            className="flex-1 py-5 bg-transparent font-body text-base sm:text-lg text-black placeholder:text-gray-400 focus:outline-none"
+          />
+
+          {/* Upload Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileInputChange}
+            className="hidden"
+            aria-label="Upload reference image"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-shrink-0 p-3 sm:p-3.5 text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-all"
+            aria-label="Upload image"
+            title="Upload image"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+
+          {/* Search Button */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className={`
+              flex-shrink-0 mr-1.5 sm:mr-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-mono text-xs sm:text-sm uppercase tracking-wider
+              transition-all duration-200
+              ${
+                canSubmit
+                  ? 'bg-gradient-to-r from-gold-vibrant to-gold-deep text-black hover:opacity-90 font-bold'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed font-semibold'
+              }
+            `}
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-4 w-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                <span className="hidden sm:inline">Searching</span>
+              </div>
+            ) : (
+              'Search'
+            )}
+          </button>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div
-            className="mt-4 p-4 bg-error/10 border-2 border-error rounded-lg animate-fade-in"
-            role="alert"
-          >
-            <div className="flex items-start gap-3">
-              <svg
-                className="w-5 h-5 text-error flex-shrink-0 mt-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <p className="font-body text-small text-error font-medium">{error}</p>
-            </div>
+          <div className="mt-3 text-center">
+            <p className="text-sm text-red-500 font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Drag Hint */}
+        {isDragging && (
+          <div className="mt-3 text-center">
+            <p className="text-sm text-gold-vibrant font-medium animate-pulse">Drop your image here</p>
           </div>
         )}
       </form>

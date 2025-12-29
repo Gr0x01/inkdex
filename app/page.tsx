@@ -77,7 +77,7 @@ export default async function Home() {
 
             {/* Subheading - Bright White */}
             <p className="font-body text-base md:text-xl lg:text-2xl mb-8 md:mb-10 px-4 leading-relaxed animate-fade-up drop-shadow-lg" style={{ animationDelay: '200ms', color: '#FFFFFF', textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)' }}>
-              Upload an image or describe your style. We'll match you with artists whose work fits your aesthetic.
+              Upload an image or describe your style. We&apos;ll match you with artists whose work fits your aesthetic.
             </p>
 
             {/* Unified Search Bar - White Card Floats on Dark */}

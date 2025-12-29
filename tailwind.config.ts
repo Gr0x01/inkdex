@@ -37,6 +37,13 @@ const config: Config = {
           secondary: '#f59e0b',
           'secondary-hover': '#d97706',
         },
+        // Gold colors
+        gold: {
+          vibrant: '#F59E0B',
+          deep: '#D97706',
+          dark: '#B45309',
+          pale: '#FEF3C7',
+        },
         // Status colors
         status: {
           success: '#10b981',
