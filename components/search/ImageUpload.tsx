@@ -7,6 +7,7 @@ interface ImageUploadProps {
   onImageSelect: (file: File | null, preview: string) => void
   currentImage?: File | null
   currentPreview?: string | null
+  compact?: boolean
 }
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -20,8 +21,10 @@ export default function ImageUpload({
   onImageSelect,
   currentImage,
   currentPreview,
+  compact = false,
 }: ImageUploadProps) {
   const [error, setError] = useState<string | null>(null)
+  const [isFocused, setIsFocused] = useState(false)
 
   const onDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
@@ -66,13 +69,16 @@ export default function ImageUpload({
     onImageSelect(null, '')
   }
 
+  const heightClass = compact ? 'min-h-[180px]' : 'p-8 md:p-12'
+
   return (
     <div className="w-full">
       <div
         {...getRootProps()}
         className={`
-          relative border-2 border-dashed rounded-lg p-8 md:p-12 text-center cursor-pointer
+          relative border-2 border-dashed rounded-lg text-center cursor-pointer
           transition-all duration-medium ease-smooth
+          ${compact ? 'p-6' : 'p-8 md:p-12'}
           ${
             isDragActive
               ? 'border-accent-primary bg-accent-primary/10 shadow-glow-accent-strong'
@@ -91,39 +97,47 @@ export default function ImageUpload({
             ;(e.target as HTMLElement).click()
           }
         }}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
       >
         <input {...getInputProps()} aria-label="File upload input" />
 
         {currentPreview ? (
-          <div className="space-y-4 animate-scale-in">
+          <div className={`space-y-3 animate-scale-in ${compact ? 'space-y-2' : 'space-y-4'}`}>
             {/* Image Preview */}
             <div className="relative inline-block">
               <img
                 src={currentPreview}
                 alt="Upload preview"
-                className="max-h-80 max-w-full rounded-lg shadow-lg mx-auto border border-border-subtle"
+                className={`${
+                  compact ? 'max-h-32' : 'max-h-80'
+                } max-w-full rounded-lg shadow-lg mx-auto border border-border-subtle`}
               />
             </div>
 
             {/* File Info */}
-            <div className="font-body text-small text-text-secondary">
-              <p className="font-medium text-text-primary">{currentImage?.name}</p>
-              <p className="text-text-tertiary mt-1">
-                {currentImage
-                  ? `${(currentImage.size / 1024 / 1024).toFixed(2)} MB`
-                  : ''}
-              </p>
-            </div>
+            {!compact && (
+              <div className="font-body text-small text-text-secondary">
+                <p className="font-medium text-text-primary">{currentImage?.name}</p>
+                <p className="text-text-tertiary mt-1">
+                  {currentImage
+                    ? `${(currentImage.size / 1024 / 1024).toFixed(2)} MB`
+                    : ''}
+                </p>
+              </div>
+            )}
 
             {/* Clear Button */}
             <button
               type="button"
               onClick={handleClear}
-              className="inline-flex items-center gap-2 font-body text-small text-status-error hover:text-status-error/80 font-medium transition-colors duration-fast uppercase tracking-wide"
+              className={`inline-flex items-center gap-2 font-body ${
+                compact ? 'text-tiny' : 'text-small'
+              } text-status-error hover:text-status-error/80 font-medium transition-colors duration-fast uppercase tracking-wide`}
               aria-label="Clear selected image"
             >
               <svg
-                className="w-4 h-4"
+                className={compact ? 'w-3 h-3' : 'w-4 h-4'}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -136,20 +150,22 @@ export default function ImageUpload({
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              Remove & choose different
+              {compact ? 'Remove' : 'Remove & choose different'}
             </button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className={compact ? 'space-y-2' : 'space-y-4'}>
             {/* Upload Icon */}
             <div className="flex justify-center">
               <div className={`
-                w-20 h-20 rounded-xl flex items-center justify-center
+                ${compact ? 'w-12 h-12' : 'w-20 h-20'} rounded-xl flex items-center justify-center
                 ${isDragActive ? 'bg-accent-primary/20' : 'bg-surface-high'}
                 transition-colors duration-medium
               `}>
                 <svg
-                  className={`w-10 h-10 ${isDragActive ? 'text-accent-primary' : 'text-text-tertiary'}`}
+                  className={`${compact ? 'w-6 h-6' : 'w-10 h-10'} ${
+                    isDragActive ? 'text-accent-primary' : 'text-text-tertiary'
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -167,7 +183,7 @@ export default function ImageUpload({
 
             {/* Upload Text */}
             <div>
-              <p className="font-body text-base font-medium text-text-primary mb-1">
+              <p className={`font-body ${compact ? 'text-small' : 'text-base'} font-medium text-text-primary mb-1`}>
                 {isDragActive ? (
                   'Drop your image here'
                 ) : (
@@ -179,9 +195,11 @@ export default function ImageUpload({
                   </>
                 )}
               </p>
-              <p className="font-body text-small text-text-tertiary uppercase tracking-wide">
-                JPEG, PNG, or WebP (max 10MB)
-              </p>
+              {(!compact || isFocused) && (
+                <p className="font-body text-tiny text-text-tertiary uppercase tracking-wide">
+                  JPEG, PNG, or WebP (max 10MB)
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -210,7 +228,7 @@ export default function ImageUpload({
       )}
 
       {/* Helper Text */}
-      {!currentPreview && !error && (
+      {!currentPreview && !error && !compact && (
         <p className="mt-3 font-body text-tiny text-text-tertiary leading-relaxed">
           Upload a reference image of tattoos you like. We&apos;ll find artists with similar styles.
         </p>

@@ -1,5 +1,6 @@
 import ArtistPreviewCard from './ArtistPreviewCard'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
+import { CITIES, STATES } from '@/lib/constants/cities'
 
 interface FeaturedArtistsGridProps {
   artists: FeaturedArtist[]
@@ -11,6 +12,11 @@ export default function FeaturedArtistsGrid({ artists, city }: FeaturedArtistsGr
   if (artists.length === 0) {
     return null
   }
+
+  // Compute city browse page URL from constants
+  const cityData = CITIES.find(c => c.name === city)
+  const stateData = STATES.find(s => s.code === cityData?.state)
+  const cityHref = stateData && cityData ? `/${stateData.slug}/${cityData.slug}` : '/texas'
 
   return (
     <section className="container mx-auto px-4 py-12 md:py-16">
@@ -34,7 +40,7 @@ export default function FeaturedArtistsGrid({ artists, city }: FeaturedArtistsGr
       {/* View All Link */}
       <div className="text-center mt-10 md:mt-12">
         <a
-          href={`/artists?city=${encodeURIComponent(city)}`}
+          href={cityHref}
           className="inline-flex items-center gap-2 font-body text-small font-medium text-accent-primary hover:text-accent-primary-hover transition-colors duration-fast uppercase tracking-wide group"
         >
           <span>View All {city} Artists</span>

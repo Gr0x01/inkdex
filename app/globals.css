@@ -679,3 +679,59 @@ a:hover {
 .stagger-children > *:nth-child(8) { animation-delay: 700ms; }
 .stagger-children > *:nth-child(9) { animation-delay: 800ms; }
 .stagger-children > *:nth-child(10) { animation-delay: 900ms; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION STYLES
+   Global navbar with dropdown and mobile menu
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Navigation Links */
+.nav-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--gray-700);
+  transition: color var(--duration-medium) var(--ease-smooth);
+}
+
+.nav-link:hover {
+  color: var(--gold-deep);
+}
+
+/* Desktop Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.5rem;
+  background: var(--white-pure);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--duration-medium) var(--ease-smooth);
+  min-width: 200px;
+  padding: 0.5rem 0;
+  z-index: 50;
+}
+
+.group:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  color: var(--gray-700);
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.dropdown-item:hover {
+  background: var(--gold-pale);
+  color: var(--gold-dark);
+}

@@ -12,8 +12,15 @@ if (typeof window === 'undefined') {
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  throw new Error(
+    'Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY'
+  );
+}
+
 const BUCKET_NAME = 'portfolio-images';
 
 // Create Supabase client (server-side with service role)

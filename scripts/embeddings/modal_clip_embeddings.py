@@ -34,6 +34,7 @@ image = (
         "Pillow==10.2.0",
         "requests==2.31.0",
         "supabase==2.15.0",  # Newer version compatible with httpx
+        "fastapi[standard]==0.115.0",  # Required for web endpoints
     )
 )
 
@@ -450,6 +451,67 @@ def generate_text_query_embedding(text: str):
     print(f"📊 First 5 values: {embedding[:5]}")
 
     return embedding
+
+
+# Expose FastAPI app via Modal
+@app.function(
+    image=image,
+    secrets=[modal.Secret.from_name("supabase")],
+)
+@modal.asgi_app()
+def fastapi_app():
+    from fastapi import FastAPI, HTTPException
+    from pydantic import BaseModel
+    import base64
+    from PIL import Image
+
+    web_app = FastAPI()
+
+    class ImageRequest(BaseModel):
+        image_data: str  # base64 encoded
+
+    class TextRequest(BaseModel):
+        text: str
+
+    @web_app.post("/generate_single_embedding")
+    def api_generate_single_embedding(request: ImageRequest):
+        """
+        Web endpoint for generating single image embedding via HTTP POST
+
+        Request body: {"image_data": "base64_encoded_image"}
+        Response: {"embedding": [768 floats]}
+        """
+        try:
+            # Decode base64 image
+            image_data = base64.b64decode(request.image_data)
+            image = Image.open(io.BytesIO(image_data))
+
+            # Generate embedding
+            embedder = CLIPEmbedder()
+            embedding = embedder.generate_image_embedding.remote(image)
+
+            return {"embedding": embedding}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @web_app.post("/generate_text_query_embedding")
+    def api_generate_text_query_embedding(request: TextRequest):
+        """
+        Web endpoint for generating text query embedding via HTTP POST
+
+        Request body: {"text": "tattoo style description"}
+        Response: {"embedding": [768 floats]}
+        """
+        try:
+            # Generate embedding
+            embedder = CLIPEmbedder()
+            embedding = embedder.generate_text_embedding.remote(request.text)
+
+            return {"embedding": embedding}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return web_app
 
 
 # Local testing function (runs without Modal)

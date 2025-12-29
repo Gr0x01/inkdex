@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getStateWithCities } from '@/lib/supabase/queries'
-import { sanitizeForJsonLd } from '@/lib/utils/seo'
+import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { STATES } from '@/lib/constants/cities'
 
 export async function generateStaticParams() {
@@ -78,7 +78,7 @@ export default async function StatePage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       <main className="min-h-screen bg-bg-primary relative noise-overlay">

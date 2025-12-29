@@ -63,8 +63,8 @@ export async function searchArtistsByEmbedding(
   if (!Array.isArray(embedding) || embedding.length !== 768) {
     throw new Error('Invalid embedding: must be an array of 768 numbers')
   }
-  if (!embedding.every(n => typeof n === 'number' && !isNaN(n))) {
-    throw new Error('Invalid embedding: all elements must be valid numbers')
+  if (!embedding.every(n => typeof n === 'number' && Number.isFinite(n))) {
+    throw new Error('Invalid embedding: all elements must be finite numbers')
   }
 
   const supabase = await createClient()
@@ -84,8 +84,16 @@ export async function searchArtistsByEmbedding(
     validateString(city, 'city', 100)
   }
 
+  // Sanitize embedding for SQL (explicit number validation prevents injection)
+  const sanitizedEmbedding = embedding.map(n => {
+    if (!Number.isFinite(n)) {
+      throw new Error('Invalid embedding value detected')
+    }
+    return n.toString()
+  }).join(',')
+
   const { data, error } = await supabase.rpc('search_artists_by_embedding', {
-    query_embedding: `[${embedding.join(',')}]`,
+    query_embedding: `[${sanitizedEmbedding}]`,
     match_threshold: threshold,
     match_count: limit,
     city_filter: city,

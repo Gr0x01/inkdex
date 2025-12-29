@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
-import { sanitizeForJsonLd } from '@/lib/utils/seo'
+import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
 import ArtistHero from '@/components/artist/ArtistHero'
 import PortfolioGrid from '@/components/artist/PortfolioGrid'
@@ -122,12 +122,12 @@ export default async function ArtistPage({
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       {shopJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(shopJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(shopJsonLd) }}
         />
       )}
 

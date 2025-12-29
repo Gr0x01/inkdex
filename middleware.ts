@@ -4,6 +4,11 @@ import { updateSession } from '@/lib/supabase/middleware'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Redirect /artists (browse page) to /texas (default state browse)
+  if (pathname === '/artists') {
+    return NextResponse.redirect(new URL('/texas', request.url), 301)
+  }
+
   // Redirect /artists/* to /artist/* (route standardization)
   if (pathname.startsWith('/artists/')) {
     const slug = pathname.replace('/artists/', '')

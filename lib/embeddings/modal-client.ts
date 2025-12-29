@@ -5,20 +5,6 @@
  * for both images and text queries using OpenCLIP ViT-L-14 (768 dimensions).
  */
 
-const MOCK_EMBEDDINGS = process.env.NEXT_PUBLIC_MOCK_EMBEDDINGS === 'true'
-
-/**
- * Generate a synthetic 768-dimensional embedding for testing
- * L2 normalized to match real CLIP embeddings
- */
-function generateMockEmbedding(): number[] {
-  const embedding = Array.from({ length: 768 }, () => Math.random() * 2 - 1)
-
-  // L2 normalize
-  const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0))
-  return embedding.map(val => val / norm)
-}
-
 /**
  * Generate CLIP embedding for an image
  *
@@ -26,30 +12,45 @@ function generateMockEmbedding(): number[] {
  * @returns 768-dimensional embedding array
  */
 export async function generateImageEmbedding(imageFile: File): Promise<number[]> {
-  // Mock mode for testing
-  if (MOCK_EMBEDDINGS) {
-    console.log('[MOCK] Generating synthetic image embedding')
-    return generateMockEmbedding()
+  // Validate input - file type and size
+  const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+  if (!ALLOWED_TYPES.includes(imageFile.type)) {
+    throw new Error('Invalid file type. Only JPEG, PNG, and WebP images are allowed.')
   }
 
-  // TODO: Implement real Modal.com integration when deployed
-  // For now, return mock embedding
-  console.warn('[TODO] Modal.com integration not yet deployed. Using mock embeddings.')
-  return generateMockEmbedding()
+  if (imageFile.size > MAX_SIZE) {
+    throw new Error('File too large. Maximum size is 10MB.')
+  }
 
-  /*
-  // Real implementation (uncomment when Modal.com is deployed):
+  if (imageFile.size === 0) {
+    throw new Error('File is empty.')
+  }
 
+  // Validate environment configuration
   const modalUrl = process.env.MODAL_FUNCTION_URL
   if (!modalUrl) {
-    throw new Error('MODAL_FUNCTION_URL not configured')
+    throw new Error('MODAL_FUNCTION_URL not configured. Please set it in your environment variables.')
   }
 
-  // Upload image to temporary location (or convert to base64)
+  // Validate URL format
+  try {
+    new URL(modalUrl)
+  } catch {
+    throw new Error('Invalid MODAL_FUNCTION_URL configuration.')
+  }
+
+  // Prevent client-side execution
+  if (typeof window !== 'undefined') {
+    throw new Error('Modal API client cannot be used in browser context.')
+  }
+
+  // Convert image to base64 for API transmission
   const buffer = await imageFile.arrayBuffer()
   const base64 = Buffer.from(buffer).toString('base64')
 
-  // Call Modal.com function
+  // Call Modal.com CLIP embedding function
   const response = await fetch(`${modalUrl}/generate_single_embedding`, {
     method: 'POST',
     headers: {
@@ -61,12 +62,31 @@ export async function generateImageEmbedding(imageFile: File): Promise<number[]>
   })
 
   if (!response.ok) {
-    throw new Error(`Modal.com API error: ${response.statusText}`)
+    const errorText = await response.text()
+    console.error(`[Modal API] ${response.status}: ${errorText}`)
+    throw new Error('Unable to process image. Please try again.')
   }
 
   const data = await response.json()
+
+  // Validate response structure
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid API response format.')
+  }
+
+  if (!Array.isArray(data.embedding)) {
+    throw new Error('Invalid API response: embedding is not an array.')
+  }
+
+  if (data.embedding.length !== 768) {
+    throw new Error(`Invalid embedding dimension: expected 768, got ${data.embedding.length}.`)
+  }
+
+  if (!data.embedding.every((n: unknown) => typeof n === 'number' && isFinite(n))) {
+    throw new Error('Invalid embedding: contains non-numeric values.')
+  }
+
   return data.embedding
-  */
 }
 
 /**
@@ -76,42 +96,73 @@ export async function generateImageEmbedding(imageFile: File): Promise<number[]>
  * @returns 768-dimensional embedding array
  */
 export async function generateTextEmbedding(text: string): Promise<number[]> {
-  // Mock mode for testing
-  if (MOCK_EMBEDDINGS) {
-    console.log(`[MOCK] Generating synthetic text embedding for: "${text}"`)
-    return generateMockEmbedding()
+  // Validate input - text length
+  const MIN_LENGTH = 3
+  const MAX_LENGTH = 500
+
+  if (!text || text.trim().length < MIN_LENGTH) {
+    throw new Error(`Text query too short. Minimum ${MIN_LENGTH} characters required.`)
   }
 
-  // TODO: Implement real Modal.com integration when deployed
-  console.warn('[TODO] Modal.com integration not yet deployed. Using mock embeddings.')
-  return generateMockEmbedding()
+  if (text.length > MAX_LENGTH) {
+    throw new Error(`Text query too long. Maximum ${MAX_LENGTH} characters allowed.`)
+  }
 
-  /*
-  // Real implementation (uncomment when Modal.com is deployed):
-
+  // Validate environment configuration
   const modalUrl = process.env.MODAL_FUNCTION_URL
   if (!modalUrl) {
-    throw new Error('MODAL_FUNCTION_URL not configured')
+    throw new Error('MODAL_FUNCTION_URL not configured. Please set it in your environment variables.')
   }
 
-  // Call Modal.com function
+  // Validate URL format
+  try {
+    new URL(modalUrl)
+  } catch {
+    throw new Error('Invalid MODAL_FUNCTION_URL configuration.')
+  }
+
+  // Prevent client-side execution
+  if (typeof window !== 'undefined') {
+    throw new Error('Modal API client cannot be used in browser context.')
+  }
+
+  // Call Modal.com CLIP text embedding function
   const response = await fetch(`${modalUrl}/generate_text_query_embedding`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text,
+      text: text.trim(),
     }),
   })
 
   if (!response.ok) {
-    throw new Error(`Modal.com API error: ${response.statusText}`)
+    const errorText = await response.text()
+    console.error(`[Modal API] ${response.status}: ${errorText}`)
+    throw new Error('Unable to process text query. Please try again.')
   }
 
   const data = await response.json()
+
+  // Validate response structure
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid API response format.')
+  }
+
+  if (!Array.isArray(data.embedding)) {
+    throw new Error('Invalid API response: embedding is not an array.')
+  }
+
+  if (data.embedding.length !== 768) {
+    throw new Error(`Invalid embedding dimension: expected 768, got ${data.embedding.length}.`)
+  }
+
+  if (!data.embedding.every((n: unknown) => typeof n === 'number' && isFinite(n))) {
+    throw new Error('Invalid embedding: contains non-numeric values.')
+  }
+
   return data.embedding
-  */
 }
 
 /**

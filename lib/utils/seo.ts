@@ -4,19 +4,33 @@
 
 /**
  * Sanitize text for use in JSON-LD structured data to prevent XSS
- * Escapes HTML special characters that could break out of JSON context
+ * Removes HTML tags and escapes special characters for JSON context
  */
 export function sanitizeForJsonLd(
   text: string | null | undefined
 ): string {
   if (!text) return ''
 
-  return text
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026')
-    .replace(/"/g, '\\u0022')
-    .replace(/'/g, '\\u0027')
+  // Remove all HTML tags first
+  const withoutTags = text.replace(/<[^>]*>/g, '')
+
+  // Return sanitized text (JSON.stringify will handle proper escaping)
+  return withoutTags
+}
+
+/**
+ * Safely serialize JSON-LD data to prevent script injection
+ * Escapes </script> tags that could break out of JSON-LD script context
+ *
+ * IMPORTANT: Use this instead of JSON.stringify() for JSON-LD data
+ * to prevent XSS attacks via premature script tag closure
+ */
+export function serializeJsonLd(data: unknown): string {
+  const json = JSON.stringify(data)
+
+  // Prevent </script> injection by escaping the closing tag
+  // This ensures the JSON-LD script block cannot be prematurely closed
+  return json.replace(/<\/script/gi, '<\\/script')
 }
 
 /**

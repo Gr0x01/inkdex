@@ -68,19 +68,22 @@ export async function GET(
     }
 
     // Search artists by embedding
+    const startTime = Date.now()
     const results = await searchArtistsByEmbedding(embedding, {
       city,
       limit,
       offset,
-      threshold: 0.5, // Lower threshold for MVP to ensure results
+      threshold: 0.25, // Optimized for CLIP cosine similarity (typical range: 0.3-0.4 for good matches)
     })
+    const queryTime = Date.now() - startTime
 
     // Return results with metadata
     return NextResponse.json({
-      results,
+      artists: results,
       total: results.length, // Note: This is approximate, would need COUNT query for exact
       page,
       limit,
+      queryTime,
       queryType: search.query_type,
       queryText: search.query_text,
       city,

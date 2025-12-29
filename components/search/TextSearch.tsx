@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 interface TextSearchProps {
   value: string
   onChange: (value: string) => void
+  rows?: number
+  compact?: boolean
 }
 
 const MIN_CHARS = 3
@@ -19,10 +21,11 @@ const EXAMPLE_QUERIES = [
   'blackwork mandala',
 ]
 
-export default function TextSearch({ value, onChange }: TextSearchProps) {
+export default function TextSearch({ value, onChange, rows = 4, compact = false }: TextSearchProps) {
   const [charCount, setCharCount] = useState(value.length)
   const [error, setError] = useState<string | null>(null)
   const [currentExample, setCurrentExample] = useState(0)
+  const [isFocused, setIsFocused] = useState(false)
 
   useEffect(() => {
     setCharCount(value.length)
@@ -37,14 +40,16 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
     }
   }, [value])
 
-  // Rotate example queries
+  // Rotate example queries (disable on homepage compact mode)
   useEffect(() => {
+    if (compact) return
+
     const interval = setInterval(() => {
       setCurrentExample((prev) => (prev + 1) % EXAMPLE_QUERIES.length)
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [compact])
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
@@ -58,6 +63,8 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
   }
 
   const isValid = value.length >= MIN_CHARS && value.length <= MAX_CHARS
+
+  const examplesCount = compact ? 3 : 4
 
   return (
     <div className="w-full space-y-3">
@@ -75,27 +82,31 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
             transition-all duration-fast ease-smooth
             ${error ? 'border-status-error' : 'border-border-medium hover:border-border-strong'}
           `}
-          rows={4}
+          rows={rows}
           aria-label="Describe the tattoo style you're looking for"
           aria-describedby="char-count helper-text"
           aria-invalid={!!error}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
 
-        {/* Character Count */}
-        <div
-          id="char-count"
-          className={`
-            absolute bottom-3 right-3 font-body text-tiny uppercase tracking-wide
-            ${
-              value.length > MAX_CHARS * 0.9
-                ? 'text-status-error font-medium'
-                : 'text-text-tertiary'
-            }
-          `}
-          aria-live="polite"
-        >
-          {charCount}/{MAX_CHARS}
-        </div>
+        {/* Character Count - Hide on compact until focused */}
+        {(!compact || isFocused) && (
+          <div
+            id="char-count"
+            className={`
+              absolute bottom-3 right-3 font-body text-tiny uppercase tracking-wide
+              ${
+                value.length > MAX_CHARS * 0.9
+                  ? 'text-status-error font-medium'
+                  : 'text-text-tertiary'
+              }
+            `}
+            aria-live="polite"
+          >
+            {charCount}/{MAX_CHARS}
+          </div>
+        )}
       </div>
 
       {/* Error Message */}
@@ -119,14 +130,16 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
 
       {/* Helper Text & Examples */}
       <div id="helper-text" className="space-y-3">
-        <p className="font-body text-tiny text-text-tertiary leading-relaxed">
-          Describe the vibe, style, or aesthetic you&apos;re looking for in your own words
-        </p>
+        {!compact && (
+          <p className="font-body text-tiny text-text-tertiary leading-relaxed">
+            Describe the vibe, style, or aesthetic you&apos;re looking for in your own words
+          </p>
+        )}
 
         {/* Example Pills */}
         <div className="flex flex-wrap gap-2 items-center">
           <span className="font-body text-tiny text-text-secondary uppercase tracking-wide">Try:</span>
-          {EXAMPLE_QUERIES.slice(0, 4).map((example) => (
+          {EXAMPLE_QUERIES.slice(0, examplesCount).map((example) => (
             <button
               key={example}
               type="button"
@@ -147,7 +160,7 @@ export default function TextSearch({ value, onChange }: TextSearchProps) {
       </div>
 
       {/* Success State */}
-      {isValid && (
+      {isValid && !compact && (
         <div
           className="flex items-start gap-3 p-4 bg-status-success/10 border border-status-success/30 rounded-lg backdrop-blur-sm animate-scale-in"
           role="status"
