@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { Playfair_Display, Space_Grotesk, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
+import { SearchProvider } from '@/components/search/SearchProvider'
+import GlobalSearchModal from '@/components/search/GlobalSearchModal'
+import SearchFAB from '@/components/search/SearchFAB'
 
 // Font configurations for "SKIN & PAPER" design system
 const playfairDisplay = Playfair_Display({
@@ -49,8 +52,12 @@ export default function RootLayout({
       className={`${playfairDisplay.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <body>
-        <Navbar />
-        {children}
+        <SearchProvider>
+          <Navbar />
+          <GlobalSearchModal />
+          {children}
+          <SearchFAB />
+        </SearchProvider>
       </body>
     </html>
   )

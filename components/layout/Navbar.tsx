@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useSearch } from '@/components/search/SearchProvider'
 
 /**
  * Global navigation header with Browse dropdown
  * Design: "SKIN & PAPER" editorial aesthetic
- * Features: Desktop dropdown + accessible mobile menu
+ * Features: Desktop dropdown + accessible mobile menu + global search
  */
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { openSearch } = useSearch()
 
   return (
     <header className="bg-white-warm border-b border-gray-300">
@@ -27,6 +29,29 @@ export default function Navbar() {
             <Link href="/" className="nav-link">
               Home
             </Link>
+
+            {/* Search Button */}
+            <button
+              onClick={openSearch}
+              className="nav-link flex items-center gap-2 hover:text-gold-vibrant transition-colors"
+              aria-label="Search"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <span>Search</span>
+            </button>
 
             {/* Browse Dropdown */}
             <div className="relative group">
@@ -67,28 +92,53 @@ export default function Navbar() {
             </div>
           </nav>
 
-          {/* Mobile Menu Toggle */}
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden cursor-pointer p-2 hover:bg-gold-pale rounded-lg transition-colors"
-            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls="mobile-navigation"
-          >
-            <svg
-              className="w-6 h-6 text-gray-700"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          {/* Mobile Actions (Search + Menu Toggle) */}
+          <div className="md:hidden flex items-center gap-3">
+            {/* Mobile Search Button */}
+            <button
+              onClick={openSearch}
+              className="cursor-pointer p-2 hover:bg-gold-pale rounded-lg transition-colors"
+              aria-label="Search"
             >
-              {isMobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="cursor-pointer p-2 hover:bg-gold-pale rounded-lg transition-colors"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation"
+            >
+              <svg
+                className="w-6 h-6 text-gray-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                {isMobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
