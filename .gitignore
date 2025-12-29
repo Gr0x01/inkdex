@@ -16,6 +16,7 @@ build/
 dist/
 out/
 .next/
+*.tsbuildinfo
 
 # Logs
 *.log
@@ -77,3 +78,4 @@ docker-compose.override.yml
 
 # Local development
 .local/supabase/.temp/
+supabase/.temp/
