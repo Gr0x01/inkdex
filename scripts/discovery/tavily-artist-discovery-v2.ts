@@ -1,0 +1,396 @@
+/**
+ * Artist Discovery Script V2 (With Caching + Expanded Queries)
+ *
+ * Improvements over V1:
+ * - Query caching (prevents duplicate API calls)
+ * - 40-50 diverse queries per city (vs 13)
+ * - Cost tracking
+ * - Better deduplication
+ * - Target: 200-300 artists per city
+ */
+
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../../types/database.types';
+import { generateQueriesForCity, getQueryStats } from './query-generator';
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+
+const TAVILY_API_KEY = process.env.TAAVILY_API;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+// Cost: ~$0.05 per query (estimated)
+const TAVILY_COST_PER_QUERY = 0.05;
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface TavilyResult {
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+}
+
+interface TavilyResponse {
+  query: string;
+  results: TavilyResult[];
+}
+
+interface DiscoveredArtist {
+  name: string;
+  instagramHandle: string;
+  instagramUrl: string;
+  city: string;
+  discoverySource: string;
+  discoveryQuery: string;
+  score: number;
+}
+
+interface CityConfig {
+  name: string;
+  state: string;
+  slug: string;
+}
+
+// ============================================================================
+// Configuration
+// ============================================================================
+
+const CITIES: CityConfig[] = [
+  { name: 'Austin', state: 'TX', slug: 'austin' },
+  // { name: 'Los Angeles', state: 'CA', slug: 'los-angeles' },
+];
+
+// ============================================================================
+// Query Caching
+// ============================================================================
+
+async function isQueryCached(
+  query: string,
+  city: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from('discovery_queries')
+    .select('id')
+    .eq('query', query)
+    .eq('city', city)
+    .eq('source', 'tavily')
+    .single();
+
+  return !!data;
+}
+
+async function cacheQuery(
+  query: string,
+  city: string,
+  artistsFound: string[],
+  resultsCount: number
+) {
+  await supabase.from('discovery_queries').insert({
+    query,
+    city,
+    source: 'tavily',
+    results_count: resultsCount,
+    artists_found: artistsFound,
+    api_cost_estimate: TAVILY_COST_PER_QUERY,
+  });
+}
+
+// ============================================================================
+// Tavily Search
+// ============================================================================
+
+async function searchTavily(query: string): Promise<TavilyResponse> {
+  try {
+    const response = await axios.post(
+      'https://api.tavily.com/search',
+      {
+        api_key: TAVILY_API_KEY,
+        query,
+        search_depth: 'basic',
+        max_results: 10,
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    console.error(`   ❌ Tavily search failed: ${error.message}`);
+    return { query, results: [] };
+  }
+}
+
+// ============================================================================
+// Instagram Handle Extraction
+// ============================================================================
+
+function extractInstagramHandle(url: string, content: string): string | null {
+  // Priority 1: Extract from URL
+  const urlPatterns = [
+    /instagram\.com\/([a-zA-Z0-9._]+)/,
+    /instagram\.com\/p\/[^/]+\/?\?.*taken-by=([a-zA-Z0-9._]+)/,
+  ];
+
+  for (const pattern of urlPatterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      const handle = match[1].toLowerCase();
+      // Filter out common non-artist pages
+      if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+        return handle;
+      }
+    }
+  }
+
+  // Priority 2: Extract from content
+  const contentPatterns = [
+    /@([a-zA-Z0-9._]+)/g,
+    /instagram\.com\/([a-zA-Z0-9._]+)/g,
+  ];
+
+  const handles = new Set<string>();
+
+  for (const pattern of contentPatterns) {
+    const matches = content.matchAll(pattern);
+    for (const match of matches) {
+      if (match[1] && match[1].length > 2) {
+        const handle = match[1].toLowerCase();
+        if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+          handles.add(handle);
+        }
+      }
+    }
+  }
+
+  return handles.size > 0 ? Array.from(handles)[0] : null;
+}
+
+function extractArtistName(title: string): string {
+  let name = title
+    .replace(/\s*[|:]\s*Tattoo Artist.*$/i, '')
+    .replace(/\s*Tattoo Artist.*$/i, '')
+    .replace(/\s*\(@[a-zA-Z0-9._]+\).*$/i, '')
+    .replace(/\s*[@].*$/i, '')
+    .replace(/\s*-\s*Instagram.*$/i, '')
+    .trim();
+
+  if (name.length > 50 || name.length === 0) {
+    const handleMatch = title.match(/@([a-zA-Z0-9._]+)/);
+    name = handleMatch ? handleMatch[1] : 'Unknown Artist';
+  }
+
+  return name;
+}
+
+// ============================================================================
+// Discovery Logic
+// ============================================================================
+
+async function discoverArtistsForCity(
+  city: CityConfig
+): Promise<DiscoveredArtist[]> {
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`🔍 Discovering artists in ${city.name}, ${city.state}`);
+  console.log(`${'='.repeat(60)}\n`);
+
+  const discovered = new Map<string, DiscoveredArtist>();
+
+  // Generate all queries
+  const queries = generateQueriesForCity(city.name, city.state);
+  const stats = getQueryStats(queries);
+
+  console.log(`📝 Generated ${stats.total} queries:`);
+  Object.entries(stats.categories).forEach(([category, count]) => {
+    console.log(`   ${category}: ${count}`);
+  });
+  console.log();
+
+  let queriesExecuted = 0;
+  let queriesCached = 0;
+  let totalCost = 0;
+
+  for (const { query, category } of queries) {
+    // Check cache first
+    const cached = await isQueryCached(query, city.slug);
+
+    if (cached) {
+      console.log(`   💾 Cached: "${query}"`);
+      queriesCached++;
+      continue;
+    }
+
+    console.log(`   🔍 Searching: "${query}"`);
+
+    const results = await searchTavily(query);
+    queriesExecuted++;
+    totalCost += TAVILY_COST_PER_QUERY;
+
+    const artistsFoundInQuery: string[] = [];
+
+    for (const result of results.results) {
+      const handle = extractInstagramHandle(result.url, result.content);
+      if (!handle) continue;
+
+      artistsFoundInQuery.push(handle);
+
+      if (!discovered.has(handle)) {
+        discovered.set(handle, {
+          name: extractArtistName(result.title),
+          instagramHandle: handle,
+          instagramUrl: `https://instagram.com/${handle}`,
+          city: `${city.name}, ${city.state}`,
+          discoverySource: `tavily_${category}`,
+          discoveryQuery: query,
+          score: result.score,
+        });
+      }
+    }
+
+    // Cache the query
+    await cacheQuery(query, city.slug, artistsFoundInQuery, results.results.length);
+
+    console.log(`      Found ${results.results.length} results, ${discovered.size} unique artists total`);
+
+    // Rate limiting
+    await sleep(500);
+  }
+
+  console.log(`\n📊 Query Summary:`);
+  console.log(`   Total queries: ${stats.total}`);
+  console.log(`   Executed: ${queriesExecuted}`);
+  console.log(`   Cached (skipped): ${queriesCached}`);
+  console.log(`   Estimated cost: $${totalCost.toFixed(2)}`);
+  console.log(`\n✅ Discovery complete for ${city.name}: ${discovered.size} unique artists`);
+
+  return Array.from(discovered.values());
+}
+
+// ============================================================================
+// Database Storage
+// ============================================================================
+
+async function saveArtistsToDatabase(
+  artists: DiscoveredArtist[],
+  citySlug: string
+): Promise<{ inserted: number; skipped: number }> {
+  console.log(`\n💾 Saving ${artists.length} artists to database...`);
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const artist of artists) {
+    const { data: existing } = await supabase
+      .from('artists')
+      .select('id, instagram_handle')
+      .eq('instagram_handle', artist.instagramHandle)
+      .single();
+
+    if (existing) {
+      skipped++;
+      continue;
+    }
+
+    const slug = generateSlug(artist.name, artist.instagramHandle);
+
+    const { error } = await supabase.from('artists').insert({
+      name: artist.name,
+      slug,
+      instagram_handle: artist.instagramHandle,
+      instagram_url: artist.instagramUrl,
+      city: citySlug,
+      discovery_source: artist.discoverySource,
+      verification_status: 'unclaimed',
+      instagram_private: false,
+    });
+
+    if (error) {
+      console.error(`   ❌ Error inserting @${artist.instagramHandle}: ${error.message}`);
+    } else {
+      inserted++;
+      if (inserted % 10 === 0) {
+        console.log(`   ✅ Inserted ${inserted} artists...`);
+      }
+    }
+
+    await sleep(100);
+  }
+
+  console.log(`   ✅ Complete: ${inserted} inserted, ${skipped} skipped`);
+
+  return { inserted, skipped };
+}
+
+function generateSlug(name: string, instagramHandle: string): string {
+  const baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+  const hash = instagramHandle.substring(0, 6);
+
+  return `${baseSlug}-${hash}`;
+}
+
+// ============================================================================
+// Utilities
+// ============================================================================
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ============================================================================
+// Main Execution
+// ============================================================================
+
+async function main() {
+  console.log('🚀 Tattoo Artist Discovery V2 - Cached + Expanded Queries');
+  console.log(`${'='.repeat(60)}\n`);
+
+  const totalStats = {
+    discovered: 0,
+    inserted: 0,
+    skipped: 0,
+  };
+
+  for (const city of CITIES) {
+    try {
+      const artists = await discoverArtistsForCity(city);
+      totalStats.discovered += artists.length;
+
+      const { inserted, skipped } = await saveArtistsToDatabase(artists, city.slug);
+      totalStats.inserted += inserted;
+      totalStats.skipped += skipped;
+
+      console.log(`\n📊 ${city.name} Summary:`);
+      console.log(`   Discovered: ${artists.length}`);
+      console.log(`   Inserted: ${inserted}`);
+      console.log(`   Skipped: ${skipped}`);
+    } catch (error: any) {
+      console.error(`\n❌ Error processing ${city.name}: ${error.message}`);
+    }
+  }
+
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`✅ DISCOVERY COMPLETE`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`Total Discovered: ${totalStats.discovered}`);
+  console.log(`Total Inserted: ${totalStats.inserted}`);
+  console.log(`Total Skipped (duplicates): ${totalStats.skipped}`);
+  console.log(`\n💡 Next steps:`);
+  console.log(`   1. Validate Instagram profiles (npm run validate-instagram)`);
+  console.log(`   2. Add Google Places supplement if needed`);
+  console.log(`   3. Scrape portfolio images (Apify)`);
+}
+
+main().catch(console.error);

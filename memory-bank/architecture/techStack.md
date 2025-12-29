@@ -1,0 +1,510 @@
+---
+Last-Updated: 2025-12-29
+Maintainer: RB
+Status: Phase 1 Infrastructure Complete ✅ (Production-Ready)
+---
+
+# Technology Stack: Tattoo Artist Discovery Platform
+
+## Core Technologies
+
+### Frontend
+- **Framework**: Next.js 14+ (App Router)
+  - Why: Server Components, ISR, great SEO, Vercel integration
+  - Version: Latest stable (14.x)
+- **Language**: TypeScript (strict mode)
+  - Why: Type safety, better DX, fewer runtime errors
+  - Config: Strict mode enabled, path aliases configured
+- **Styling**: Tailwind CSS v3
+  - Why: Fast development, consistent design system, small bundle
+  - Approach: Component-first, responsive utilities
+- **State Management**:
+  - MVP: URL-based state + React Server Components
+  - Post-MVP: Zustand for client-side user state (saved artists, auth)
+  - Why: Minimal complexity for MVP, easy to add Zustand later
+- **Deployment**: Vercel
+  - Why: Best Next.js DX, edge functions, automatic ISR
+  - Tier: Hobby (free) for MVP → Pro ($20/mo) for post-MVP
+
+### Backend & Data
+- **Database**: Supabase (PostgreSQL + managed hosting)
+  - Why: Postgres + pgvector, auth built-in, generous free tier
+  - Tier: Free tier for MVP → Pro ($25/mo) for post-MVP
+  - Extensions: pgvector for CLIP embeddings
+- **Vector Search**: pgvector with **IVFFlat indexing**
+  - Why: Better for 10k-100k+ vectors, good recall/speed tradeoff
+  - Index Config: `lists = 100` for MVP (10k images), scale to `lists = 316` for 100k
+  - Alternative Considered: HNSW (better for <10k, more memory)
+- **Image Embeddings**: OpenCLIP ViT-L-14 (768 dimensions)
+  - Why: CLIP is multimodal (text + image share same vector space!)
+  - Model: `ViT-L-14` via Modal.com serverless GPU
+  - Text Search: Same model encodes text queries → same vector space
+  - Cost: ~$0.30 per city (one-time), pay-per-second GPU
+- **Image Storage**: Cloudflare R2 + CDN
+  - Why: S3-compatible, no egress fees, $0.015/GB storage
+  - Structure: `original/{artist_id}/{post_id}.jpg`, `thumbnails/{size}/{artist_id}/{post_id}_${width}w.webp`
+  - Sizes: 320w, 640w, 1280w (small, medium, large)
+  - Format: WebP 85% quality (JPEG fallback)
+  - Cost: ~$0.53/month for 35GB (MVP)
+- **Authentication**: Supabase Auth with Instagram OAuth provider
+  - Why: Built into Supabase, handles OAuth flow, RLS integration
+  - MVP Status: Configured but not exposed in UI
+  - Post-MVP: Login, saved artists, artist claiming
+- **APIs & Services**:
+  - **DataForSEO**: City selection + keyword research (Phase 0 - DONE)
+  - **Google Places API**: Artist/shop discovery via Maps
+  - **Apify**: Managed Instagram scraping (legal, managed IPs)
+  - **Modal.com**: Serverless GPU for CLIP embeddings
+  - **Instagram Graph API**: OAuth verification (post-MVP)
+
+### Architecture Pattern
+- **Server Components**: Default for data fetching (faster, less JS)
+- **Client Components**: Only for interactivity (search input, image upload)
+- **API Routes**: `/api/search` (image/text → embedding → searchId)
+- **Static Generation**: City/artist/style pages (ISR with 24h revalidation)
+- **URL-Based State**: Search results via `?id={searchId}` (no client state needed)
+- **Future Auth Context**: AuthProvider wrapper (ready but unused in MVP)
+
+---
+
+## Development Tools
+
+### Code Quality
+- **Linting**: ESLint (Next.js config + custom rules)
+  - Config: Strict, enforce accessibility, no unused vars
+  - Run: `npm run lint` (pre-commit hook)
+- **Formatting**: Prettier (integrated with ESLint)
+  - Config: 2-space indent, single quotes, trailing commas
+  - Run: Auto-format on save (VSCode) or `npm run format`
+- **Type Checking**: TypeScript strict mode
+  - Run: `npm run type-check` (CI/CD gate)
+  - Generated types: `types/database.ts` from Supabase schema
+- **Testing**:
+  - MVP: Manual testing (8-week timeline, prioritize shipping)
+  - Post-MVP: Jest + React Testing Library for critical flows
+  - E2E: Playwright for search flow (post-MVP)
+
+### Development Environment
+- **Package Manager**: npm (default with Node.js)
+  - Why: Stable, good lockfile, works with all tools
+  - Alternative: pnpm (faster, but adds complexity)
+- **Version Control**: Git + GitHub
+  - Branch Strategy: `main` (production) + feature branches
+  - Commit Convention: Conventional Commits (feat, fix, docs, etc.)
+- **CI/CD**: GitHub Actions (optional for MVP)
+  - MVP: Manual deployments to Vercel
+  - Post-MVP: Auto-deploy on merge to main, run type-check + lint
+- **Containerization**: Not needed (Vercel handles deployment)
+  - Modal.com handles Python GPU containers for embeddings
+
+### Specialized Tools
+- **Image Processing**: Sharp (Node.js)
+  - Why: Fast, good quality, supports WebP
+  - Use: Resize + format conversion before R2 upload
+- **Web Scraping**:
+  - Cheerio (static HTML parsing)
+  - Puppeteer (dynamic sites, artist roster pages)
+- **Instagram Scraping**: Apify managed service
+  - Why: Legal grey area → use managed service with rotating IPs
+  - Cost: ~$20-40 per city
+- **GPU Inference**: Modal.com (Python serverless functions)
+  - Why: Pay-per-second A10G GPU, no infra management
+  - Use: Generate CLIP embeddings for images + text queries
+
+---
+
+## Architecture Decisions
+
+### Database Design
+
+**Schema Overview:**
+```sql
+-- Core tables (MVP)
+artists                 # Artist profiles (400-600 rows)
+portfolio_images        # Instagram images with embeddings (8k-12k rows)
+searches                # Search session storage (temporary)
+scraping_jobs           # Track Instagram scraping progress
+style_seeds             # Seed images for SEO landing pages (10 rows)
+
+-- Future tables (post-MVP, created now for RLS setup)
+users                   # Supabase Auth users
+saved_artists           # User bookmarks (many-to-many)
+```
+
+**Key Decisions:**
+1. **IVFFlat over HNSW**: Better for 10k+ vectors, faster build, good recall with tuning
+2. **Deferred Index Creation**: Create vector index AFTER data load with optimal parameters (not on empty table)
+3. **Normalized Schema**: Artists separate from portfolio images (many-to-one)
+4. **Future-Proof Columns**: `claimed_by_user_id`, `verification_status`, `bio_override` in `artists` table (ready for post-MVP)
+5. **Instagram ID Tracking**: Store `instagram_id` (user ID) during discovery for OAuth matching
+6. **Complete RLS Policies**: 15 policies across 5 tables (public read + service role writes for artists/portfolio_images)
+7. **Database Validation**: CHECK constraints for enums, URLs, email format, non-negative counts
+8. **Type Safety**: Generated TypeScript types + Zod validation for multi-layer safety
+9. **Automatic Triggers**: updated_at triggers eliminate manual timestamp management
+
+**Vector Index Configuration:**
+```sql
+-- ✅ DEFERRED until after data load (see supabase/migrations/20251229_008_defer_ivfflat_index.sql)
+
+-- For MVP (<1000 images) - Use HNSW:
+CREATE INDEX CONCURRENTLY idx_portfolio_embeddings ON portfolio_images
+USING hnsw (embedding vector_cosine_ops)
+WITH (m = 16, ef_construction = 64);
+
+-- For Production (1000-100k images) - Use IVFFlat:
+CREATE INDEX CONCURRENTLY idx_portfolio_embeddings ON portfolio_images
+USING ivfflat (embedding vector_cosine_ops)
+WITH (lists = GREATEST(FLOOR(SQRT(COUNT(*))), 10));
+
+-- Rule: lists = sqrt(total_rows)
+-- For 10k images: lists = 100
+-- For 100k images: lists = 316
+```
+
+**Search Function:**
+- `search_artists_by_embedding()`: ✅ Optimized Postgres function (see migration 007)
+- Returns: Top 20 artists with top 3 matching images each
+- Filters: City, similarity threshold (default 0.5)
+- Performance Optimizations:
+  - Early city filtering (reduces dataset before vector ops)
+  - CTE-based query planning
+  - Efficient limiting and pagination
+  - Partitioned by artist_id, ranked by similarity
+
+### API Design
+
+**Endpoints:**
+```
+POST /api/search
+  - Accepts: { type: 'image' | 'text' | 'hybrid', image?: File, query?: string, city?: string }
+  - Generates CLIP embedding (image or text)
+  - Stores in `searches` table
+  - Returns: { searchId: string }
+
+GET /api/search/[searchId]
+  - Fetches embedding from `searches` table
+  - Runs vector similarity search
+  - Returns: { artists: [...], query_type: string }
+
+POST /api/saved-artists (POST-MVP)
+  - Requires auth
+  - Body: { artistId: string }
+  - Inserts to `saved_artists` table (RLS enforced)
+
+DELETE /api/saved-artists/[id] (POST-MVP)
+  - Requires auth
+  - Deletes from `saved_artists` table
+
+POST /api/claim-profile (POST-MVP)
+  - Requires auth (Instagram OAuth)
+  - Matches user's Instagram ID to artist.instagram_id
+  - Sets verification_status = 'pending'
+```
+
+**Design Principles:**
+- Server-side rendering for SEO pages (artists, cities, styles)
+- Client-side fetching only for search results (dynamic)
+- Streaming responses for large result sets (future optimization)
+- Rate limiting: Vercel edge functions (post-MVP)
+
+### Security Considerations
+
+**Authentication & Authorization:**
+- MVP: No auth required for public pages (fully public)
+- ✅ RLS Policies: 15 policies across 5 tables (production-ready)
+  - Public read access for artists/portfolio_images
+  - Service role-only writes (scraping scripts)
+  - User-scoped access for saved_artists/searches (post-MVP)
+  - Claimed artists can manage own profiles
+- Post-MVP: Supabase Auth with Instagram OAuth
+  - JWT tokens in httpOnly cookies
+  - Server-side auth checks via `@supabase/ssr`
+
+**Data Security:**
+- ✅ Environment variables for all secrets (`.env.local`, Vercel env vars)
+  - Zod validation catches missing/invalid env vars at startup
+- ✅ Supabase RLS policies (complete, production-ready)
+- ✅ Database validation constraints (CHECK, NOT NULL, FK)
+- ✅ TypeScript type safety (generated from database schema)
+- Instagram OAuth: Only request `user_profile` and `user_media` scopes (post-MVP)
+- No PII collection in MVP (no user accounts)
+
+**API Security:**
+- CORS: Restrict to own domain in production
+- Rate limiting: Vercel edge functions (post-MVP)
+- Input validation: Zod schemas for all API inputs
+- Image upload: File size limit (10MB), format validation (jpg, png, webp)
+
+**Legal/Compliance:**
+- Fair use: Transformative search indexing (not redistribution)
+- Attribution: Instagram URLs preserved in database
+- DMCA: Artist claiming enables takedown control
+- Privacy: No tracking cookies in MVP (GA4 post-MVP with consent)
+
+### Performance Considerations
+
+**Database Optimization:**
+- IVFFlat index tuning: `lists` parameter scales with data size
+- City filtering: Index on `artists.city` reduces search space
+- Connection pooling: Supabase Pooler for serverless functions
+- Query optimization: Avoid N+1 with joins, use `jsonb_agg` for images
+
+**Caching Strategy:**
+- **ISR (Incremental Static Regeneration)**: 24h revalidation for artist/city pages
+  - Why: Content changes slowly (daily Instagram scrapes)
+  - Fallback: Stale-while-revalidate (serve cached, rebuild in background)
+- **Edge Caching**: Vercel CDN for static assets (images, CSS, JS)
+- **R2 CDN**: Cloudflare CDN for portfolio images (low-latency global delivery)
+- **Database Caching**: Supabase read replicas (post-MVP for scaling)
+
+**Image Optimization:**
+- WebP format (85% quality, ~70% smaller than JPEG)
+- Three sizes: 320w (mobile), 640w (tablet), 1280w (desktop)
+- Next.js Image component: Lazy loading, blur placeholders, responsive `srcset`
+- R2 + Cloudflare CDN: Global edge caching (<100ms latency)
+
+**Bundle Optimization:**
+- Code splitting: Dynamic imports for heavy components (search, image upload)
+- Tree shaking: Import only used utilities (lodash-es, date-fns)
+- Target: <200KB first load JS (Next.js default is ~250KB)
+- Font optimization: Next.js Font API (self-host Google Fonts)
+
+**Vector Search Optimization:**
+- Target: <500ms for vector similarity search
+- Strategies:
+  1. IVFFlat index (faster than brute force)
+  2. City filtering (reduces search space by 50%)
+  3. Similarity threshold (default 0.7, filters low matches)
+  4. Limit results (20 artists max per query)
+  5. Pagination offset (don't re-compute for page 2+)
+- Monitoring: Log query times, alert if >1s
+
+**Monitoring & Observability:**
+- MVP: Vercel Analytics (page views, Web Vitals)
+- Post-MVP:
+  - Sentry (error tracking)
+  - Custom metrics: Search latency, embedding generation time
+  - Database: Supabase dashboard (query performance, connection pool)
+
+---
+
+## Dependencies
+
+### Production Dependencies
+```json
+{
+  "@supabase/ssr": "^0.x",                    // ✅ Supabase client for Next.js App Router
+  "@aws-sdk/client-s3": "^3.x",              // R2 uploads (S3-compatible) - Phase 2
+  "sharp": "^0.33.x",                         // Image processing - Phase 2
+  "openai": "^4.x",                           // CLIP embeddings (or alternative) - Phase 2
+  "zod": "^3.x",                              // ✅ Schema validation (env vars)
+  "next": "^15.5.x",                          // ✅ Framework (App Router)
+  "react": "^19.x",                           // ✅ UI library
+  "react-dom": "^19.x",                       // ✅ DOM renderer
+  "tailwindcss": "^3.x",                      // ✅ Styling
+  "zustand": "^4.x"                           // State management (post-MVP)
+}
+```
+
+**✅ = Currently installed and configured**
+
+### Development Dependencies
+```json
+{
+  "typescript": "^5.x",                       // Type checking
+  "@types/node": "^20.x",                     // Node types
+  "@types/react": "^18.x",                    // React types
+  "eslint": "^8.x",                           // Linting
+  "eslint-config-next": "^14.x",              // Next.js ESLint config
+  "prettier": "^3.x",                         // Code formatting
+  "prettier-plugin-tailwindcss": "^0.5.x"     // Tailwind class sorting
+}
+```
+
+### External Services (API Keys Required)
+- Supabase (free tier, no card required)
+- Cloudflare R2 (free 10GB/month)
+- OpenAI API or alternative (for CLIP embeddings)
+- Google Places API ($200/month free credit)
+- DataForSEO (pay-per-query, ~$1-2 per city)
+- Apify (pay-per-usage, ~$20-40 per city)
+- Modal.com (pay-per-second GPU, ~$0.30 per city)
+- Vercel (hobby tier free)
+
+---
+
+## Environment Configuration
+
+### Local Development (`.env.local`)
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# OpenAI (for CLIP embeddings)
+OPENAI_API_KEY=sk-...
+
+# Google APIs
+GOOGLE_PLACES_API_KEY=AIzaSy...
+
+# DataForSEO (Phase 0 - DONE)
+DATAFORSEO_LOGIN=your-email
+DATAFORSEO_PASSWORD=your-password
+
+# Cloudflare R2
+R2_ACCOUNT_ID=xxx
+R2_ACCESS_KEY_ID=xxx
+R2_SECRET_ACCESS_KEY=xxx
+R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
+R2_PUBLIC_URL=https://cdn.yourdomain.com
+
+# Instagram OAuth (for post-MVP)
+INSTAGRAM_CLIENT_ID=xxx
+INSTAGRAM_CLIENT_SECRET=xxx
+
+# Analytics (post-MVP)
+NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
+
+# App Config
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
+```
+
+### Production (Vercel Environment Variables)
+- Same as above, but `NEXT_PUBLIC_APP_URL=https://yourdomain.com`
+- `NODE_ENV=production` (auto-set by Vercel)
+- All secrets stored in Vercel dashboard (encrypted)
+
+---
+
+## Deployment Architecture
+
+### Hosting & Infrastructure
+```
+Frontend (Next.js)
+  ├─ Vercel Edge Network (global CDN)
+  ├─ ISR: 24h revalidation (artist/city/style pages)
+  └─ API Routes: Serverless functions (search endpoint)
+
+Database (Supabase)
+  ├─ PostgreSQL + pgvector
+  ├─ Connection pooling (Supabase Pooler)
+  └─ Auto-backups (daily)
+
+Image Storage (Cloudflare R2)
+  ├─ S3-compatible object storage
+  ├─ Cloudflare CDN (global edge caching)
+  └─ Custom domain: cdn.yourdomain.com
+
+Embeddings (Modal.com)
+  ├─ Serverless Python functions
+  ├─ A10G GPU (on-demand, pay-per-second)
+  └─ OpenCLIP ViT-L-14 model
+```
+
+### Deployment Flow
+1. **Code Push**: Git push to `main` branch
+2. **Build**: Vercel auto-builds Next.js (static pages + serverless functions)
+3. **Deploy**: Atomic deployment (zero downtime)
+4. **Invalidate Cache**: ISR revalidation on next request
+5. **Rollback**: Instant rollback via Vercel dashboard (if needed)
+
+### Data Pipeline Deployment
+```
+Scripts (Node.js + Python)
+  ├─ Run locally or on server (not Vercel)
+  ├─ Google Maps discovery → Supabase
+  ├─ Instagram scraping → R2 + Supabase
+  ├─ Embedding generation (Modal.com) → Supabase
+  └─ Scheduled re-scraping: Cron job (post-MVP)
+```
+
+### Monitoring & Alerts
+- **Vercel Analytics**: Page views, Web Vitals, errors
+- **Supabase Dashboard**: Database performance, connection pool
+- **Sentry** (post-MVP): Error tracking, performance monitoring
+- **Custom Alerts** (post-MVP): Search latency >1s, embedding errors
+
+---
+
+## Alternative Considerations & Trade-offs
+
+### Why Not X?
+
+**Pinecone/Weaviate/Qdrant (vector databases)?**
+- ❌ More expensive ($70+/month for managed)
+- ❌ Additional service to manage
+- ✅ pgvector: Same database, simpler stack, Supabase handles it
+
+**HNSW indexing instead of IVFFlat?**
+- ❌ HNSW: Slower build time, more memory, better for <10k vectors
+- ✅ IVFFlat: Faster build, good recall with tuning, scales to 100k+
+
+**Vercel Blob instead of Cloudflare R2?**
+- ❌ Vercel Blob: More expensive egress fees
+- ✅ R2: No egress fees, S3-compatible, same Cloudflare CDN
+
+**Firebase instead of Supabase?**
+- ❌ Firebase: No pgvector, NoSQL (harder for relational data)
+- ✅ Supabase: Postgres, pgvector, auth built-in, better DX
+
+**Replicate.com instead of Modal.com for embeddings?**
+- ❌ Replicate: Higher cost per inference, slower cold starts
+- ✅ Modal: Pay-per-second, faster, better Python DX
+
+**Self-hosted Instagram scraping instead of Apify?**
+- ❌ Self-hosted: Rate limit risk, IP bans, legal grey area
+- ✅ Apify: Managed IPs, legal compliance, reliable
+
+---
+
+## Future Architecture Considerations
+
+### Scaling to 10+ Cities (100k+ Images)
+1. **Database**: Upgrade Supabase to Pro ($25/mo), increase `lists` to 316 for IVFFlat
+2. **Image Storage**: R2 scales automatically (pay-per-GB)
+3. **Embedding Generation**: Modal.com scales to millions of images (pay-per-second)
+4. **Caching**: Add Redis for search result caching (hot queries)
+5. **CDN**: Cloudflare already global, no changes needed
+
+### Post-MVP Features (Weeks 9-12)
+1. **User Authentication**: Enable Supabase Auth UI, Instagram OAuth flow
+2. **Saved Artists**: Expose `saved_artists` table, RLS enforced
+3. **Artist Dashboard**: Protected routes (`/dashboard`), server-side auth checks
+4. **Hybrid Search**: Combine image + text embeddings (weighted average)
+
+### Future Optimizations (Months 3-6)
+1. **Batch Embeddings**: Pre-compute embeddings for common text queries ("fine line", "traditional")
+2. **Search Result Caching**: Redis cache for hot searches (TTL 1h)
+3. **Read Replicas**: Supabase read replicas for scaling (separate read/write)
+4. **Edge Functions**: Move search API to Vercel Edge (lower latency)
+
+---
+
+## References & Documentation
+
+### Official Docs
+- [Next.js 14 App Router](https://nextjs.org/docs)
+- [Supabase PostgreSQL + pgvector](https://supabase.com/docs/guides/database/extensions/pgvector)
+- [Cloudflare R2](https://developers.cloudflare.com/r2/)
+- [OpenCLIP Models](https://github.com/mlfoundations/open_clip)
+- [Modal.com Python Functions](https://modal.com/docs)
+
+### Internal Docs
+- [Implementation Plan](../projects/tattoo-discovery-implementation-plan.md)
+- [Database Schema](../projects/tattoo-discovery-implementation-plan.md#database-schema-updated-for-future-proofing)
+- [Search UX Strategy](../projects/search-ux-strategy.md)
+- [Architecture Patterns](./patterns.md) - **Inherited from DDD project**
+- [City Analysis Results](../development/activeContext.md#launch-city-selection-results)
+
+### Tutorials & Guides
+- [pgvector + Supabase Tutorial](https://supabase.com/blog/openai-embeddings-postgres-vector)
+- [Next.js Image Optimization](https://nextjs.org/docs/app/building-your-application/optimizing/images)
+- [CLIP Embeddings Explained](https://openai.com/research/clip)
+- [IVFFlat vs HNSW Comparison](https://github.com/pgvector/pgvector#indexing)
+
+---
+
+**Last Review:** 2025-12-29
+**Next Review:** After Phase 2 (Artist Discovery + Image Scraping complete)

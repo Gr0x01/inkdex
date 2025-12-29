@@ -1,0 +1,4003 @@
+[
+  {
+    "city": "Chicago, IL",
+    "totalSearchVolume": 269350,
+    "avgCompetition": 0.42043478260869566,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop chicago",
+        "searchVolume": 5400,
+        "competition": 0.67,
+        "cpc": 1.53,
+        "difficulty": 0,
+        "trend": [
+          2900,
+          5400,
+          4400,
+          4400,
+          6600,
+          5400,
+          5400,
+          5400,
+          6600,
+          5400,
+          5400,
+          5400
+        ]
+      },
+      {
+        "keyword": "tattoo parlor chicago",
+        "searchVolume": 5400,
+        "competition": 0.67,
+        "cpc": 1.53,
+        "difficulty": 0,
+        "trend": [
+          2900,
+          5400,
+          4400,
+          4400,
+          6600,
+          5400,
+          5400,
+          5400,
+          6600,
+          5400,
+          5400,
+          5400
+        ]
+      },
+      {
+        "keyword": "chicago tattoo",
+        "searchVolume": 4400,
+        "competition": 0.33,
+        "cpc": 1.43,
+        "difficulty": 0,
+        "trend": [
+          2900,
+          3600,
+          3600,
+          4400,
+          5400,
+          5400,
+          4400,
+          5400,
+          6600,
+          4400,
+          5400,
+          5400
+        ]
+      },
+      {
+        "keyword": "tattoo artist chicago",
+        "searchVolume": 2400,
+        "competition": 0.67,
+        "cpc": 1.38,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1900,
+          1900,
+          2400,
+          2400,
+          2400,
+          2400,
+          2400,
+          2900,
+          2400,
+          2400,
+          2400
+        ]
+      },
+      {
+        "keyword": "tattoo studios chicago",
+        "searchVolume": 2400,
+        "competition": 0.67,
+        "cpc": 1.38,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1900,
+          1900,
+          2400,
+          2400,
+          2400,
+          2400,
+          2400,
+          2900,
+          2400,
+          2400,
+          2400
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in chicago",
+        "searchVolume": 1300,
+        "competition": 0.67,
+        "cpc": 1.71,
+        "difficulty": 0,
+        "trend": [
+          720,
+          880,
+          1000,
+          1000,
+          1600,
+          1300,
+          1300,
+          1600,
+          1900,
+          1600,
+          1600,
+          1600
+        ]
+      },
+      {
+        "keyword": "fine line tattoo chicago",
+        "searchVolume": 880,
+        "competition": 0.67,
+        "cpc": 1.54,
+        "difficulty": 0,
+        "trend": [
+          590,
+          720,
+          720,
+          880,
+          1000,
+          880,
+          880,
+          1000,
+          1000,
+          880,
+          1000,
+          720
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in chicago",
+        "searchVolume": 720,
+        "competition": 0.67,
+        "cpc": 1.4,
+        "difficulty": 0,
+        "trend": [
+          390,
+          480,
+          480,
+          720,
+          720,
+          720,
+          720,
+          880,
+          880,
+          720,
+          880,
+          880
+        ]
+      },
+      {
+        "keyword": "traditional tattoo chicago",
+        "searchVolume": 140,
+        "competition": 0.33,
+        "cpc": 0.87,
+        "difficulty": 0,
+        "trend": [
+          90,
+          90,
+          110,
+          170,
+          170,
+          140,
+          140,
+          140,
+          140,
+          170,
+          170,
+          170
+        ]
+      },
+      {
+        "keyword": "top tattoo artists chicago",
+        "searchVolume": 90,
+        "competition": 0.67,
+        "cpc": 1.62,
+        "difficulty": 0,
+        "trend": [
+          40,
+          70,
+          50,
+          90,
+          90,
+          90,
+          90,
+          110,
+          140,
+          110,
+          110,
+          110
+        ]
+      },
+      {
+        "keyword": "japanese tattoo chicago",
+        "searchVolume": 50,
+        "competition": 0.33,
+        "cpc": 0.47,
+        "difficulty": 0,
+        "trend": [
+          30,
+          30,
+          40,
+          40,
+          50,
+          40,
+          40,
+          50,
+          70,
+          40,
+          50,
+          140
+        ]
+      },
+      {
+        "keyword": "tattoo designs chicago",
+        "searchVolume": 50,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          50,
+          30,
+          20,
+          30,
+          50,
+          70,
+          40,
+          70,
+          50,
+          40,
+          70,
+          30
+        ]
+      },
+      {
+        "keyword": "realism tattoo chicago",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 1.55,
+        "difficulty": 0,
+        "trend": [
+          30,
+          30,
+          20,
+          40,
+          20,
+          40,
+          50,
+          50,
+          70,
+          40,
+          30,
+          40
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo chicago",
+        "searchVolume": 30,
+        "competition": 0.33,
+        "cpc": 1.15,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          40,
+          50,
+          40,
+          50,
+          20,
+          10,
+          40,
+          20,
+          30,
+          30
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo chicago",
+        "searchVolume": 20,
+        "competition": 0.33,
+        "cpc": 1.18,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          40,
+          30,
+          30,
+          30,
+          20,
+          30,
+          20,
+          40,
+          20
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo chicago",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 0.66,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "geometric tattoo chicago",
+        "searchVolume": 10,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          20,
+          10,
+          20,
+          10,
+          20,
+          10,
+          10,
+          20
+        ]
+      },
+      {
+        "keyword": "tattoo ideas chicago",
+        "searchVolume": 10,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          10,
+          20,
+          10,
+          10,
+          10,
+          20,
+          30,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me chicago",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist chicago",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration chicago",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio chicago",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "chicagoinktattoo.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.tattoofactory.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.crispyaura.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.chitowntattoo.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.mindcrushertattoo.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.chicagoinktattoo.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.chicagotattooing.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 81,
+    "insights": [
+      "🔥 High search demand: 269,350 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "🎨 Style-specific demand: 1 high-volume style queries",
+      "📈 Growing market: 16 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "New York, NY",
+    "totalSearchVolume": 266530,
+    "avgCompetition": 0.42,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop new york",
+        "searchVolume": 5400,
+        "competition": 0.67,
+        "cpc": 2.62,
+        "difficulty": 0,
+        "trend": [
+          4400,
+          4400,
+          5400,
+          6600,
+          5400,
+          5400,
+          5400,
+          5400,
+          6600,
+          5400,
+          6600,
+          5400
+        ]
+      },
+      {
+        "keyword": "tattoo parlor new york",
+        "searchVolume": 2400,
+        "competition": 0.33,
+        "cpc": 2.46,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1900,
+          1900,
+          2400,
+          2400,
+          2900,
+          2400,
+          2400,
+          2900,
+          2400,
+          1900,
+          2400
+        ]
+      },
+      {
+        "keyword": "tattoo artist new york",
+        "searchVolume": 1900,
+        "competition": 0.33,
+        "cpc": 2.61,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1600,
+          1600,
+          1900,
+          2400,
+          1900,
+          1600,
+          1900,
+          1900,
+          1600,
+          1900,
+          1900
+        ]
+      },
+      {
+        "keyword": "tattoo ideas new york",
+        "searchVolume": 1900,
+        "competition": 0.33,
+        "cpc": 2.71,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1600,
+          1900,
+          2400,
+          1900,
+          2400,
+          1900,
+          2400,
+          1600,
+          1900,
+          1600
+        ]
+      },
+      {
+        "keyword": "tattoo designs new york",
+        "searchVolume": 1900,
+        "competition": 0.33,
+        "cpc": 2.71,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1600,
+          1900,
+          2400,
+          1900,
+          2400,
+          1900,
+          2400,
+          1600,
+          1900,
+          1600
+        ]
+      },
+      {
+        "keyword": "new york tattoo",
+        "searchVolume": 1900,
+        "competition": 0.33,
+        "cpc": 1.79,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1600,
+          1600,
+          1900,
+          2400,
+          1900,
+          1600,
+          1900,
+          1600,
+          1900,
+          1900
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in new york",
+        "searchVolume": 1600,
+        "competition": 1,
+        "cpc": 2.66,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1000,
+          1300,
+          1600,
+          1900,
+          1600,
+          1600,
+          1600,
+          1900,
+          1900,
+          1900,
+          2400
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in new york",
+        "searchVolume": 1000,
+        "competition": 0.67,
+        "cpc": 2.99,
+        "difficulty": 0,
+        "trend": [
+          720,
+          720,
+          880,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1300,
+          1000,
+          1300,
+          1300
+        ]
+      },
+      {
+        "keyword": "top tattoo artists new york",
+        "searchVolume": 1000,
+        "competition": 0.67,
+        "cpc": 2.99,
+        "difficulty": 0,
+        "trend": [
+          720,
+          720,
+          880,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1300,
+          1000,
+          1300,
+          1300
+        ]
+      },
+      {
+        "keyword": "fine line tattoo new york",
+        "searchVolume": 1000,
+        "competition": 1,
+        "cpc": 1.82,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1300,
+          1300,
+          1000,
+          1300,
+          1300,
+          1000,
+          1000,
+          1000
+        ]
+      },
+      {
+        "keyword": "traditional tattoo new york",
+        "searchVolume": 210,
+        "competition": 0.33,
+        "cpc": 1.64,
+        "difficulty": 0,
+        "trend": [
+          110,
+          140,
+          210,
+          210,
+          260,
+          260,
+          210,
+          210,
+          210,
+          260,
+          260,
+          210
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo new york",
+        "searchVolume": 110,
+        "competition": 0.33,
+        "cpc": 3.78,
+        "difficulty": 0,
+        "trend": [
+          110,
+          90,
+          90,
+          140,
+          170,
+          320,
+          140,
+          90,
+          90,
+          70,
+          110,
+          110
+        ]
+      },
+      {
+        "keyword": "japanese tattoo new york",
+        "searchVolume": 90,
+        "competition": 0.67,
+        "cpc": 1.41,
+        "difficulty": 0,
+        "trend": [
+          70,
+          50,
+          90,
+          90,
+          90,
+          140,
+          90,
+          90,
+          140,
+          90,
+          110,
+          140
+        ]
+      },
+      {
+        "keyword": "tattoo studios new york",
+        "searchVolume": 70,
+        "competition": 0.67,
+        "cpc": 2.56,
+        "difficulty": 0,
+        "trend": [
+          50,
+          70,
+          50,
+          50,
+          70,
+          50,
+          110,
+          90,
+          40,
+          70,
+          110,
+          110
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo new york",
+        "searchVolume": 40,
+        "competition": 1,
+        "cpc": 1.58,
+        "difficulty": 0,
+        "trend": [
+          10,
+          20,
+          40,
+          50,
+          40,
+          50,
+          40,
+          40,
+          50,
+          30,
+          50,
+          50
+        ]
+      },
+      {
+        "keyword": "geometric tattoo new york",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 1.34,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          10,
+          20,
+          20
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "black and grey tattoo new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "realism tattoo new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio new york",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.nyctattooshop.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.risingdragon.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "uk.pinterest.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.studio28nyc.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.bangbangforever.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.google.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.artwithapoint.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.newyorktattoocollective.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 80,
+    "insights": [
+      "🔥 High search demand: 266,530 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "🎨 Style-specific demand: 1 high-volume style queries",
+      "📈 Growing market: 10 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Austin, TX",
+    "totalSearchVolume": 262100,
+    "avgCompetition": 0.4943478260869565,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop austin",
+        "searchVolume": 5400,
+        "competition": 0.67,
+        "cpc": 1.92,
+        "difficulty": 0,
+        "trend": [
+          2900,
+          3600,
+          3600,
+          4400,
+          4400,
+          5400,
+          4400,
+          5400,
+          8100,
+          6600,
+          5400,
+          5400
+        ]
+      },
+      {
+        "keyword": "tattoo parlor austin",
+        "searchVolume": 5400,
+        "competition": 0.67,
+        "cpc": 1.92,
+        "difficulty": 0,
+        "trend": [
+          2900,
+          3600,
+          3600,
+          4400,
+          4400,
+          5400,
+          4400,
+          5400,
+          8100,
+          6600,
+          5400,
+          5400
+        ]
+      },
+      {
+        "keyword": "tattoo artist austin",
+        "searchVolume": 1300,
+        "competition": 0.67,
+        "cpc": 2.45,
+        "difficulty": 0,
+        "trend": [
+          880,
+          1000,
+          1300,
+          1300,
+          1600,
+          1600,
+          1300,
+          1600,
+          1600,
+          1300,
+          1600,
+          1300
+        ]
+      },
+      {
+        "keyword": "austin tattoo",
+        "searchVolume": 1300,
+        "competition": 0.67,
+        "cpc": 2.01,
+        "difficulty": 0,
+        "trend": [
+          720,
+          880,
+          880,
+          1300,
+          2400,
+          2900,
+          880,
+          1000,
+          1300,
+          1000,
+          880,
+          880
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in austin",
+        "searchVolume": 1000,
+        "competition": 0.67,
+        "cpc": 2.26,
+        "difficulty": 0,
+        "trend": [
+          720,
+          720,
+          720,
+          1000,
+          880,
+          1000,
+          1000,
+          1000,
+          1300,
+          1000,
+          1300,
+          1300
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in austin",
+        "searchVolume": 590,
+        "competition": 1,
+        "cpc": 2.03,
+        "difficulty": 0,
+        "trend": [
+          390,
+          480,
+          390,
+          480,
+          590,
+          720,
+          590,
+          880,
+          720,
+          590,
+          720,
+          590
+        ]
+      },
+      {
+        "keyword": "fine line tattoo austin",
+        "searchVolume": 590,
+        "competition": 0.67,
+        "cpc": 1.36,
+        "difficulty": 0,
+        "trend": [
+          480,
+          480,
+          480,
+          480,
+          720,
+          590,
+          720,
+          590,
+          720,
+          590,
+          720,
+          480
+        ]
+      },
+      {
+        "keyword": "tattoo studios austin",
+        "searchVolume": 260,
+        "competition": 0.67,
+        "cpc": 2.36,
+        "difficulty": 0,
+        "trend": [
+          50,
+          70,
+          110,
+          390,
+          40,
+          50,
+          70,
+          210,
+          720,
+          880,
+          170,
+          140
+        ]
+      },
+      {
+        "keyword": "traditional tattoo austin",
+        "searchVolume": 70,
+        "competition": 0.67,
+        "cpc": 0.89,
+        "difficulty": 0,
+        "trend": [
+          30,
+          40,
+          50,
+          50,
+          50,
+          40,
+          50,
+          50,
+          70,
+          70,
+          170,
+          110
+        ]
+      },
+      {
+        "keyword": "top tattoo artists austin",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 2.43,
+        "difficulty": 0,
+        "trend": [
+          40,
+          50,
+          20,
+          30,
+          30,
+          70,
+          70,
+          50,
+          50,
+          30,
+          30,
+          50
+        ]
+      },
+      {
+        "keyword": "japanese tattoo austin",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 1.9,
+        "difficulty": 0,
+        "trend": [
+          10,
+          40,
+          90,
+          30,
+          10,
+          30,
+          30,
+          50,
+          90,
+          40,
+          30,
+          10
+        ]
+      },
+      {
+        "keyword": "geometric tattoo austin",
+        "searchVolume": 30,
+        "competition": 0.67,
+        "cpc": 2.09,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          70,
+          10,
+          20,
+          20,
+          20,
+          30,
+          40,
+          40,
+          70,
+          10
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo austin",
+        "searchVolume": 30,
+        "competition": 0.67,
+        "cpc": 1.89,
+        "difficulty": 0,
+        "trend": [
+          20,
+          10,
+          10,
+          10,
+          20,
+          30,
+          90,
+          30,
+          40,
+          10,
+          30,
+          30
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo austin",
+        "searchVolume": 20,
+        "competition": 1,
+        "cpc": 2.29,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          70,
+          10,
+          10,
+          10,
+          10,
+          40,
+          40,
+          40,
+          20,
+          20
+        ]
+      },
+      {
+        "keyword": "realism tattoo austin",
+        "searchVolume": 20,
+        "competition": 0.67,
+        "cpc": 1.65,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          30,
+          20,
+          20,
+          30,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo austin",
+        "searchVolume": 10,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          20,
+          50,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo ideas austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo designs austin",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.allsaintstattoo.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "inkempireaustin.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "sacramentdowntown.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.inkcouturetattoos.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.atomic-tattoo.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "austintattoocompany.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "moontattoostudio.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 78,
+    "insights": [
+      "🔥 High search demand: 262,100 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "🎨 Style-specific demand: 1 high-volume style queries",
+      "📈 Growing market: 12 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Seattle, WA",
+    "totalSearchVolume": 258260,
+    "avgCompetition": 0.48,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "seattle tattoo",
+        "searchVolume": 4400,
+        "competition": 0.67,
+        "cpc": 2.07,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1900,
+          1900,
+          2400,
+          2900,
+          2900,
+          2900,
+          2900,
+          2900,
+          2400,
+          2900,
+          22200
+        ]
+      },
+      {
+        "keyword": "tattoo artist seattle",
+        "searchVolume": 1900,
+        "competition": 0.67,
+        "cpc": 1.67,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1300,
+          1300,
+          1900,
+          1900,
+          1900,
+          1900,
+          1900,
+          2400,
+          1900,
+          1900,
+          1900
+        ]
+      },
+      {
+        "keyword": "tattoo parlor seattle",
+        "searchVolume": 1900,
+        "competition": 0.67,
+        "cpc": 1.86,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1600,
+          1900,
+          2400,
+          2400,
+          1900,
+          1900,
+          2400,
+          1600,
+          1600,
+          1900
+        ]
+      },
+      {
+        "keyword": "tattoo shop seattle",
+        "searchVolume": 1600,
+        "competition": 0.67,
+        "cpc": 2.44,
+        "difficulty": 0,
+        "trend": [
+          880,
+          1000,
+          1300,
+          1600,
+          1600,
+          1600,
+          1300,
+          1600,
+          1900,
+          1300,
+          1600,
+          1600
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in seattle",
+        "searchVolume": 590,
+        "competition": 0.67,
+        "cpc": 1.92,
+        "difficulty": 0,
+        "trend": [
+          390,
+          390,
+          480,
+          480,
+          480,
+          590,
+          590,
+          480,
+          590,
+          590,
+          880,
+          720
+        ]
+      },
+      {
+        "keyword": "top tattoo artists seattle",
+        "searchVolume": 590,
+        "competition": 0.67,
+        "cpc": 1.92,
+        "difficulty": 0,
+        "trend": [
+          390,
+          390,
+          480,
+          480,
+          480,
+          590,
+          590,
+          480,
+          590,
+          590,
+          880,
+          720
+        ]
+      },
+      {
+        "keyword": "fine line tattoo seattle",
+        "searchVolume": 590,
+        "competition": 0.67,
+        "cpc": 1.99,
+        "difficulty": 0,
+        "trend": [
+          390,
+          480,
+          590,
+          590,
+          590,
+          720,
+          720,
+          590,
+          590,
+          590,
+          480,
+          590
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in seattle",
+        "searchVolume": 320,
+        "competition": 0.67,
+        "cpc": 1.89,
+        "difficulty": 0,
+        "trend": [
+          260,
+          210,
+          210,
+          260,
+          320,
+          320,
+          320,
+          320,
+          390,
+          260,
+          390,
+          320
+        ]
+      },
+      {
+        "keyword": "traditional tattoo seattle",
+        "searchVolume": 140,
+        "competition": 0.67,
+        "cpc": 1.39,
+        "difficulty": 0,
+        "trend": [
+          110,
+          110,
+          110,
+          110,
+          140,
+          110,
+          170,
+          170,
+          170,
+          170,
+          210,
+          140
+        ]
+      },
+      {
+        "keyword": "tattoo studios seattle",
+        "searchVolume": 90,
+        "competition": 0.33,
+        "cpc": 1.45,
+        "difficulty": 0,
+        "trend": [
+          90,
+          140,
+          30,
+          70,
+          90,
+          50,
+          90,
+          170,
+          90,
+          40,
+          50,
+          40
+        ]
+      },
+      {
+        "keyword": "japanese tattoo seattle",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 0.93,
+        "difficulty": 0,
+        "trend": [
+          20,
+          20,
+          30,
+          40,
+          50,
+          30,
+          50,
+          20,
+          70,
+          40,
+          50,
+          50
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo seattle",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 1.45,
+        "difficulty": 0,
+        "trend": [
+          20,
+          20,
+          30,
+          20,
+          30,
+          30,
+          50,
+          50,
+          70,
+          40,
+          40,
+          40
+        ]
+      },
+      {
+        "keyword": "geometric tattoo seattle",
+        "searchVolume": 30,
+        "competition": 0.67,
+        "cpc": 1.21,
+        "difficulty": 0,
+        "trend": [
+          20,
+          20,
+          20,
+          30,
+          40,
+          20,
+          40,
+          30,
+          40,
+          30,
+          70,
+          20
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo seattle",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 1.93,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "realism tattoo seattle",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 1.64,
+        "difficulty": 0,
+        "trend": [
+          10,
+          20,
+          10,
+          10,
+          10,
+          20,
+          10,
+          30,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo seattle",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 2.47,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          30,
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo ideas seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo designs seattle",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.cleopatraink.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.piercedhearts.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "finerthingstattoo.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "tattooinseattle.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.trueloveart.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.instagram.com",
+        "position": 4,
+        "type": "social",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.seattletattooemporium.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 78,
+    "insights": [
+      "🔥 High search demand: 258,260 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "🎨 Style-specific demand: 1 high-volume style queries",
+      "📈 Growing market: 11 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Los Angeles, CA",
+    "totalSearchVolume": 261920,
+    "avgCompetition": 0.5221739130434783,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "los angeles tattoo",
+        "searchVolume": 6600,
+        "competition": 0.33,
+        "cpc": 4.6,
+        "difficulty": 0,
+        "trend": [
+          6600,
+          5400,
+          5400,
+          6600,
+          6600,
+          8100,
+          6600,
+          6600,
+          8100,
+          6600,
+          6600,
+          6600
+        ]
+      },
+      {
+        "keyword": "tattoo shop los angeles",
+        "searchVolume": 2900,
+        "competition": 0.67,
+        "cpc": 4.55,
+        "difficulty": 0,
+        "trend": [
+          1900,
+          1900,
+          2400,
+          2400,
+          2400,
+          2900,
+          2900,
+          3600,
+          4400,
+          2900,
+          3600,
+          2900
+        ]
+      },
+      {
+        "keyword": "tattoo artist los angeles",
+        "searchVolume": 2400,
+        "competition": 0.67,
+        "cpc": 3.67,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1900,
+          2900,
+          1900,
+          2400,
+          1900,
+          5400,
+          3600,
+          1300,
+          1600,
+          1600
+        ]
+      },
+      {
+        "keyword": "tattoo ideas los angeles",
+        "searchVolume": 1300,
+        "competition": 0.33,
+        "cpc": 1.16,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1000,
+          1000,
+          1600,
+          1600,
+          1600,
+          1600,
+          1300,
+          1600,
+          1300,
+          1600,
+          1300
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in los angeles",
+        "searchVolume": 720,
+        "competition": 1,
+        "cpc": 4.44,
+        "difficulty": 0,
+        "trend": [
+          390,
+          390,
+          590,
+          590,
+          590,
+          720,
+          880,
+          880,
+          1000,
+          720,
+          880,
+          720
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in los angeles",
+        "searchVolume": 590,
+        "competition": 0.67,
+        "cpc": 3.41,
+        "difficulty": 0,
+        "trend": [
+          480,
+          390,
+          480,
+          590,
+          720,
+          590,
+          720,
+          720,
+          720,
+          590,
+          720,
+          720
+        ]
+      },
+      {
+        "keyword": "fine line tattoo los angeles",
+        "searchVolume": 480,
+        "competition": 1,
+        "cpc": 4.48,
+        "difficulty": 0,
+        "trend": [
+          390,
+          390,
+          320,
+          480,
+          480,
+          590,
+          480,
+          480,
+          590,
+          480,
+          720,
+          590
+        ]
+      },
+      {
+        "keyword": "tattoo designs los angeles",
+        "searchVolume": 320,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          260,
+          260,
+          260,
+          260,
+          210,
+          320,
+          320,
+          320,
+          320,
+          320,
+          390,
+          260
+        ]
+      },
+      {
+        "keyword": "tattoo studios los angeles",
+        "searchVolume": 170,
+        "competition": 0.67,
+        "cpc": 3.24,
+        "difficulty": 0,
+        "trend": [
+          90,
+          140,
+          170,
+          320,
+          170,
+          320,
+          170,
+          170,
+          170,
+          110,
+          170,
+          170
+        ]
+      },
+      {
+        "keyword": "traditional tattoo los angeles",
+        "searchVolume": 140,
+        "competition": 0.33,
+        "cpc": 4.27,
+        "difficulty": 0,
+        "trend": [
+          110,
+          90,
+          110,
+          110,
+          140,
+          110,
+          210,
+          140,
+          170,
+          110,
+          170,
+          110
+        ]
+      },
+      {
+        "keyword": "tattoo parlor los angeles",
+        "searchVolume": 110,
+        "competition": 0.33,
+        "cpc": 3.45,
+        "difficulty": 0,
+        "trend": [
+          110,
+          110,
+          110,
+          70,
+          170,
+          110,
+          110,
+          110,
+          110,
+          70,
+          90,
+          90
+        ]
+      },
+      {
+        "keyword": "japanese tattoo los angeles",
+        "searchVolume": 70,
+        "competition": 0.67,
+        "cpc": 1.27,
+        "difficulty": 0,
+        "trend": [
+          40,
+          40,
+          50,
+          70,
+          50,
+          50,
+          90,
+          70,
+          140,
+          70,
+          90,
+          70
+        ]
+      },
+      {
+        "keyword": "top tattoo artists los angeles",
+        "searchVolume": 40,
+        "competition": 0.67,
+        "cpc": 2.34,
+        "difficulty": 0,
+        "trend": [
+          40,
+          20,
+          40,
+          40,
+          50,
+          40,
+          50,
+          50,
+          50,
+          30,
+          50,
+          30
+        ]
+      },
+      {
+        "keyword": "realism tattoo los angeles",
+        "searchVolume": 20,
+        "competition": 0.67,
+        "cpc": 2.78,
+        "difficulty": 0,
+        "trend": [
+          20,
+          30,
+          20,
+          30,
+          10,
+          10,
+          20,
+          20,
+          20,
+          30,
+          10,
+          20
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo los angeles",
+        "searchVolume": 20,
+        "competition": 1,
+        "cpc": 3.22,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          20,
+          30,
+          20,
+          20,
+          30,
+          20,
+          30,
+          30,
+          40,
+          30
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo los angeles",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 2.14,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          20,
+          10,
+          10,
+          10,
+          20,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "geometric tattoo los angeles",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 2.06,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          10,
+          10,
+          20,
+          20,
+          30,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo los angeles",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          40,
+          40,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo inspiration los angeles",
+        "searchVolume": 10,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          0,
+          0,
+          0,
+          0,
+          10,
+          0,
+          0,
+          0,
+          10,
+          10,
+          10,
+          0
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me los angeles",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist los angeles",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio los angeles",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "mantletattoo.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "thehonorablesociety.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.pinterest.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.baronart.tattoo",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "blackink.ai",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.reddit.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.discoverlosangeles.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 77,
+    "insights": [
+      "🔥 High search demand: 261,920 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "📈 Growing market: 10 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Portland, OR",
+    "totalSearchVolume": 258530,
+    "avgCompetition": 0.5369565217391304,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop portland",
+        "searchVolume": 3600,
+        "competition": 0.67,
+        "cpc": 1.74,
+        "difficulty": 0,
+        "trend": [
+          2400,
+          2900,
+          3600,
+          4400,
+          4400,
+          4400,
+          3600,
+          4400,
+          4400,
+          3600,
+          4400,
+          3600
+        ]
+      },
+      {
+        "keyword": "tattoo parlor portland",
+        "searchVolume": 3600,
+        "competition": 0.67,
+        "cpc": 1.74,
+        "difficulty": 0,
+        "trend": [
+          2400,
+          2900,
+          3600,
+          4400,
+          4400,
+          4400,
+          3600,
+          4400,
+          4400,
+          3600,
+          4400,
+          3600
+        ]
+      },
+      {
+        "keyword": "portland tattoo",
+        "searchVolume": 1900,
+        "competition": 0.67,
+        "cpc": 2.03,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1600,
+          1900,
+          2400,
+          2400,
+          2400,
+          2400,
+          2400,
+          2900,
+          1900,
+          1900,
+          2400
+        ]
+      },
+      {
+        "keyword": "tattoo artist portland",
+        "searchVolume": 1600,
+        "competition": 0.67,
+        "cpc": 1.76,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1300,
+          1600,
+          1600,
+          1900,
+          1600,
+          1900,
+          1900,
+          1900,
+          1600,
+          1600,
+          1600
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in portland",
+        "searchVolume": 590,
+        "competition": 1,
+        "cpc": 1.82,
+        "difficulty": 0,
+        "trend": [
+          390,
+          480,
+          480,
+          590,
+          720,
+          590,
+          590,
+          720,
+          720,
+          720,
+          880,
+          720
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in portland",
+        "searchVolume": 480,
+        "competition": 1,
+        "cpc": 1.45,
+        "difficulty": 0,
+        "trend": [
+          320,
+          320,
+          320,
+          480,
+          590,
+          480,
+          480,
+          480,
+          590,
+          590,
+          590,
+          880
+        ]
+      },
+      {
+        "keyword": "fine line tattoo portland",
+        "searchVolume": 390,
+        "competition": 0.67,
+        "cpc": 2.03,
+        "difficulty": 0,
+        "trend": [
+          260,
+          320,
+          390,
+          390,
+          480,
+          390,
+          390,
+          390,
+          390,
+          320,
+          320,
+          320
+        ]
+      },
+      {
+        "keyword": "traditional tattoo portland",
+        "searchVolume": 110,
+        "competition": 0.67,
+        "cpc": 1.21,
+        "difficulty": 0,
+        "trend": [
+          70,
+          70,
+          110,
+          90,
+          170,
+          210,
+          110,
+          110,
+          170,
+          110,
+          140,
+          90
+        ]
+      },
+      {
+        "keyword": "tattoo studios portland",
+        "searchVolume": 110,
+        "competition": 0.33,
+        "cpc": 1.02,
+        "difficulty": 0,
+        "trend": [
+          260,
+          70,
+          110,
+          110,
+          110,
+          90,
+          110,
+          110,
+          90,
+          70,
+          170,
+          110
+        ]
+      },
+      {
+        "keyword": "top tattoo artists portland",
+        "searchVolume": 40,
+        "competition": 1,
+        "cpc": 1.48,
+        "difficulty": 0,
+        "trend": [
+          30,
+          20,
+          40,
+          40,
+          40,
+          30,
+          40,
+          40,
+          70,
+          50,
+          40,
+          40
+        ]
+      },
+      {
+        "keyword": "japanese tattoo portland",
+        "searchVolume": 30,
+        "competition": 1,
+        "cpc": 0.83,
+        "difficulty": 0,
+        "trend": [
+          10,
+          20,
+          20,
+          20,
+          30,
+          20,
+          50,
+          40,
+          40,
+          40,
+          40,
+          40
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo portland",
+        "searchVolume": 30,
+        "competition": 1,
+        "cpc": 1.75,
+        "difficulty": 0,
+        "trend": [
+          20,
+          10,
+          20,
+          20,
+          20,
+          30,
+          40,
+          40,
+          30,
+          20,
+          50,
+          40
+        ]
+      },
+      {
+        "keyword": "geometric tattoo portland",
+        "searchVolume": 20,
+        "competition": 0.67,
+        "cpc": 1.45,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          20,
+          20,
+          20,
+          20,
+          20,
+          20,
+          10,
+          20
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo portland",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 2.16,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          10,
+          30
+        ]
+      },
+      {
+        "keyword": "realism tattoo portland",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 3.36,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          20,
+          20,
+          20,
+          10,
+          10,
+          30,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo portland",
+        "searchVolume": 10,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          0,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo ideas portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo designs portland",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "bigtimepdx.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.atlastattoo.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.tattoo34pdx.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.travelportland.com",
+        "position": 4,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.lucky13tattooinc.com",
+        "position": 5,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.instagram.com",
+        "position": 5,
+        "type": "social",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.thebirdhousetattoo.com",
+        "position": 5,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 77,
+    "insights": [
+      "🔥 High search demand: 258,530 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "📈 Growing market: 12 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Miami, FL",
+    "totalSearchVolume": 254910,
+    "avgCompetition": 0.5369565217391304,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop miami",
+        "searchVolume": 1900,
+        "competition": 1,
+        "cpc": 2.42,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1300,
+          1300,
+          1900,
+          3600,
+          1900,
+          1900,
+          2400,
+          2400,
+          1900,
+          2400,
+          2400
+        ]
+      },
+      {
+        "keyword": "tattoo parlor miami",
+        "searchVolume": 1900,
+        "competition": 1,
+        "cpc": 2.42,
+        "difficulty": 0,
+        "trend": [
+          1300,
+          1300,
+          1300,
+          1900,
+          3600,
+          1900,
+          1900,
+          2400,
+          2400,
+          1900,
+          2400,
+          2400
+        ]
+      },
+      {
+        "keyword": "miami tattoo",
+        "searchVolume": 1900,
+        "competition": 0.67,
+        "cpc": 4.5,
+        "difficulty": 0,
+        "trend": [
+          1600,
+          1600,
+          1900,
+          1900,
+          1900,
+          1900,
+          2400,
+          2400,
+          2900,
+          2400,
+          2400,
+          2400
+        ]
+      },
+      {
+        "keyword": "tattoo artist miami",
+        "searchVolume": 1000,
+        "competition": 0.67,
+        "cpc": 2.52,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          720,
+          1000,
+          880,
+          1000,
+          880,
+          720,
+          880,
+          1000,
+          720,
+          1300,
+          1000
+        ]
+      },
+      {
+        "keyword": "tattoo studios miami",
+        "searchVolume": 1000,
+        "competition": 0.67,
+        "cpc": 2.52,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          720,
+          1000,
+          880,
+          1000,
+          880,
+          720,
+          880,
+          1000,
+          720,
+          1300,
+          1000
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in miami",
+        "searchVolume": 480,
+        "competition": 1,
+        "cpc": 1.92,
+        "difficulty": 0,
+        "trend": [
+          260,
+          320,
+          320,
+          390,
+          480,
+          480,
+          590,
+          480,
+          720,
+          590,
+          720,
+          590
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in miami",
+        "searchVolume": 320,
+        "competition": 1,
+        "cpc": 3.21,
+        "difficulty": 0,
+        "trend": [
+          210,
+          210,
+          260,
+          320,
+          320,
+          320,
+          260,
+          390,
+          390,
+          320,
+          390,
+          390
+        ]
+      },
+      {
+        "keyword": "fine line tattoo miami",
+        "searchVolume": 260,
+        "competition": 1,
+        "cpc": 3.52,
+        "difficulty": 0,
+        "trend": [
+          170,
+          170,
+          210,
+          170,
+          260,
+          210,
+          260,
+          320,
+          320,
+          260,
+          320,
+          260
+        ]
+      },
+      {
+        "keyword": "tattoo designs miami",
+        "searchVolume": 70,
+        "competition": 0.33,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          30,
+          30,
+          40,
+          70,
+          70,
+          90,
+          110,
+          70,
+          90,
+          50,
+          70,
+          50
+        ]
+      },
+      {
+        "keyword": "top tattoo artists miami",
+        "searchVolume": 30,
+        "competition": 0.67,
+        "cpc": 1.98,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          30,
+          20,
+          30,
+          40,
+          20,
+          20,
+          30,
+          30,
+          30,
+          30
+        ]
+      },
+      {
+        "keyword": "traditional tattoo miami",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 2.89,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          20,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo miami",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 2.07,
+        "difficulty": 0,
+        "trend": [
+          10,
+          0,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "japanese tattoo miami",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 2.49,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo miami",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 3.12,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          0,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo miami",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "geometric tattoo miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "realism tattoo miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo ideas miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio miami",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.tattooshopmiamidade.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "iris.tattoo",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.inkaholik.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "empireink.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.inkedlifemiami.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.myinkflorida.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.instagram.com",
+        "position": 4,
+        "type": "social",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 76,
+    "insights": [
+      "🔥 High search demand: 254,910 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "📈 Growing market: 9 keywords trending up"
+    ],
+    "recommendation": "high"
+  },
+  {
+    "city": "Denver, CO",
+    "totalSearchVolume": 259740,
+    "avgCompetition": 0.6669565217391304,
+    "avgDifficulty": 0,
+    "keywords": [
+      {
+        "keyword": "tattoo near me",
+        "searchVolume": 246000,
+        "competition": 0.33,
+        "cpc": 1.8,
+        "difficulty": 0,
+        "trend": [
+          201000,
+          201000,
+          201000,
+          246000,
+          246000,
+          301000,
+          246000,
+          246000,
+          301000,
+          201000,
+          201000,
+          246000
+        ]
+      },
+      {
+        "keyword": "tattoo shop denver",
+        "searchVolume": 3600,
+        "competition": 1,
+        "cpc": 2.43,
+        "difficulty": 0,
+        "trend": [
+          1900,
+          2400,
+          2900,
+          3600,
+          4400,
+          4400,
+          3600,
+          4400,
+          5400,
+          3600,
+          4400,
+          4400
+        ]
+      },
+      {
+        "keyword": "tattoo artist denver",
+        "searchVolume": 1900,
+        "competition": 1,
+        "cpc": 2.51,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1600,
+          1600,
+          1900,
+          1900,
+          2400,
+          1900,
+          1900,
+          2400,
+          1900,
+          2400,
+          1900
+        ]
+      },
+      {
+        "keyword": "tattoo studios denver",
+        "searchVolume": 1900,
+        "competition": 1,
+        "cpc": 2.51,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1600,
+          1600,
+          1900,
+          1900,
+          2400,
+          1900,
+          1900,
+          2400,
+          1900,
+          2400,
+          1900
+        ]
+      },
+      {
+        "keyword": "tattoo parlor denver",
+        "searchVolume": 1900,
+        "competition": 1,
+        "cpc": 2.51,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1600,
+          1600,
+          1900,
+          1900,
+          2400,
+          1900,
+          1900,
+          2400,
+          1900,
+          2400,
+          1900
+        ]
+      },
+      {
+        "keyword": "denver tattoo",
+        "searchVolume": 1900,
+        "competition": 0.67,
+        "cpc": 2.53,
+        "difficulty": 0,
+        "trend": [
+          1000,
+          1300,
+          1600,
+          1900,
+          2400,
+          1900,
+          1900,
+          1900,
+          2400,
+          1600,
+          1900,
+          1600
+        ]
+      },
+      {
+        "keyword": "best tattoo shops in denver",
+        "searchVolume": 1000,
+        "competition": 1,
+        "cpc": 3.09,
+        "difficulty": 0,
+        "trend": [
+          590,
+          720,
+          720,
+          1000,
+          1600,
+          1600,
+          1300,
+          1300,
+          1600,
+          1000,
+          1000,
+          1000
+        ]
+      },
+      {
+        "keyword": "fine line tattoo denver",
+        "searchVolume": 720,
+        "competition": 1,
+        "cpc": 2.54,
+        "difficulty": 0,
+        "trend": [
+          390,
+          480,
+          590,
+          590,
+          880,
+          880,
+          720,
+          720,
+          880,
+          720,
+          880,
+          590
+        ]
+      },
+      {
+        "keyword": "best tattoo artist in denver",
+        "searchVolume": 590,
+        "competition": 1,
+        "cpc": 2.47,
+        "difficulty": 0,
+        "trend": [
+          390,
+          390,
+          480,
+          590,
+          590,
+          480,
+          590,
+          480,
+          720,
+          590,
+          590,
+          590
+        ]
+      },
+      {
+        "keyword": "traditional tattoo denver",
+        "searchVolume": 70,
+        "competition": 0.67,
+        "cpc": 1.94,
+        "difficulty": 0,
+        "trend": [
+          40,
+          30,
+          50,
+          50,
+          90,
+          70,
+          90,
+          70,
+          70,
+          50,
+          40,
+          70
+        ]
+      },
+      {
+        "keyword": "top tattoo artists denver",
+        "searchVolume": 50,
+        "competition": 1,
+        "cpc": 1.75,
+        "difficulty": 0,
+        "trend": [
+          30,
+          40,
+          50,
+          40,
+          50,
+          70,
+          50,
+          70,
+          90,
+          70,
+          90,
+          40
+        ]
+      },
+      {
+        "keyword": "geometric tattoo denver",
+        "searchVolume": 30,
+        "competition": 1,
+        "cpc": 1.71,
+        "difficulty": 0,
+        "trend": [
+          30,
+          20,
+          20,
+          20,
+          30,
+          20,
+          20,
+          20,
+          40,
+          30,
+          30,
+          90
+        ]
+      },
+      {
+        "keyword": "japanese tattoo denver",
+        "searchVolume": 20,
+        "competition": 1,
+        "cpc": 1.17,
+        "difficulty": 0,
+        "trend": [
+          10,
+          40,
+          20,
+          20,
+          30,
+          30,
+          20,
+          30,
+          20,
+          20,
+          30,
+          20
+        ]
+      },
+      {
+        "keyword": "realism tattoo denver",
+        "searchVolume": 20,
+        "competition": 1,
+        "cpc": 2.65,
+        "difficulty": 0,
+        "trend": [
+          20,
+          20,
+          20,
+          40,
+          30,
+          20,
+          20,
+          30,
+          20,
+          30,
+          20,
+          30
+        ]
+      },
+      {
+        "keyword": "watercolor tattoo denver",
+        "searchVolume": 20,
+        "competition": 1,
+        "cpc": 2.25,
+        "difficulty": 0,
+        "trend": [
+          10,
+          20,
+          30,
+          20,
+          30,
+          20,
+          10,
+          20,
+          40,
+          20,
+          40,
+          40
+        ]
+      },
+      {
+        "keyword": "black and grey tattoo denver",
+        "searchVolume": 10,
+        "competition": 0.67,
+        "cpc": 2.28,
+        "difficulty": 0,
+        "trend": [
+          10,
+          0,
+          10,
+          10,
+          10,
+          40,
+          10,
+          10,
+          20,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "keyword": "minimalist tattoo denver",
+        "searchVolume": 10,
+        "competition": 1,
+        "cpc": 2.13,
+        "difficulty": 0,
+        "trend": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          10,
+          40,
+          20,
+          10,
+          20,
+          10
+        ]
+      },
+      {
+        "keyword": "tattoo artists near me denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "find tattoo artist denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo ideas denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo inspiration denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo portfolio denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      },
+      {
+        "keyword": "tattoo designs denver",
+        "searchVolume": 0,
+        "competition": 0,
+        "cpc": 0,
+        "difficulty": 0,
+        "trend": []
+      }
+    ],
+    "topCompetitors": [
+      {
+        "domain": "app.inkzup.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.cleopatraink.com",
+        "position": 1,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "brand.page",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.instagram.com",
+        "position": 2,
+        "type": "social",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.certifiedtattoo.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "boundbydesign.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.ikonikinktattoo.com",
+        "position": 2,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.vagaro.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "www.endlessinktattoo.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      },
+      {
+        "domain": "dedicationtattoo.com",
+        "position": 3,
+        "type": "shop",
+        "domainRank": 0,
+        "etv": 0
+      }
+    ],
+    "opportunityScore": 74,
+    "insights": [
+      "🔥 High search demand: 259,740 monthly searches",
+      "✅ Easy to rank: Average keyword difficulty 0/100",
+      "💡 Visual search opportunity: Low competition on inspiration/portfolio queries",
+      "🎨 Style-specific demand: 1 high-volume style queries",
+      "📈 Growing market: 15 keywords trending up"
+    ],
+    "recommendation": "high"
+  }
+]
