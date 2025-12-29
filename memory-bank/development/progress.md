@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-29
+Last-Updated: 2025-12-30
 Maintainer: RB
-Status: Phase 3 Complete ✅ (Ready for Testing), Phase 4 Infrastructure Ready ✅
+Status: Phase 3 Complete ✅, Phase 4 Production Complete ✅ (1,257 embeddings)
 ---
 
 # Progress Log: Tattoo Artist Discovery Platform
@@ -211,6 +211,69 @@ After initial infrastructure setup, comprehensive code review identified and fix
 6. **Monitoring catches setup mistakes early:**
    - First run used inline classification (user caught it immediately)
    - Active monitoring during first ~10 artists prevents wasting 90+ minutes
+
+### Phase 4 Production: CLIP Embedding Generation (Dec 30, 2025)
+
+**Status:** ✅ COMPLETE - All 1,257 images have embeddings
+
+**Production Results:**
+- Total images processed: 1,257/1,257 (100%)
+- Model: OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - 768 dimensions
+- GPU: Modal.com A10G (~$0.60/hour, billed per second)
+- Processing time: ~2-3 hours total
+- Success rate: 100% (0 errors)
+- Cost: ~$1.50-2.00 for full run
+
+**Lessons Learned:**
+
+1. **Modal timeout architecture is complex:**
+   - Container lifetime timeout (7200s) ≠ remote method timeout (300s)
+   - Remote method timeout is HARD LIMIT, cannot be overridden with decorators
+   - Cumulative timeout: Multiple `.remote()` calls add up toward 300s limit
+   - Solution: Process in smaller chunks (2 batches × 50 images = ~200-250s)
+
+2. **Optimal batch sizing requires understanding all constraints:**
+   - GPU can handle 100+ images easily
+   - Network I/O takes ~30-60s per 50 images
+   - CLIP inference takes ~60-90s per 50 images
+   - Database writes take ~10-20s per 50 images
+   - Total: ~2-3 min per 50-image batch (safe margin under 5-min timeout)
+
+3. **Resume capability is critical for long-running jobs:**
+   - Query `WHERE embedding IS NULL AND status='pending'` enables automatic resume
+   - Can Ctrl+C and restart without losing progress
+   - Idempotent by design (skips already-processed images)
+   - Processed 1,257 images across ~26 separate runs without issues
+
+4. **Status workflow prevents incomplete data in production:**
+   - Upload with `status='pending'` (not searchable yet)
+   - Generate embedding → set `status='active'` (now searchable)
+   - Prevents race conditions where users search before embeddings exist
+   - Supports incremental updates (only new images need embeddings)
+
+5. **Infrastructure code requires iteration:**
+   - Initial attempt: Used wrong column name (`image_url` vs `storage_original_path`)
+   - Second attempt: Used wrong bucket name (`portfolio` vs `portfolio-images`)
+   - Third attempt: Hit timeout with 100 images per batch
+   - Fourth attempt: Success with 50 images, 2 batches per run
+   - Importance of testing with small batches before full production run
+
+6. **Modal.com is cost-effective but has learning curve:**
+   - A10G GPU is fast and cheap (~$0.60/hour, billed per second)
+   - Timeout constraints require architectural understanding
+   - Container caching makes subsequent runs faster (~85s build time cached)
+   - Secret management works well (Supabase credentials never exposed)
+
+**Schema Changes:**
+- Migration `20251230_001_add_pending_status.sql` - Added 'pending' to status enum
+- Updated `process-and-upload.ts` to insert with `status='pending'`
+- Updated `modal_clip_embeddings.py` to set `status='active'` after success
+
+**Next Steps:**
+1. Create vector index (IVFFlat or HNSW)
+2. Test search performance (target: <500ms)
+3. Verify search quality (target: 70%+ relevance)
+4. Deploy Modal functions for production search
 
 ### Phase 2: Artist Discovery (Dec 29, 2025 - In Progress)
 

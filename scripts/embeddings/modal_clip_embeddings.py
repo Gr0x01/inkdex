@@ -45,7 +45,7 @@ image = (
     gpu="A10G",  # Single A10G GPU (~$0.60/hour, billed per second)
     image=image,
     secrets=[modal.Secret.from_name("supabase")],
-    timeout=3600,  # 1 hour max
+    timeout=7200,  # 2 hour max for full batch processing
 )
 class CLIPEmbedder:
     """CLIP embedding generator using OpenCLIP ViT-L-14"""
@@ -254,7 +254,7 @@ class CLIPEmbedder:
         # Fetch images from Supabase that don't have embeddings yet
         # Only fetch images with status='pending' to avoid race conditions
         query = self.supabase.table("portfolio_images").select(
-            "id, image_url, artist_id"
+            "id, storage_original_path, artist_id"
         ).is_("embedding", "null").eq("status", "pending").limit(batch_size).offset(offset)
 
         # Optional city filter (join with artists table)
@@ -279,19 +279,24 @@ class CLIPEmbedder:
 
         for img_data in images:
             try:
+                # Construct public URL from storage path
+                storage_path = img_data["storage_original_path"]
+                supabase_url = os.environ["SUPABASE_URL"]
+                public_url = f"{supabase_url}/storage/v1/object/public/portfolio-images/{storage_path}"
+
                 # Generate embedding
-                embedding = self.generate_embedding.local(img_data["image_url"])
+                embedding = self.generate_embedding.local(public_url)
 
                 results.append({
                     "id": img_data["id"],
                     "embedding": embedding,
-                    "status": "processed"
+                    "status": "active"  # Mark as active once embedding is generated
                 })
 
             except Exception as e:
                 error_info = {
                     "image_id": img_data["id"],
-                    "image_url": img_data["image_url"],
+                    "storage_path": img_data["storage_original_path"],
                     "error_type": type(e).__name__,
                     "error_message": str(e),
                     "traceback": traceback.format_exc()[-500:]  # Last 500 chars
@@ -327,7 +332,7 @@ class CLIPEmbedder:
                     "error_message": f"Failed to store embedding: {str(e)}"
                 })
 
-        processed_count = len([r for r in results if r.get("status") == "processed"])
+        processed_count = len([r for r in results if r.get("status") == "active"])
 
         return {
             "processed": processed_count,
@@ -398,7 +403,8 @@ def generate_embeddings_batch(
     print(f"\n🎉 Embedding generation complete!")
     print(f"   Total processed: {total_processed}")
     print(f"   Total errors: {total_errors}")
-    print(f"   Success rate: {(total_processed / (total_processed + total_errors) * 100):.1f}%")
+    if total_processed + total_errors > 0:
+        print(f"   Success rate: {(total_processed / (total_processed + total_errors) * 100):.1f}%")
 
 
 @app.function(

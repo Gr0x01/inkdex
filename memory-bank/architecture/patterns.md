@@ -484,6 +484,155 @@ export default async function ArtistPage({ params }: { params: { slug: string } 
 
 ---
 
+### 6. Batch Processing with Modal.com (GPU Workloads)
+
+**Purpose:** Process large batches of data on serverless GPUs with proper timeout handling and resume capability.
+
+**Context:** Used for CLIP embedding generation (1,257 images) - Pattern applicable to any GPU-intensive batch processing.
+
+**Pattern:**
+```python
+# scripts/embeddings/modal_clip_embeddings.py
+import modal
+
+app = modal.App("tattoo-clip-embeddings")
+
+@app.cls(
+    gpu="A10G",  # GPU type
+    image=image,  # Container image with dependencies
+    secrets=[modal.Secret.from_name("supabase")],
+    timeout=7200,  # Container lifetime (2 hours)
+)
+class CLIPEmbedder:
+    @modal.enter()
+    def enter(self):
+        """Initialize model once per container (cached across batches)"""
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(...)
+        self.supabase = create_client(...)
+
+    @modal.method()  # Remote method timeout: 300s (HARD LIMIT)
+    def process_batch_from_db(
+        self,
+        batch_size: int = 50,  # Tuned to stay under 300s timeout
+        offset: int = 0,
+    ) -> dict:
+        """
+        Process one batch of images.
+
+        Time breakdown (50 images):
+        - Image download: ~30-60s
+        - GPU inference: ~60-90s
+        - DB writes: ~10-20s
+        Total: ~2-3 min (safe margin under 5-min timeout)
+        """
+        # Fetch images WHERE embedding IS NULL AND status='pending'
+        query = self.supabase.table("portfolio_images").select(
+            "id, storage_original_path, artist_id"
+        ).is_("embedding", "null").eq("status", "pending").limit(batch_size).offset(offset)
+
+        images = query.execute().data
+        if not images:
+            return {"processed": 0, "message": "No images to process"}
+
+        # Process all images in batch
+        results = []
+        for img_data in images:
+            public_url = construct_storage_url(img_data["storage_original_path"])
+            embedding = self.generate_embedding.local(public_url)  # GPU inference
+
+            results.append({
+                "id": img_data["id"],
+                "embedding": embedding,
+                "status": "active"  # Mark as searchable after embedding
+            })
+
+        # Batch update database
+        for result in results:
+            self.supabase.table("portfolio_images").update(result).eq("id", result["id"]).execute()
+
+        return {"processed": len(results), "errors": 0}
+
+@app.function(image=image, secrets=[modal.Secret.from_name("supabase")])
+def generate_embeddings_batch(
+    batch_size: int = 50,
+    max_batches: int = 2,  # Process 2 batches per run (stays under 300s cumulative timeout)
+):
+    """
+    Process multiple batches with automatic resume.
+
+    Strategy:
+    - Each run processes 2 batches (100 images)
+    - Takes ~4-6 minutes total (under 300s cumulative timeout)
+    - Can restart to process remaining images
+    - Idempotent (skips already-processed images via WHERE clause)
+    """
+    embedder = CLIPEmbedder()
+
+    for batch_num in range(max_batches):
+        offset = batch_num * batch_size
+        result = embedder.process_batch_from_db.remote(batch_size=batch_size, offset=offset)
+
+        if result["processed"] == 0:
+            print("✅ All images processed!")
+            break
+```
+
+**Key Learnings:**
+
+1. **Modal Timeout Architecture:**
+   - **Container lifetime timeout** (7200s) ≠ **Remote method timeout** (300s)
+   - Remote method timeout is HARD LIMIT, cannot be overridden
+   - Cumulative timeout: Multiple `.remote()` calls add up toward 300s limit
+   - Solution: Limit batches per run (e.g., 2 batches × 50 images = ~200-250s)
+
+2. **Batch Size Optimization:**
+   - GPU can handle 100+ images easily
+   - Network I/O and DB writes are the bottleneck
+   - Test with small batches first to measure timing
+   - Leave 20-30% buffer for timeout safety
+
+3. **Resume Capability Pattern:**
+   ```sql
+   WHERE embedding IS NULL AND status='pending'
+   ```
+   - Enables automatic resume after interruption
+   - Idempotent by design
+   - Can Ctrl+C and restart without losing progress
+
+4. **Status Lifecycle for Incremental Updates:**
+   - Upload: `status='pending'` (not searchable yet)
+   - After embedding: `status='active'` (now searchable)
+   - Prevents race conditions where users search before embeddings exist
+   - Supports adding new images without re-processing existing ones
+
+5. **Cost Optimization:**
+   - Container caching reduces build time (~85s cached vs 3-5 min first build)
+   - Pay-per-second GPU billing (A10G: ~$0.60/hour)
+   - Batch processing minimizes cold starts
+   - Example: 1,257 images processed for ~$1.50-2.00 total
+
+**Usage Example:**
+```bash
+# Process all images in chunks (automatic resume)
+python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 50 --max-batches 2
+
+# Run multiple times until complete
+# Each run processes 100 images, script exits when no more images found
+```
+
+**When to Use This Pattern:**
+- GPU-intensive workloads (ML inference, image processing)
+- Large batch processing with potential timeouts
+- Need for fault tolerance and resume capability
+- Cost-sensitive workloads (pay-per-second billing)
+
+**Alternative Approaches:**
+- For small batches (<50 items): Direct API calls may be simpler
+- For real-time inference: Deploy Modal web endpoints instead
+- For non-GPU workloads: Consider serverless functions (Vercel, AWS Lambda)
+
+---
+
 ## Key Takeaway
 
 The DDD project has proven these patterns in production. **Don't reinvent the wheel—copy, adapt, and ship.**

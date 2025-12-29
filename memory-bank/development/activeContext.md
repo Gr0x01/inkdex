@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-29 (Updated: Phase 3 Production Complete)
+Last-Updated: 2025-12-30 (Updated: Phase 4 Production Complete)
 Maintainer: RB
-Status: Phase 3 PRODUCTION COMPLETE ✅, Phase 4 Ready ✅, Phase 5 Complete ✅
+Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Complete ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
@@ -26,8 +26,9 @@ Status: Phase 3 PRODUCTION COMPLETE ✅, Phase 4 Ready ✅, Phase 5 Complete ✅
 11. ✅ **COMPLETED (Phase 3):** Instagram scraping pipeline (Apify + parallel processing)
 12. ✅ **COMPLETED (Phase 3):** GPT-5-nano batch image classification (1,282 tattoo images)
 13. ✅ **COMPLETED (Phase 3):** Image processing & upload (Sharp + WebP + 100 concurrent uploads)
-14. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
-15. **NEXT:** Generate CLIP embeddings for visual search (Phase 4)
+14. ✅ **COMPLETED (Phase 4):** CLIP embedding generation (1,257 images, 768-dim vectors)
+15. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
+16. **NEXT:** Create vector index and test semantic search (Phase 4 finalization)
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -303,10 +304,69 @@ Status: Phase 3 PRODUCTION COMPLETE ✅, Phase 4 Ready ✅, Phase 5 Complete ✅
 - Parallel uploads: 100 concurrent uploads (leveraging 1 Gbps bandwidth)
 
 **Next Steps:**
-1. Generate CLIP embeddings: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 100`
-2. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
-3. Test search performance: `npx tsx scripts/embeddings/test-search.ts`
-4. Deploy search UI to production
+✅ Phase 3 Complete - Moving to Phase 4 embedding generation
+
+### Phase 4: CLIP Embedding Generation (✅ PRODUCTION COMPLETE - Dec 30, 2025)
+
+**Status:** ✅ All 1,257 images have embeddings, ready for vector index creation
+
+**Production Results (Dec 30, 2025):**
+- ✅ Generated embeddings for all 1,257 portfolio images (100%)
+- ✅ Model: OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - 768 dimensions
+- ✅ GPU: Modal.com A10G (~$0.60/hour, billed per second)
+- ✅ Image status workflow: `pending` → `active` after embedding
+- ✅ Total processing time: ~2-3 hours (with Modal 300s timeout limitations)
+- ✅ Success rate: 100% (1,257/1,257 embeddings generated, 0 errors)
+- ✅ All embeddings L2 normalized for cosine similarity search
+
+**Architecture & Workflow:**
+1. **Status Lifecycle:**
+   - Images uploaded with `status='pending'` (not searchable)
+   - Embedding generation queries `WHERE embedding IS NULL AND status='pending'`
+   - After embedding generated → `status='active'` (searchable)
+   - Supports incremental updates (only processes new images)
+
+2. **Database Schema Updates:**
+   - ✅ Migration `20251230_001_add_pending_status.sql` - Added 'pending' to status enum
+   - ✅ Modified upload script to use `status='pending'`
+   - ✅ Modified Modal script to set `status='active'` after success
+
+3. **Processing Strategy:**
+   - Batch size: 50 images per batch (Modal timeout constraint)
+   - Max batches per run: 2 batches (stays under 300s timeout)
+   - Automatic resume capability (idempotent, skips existing embeddings)
+   - Total: ~26 runs of 50 images to complete all 1,257
+
+**Performance Optimization:**
+- GPU processing: ~60-90s per 50 images (CLIP inference)
+- Image download: ~30-60s per 50 images (Supabase Storage → Modal)
+- Database writes: ~10-20s per 50 images (batch updates)
+- Total per batch: ~2-3 minutes (well under 5-minute timeout with buffer)
+
+**Modal Configuration:**
+- Container timeout: 7200s (2 hours max)
+- Remote method timeout: 300s (5 minutes, cannot be overridden)
+- Batching strategy: Process in chunks to avoid cumulative timeout
+- Cost: ~$1.50-2.00 total for full run (A10G GPU time)
+
+**Files Created/Modified:**
+- `scripts/embeddings/modal_clip_embeddings.py` - Fixed schema to use `storage_original_path` and `portfolio-images` bucket
+- `scripts/scraping/process-and-upload.ts` - Changed to insert with `status='pending'`
+- `supabase/migrations/20251230_001_add_pending_status.sql` - Added pending status support
+
+**Key Learnings:**
+1. **Modal timeout architecture**: Remote method calls have 300s hard timeout (separate from container lifetime)
+2. **Cumulative timeout**: Multiple batch calls accumulate toward 300s limit, need to process in smaller chunks
+3. **Optimal batch size**: 50 images/batch, 2 batches/run = ~200-250s total (safe margin)
+4. **Resume capability**: Automatic resume by querying `WHERE embedding IS NULL` enables fault tolerance
+5. **Status workflow**: `pending` → `active` lifecycle prevents incomplete images from appearing in search
+
+**Next Steps:**
+1. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+2. Test search performance: `npx tsx scripts/embeddings/test-search.ts`
+3. Verify search quality with real embeddings (target: <500ms query time, 70%+ relevance)
+4. Deploy Modal functions for production search
+5. Update frontend to use real embeddings (`NEXT_PUBLIC_MOCK_EMBEDDINGS=false`)
 
 ## Launch City Selection Results
 

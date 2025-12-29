@@ -187,7 +187,7 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
             post_caption: meta.caption || null,
             post_timestamp: meta.timestamp,
             likes_count: meta.likes,
-            status: 'active',
+            status: 'pending',  // Images start as pending until embeddings are generated
           });
 
         if (dbError) {
