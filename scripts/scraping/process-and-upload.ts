@@ -259,49 +259,62 @@ async function main() {
 
   console.log(`📂 Found ${artistDirs.length} artists to process\n`);
 
+  const CONCURRENT_UPLOADS = 100; // Process 100 artists in parallel
+  console.log(`🚀 Running ${CONCURRENT_UPLOADS} artists in parallel\n`);
+
   let totalProcessed = 0;
   let totalErrors = 0;
+  let completed = 0;
 
-  // Process each artist
-  for (let i = 0; i < artistDirs.length; i++) {
-    const artistId = artistDirs[i];
-    const artistDir = join(TEMP_DIR, artistId);
+  // Process artists in parallel batches
+  const processBatch = async (batch: string[]) => {
+    const promises = batch.map(async (artistId) => {
+      const artistDir = join(TEMP_DIR, artistId);
 
-    console.log(`[${i + 1}/${artistDirs.length}] Processing artist ${artistId}...`);
+      const { success, imagesProcessed, errors } = await processArtistImages(artistId, artistDir);
 
-    const { success, imagesProcessed, errors } = await processArtistImages(artistId, artistDir);
+      // Track progress
+      completed++;
+      const progress = ((completed / artistDirs.length) * 100).toFixed(1);
+      console.log(`📊 Progress: ${progress}% (${completed}/${artistDirs.length}) - ${imagesProcessed} images uploaded`);
 
-    totalProcessed += imagesProcessed;
-    totalErrors += errors.length;
-
-    if (errors.length > 0) {
-      console.log(`   ⚠️  ${errors.length} errors:`);
-      errors.forEach(e => console.log(`      - ${e}`));
-    }
-
-    console.log(`   ✅ Processed ${imagesProcessed} images\n`);
-
-    // Update scraping job
-    try {
-      const { error } = await supabase
-        .from('scraping_jobs')
-        .update({ images_scraped: imagesProcessed })
-        .eq('artist_id', artistId);
-
-      if (error) {
-        console.warn(`   ⚠️  Failed to update scraping_jobs: ${error.message}`);
+      if (errors.length > 0) {
+        console.log(`   ⚠️  ${artistId}: ${errors.length} errors`);
       }
-    } catch (error) {
-      // Non-critical error
-    }
 
-    // Clean up artist directory to free disk space
-    try {
-      rmSync(artistDir, { recursive: true });
-      console.log(`   🗑️  Cleaned up temp files`);
-    } catch (error: any) {
-      console.warn(`   ⚠️  Failed to clean up: ${error.message}`);
-    }
+      // Update scraping job
+      try {
+        await supabase
+          .from('scraping_jobs')
+          .update({ images_scraped: imagesProcessed })
+          .eq('artist_id', artistId);
+      } catch (error) {
+        // Non-critical error
+      }
+
+      // Clean up artist directory
+      try {
+        rmSync(artistDir, { recursive: true });
+      } catch (error: any) {
+        // Ignore cleanup errors
+      }
+
+      return { imagesProcessed, errors: errors.length };
+    });
+
+    const results = await Promise.all(promises);
+
+    // Aggregate results
+    results.forEach(({ imagesProcessed, errors }) => {
+      totalProcessed += imagesProcessed;
+      totalErrors += errors;
+    });
+  };
+
+  // Process in batches
+  for (let i = 0; i < artistDirs.length; i += CONCURRENT_UPLOADS) {
+    const batch = artistDirs.slice(i, i + CONCURRENT_UPLOADS);
+    await processBatch(batch);
   }
 
   // Summary

@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2025-12-29
+Last-Updated: 2025-12-29 (Updated: Parallelization guidance added)
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -537,6 +537,9 @@ vercel env pull             # Pull environment variables
 ---
 
 ## Development Best Practices
+
+### Parallelization & Batching
+**ALWAYS parallelize and batch operations by default. Serial execution is ONLY for initial testing (1-2 items to verify correctness), then immediately switch to parallel/batch for production runs.**
 
 ### Minimal First Implementation (KISS + YAGNI)
 1. **Ask**: "What is the smallest change that solves this?"

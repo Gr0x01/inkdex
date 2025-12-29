@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-29
+Last-Updated: 2025-12-29 (Updated: Phase 3 Production Complete)
 Maintainer: RB
-Status: Phase 3 Complete ✅, Phase 4 Ready ✅, Phase 5 REDESIGNED & Complete ✅
+Status: Phase 3 PRODUCTION COMPLETE ✅, Phase 4 Ready ✅, Phase 5 Complete ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
@@ -23,10 +23,11 @@ Status: Phase 3 Complete ✅, Phase 4 Ready ✅, Phase 5 REDESIGNED & Complete �
 8. ✅ **COMPLETED (Phase 2):** Shop website scraper (Puppeteer)
 9. ✅ **COMPLETED (Phase 2):** Austin discovery (204 artists - 102% of target, $3.46 cost)
 10. ✅ **COMPLETED (Phase 3):** Supabase Storage bucket setup (portfolio-images)
-11. ✅ **COMPLETED (Phase 3):** Instagram scraping pipeline (Apify + security hardening)
-12. ✅ **COMPLETED (Phase 3):** Image processing pipeline (Sharp + WebP thumbnails)
-13. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
-14. **NEXT:** Test scraping with 1-2 Austin artists, then full production run (204 artists)
+11. ✅ **COMPLETED (Phase 3):** Instagram scraping pipeline (Apify + parallel processing)
+12. ✅ **COMPLETED (Phase 3):** GPT-5-nano batch image classification (1,282 tattoo images)
+13. ✅ **COMPLETED (Phase 3):** Image processing & upload (Sharp + WebP + 100 concurrent uploads)
+14. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
+15. **NEXT:** Generate CLIP embeddings for visual search (Phase 4)
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -288,12 +289,24 @@ Status: Phase 3 Complete ✅, Phase 4 Ready ✅, Phase 5 REDESIGNED & Complete �
 - **Storage Savings:** ~1.8 GB (no non-tattoo uploads)
 - **Processing Time:** ~10-15 minutes (with Tier 5 parallel processing)
 
+**Production Run Complete (Dec 29, 2025):**
+- ✅ Scraped 188 Austin artists (16 bad handles deleted from database)
+- ✅ Downloaded 1,692 Instagram images with 8-20 parallel Apify calls
+- ✅ GPT-5-nano classification: 1,282 tattoo images kept (75.8% pass rate)
+- ✅ Uploaded 1,106 images to Supabase Storage with 100 concurrent uploads (~2-3 min)
+- ✅ Database cleanup: Deleted 16 failed artist records with invalid handles
+- ✅ Total pipeline time: ~90 minutes (scraping + classification + upload)
+
+**Performance Optimizations Applied:**
+- Parallel scraping: 8 concurrent Apify calls (balanced for rate limits)
+- Batch classification: All 1,692 images classified in single GPT-5-nano Flex tier batch
+- Parallel uploads: 100 concurrent uploads (leveraging 1 Gbps bandwidth)
+
 **Next Steps:**
-1. ✅ Commit GPT-5-nano implementation
-2. Remove TEST_LIMIT for full production run (change `TEST_LIMIT = 2` → `TEST_LIMIT = None`)
-3. Run full production scrape: `python3 scripts/scraping/apify-scraper.py`
-4. Process images: `npm run process-images`
-5. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+1. Generate CLIP embeddings: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 100`
+2. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+3. Test search performance: `npx tsx scripts/embeddings/test-search.ts`
+4. Deploy search UI to production
 
 ## Launch City Selection Results
 

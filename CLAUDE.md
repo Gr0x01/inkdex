@@ -122,6 +122,7 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
 - Monitor and measure performance impact of changes
 - Optimize for user experience and system efficiency
 - Document performance considerations
+- **ALWAYS parallelize and batch operations by default. Serial execution is ONLY for initial testing, then immediately switch to parallel/batch for production runs.**
 
 ## PROCESS REMINDERS
 

@@ -17,6 +17,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from apify_client import ApifyClient
 from openai import AsyncOpenAI
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 # Load environment variables
 load_dotenv('.env.local')
@@ -33,6 +35,10 @@ MAX_POSTS = 50
 
 # GPT-5-nano classification settings
 BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
+
+# Parallel scraping settings
+CONCURRENT_APIFY_CALLS = 8  # Run 8 in parallel (balance speed vs memory)
+db_lock = Lock()  # Thread-safe database operations
 
 def validate_instagram_handle(handle: str) -> bool:
     """Validate Instagram handle format"""
@@ -88,38 +94,40 @@ def get_pending_artists(conn, limit=None):
     return artists
 
 def create_scraping_job(conn, artist_id):
-    """Create a scraping job entry"""
-    cursor = conn.cursor()
+    """Create a scraping job entry (thread-safe)"""
+    with db_lock:
+        cursor = conn.cursor()
 
-    query = """
-        INSERT INTO scraping_jobs (artist_id, status, started_at)
-        VALUES (%s, 'running', NOW())
-        RETURNING id
-    """
+        query = """
+            INSERT INTO scraping_jobs (artist_id, status, started_at)
+            VALUES (%s, 'running', NOW())
+            RETURNING id
+        """
 
-    cursor.execute(query, (artist_id,))
-    job_id = cursor.fetchone()[0]
-    conn.commit()
-    cursor.close()
+        cursor.execute(query, (artist_id,))
+        job_id = cursor.fetchone()[0]
+        conn.commit()
+        cursor.close()
 
-    return job_id
+        return job_id
 
 def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=None):
-    """Update scraping job status"""
-    cursor = conn.cursor()
+    """Update scraping job status (thread-safe)"""
+    with db_lock:
+        cursor = conn.cursor()
 
-    query = """
-        UPDATE scraping_jobs
-        SET status = %s,
-            images_scraped = %s,
-            error_message = %s,
-            completed_at = CASE WHEN %s = 'completed' THEN NOW() ELSE completed_at END
-        WHERE id = %s
-    """
+        query = """
+            UPDATE scraping_jobs
+            SET status = %s,
+                images_scraped = %s,
+                error_message = %s,
+                completed_at = CASE WHEN %s = 'completed' THEN NOW() ELSE completed_at END
+            WHERE id = %s
+        """
 
-    cursor.execute(query, (status, images_scraped, error_message, status, job_id))
-    conn.commit()
-    cursor.close()
+        cursor.execute(query, (status, images_scraped, error_message, status, job_id))
+        conn.commit()
+        cursor.close()
 
 async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> bool:
     """
@@ -294,46 +302,62 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
 
         print(f"   ✅ Downloaded {len(downloaded_images)} images")
 
-        # PHASE 2: Classify all images in parallel using GPT-5-nano Flex
-        print(f"   🤖 Classifying images with GPT-5-nano (Flex tier)...")
-        image_paths = [img['temp_path'] for img in downloaded_images]
-        classifications = asyncio.run(batch_classify_images(image_paths))
-
-        # PHASE 3: Filter and finalize based on classifications
-        print(f"   🗂️  Filtering results...")
+        # PHASE 2: Save all images (NO inline classification - will batch classify later)
+        print(f"   💾 Saving all images (classification will happen in batch later)...")
         metadata_list = []
-        tattoo_count = 0
-        skipped_count = 0
 
-        for img_info, is_tattoo in zip(downloaded_images, classifications):
+        for img_info in downloaded_images:
             temp_path = img_info['temp_path']
             post_id = img_info['post_id']
 
-            if is_tattoo:
-                # Rename temp → final (it's a tattoo!)
-                final_path = artist_dir / f"{post_id}.jpg"
-                temp_path.rename(final_path)
-                metadata_list.append(img_info['metadata'])
-                tattoo_count += 1
-            else:
-                # Delete non-tattoo image
-                temp_path.unlink()
-                skipped_count += 1
+            # Rename temp → final (save everything for now)
+            final_path = artist_dir / f"{post_id}.jpg"
+            temp_path.rename(final_path)
+            metadata_list.append(img_info['metadata'])
 
-        # Save consolidated metadata (only tattoos)
+        # Save consolidated metadata (all images)
         metadata_file = artist_dir / 'metadata.json'
         with open(metadata_file, 'w') as f:
             json.dump(metadata_list, f, indent=2)
 
-        print(f"   ✅ Saved {tattoo_count} tattoo images")
-        if skipped_count > 0:
-            print(f"   ⏭️  Skipped {skipped_count} non-tattoo images")
-        print(f"   📊 Total processed: {len(downloaded_images)} posts")
+        print(f"   ✅ Saved {len(downloaded_images)} images")
+        print(f"   📊 Total downloaded: {len(downloaded_images)} posts")
 
-        return tattoo_count, None
+        return len(downloaded_images), None
 
     except Exception as e:
         return 0, str(e)
+
+def process_single_artist(artist_data, apify_client, conn):
+    """Process a single artist (thread-safe wrapper)"""
+    artist_id, instagram_handle, artist_name, index, total = artist_data
+
+    try:
+        print(f"[{index}/{total}] {artist_name} (@{instagram_handle})")
+
+        # Create scraping job
+        job_id = create_scraping_job(conn, artist_id)
+
+        try:
+            # Scrape profile
+            images_scraped, error = scrape_artist_profile(apify_client, instagram_handle, artist_id)
+
+            if error:
+                print(f"   ⚠️  Error: {error}")
+                update_scraping_job(conn, job_id, 'failed', images_scraped, error)
+                return {'success': False, 'artist_id': artist_id, 'images': 0}
+            else:
+                update_scraping_job(conn, job_id, 'completed', images_scraped)
+                return {'success': True, 'artist_id': artist_id, 'images': images_scraped}
+
+        except Exception as e:
+            print(f"   ❌ Unexpected error for {artist_name}: {e}")
+            update_scraping_job(conn, job_id, 'failed', 0, str(e))
+            return {'success': False, 'artist_id': artist_id, 'images': 0}
+
+    except Exception as e:
+        print(f"   ❌ Fatal error for {artist_name}: {e}")
+        return {'success': False, 'artist_id': artist_id, 'images': 0}
 
 def main():
     """Main scraping workflow"""
@@ -360,9 +384,9 @@ def main():
         conn = connect_db()
         print("✅ Connected\n")
 
-        # Get pending artists (LIMIT 2 FOR TESTING)
+        # Get pending artists (FULL PRODUCTION RUN)
         print("📋 Finding artists to scrape...")
-        TEST_LIMIT = 2  # Change to None for full production run
+        TEST_LIMIT = None  # Full production run - all 204 artists
         artists = get_pending_artists(conn, limit=TEST_LIMIT)
         if TEST_LIMIT:
             print(f"⚠️  TEST MODE: Limited to {TEST_LIMIT} artists")
@@ -372,42 +396,60 @@ def main():
             return
 
         print(f"Found {len(artists)} artists to scrape\n")
+        print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
 
-        # Process each artist
-        for index, (artist_id, instagram_handle, artist_name) in enumerate(artists, 1):
-            print(f"[{index}/{len(artists)}] {artist_name} (@{instagram_handle})")
+        # Prepare artist data with indices
+        artist_data_list = [
+            (artist_id, instagram_handle, artist_name, index, len(artists))
+            for index, (artist_id, instagram_handle, artist_name) in enumerate(artists, 1)
+        ]
 
-            # Create scraping job
-            job_id = create_scraping_job(conn, artist_id)
+        # Process artists in parallel using ThreadPoolExecutor
+        total_images = 0
+        total_errors = 0
+        completed_count = 0
 
-            try:
-                # Scrape profile
-                images_scraped, error = scrape_artist_profile(apify_client, instagram_handle, artist_id)
+        try:
+            with ThreadPoolExecutor(max_workers=CONCURRENT_APIFY_CALLS) as executor:
+                # Submit all tasks
+                futures = {
+                    executor.submit(process_single_artist, artist_data, apify_client, conn): artist_data
+                    for artist_data in artist_data_list
+                }
 
-                if error:
-                    print(f"   ⚠️  Error: {error}")
-                    update_scraping_job(conn, job_id, 'failed', images_scraped, error)
-                else:
-                    update_scraping_job(conn, job_id, 'completed', images_scraped)
+                # Process results as they complete
+                for future in as_completed(futures):
+                    try:
+                        result = future.result()
+                        completed_count += 1
 
-                # Progress
-                percentage = (index / len(artists)) * 100
-                print(f"   📊 Progress: {percentage:.1f}% ({index}/{len(artists)})\n")
+                        if result['success']:
+                            total_images += result['images']
+                        else:
+                            total_errors += 1
 
-            except KeyboardInterrupt:
-                print("\n\n⚠️  Interrupted by user")
-                update_scraping_job(conn, job_id, 'failed', 0, 'Interrupted by user')
-                break
-            except Exception as e:
-                print(f"   ❌ Unexpected error: {e}")
-                update_scraping_job(conn, job_id, 'failed', 0, str(e))
+                        # Progress update
+                        percentage = (completed_count / len(artists)) * 100
+                        print(f"   📊 Progress: {percentage:.1f}% ({completed_count}/{len(artists)}) - {total_images} images total\n")
+
+                    except Exception as e:
+                        print(f"   ❌ Future execution error: {e}")
+                        total_errors += 1
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Interrupted by user")
+            executor.shutdown(wait=False, cancel_futures=True)
 
         # Summary
         print("\n✅ Scraping session complete!")
         print(f"📁 Images saved to: {TEMP_DIR}")
+        print(f"📊 Total images downloaded: {total_images}")
+        print(f"✅ Successful: {completed_count - total_errors}")
+        print(f"⚠️  Errors: {total_errors}")
         print("\n📋 Next steps:")
-        print("   1. Process and upload images: npm run process-images")
-        print("   2. Validate results: npm run validate-scraped-images")
+        print("   1. Batch classify all images with GPT-5-nano: python3 scripts/scraping/batch-classify.py")
+        print("   2. Process and upload filtered images: npm run process-images")
+        print("   3. Validate results: npm run validate-scraped-images")
 
     except KeyboardInterrupt:
         print("\n\n⚠️  Interrupted by user")

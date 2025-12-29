@@ -182,6 +182,36 @@ After initial infrastructure setup, comprehensive code review identified and fix
 7. **Generated types prevent bugs:** Supabase-generated TypeScript types catch column name typos at compile time
 8. **Automatic triggers reduce errors:** updated_at triggers eliminate manual timestamp management
 
+### Phase 3 Production: Instagram Scraping Lessons Learned (Dec 29, 2025)
+
+1. **Parallelization is not one-size-fits-all:**
+   - Apify scraping: 20 concurrent hit memory limits (8GB Apify cap) → tuned to 8 concurrent
+   - GPT-5-nano: Best as single large batch (1,692 images) with Flex tier managing parallelization
+   - Supabase uploads: 100 concurrent worked perfectly with 1 Gbps bandwidth (no memory issues)
+
+2. **Batch processing architecture wins:**
+   - Initial mistake: Inline GPT-5-nano during download (5+ min per artist)
+   - Fixed: Download all → Batch classify → Upload filtered (2-3 min total for classification)
+   - Time savings: 90+ minutes → 2-3 minutes (30x faster)
+
+3. **Database cleanup is operational hygiene:**
+   - Bad data accumulates during discovery (invalid handles, typos, generic names)
+   - Delete immediately during production rather than carrying forward
+   - 16 artists deleted (8% of original 204) - all invalid handles or private accounts
+
+4. **User bandwidth matters for parallelization:**
+   - 1 Gbps upload enabled 100 concurrent uploads (limited only by processing, not network)
+   - With slower connection, would need to tune concurrency based on bandwidth tests
+
+5. **API rate limits vary by service:**
+   - Apify: Hit 8GB memory limit at 20 concurrent (service-side constraint)
+   - Supabase Storage: No apparent limit up to 100 concurrent uploads
+   - GPT-5-nano Flex: 30k RPM (5,000 image batches work fine)
+
+6. **Monitoring catches setup mistakes early:**
+   - First run used inline classification (user caught it immediately)
+   - Active monitoring during first ~10 artists prevents wasting 90+ minutes
+
 ### Phase 2: Artist Discovery (Dec 29, 2025 - In Progress)
 
 **Discovery Approach:**
@@ -313,12 +343,51 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - CLIP classification: ~$0.60 (doubles GPU cost) - rejected
 - GPT-5-nano: **$0.01** + 95%+ accuracy - **SELECTED** ✅
 
+**Production Run Complete (Dec 29, 2025):**
+
+**Final Results:**
+- ✅ **188 artists scraped** (16 bad handles deleted from 204 original)
+- ✅ **1,692 raw images** downloaded from Instagram
+- ✅ **1,282 tattoo images** kept after GPT-5-nano classification (75.8% pass rate)
+- ✅ **1,106 images uploaded** to Supabase Storage (100 concurrent uploads)
+- ✅ **Total pipeline time:** ~90 minutes (scraping + classification + upload)
+
+**Database Cleanup:**
+- Deleted 16 failed artist records with invalid Instagram handles:
+  - Invalid formats: `@gmail.com`, `@nathanhebert.com`, `@goldengoattattoo.` (trailing period)
+  - Generic/reserved: `@widget`, `@wsb`, `@sqs`, `@n05`, `@popular`
+  - Private/empty accounts: Various artists with no posts
+- Final Austin database: 188 verified artists with portfolio images
+
+**Performance Optimizations:**
+1. **Parallel Scraping:** 8 concurrent Apify calls (balanced for rate limits, avoiding memory errors)
+2. **Batch Classification:** All 1,692 images classified in single GPT-5-nano Flex tier batch (~2-3 min)
+3. **Parallel Uploads:** Upgraded from 20 → 100 concurrent uploads (leveraging 1 Gbps bandwidth)
+   - Upload time: ~2-3 minutes (vs 20-30 min sequential)
+   - Memory efficient: ~50-200MB for 100 concurrent buffers
+
+**Scripts Enhanced:**
+- `apify-scraper.py`: Added CONCURRENT_APIFY_CALLS parameter (originally 20, tuned to 8)
+- `batch-classify.py`: GPT-5-nano Flex tier with async parallel processing (5,000 batch size)
+- `process-and-upload.ts`: Upgraded to 100 concurrent uploads with Promise.all batching
+
+**Cost Breakdown:**
+- Apify scraping: ~$15-25 (188 artists × 50 posts each)
+- GPT-5-nano classification: ~$0.65 (1,692 images × $0.000155 Flex tier)
+- Supabase Storage: $0 (within 100GB free tier)
+- **Total Phase 3 cost:** ~$16-26
+
+**Ready for Phase 4:**
+- 1,106 clean tattoo images ready for CLIP embedding generation
+- Database optimized with partial index on `portfolio_images.status`
+- Modal.com infrastructure tested and ready
+- Expected Phase 4 cost: ~$0.30-0.60 for GPU processing
+
 **Next Steps:**
-1. Implement GPT-5-nano filtering in `apify-scraper.py` (~30 min)
-2. Test filtering accuracy with 2-3 artists
-3. Run full production scrape: `npm run scrape-instagram` (202 artists, 30-60 min)
-4. Expected: ~1,600-1,800 clean tattoo images (vs 2,500 unfiltered)
-5. Proceed to Phase 4 (CLIP embeddings on Modal.com)
+1. Generate CLIP embeddings: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch --batch-size 100`
+2. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
+3. Test search performance: `npx tsx scripts/embeddings/test-search.ts`
+4. Proceed to Phase 5 (Search UI already complete)
 
 ### Phase 4: Embedding Generation Infrastructure (✅ TESTED & WORKING - Dec 29, 2025)
 **Status**: Fully tested on Modal.com GPU, embeddings generating correctly, ready for production
@@ -403,3 +472,9 @@ After initial infrastructure setup, comprehensive code review identified and fix
 16. **NumPy version pinning:** Pin to <2 for torch 2.1.2 compatibility (prevents "module compiled with NumPy 1.x" errors)
 17. **Supabase library upgrade:** Use 2.15.0+ to fix httpx proxy parameter incompatibility in Modal containers
 18. **GPT-5-nano image filtering:** $0.01 per 2,500 images with 95%+ accuracy beats manual curation ($70-140) and caption filtering (60% accuracy)
+19. **Parallelization strategies:** Different optimal concurrency for different operations:
+    - Apify scraping: 8 concurrent (limited by API rate limits, memory constraints)
+    - GPT-5-nano classification: Single batch of 1,692 images (Flex tier handles parallelization)
+    - Supabase uploads: 100 concurrent (limited only by bandwidth, not memory)
+20. **Database cleanup during production:** Delete bad data immediately rather than accumulating failed records (deleted 16 invalid handles)
+21. **Batch processing over inline filtering:** Download → Batch classify → Filter saves time vs inline classification (2-3 min vs 90+ min)
