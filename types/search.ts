@@ -35,12 +35,14 @@ export interface SearchResult {
 }
 
 export interface SearchResultsResponse {
-  results: SearchResult[]
+  artists: SearchResult[]
   total: number
   page: number
   limit: number
+  queryTime: number
   queryType: SearchQueryType
   queryText?: string
+  city?: string | null
 }
 
 export interface SearchFormData {

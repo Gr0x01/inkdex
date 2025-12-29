@@ -50,7 +50,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     throw error
   }
 
-  const { results: artists, total, queryType, queryText } = results
+  const { artists, total, queryType, queryText } = results
   const hasResults = artists.length > 0
   const totalPages = Math.ceil(total / limit)
 
