@@ -35,6 +35,21 @@ export async function generateMetadata({
       title,
       description,
       type: 'website',
+      siteName: 'Tattoo Artist Discovery',
+      images: [
+        {
+          url: '/og-state-default.jpg', // TODO: Create state-specific OG image
+          width: 1200,
+          height: 630,
+          alt: `Tattoo Artists in ${state.name}`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/og-state-default.jpg'],
     },
     alternates: {
       canonical: `/${stateSlug}`,
@@ -95,7 +110,9 @@ export default async function StatePage({
                 </Link>
               </li>
               <li>/</li>
-              <li className="text-text-primary">{state.name}</li>
+              <li aria-current="page" className="text-text-primary">
+                {state.name}
+              </li>
             </ol>
           </nav>
 

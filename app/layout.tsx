@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
 import { SearchProvider } from '@/components/search/SearchProvider'
 import GlobalSearchModal from '@/components/search/GlobalSearchModal'
 import SearchFAB from '@/components/search/SearchFAB'
@@ -39,6 +40,26 @@ const crimsonPro = Crimson_Pro({
 export const metadata: Metadata = {
   title: 'Find Your Tattoo Artist by Vibe',
   description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
+  openGraph: {
+    title: 'Find Your Tattoo Artist by Vibe',
+    description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
+    type: 'website',
+    siteName: 'Tattoo Artist Discovery',
+    images: [
+      {
+        url: '/og-default.jpg', // TODO: Create homepage OG image
+        width: 1200,
+        height: 630,
+        alt: 'Tattoo Artist Discovery - Find artists by visual search',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Find Your Tattoo Artist by Vibe',
+    description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
+    images: ['/og-default.jpg'],
+  },
 }
 
 export const viewport = {
@@ -62,6 +83,7 @@ export default function RootLayout({
           <Navbar />
           <GlobalSearchModal />
           {children}
+          <Footer />
           <SearchFAB />
         </SearchProvider>
       </body>

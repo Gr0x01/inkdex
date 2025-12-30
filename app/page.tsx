@@ -2,6 +2,7 @@ import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
 import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
 import { getFeaturedArtists } from '@/lib/supabase/queries'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
+import { serializeJsonLd } from '@/lib/utils/seo'
 
 // Force dynamic rendering for homepage to allow Supabase queries with cookies
 export const dynamic = 'force-dynamic'
@@ -17,8 +18,33 @@ export default async function Home() {
     console.error('Failed to fetch featured artists:', error)
   }
 
+  // Organization schema for homepage
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Tattoo Artist Discovery',
+    description: 'Visual search platform for discovering tattoo artists. Find artists by uploading images or describing your style in natural language.',
+    url: '/',
+    logo: '/og-default.jpg', // TODO: Create actual logo file
+    sameAs: [
+      // TODO: Add social media profiles when available
+    ],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Customer Service',
+      availableLanguage: 'English',
+    },
+  }
+
   return (
-    <main className="min-h-screen bg-ink overflow-x-hidden">
+    <>
+      {/* Organization Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
+      />
+
+      <main className="min-h-screen bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION - Dark Editorial with Video
           ═══════════════════════════════════════════════════════════════ */}
@@ -168,6 +194,7 @@ export default async function Home() {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   )
 }

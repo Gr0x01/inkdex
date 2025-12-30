@@ -352,11 +352,29 @@ export async function getRelatedArtists(
     return []
   }
 
+  // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
+  let embeddingString: string
+  if (typeof firstImage.embedding === 'string') {
+    // Already a string, use as-is (strip brackets if present)
+    embeddingString = firstImage.embedding.replace(/^\[|\]$/g, '')
+  } else if (Array.isArray(firstImage.embedding)) {
+    // Array format, sanitize and join
+    embeddingString = firstImage.embedding.map((n: number) => {
+      if (!Number.isFinite(n)) {
+        throw new Error('Invalid embedding value in database')
+      }
+      return n.toString()
+    }).join(',')
+  } else {
+    console.error('Unexpected embedding format:', typeof firstImage.embedding)
+    return []
+  }
+
   // 2. Use RPC function to find similar artists in same city
   const { data: similarArtists, error: searchError } = await supabase.rpc(
     'search_artists_by_embedding',
     {
-      query_embedding: `[${firstImage.embedding.join(',')}]`,
+      query_embedding: `[${embeddingString}]`,
       match_threshold: 0.5, // Lower threshold for same-city artists
       match_count: limit + 1, // +1 to account for filtering out current artist
       city_filter: city,

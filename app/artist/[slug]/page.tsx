@@ -1,11 +1,14 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
+import { STATES, CITIES } from '@/lib/constants/cities'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
 import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
+import RelatedArtists from '@/components/artist/RelatedArtists'
 
 export async function generateStaticParams() {
   // Use service role client for build-time static generation
@@ -81,6 +84,12 @@ export default async function ArtistPage({
 
   if (!artist) notFound()
 
+  // Get state and city slugs for breadcrumb navigation
+  const state = STATES.find((s) => s.code === artist.state)
+  const city = CITIES.find((c) => c.name === artist.city)
+  const stateSlug = state?.slug || ''
+  const citySlug = city?.slug || ''
+
   // JSON-LD structured data (sanitized to prevent XSS)
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -116,6 +125,46 @@ export default async function ArtistPage({
       }
     : null
 
+  // Breadcrumb structured data (sanitized)
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: '/',
+      },
+      ...(state
+        ? [
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: sanitizeForJsonLd(state.name),
+              item: `/${stateSlug}`,
+            },
+          ]
+        : []),
+      ...(city
+        ? [
+            {
+              '@type': 'ListItem',
+              position: state ? 3 : 2,
+              name: sanitizeForJsonLd(city.name),
+              item: `/${stateSlug}/${citySlug}`,
+            },
+          ]
+        : []),
+      {
+        '@type': 'ListItem',
+        position: state && city ? 4 : state || city ? 3 : 2,
+        name: sanitizeForJsonLd(artist.name),
+        item: `/artist/${slug}`,
+      },
+    ],
+  }
+
   return (
     <>
       {/* JSON-LD Structured Data */}
@@ -129,9 +178,59 @@ export default async function ArtistPage({
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(shopJsonLd) }}
         />
       )}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
 
       {/* Editorial Magazine Layout */}
       <main className="min-h-screen bg-paper">
+        {/* Breadcrumbs */}
+        <div className="px-4 pt-6 sm:px-6 lg:px-8">
+          <nav className="font-body text-small text-text-secondary mb-4" aria-label="Breadcrumb">
+            <ol className="flex items-center gap-2 flex-wrap">
+              <li>
+                <Link
+                  href="/"
+                  className="hover:text-accent-primary transition-colors"
+                >
+                  Home
+                </Link>
+              </li>
+              {state && (
+                <>
+                  <li>/</li>
+                  <li>
+                    <Link
+                      href={`/${stateSlug}`}
+                      className="hover:text-accent-primary transition-colors"
+                    >
+                      {state.name}
+                    </Link>
+                  </li>
+                </>
+              )}
+              {city && (
+                <>
+                  <li>/</li>
+                  <li>
+                    <Link
+                      href={`/${stateSlug}/${citySlug}`}
+                      className="hover:text-accent-primary transition-colors"
+                    >
+                      {city.name}
+                    </Link>
+                  </li>
+                </>
+              )}
+              <li>/</li>
+              <li aria-current="page" className="text-text-primary">
+                {artist.name}
+              </li>
+            </ol>
+          </nav>
+        </div>
+
         <div className="flex flex-col lg:flex-row">
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
           <ArtistInfoColumn
@@ -145,6 +244,9 @@ export default async function ArtistPage({
               images={artist.portfolio_images || []}
               artistName={artist.name}
             />
+
+            {/* Related Artists Section */}
+            <RelatedArtists artistId={artist.id} city={artist.city} />
           </div>
         </div>
       </main>
