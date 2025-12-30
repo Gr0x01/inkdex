@@ -199,7 +199,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {hasResults ? (
           <>
             {/* Artist Grid */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 mb-12">
               {artists.map((artist) => (
                 <ArtistCard key={artist.artist_id} artist={artist} />
               ))}
