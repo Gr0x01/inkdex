@@ -36,24 +36,24 @@ export function getImageUrl(
  * @returns Best available image URL
  */
 export function getBestImageUrl(options: {
-  r2ThumbnailLarge?: string | null
-  r2ThumbnailMedium?: string | null
-  storageThumbnail?: string | null
+  storageThumb1280?: string | null
+  storageThumb640?: string | null
+  storageThumb320?: string | null
   profileImage?: string | null
   fallback?: string
 }): string {
   const {
-    r2ThumbnailLarge,
-    r2ThumbnailMedium,
-    storageThumbnail,
+    storageThumb1280,
+    storageThumb640,
+    storageThumb320,
     profileImage,
     fallback = '/placeholder-tattoo.jpg',
   } = options
 
   const path =
-    r2ThumbnailLarge ||
-    r2ThumbnailMedium ||
-    storageThumbnail ||
+    storageThumb1280 ||
+    storageThumb640 ||
+    storageThumb320 ||
     profileImage ||
     fallback
 
@@ -66,14 +66,14 @@ export function getBestImageUrl(options: {
  * @returns Image URL
  */
 export function getPortfolioImageUrl(image: {
-  r2_thumbnail_large?: string | null
-  r2_thumbnail_medium?: string | null
+  storage_thumb_1280?: string | null
   storage_thumb_640?: string | null
+  storage_thumb_320?: string | null
 }): string {
   return getBestImageUrl({
-    r2ThumbnailMedium: image.r2_thumbnail_medium,
-    r2ThumbnailLarge: image.r2_thumbnail_large,
-    storageThumbnail: image.storage_thumb_640,
+    storageThumb1280: image.storage_thumb_1280,
+    storageThumb640: image.storage_thumb_640,
+    storageThumb320: image.storage_thumb_320,
   })
 }
 
@@ -85,14 +85,14 @@ export function getPortfolioImageUrl(image: {
  */
 export function getArtistFeaturedImageUrl(
   featuredImage?: {
-    r2_thumbnail_large?: string | null
-    r2_thumbnail_medium?: string | null
+    storage_thumb_1280?: string | null
+    storage_thumb_640?: string | null
   } | null,
   profileImage?: string | null
 ): string {
   return getBestImageUrl({
-    r2ThumbnailLarge: featuredImage?.r2_thumbnail_large,
-    r2ThumbnailMedium: featuredImage?.r2_thumbnail_medium,
+    storageThumb1280: featuredImage?.storage_thumb_1280,
+    storageThumb640: featuredImage?.storage_thumb_640,
     profileImage,
   })
 }

@@ -124,8 +124,8 @@ export async function getArtistBySlug(slug: string) {
       portfolio_images (
         id,
         instagram_url,
-        r2_thumbnail_medium,
-        r2_thumbnail_large,
+        storage_thumb_640,
+        storage_thumb_1280,
         post_caption,
         post_timestamp,
         likes_count,

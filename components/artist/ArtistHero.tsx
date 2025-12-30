@@ -21,8 +21,8 @@ interface ArtistHeroProps {
     verification_status: string
   }
   featuredImage?: {
-    r2_thumbnail_large?: string | null
-    r2_thumbnail_medium?: string | null
+    storage_thumb_1280?: string | null
+    storage_thumb_640?: string | null
     instagram_url: string
   } | null
 }

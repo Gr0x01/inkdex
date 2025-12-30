@@ -7,10 +7,9 @@ import { getPortfolioImageUrl } from '@/lib/utils/images'
 interface PortfolioImage {
   id: string
   instagram_url: string
-  r2_thumbnail_medium?: string | null
-  r2_thumbnail_large?: string | null
-  post_caption?: string | null
   storage_thumb_640?: string | null
+  storage_thumb_1280?: string | null
+  post_caption?: string | null
 }
 
 interface PortfolioGridProps {
