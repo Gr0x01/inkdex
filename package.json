@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "analyze-cities": "tsx scripts/city-analysis/analyze-markets.ts",
     "discover-artists": "tsx scripts/discovery/tavily-artist-discovery-v2.ts",
@@ -46,15 +46,19 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
     "@types/node": "^20.10.6",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
     "autoprefixer": "^10.4.16",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.1",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.51.0"
   }
 }

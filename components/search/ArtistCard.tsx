@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { SearchResult } from '@/types/search'
-import { FEATURED_LIKES_THRESHOLD } from '@/lib/utils/featured'
+import { FEATURED_FOLLOWER_THRESHOLD } from '@/lib/utils/featured'
 
 interface ArtistCardProps {
   artist: SearchResult
@@ -18,11 +18,11 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     instagram_url,
     matching_images,
     similarity,
-    max_likes,
+    follower_count,
   } = artist
 
-  // Check if artist is featured (has posts with >10k likes)
-  const isFeatured = max_likes !== undefined && max_likes >= FEATURED_LIKES_THRESHOLD
+  // Check if artist is featured (has 50k+ followers)
+  const isFeatured = follower_count !== null && follower_count !== undefined && follower_count >= FEATURED_FOLLOWER_THRESHOLD
 
   // All available images
   const allImages = (matching_images || []).filter(img => img.url && img.instagramUrl)

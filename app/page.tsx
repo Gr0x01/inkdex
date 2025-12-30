@@ -4,6 +4,9 @@ import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
 import { getFeaturedImages, getFeaturedArtists } from '@/lib/supabase/queries'
 import type { FeaturedImage, FeaturedArtist } from '@/lib/mock/featured-data'
 
+// Force dynamic rendering for homepage to allow Supabase queries with cookies
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   // Fetch featured content (with fallback to empty arrays)
   let featuredImages: FeaturedImage[] = []
@@ -16,7 +19,8 @@ export default async function Home() {
   }
 
   try {
-    featuredArtists = await getFeaturedArtists('Austin', 12) as FeaturedArtist[]
+    // Query uses lowercase city slug, but we pass capitalized name to component
+    featuredArtists = await getFeaturedArtists('austin', 12) as FeaturedArtist[]
   } catch (error) {
     console.error('Failed to fetch featured artists:', error)
   }

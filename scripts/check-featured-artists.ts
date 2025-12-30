@@ -1,75 +1,74 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 import { resolve } from 'path';
-import { createClient } from '@supabase/supabase-js';
 
-// Load environment variables before anything else
-dotenv.config({ path: resolve(process.cwd(), '.env.local') });
+// Load environment variables first
+config({ path: resolve(process.cwd(), '.env.local') });
+
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types/database.types';
+import { isArtistFeatured, FEATURED_FOLLOWER_THRESHOLD } from '../lib/utils/featured';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-async function checkFeaturedArtists() {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing Supabase environment variables');
+  process.exit(1);
+}
 
-  // Get all artists with their max likes count
+const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
+
+async function checkFeaturedArtists() {
+  console.log(`🎯 Featured Artist Threshold: ${FEATURED_FOLLOWER_THRESHOLD.toLocaleString()} followers\n`);
+
   const { data: artists, error } = await supabase
     .from('artists')
-    .select(`
-      id,
-      name,
-      instagram_handle,
-      city,
-      portfolio_images (
-        likes_count
-      )
-    `)
-    .order('name');
+    .select('name, instagram_handle, follower_count, city, state')
+    .gte('follower_count', FEATURED_FOLLOWER_THRESHOLD)
+    .order('follower_count', { ascending: false });
 
   if (error) {
-    console.error('Error fetching artists:', error);
+    console.error('❌ Error fetching artists:', error);
     return;
   }
 
-  // Calculate max likes for each artist
-  const artistsWithMaxLikes = artists
-    .map((artist: any) => {
-      const maxLikes = Math.max(
-        ...artist.portfolio_images.map((img: any) => img.likes_count || 0),
-        0
-      );
-      return {
-        name: artist.name,
-        instagram_handle: artist.instagram_handle,
-        city: artist.city,
-        maxLikes,
-        isFeatured: maxLikes >= 10000,
-      };
-    })
-    .sort((a, b) => b.maxLikes - a.maxLikes);
-
-  console.log('=== Featured Artists (>10k likes) ===\n');
-  const featured = artistsWithMaxLikes.filter((a) => a.isFeatured);
-
-  if (featured.length === 0) {
-    console.log('⚠️  No artists have posts with >10,000 likes');
-    console.log('\nTop 10 artists by max likes:');
-    artistsWithMaxLikes.slice(0, 10).forEach((artist, i) => {
-      console.log(
-        `${i + 1}. ${artist.name} (@${artist.instagram_handle}) - ${artist.city} - ${artist.maxLikes.toLocaleString()} likes`
-      );
-    });
-  } else {
-    console.log(`Found ${featured.length} featured artists:\n`);
-    featured.forEach((artist, i) => {
-      console.log(
-        `${i + 1}. ${artist.name} (@${artist.instagram_handle}) - ${artist.city} - ${artist.maxLikes.toLocaleString()} likes`
-      );
-    });
-
-    console.log('\n=== Summary ===');
-    console.log(`Total artists: ${artistsWithMaxLikes.length}`);
-    console.log(`Featured artists: ${featured.length} (${((featured.length / artistsWithMaxLikes.length) * 100).toFixed(1)}%)`);
+  if (!artists || artists.length === 0) {
+    console.log('⚠️  No featured artists found with the current threshold');
+    return;
   }
+
+  console.log(`✨ Featured Artists (${artists.length} total):\n`);
+  console.log('Rank | Followers | Name | Handle | Location');
+  console.log('-----|-----------|------|--------|----------');
+
+  artists.forEach((artist, index) => {
+    const followers = artist.follower_count?.toLocaleString() || 'N/A';
+    const name = artist.name || 'Unknown';
+    const handle = artist.instagram_handle || 'N/A';
+    const location = `${artist.city}, ${artist.state || 'N/A'}`;
+    const featured = isArtistFeatured(artist.follower_count);
+
+    console.log(
+      `${String(index + 1).padStart(4)} | ${followers.padStart(9)} | ${name.padEnd(25).substring(0, 25)} | @${handle.padEnd(20).substring(0, 20)} | ${location} ${featured ? '✓' : ''}`
+    );
+  });
+
+  // Get total count for percentage
+  const { count: totalCount } = await supabase
+    .from('artists')
+    .select('*', { count: 'exact', head: true });
+
+  console.log('\n📊 Summary:');
+  console.log(`Total artists: ${totalCount || 0}`);
+  console.log(`Featured artists: ${artists.length} (${totalCount ? ((artists.length / totalCount) * 100).toFixed(1) : '0'}%)`);
+
+  // Test the isArtistFeatured function
+  console.log('\n🧪 Testing isArtistFeatured() function:');
+  console.log(`   49,999 followers: ${isArtistFeatured(49999) ? '✓ Featured' : '✗ Not Featured'} (expected: Not Featured)`);
+  console.log(`   50,000 followers: ${isArtistFeatured(50000) ? '✓ Featured' : '✗ Not Featured'} (expected: Featured)`);
+  console.log(`   50,001 followers: ${isArtistFeatured(50001) ? '✓ Featured' : '✗ Not Featured'} (expected: Featured)`);
+  console.log(`   null followers:   ${isArtistFeatured(null) ? '✓ Featured' : '✗ Not Featured'} (expected: Not Featured)`);
+  console.log(`   undefined:        ${isArtistFeatured(undefined) ? '✓ Featured' : '✗ Not Featured'} (expected: Not Featured)`);
 }
 
 checkFeaturedArtists().catch(console.error);

@@ -236,9 +236,10 @@ export async function getFeaturedImages(limit: number = 30) {
 }
 
 /**
- * Get featured artists with portfolios for homepage grid
+ * Get featured artists (50k+ followers) with portfolios for homepage grid
  * @param city - City to filter by
  * @param limit - Number of artists to fetch (default 12)
+ * @returns Artists with 50k+ followers and at least 4 portfolio images
  */
 export async function getFeaturedArtists(city: string, limit: number = 12) {
   // Validate inputs
@@ -252,7 +253,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
 
   const supabase = await createClient()
 
-  // First, get artists with their image counts
+  // Get featured artists (50k+ followers) with their portfolio images
   const { data, error } = await supabase
     .from('artists')
     .select(`
@@ -261,16 +262,19 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
       slug,
       shop_name,
       verification_status,
+      follower_count,
       portfolio_images!inner (
         id,
         storage_thumb_640,
-        status
+        status,
+        likes_count
       )
     `)
     .eq('city', city)
+    .gte('follower_count', 50000)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
-    .order('verification_status', { ascending: false })
+    .order('follower_count', { ascending: false })
     .order('name', { ascending: true })
 
   if (error) {
@@ -289,6 +293,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
         slug: row.slug,
         shop_name: row.shop_name,
         verification_status: row.verification_status,
+        follower_count: row.follower_count,
         portfolio_images: [],
       })
     }
@@ -300,6 +305,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
       artist.portfolio_images.push({
         id: row.portfolio_images.id,
         url: publicUrl,
+        likes_count: row.portfolio_images.likes_count,
       })
     }
   })
@@ -456,6 +462,7 @@ export async function getCityArtists(
       verification_status,
       profile_image_url,
       instagram_handle,
+      follower_count,
       portfolio_images!inner (
         id,
         storage_thumb_640,

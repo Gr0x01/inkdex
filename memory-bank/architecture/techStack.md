@@ -70,10 +70,11 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 ## Development Tools
 
 ### Code Quality
-- **Linting**: ESLint 9+ (Next.js config)
-  - Config: Flat config format (eslint.config.mjs), enforce accessibility, no unused vars
-  - Run: `npm run lint` (currently has ESLint 9 compatibility issues with Next.js - to be resolved)
-  - Note: Type-check (`npm run type-check`) is primary quality gate
+- **Linting**: ESLint 9.39.2 (Flat config format - required for Next.js 16+)
+  - Config: `eslint.config.mjs` with TypeScript ESLint + Next.js plugin
+  - Run: `eslint .` (via `npm run lint`)
+  - Note: Next.js 16 removed `next lint` command - must use ESLint CLI directly
+  - Ignores: `.next/`, `node_modules/`, build artifacts
 - **Formatting**: Prettier (integrated with ESLint)
   - Config: 2-space indent, single quotes, trailing commas
   - Run: Auto-format on save (VSCode) or `npm run format`

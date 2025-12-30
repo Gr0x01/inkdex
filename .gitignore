@@ -79,3 +79,5 @@ docker-compose.override.yml
 # Local development
 .local/supabase/.temp/
 supabase/.temp/
+build-output.txt
+pre-upgrade-versions.txt
