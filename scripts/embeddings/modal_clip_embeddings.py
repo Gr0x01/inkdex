@@ -458,7 +458,8 @@ def generate_text_query_embedding(text: str):
     gpu="A10G",
     image=image,
     secrets=[modal.Secret.from_name("supabase")],
-    # No keep_warm - pay-per-use only (cold starts 5-10s, but free when idle)
+    scaledown_window=600,  # Keep container alive for 10 minutes after last request (Modal 1.0+)
+    # No keep_warm - only pay when actively used, not 24/7
 )
 class Model:
     @modal.enter()

@@ -3,6 +3,7 @@ import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
 import { getFeaturedArtists } from '@/lib/supabase/queries'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
 import { serializeJsonLd } from '@/lib/utils/seo'
+import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 
 // Force dynamic rendering for homepage to allow Supabase queries with cookies
 export const dynamic = 'force-dynamic'
@@ -43,6 +44,9 @@ export default async function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(organizationSchema) }}
       />
+
+      {/* Pre-warm Modal container for fast first search */}
+      <ModalWarmup />
 
       <main className="min-h-screen bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════
