@@ -41,14 +41,13 @@ export default function ArtistInfoColumn({
 
   // Calculate portfolio stats
   const portfolioCount = portfolioImages.length
-  const totalLikes = portfolioImages.reduce((sum, img) => sum + (img.likes_count || 0), 0)
 
   return (
     <div className="bg-paper relative">
       {/* Subtle grain texture overlay - reduced on mobile */}
       <div className="grain-overlay absolute inset-0 pointer-events-none opacity-20 sm:opacity-30" />
 
-      <div className="relative p-5 sm:p-6 lg:p-8 space-y-5 sm:space-y-6">
+      <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-5 sm:space-y-6">
         {/* Profile Image - Editorial Style */}
         {artist.profile_image_url && (
           <div className="relative">
@@ -137,15 +136,6 @@ export default function ArtistInfoColumn({
               </div>
             )}
           </div>
-
-          {/* Total Likes (if significant) */}
-          {totalLikes > 100 && (
-            <div className="text-center mt-3 pt-3 border-t border-gray-300">
-              <div className="font-body text-[0.875rem] text-gray-600">
-                <span className="font-[600] text-ink">{totalLikes.toLocaleString()}</span> total likes
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Featured badge */}

@@ -189,7 +189,7 @@ export default async function ArtistPage({
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
           <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-y-auto">
             {/* Breadcrumbs */}
-            <nav className="font-body text-small text-text-secondary p-4 sm:p-6 lg:pt-8 lg:px-8" aria-label="Breadcrumb">
+            <nav className="font-body text-small text-text-secondary px-4 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-3 lg:px-8 lg:pt-8 lg:pb-4" aria-label="Breadcrumb">
               <ol className="flex items-center gap-2 flex-wrap">
                 <li>
                   <Link
