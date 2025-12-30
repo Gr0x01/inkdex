@@ -41,7 +41,7 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
                 <img
                   src={image.url}
                   alt={`Tattoo work by ${image.artist_name}`}
-                  className="w-full h-full object-cover grayscale-hover"
+                  className="w-full h-full object-cover"
                   loading="lazy"
                 />
 

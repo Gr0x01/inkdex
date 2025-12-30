@@ -57,7 +57,7 @@ export default async function RelatedArtists({
                       alt={artist.name}
                       fill
                       sizes="(max-width: 768px) 240px, 25vw"
-                      className="object-cover grayscale-hover"
+                      className="object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-surface-mid">

@@ -117,7 +117,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               {/* Back Link */}
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 font-mono text-xs font-medium text-gray-600 hover:text-gold-deep transition-colors duration-fast group flex-shrink-0 uppercase tracking-wider"
+                className="inline-flex items-center gap-2 font-mono text-xs font-medium text-gray-600 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-wider"
               >
                 <svg
                   className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-fast"
@@ -154,7 +154,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     />
                   </svg>
                   <span className="truncate">
-                    Searched for: <span className="font-medium text-black-warm">&ldquo;{queryText}&rdquo;</span>
+                    Searched for: <span className="font-medium text-ink">&ldquo;{queryText}&rdquo;</span>
                   </span>
                 </div>
               )}
@@ -252,8 +252,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
                 {/* Page Indicator */}
                 <span className="font-body text-sm text-gray-600 px-4">
-                  Page <span className="text-black-warm font-medium">{currentPage}</span> of{' '}
-                  <span className="text-black-warm font-medium">{totalPages}</span>
+                  Page <span className="text-ink font-medium">{currentPage}</span> of{' '}
+                  <span className="text-ink font-medium">{totalPages}</span>
                 </span>
 
                 {/* Next Button */}
@@ -320,7 +320,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </svg>
             </div>
 
-            <h2 className="font-heading text-3xl font-bold text-black-warm mb-4">
+            <h2 className="font-heading text-3xl font-bold text-ink mb-4">
               No Artists Found
             </h2>
             <p className="font-body text-base text-gray-600 mb-8 leading-relaxed">

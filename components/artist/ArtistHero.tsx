@@ -47,20 +47,12 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
             fill
             priority
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover grayscale-hover"
-          />
-
-          {/* Electric blue glow overlay */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              boxShadow: 'inset 0 0 60px rgba(59, 130, 246, 0.15)',
-            }}
+            className="object-cover"
           />
         </div>
 
         {/* Right: Artist Info */}
-        <div className="flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 bg-bg-primary noise-overlay">
+        <div className="flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 bg-bg-primary">
           <div className="max-w-xl mx-auto w-full space-y-6">
             {/* Name & Verification */}
             <div>
@@ -70,7 +62,7 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
                 </h1>
                 {isVerified && (
                   <svg
-                    className="w-8 h-8 text-accent-primary flex-shrink-0"
+                    className="w-8 h-8 text-ink flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                     aria-label="Verified artist"
@@ -95,7 +87,7 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
             {/* Bio */}
             {displayBio && (
               <div className="space-y-2">
-                <p className="font-accent text-body leading-relaxed text-text-primary italic line-clamp-4">
+                <p className="font-body text-body leading-relaxed text-text-primary italic line-clamp-4">
                   {displayBio}
                 </p>
               </div>
@@ -121,7 +113,7 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
                   href={artist.instagram_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-primary glow inline-flex items-center justify-center gap-2 group"
+                  className="btn btn-primary inline-flex items-center justify-center gap-2 group"
                 >
                   <svg
                     className="w-5 h-5"

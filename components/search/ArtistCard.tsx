@@ -38,7 +38,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
   return (
     <Link
       href={`/artist/${artist_slug}`}
-      className="group block bg-white border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow duration-200"
+      className="group block bg-white border border-gray-200 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
     >
       {/* TOP: Hero Image (tap to rotate) */}
       {currentImage && (
@@ -51,7 +51,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
             alt={`${artist_name} portfolio`}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-[1.03] transition-transform duration-300"
           />
 
           {/* Image counter */}
@@ -66,7 +66,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
       {/* BOTTOM: Artist Info */}
       <div className="p-3">
         {instagramHandle && (
-          <h3 className="font-heading text-sm font-semibold text-black-warm mb-0.5">
+          <h3 className="font-heading text-sm font-semibold text-ink mb-0.5">
             @{instagramHandle}
           </h3>
         )}

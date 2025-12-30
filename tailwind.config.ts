@@ -8,75 +8,52 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Color System
+      // Color System - Paper & Ink
       colors: {
-        // Background colors
-        bg: {
-          primary: '#0a0a0a',
-          secondary: '#141414',
-          tertiary: '#1e1e1e',
+        // Base colors
+        paper: '#F8F7F5',
+        ink: '#1A1A1A',
+
+        // Grayscale (5 levels)
+        gray: {
+          100: '#F0EFEC',
+          300: '#D8D6D2',
+          500: '#8B8985',
+          700: '#4A4845',
+          900: '#2A2826',
         },
-        // Surface colors
-        surface: {
-          low: '#1e1e1e',
-          mid: '#282828',
-          high: '#323232',
-        },
-        // Text colors
-        text: {
-          primary: '#f5f5f5',
-          secondary: '#a8a8a8',
-          tertiary: '#888888', // Updated from #6b6b6b for WCAG AA compliance (4.68:1 contrast)
-          inverse: '#0a0a0a',
-        },
-        // Accent colors
-        accent: {
-          primary: '#3b82f6',
-          'primary-hover': '#2563eb',
-          'primary-active': '#1d4ed8',
-          secondary: '#f59e0b',
-          'secondary-hover': '#d97706',
-        },
-        // Gold colors
-        gold: {
-          vibrant: '#F59E0B',
-          deep: '#D97706',
-          dark: '#B45309',
-          pale: '#FEF3C7',
-        },
+
+        // Optional warm gray accent
+        'warm-gray': '#8B7355',
+
         // Status colors
         status: {
           success: '#10b981',
           error: '#ef4444',
           warning: '#f59e0b',
         },
-        // Borders
-        border: {
-          subtle: '#2a2a2a',
-          medium: '#3a3a3a',
-          strong: '#4a4a4a',
-        },
       },
 
       // Font Families
       fontFamily: {
-        display: ['var(--font-space-grotesk)', 'sans-serif'],
-        body: ['var(--font-jetbrains-mono)', 'monospace'],
-        accent: ['var(--font-crimson-pro)', 'serif'],
+        display: ['var(--font-playfair)', 'serif'],
+        heading: ['var(--font-libre-baskerville)', 'serif'], // CHANGED from Space Grotesk
+        body: ['var(--font-crimson-pro)', 'serif'],
+        mono: ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
       // Font Sizes (with line heights)
       fontSize: {
-        display: ['3.5rem', { lineHeight: '1.05', fontWeight: '900' }],
-        h1: ['2.5rem', { lineHeight: '1.1', fontWeight: '800' }],
+        display: ['3.5rem', { lineHeight: '0.95', fontWeight: '900' }],
+        h1: ['2.5rem', { lineHeight: '1.1', fontWeight: '700' }],
         h2: ['1.75rem', { lineHeight: '1.2', fontWeight: '700' }],
-        h3: ['1.25rem', { lineHeight: '1.3', fontWeight: '600' }],
-        body: ['0.9375rem', { lineHeight: '1.6', fontWeight: '400' }],
-        small: ['0.8125rem', { lineHeight: '1.5', fontWeight: '400' }],
-        tiny: ['0.6875rem', { lineHeight: '1.4', fontWeight: '500', letterSpacing: '0.05em' }],
+        h3: ['1.25rem', { lineHeight: '1.3', fontWeight: '700' }],
+        body: ['0.9375rem', { lineHeight: '1.8', fontWeight: '300' }], // Increased line-height
+        small: ['0.8125rem', { lineHeight: '1.5', fontWeight: '300' }],
+        tiny: ['0.6875rem', { lineHeight: '1.4', fontWeight: '200', letterSpacing: '0.05em' }],
       },
 
-      // Spacing (8px grid with extreme jumps)
+      // Spacing (8px grid)
       spacing: {
         '1': '0.5rem',   // 8px
         '2': '1rem',     // 16px
@@ -97,15 +74,12 @@ const config: Config = {
         full: '9999px',
       },
 
-      // Box Shadow (dramatic depth)
+      // Box Shadow - Minimal (reduced opacity)
       boxShadow: {
-        sm: '0 2px 8px rgba(0, 0, 0, 0.4)',
-        md: '0 4px 16px rgba(0, 0, 0, 0.5)',
-        lg: '0 8px 32px rgba(0, 0, 0, 0.6)',
-        xl: '0 16px 64px rgba(0, 0, 0, 0.7)',
-        // Glow effects
-        'glow-accent': '0 0 20px rgba(59, 130, 246, 0.3)',
-        'glow-accent-strong': '0 0 40px rgba(59, 130, 246, 0.5)',
+        sm: '0 1px 3px rgba(26, 26, 26, 0.08)',
+        md: '0 2px 6px rgba(26, 26, 26, 0.12)',
+        lg: '0 4px 12px rgba(26, 26, 26, 0.16)',
+        xl: '0 8px 24px rgba(26, 26, 26, 0.18)',
       },
 
       // Animation
@@ -119,13 +93,12 @@ const config: Config = {
         fast: '150ms',
         medium: '300ms',
         slow: '500ms',
-        dramatic: '800ms',
       },
 
       // Keyframe Animations
       keyframes: {
         'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '0%': { opacity: '0', transform: 'translateY(20px)' }, // Reduced from 40px
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'fade-in': {
@@ -135,10 +108,6 @@ const config: Config = {
         'scale-in': {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
-        },
-        'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.3)' },
-          '50%': { boxShadow: '0 0 40px rgba(59, 130, 246, 0.6)' },
         },
         'shimmer': {
           '0%': { backgroundPosition: '-1000px 0' },
@@ -150,16 +119,13 @@ const config: Config = {
         'fade-up': 'fade-up 0.5s ease-out',
         'fade-in': 'fade-in 0.3s ease-out',
         'scale-in': 'scale-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
       },
 
       // Background Images
       backgroundImage: {
-        'gradient-hero': 'linear-gradient(135deg, #0a0a0a 0%, #1e1e1e 50%, #141414 100%)',
-        'gradient-card': 'linear-gradient(180deg, rgba(10, 10, 10, 0) 0%, rgba(10, 10, 10, 0.8) 100%)',
-        'gradient-accent': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-        'noise': "url('/noise.png')",
+        'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))',
+        'dotted-pattern': 'radial-gradient(circle, #D8D6D2 1px, transparent 1px)',
       },
     },
   },

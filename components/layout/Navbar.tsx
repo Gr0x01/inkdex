@@ -6,7 +6,7 @@ import { useSearch } from '@/components/search/SearchProvider'
 
 /**
  * Global navigation header with Browse dropdown
- * Design: "SKIN & PAPER" editorial aesthetic
+ * Design: "PAPER & INK" minimal editorial aesthetic
  * Features: Desktop dropdown + accessible mobile menu + global search
  */
 export default function Navbar() {
@@ -14,13 +14,13 @@ export default function Navbar() {
   const { openSearch } = useSearch()
 
   return (
-    <header className="bg-white-warm border-b border-gray-300">
+    <header className="bg-paper border-b border-gray-300">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="font-display text-2xl md:text-3xl font-[900] text-black-warm group-hover:text-gold-deep transition-colors duration-medium">
-              SKIN & PAPER
+            <div className="font-display text-2xl md:text-3xl font-[900] text-ink group-hover:underline transition-all duration-medium">
+              PAPER & INK
             </div>
           </Link>
 
@@ -33,7 +33,7 @@ export default function Navbar() {
             {/* Search Button */}
             <button
               onClick={openSearch}
-              className="nav-link flex items-center gap-2 hover:text-gold-vibrant transition-colors"
+              className="nav-link flex items-center gap-2 hover:text-ink transition-colors"
               aria-label="Search"
             >
               <svg
@@ -97,7 +97,7 @@ export default function Navbar() {
             {/* Mobile Search Button */}
             <button
               onClick={openSearch}
-              className="cursor-pointer p-2 hover:bg-gold-pale rounded-lg transition-colors"
+              className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Search"
             >
               <svg
@@ -119,7 +119,7 @@ export default function Navbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="cursor-pointer p-2 hover:bg-gold-pale rounded-lg transition-colors"
+              className="cursor-pointer p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation"
@@ -151,7 +151,7 @@ export default function Navbar() {
         aria-label="Mobile navigation"
         aria-hidden={!isMobileMenuOpen}
       >
-        <div className="py-4 px-4 space-y-4 bg-white-warm">
+        <div className="py-4 px-4 space-y-4 bg-paper">
           <Link href="/" className="block nav-link" onClick={() => setIsMobileMenuOpen(false)}>
             Home
           </Link>

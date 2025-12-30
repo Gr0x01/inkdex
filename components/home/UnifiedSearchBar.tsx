@@ -152,7 +152,7 @@ export default function UnifiedSearchBar() {
               relative flex items-center gap-2 sm:gap-3
               bg-white rounded-full shadow-2xl
               transition-all duration-300
-              ${isDragging ? 'ring-4 ring-gold-vibrant/50 scale-[1.02]' : ''}
+              ${isDragging ? 'ring-4 ring-ink/50 scale-[1.01]' : ''}
               ${error ? 'ring-2 ring-red-500/50' : ''}
             `}
             onDrop={handleDrop}
@@ -166,7 +166,7 @@ export default function UnifiedSearchBar() {
                   <img
                     src={imagePreview}
                     alt="Reference"
-                    className="h-12 w-12 rounded-full object-cover ring-2 ring-gold-vibrant"
+                    className="h-12 w-12 rounded-full object-cover ring-2 ring-ink"
                   />
                   <button
                     type="button"
@@ -228,10 +228,10 @@ export default function UnifiedSearchBar() {
               disabled={!canSubmit}
               className={`
                 flex-shrink-0 mr-1.5 sm:mr-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-full font-mono text-xs sm:text-sm uppercase tracking-wider
-                transition-colors duration-200 min-w-[80px] sm:min-w-[100px] flex items-center justify-center
+                transition-all duration-200 min-w-[80px] sm:min-w-[100px] flex items-center justify-center
                 ${
                   canSubmit
-                    ? 'bg-gradient-to-r from-gold-vibrant to-gold-deep text-black hover:opacity-90 font-bold'
+                    ? 'bg-ink text-paper hover:opacity-90 hover:-translate-y-0.5 font-bold'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed font-semibold'
                 }
               `}
@@ -257,7 +257,7 @@ export default function UnifiedSearchBar() {
         {/* Drag Hint */}
         {isDragging && !isSubmitting && (
           <div className="mt-3 text-center">
-            <p className="text-sm text-gold-vibrant font-medium animate-pulse">Drop your image here</p>
+            <p className="text-sm text-ink font-medium animate-pulse">Drop your image here</p>
           </div>
         )}
       </form>

@@ -33,7 +33,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
             <img
               src={image.url}
               alt={`${artist.name}'s work ${index + 1}`}
-              className="w-full h-full object-cover grayscale-hover"
+              className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>

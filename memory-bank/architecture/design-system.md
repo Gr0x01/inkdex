@@ -1,22 +1,29 @@
-# SKIN & PAPER - Design System Documentation
+# PAPER & INK - Design System Documentation
 
-**Version**: 1.0
+**Version**: 2.0
 **Last Updated**: 2025-12-30
-**Design Philosophy**: Editorial Magazine × Street Culture Tattoo Discovery
+**Design Philosophy**: Editorial Minimal × Tattoo Artist Discovery
 
 ---
 
 ## 🎨 DESIGN VISION
 
 ### The Unforgettable Element
-**Torn Paper Transitions** + **Oversized Editorial Typography** + **Dual-Tone Rhythm** (white/black alternating sections)
+**Dotted Paper Texture** + **Serif Editorial Typography** + **Black & White Minimalism** (portfolio work takes center stage)
 
 ### Aesthetic Direction
-This isn't a tech platform—it's a premium tattoo culture magazine that happens to be interactive.
+This isn't a tech platform—it's a paper editorial magazine for tattoo culture that happens to be interactive.
 
-**Tone**: Editorial/Magazine-inspired with modern web polish
+**Tone**: Minimal editorial with refined restraint
 **Target User**: 22-35 year olds who communicate in Pinterest boards, not terminology
 **Brand Promise**: "Find Your Tattoo Artist by Vibe, Not Vocabulary"
+
+### Design Principles
+- **Paper as Background**: Near-white (#F8F7F5) textured background recedes to showcase portfolio work
+- **Ink as Accent**: Near-black (#1A1A1A) for text and UI elements - simple, bold, editorial
+- **Full-Color Portfolio**: All tattoo work displayed in full vibrant color immediately (no filters)
+- **Subtle Interactions**: Refined hover effects (4px lifts max), simple underlines, minimal shadows
+- **Traditional Serifs**: Libre Baskerville for headings, Crimson Pro for body - classic editorial feel
 
 ---
 
@@ -26,32 +33,33 @@ This isn't a tech platform—it's a premium tattoo culture magazine that happens
 
 **Display Font**: Playfair Display (900 weight)
 - Usage: Hero headlines, dramatic emphasis
-- Character: Editorial, timeless, dramatic
+- Character: Editorial, timeless, high-contrast serif
 - Example: "FIND YOUR ARTIST"
 
-**Heading Font**: Space Grotesk (700-800 weight)
-- Usage: Section headers, card titles
-- Character: Modern, geometric, bold
-- Example: Section headers, "How It Works"
+**Heading Font**: Libre Baskerville (700 weight) **[CHANGED in v2.0]**
+- Usage: Section headers, card titles, H1-H3
+- Character: Traditional, refined, classic editorial serif
+- Example: Section headers, "Similar Artists in Austin"
 
 **Body Font**: Crimson Pro (300-400 weight)
 - Usage: Paragraphs, descriptions, readable text
-- Character: Elegant, literary, readable
+- Character: Elegant, literary, highly readable
+- Line-height: 1.8 (increased for editorial spacing)
 - Example: Body copy, artist descriptions
 
-**Mono/Labels**: JetBrains Mono (100-200 weight)
+**Mono/Labels**: JetBrains Mono (200 weight)
 - Usage: Labels, metadata, technical info
-- Character: Technical contrast, lightweight
+- Character: Technical contrast, lightweight, uppercase
 - Example: "AUSTIN ARTISTS", "188 ARTISTS"
 
 ### Typography Scale
 
 ```css
 Display:  clamp(3rem, 6vw, 6rem)    / line-height: 0.95  / weight: 900
-H1:       clamp(2rem, 4vw, 4rem)    / line-height: 1.1   / weight: 800
+H1:       clamp(2rem, 4vw, 4rem)    / line-height: 1.1   / weight: 700
 H2:       clamp(1.5rem, 3vw, 2.5rem)/ line-height: 1.2   / weight: 700
-H3:       clamp(1.25rem, 2vw, 1.5rem)/ line-height: 1.3  / weight: 600
-Body:     17px (1.0625rem)          / line-height: 1.7   / weight: 300
+H3:       clamp(1.25rem, 2vw, 1.5rem)/ line-height: 1.3  / weight: 700
+Body:     17px (1.0625rem)          / line-height: 1.8   / weight: 300 [INCREASED]
 Small:    14px (0.875rem)           / line-height: 1.5   / weight: 300
 Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 ```
@@ -60,8 +68,8 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 
 ```css
 .font-display        → Playfair Display 900
-.font-heading        → Space Grotesk 800
-.font-body           → Crimson Pro 300
+.font-heading        → Libre Baskerville 700 [CHANGED]
+.font-body           → Crimson Pro 300, line-height: 1.8
 .font-body-medium    → Crimson Pro 400
 .font-mono           → JetBrains Mono 200, uppercase, 0.15em tracking
 
@@ -74,34 +82,33 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 
 ## 🎨 COLOR PALETTE
 
-### Base System - High Contrast Foundation
+### Base System - Paper & Ink **[COMPLETELY REVISED in v2.0]**
 
 ```css
-/* Pure Colors */
---white-pure: #FFFFFF
---white-warm: #FAFAF8    /* Primary background */
---black-pure: #000000
---black-warm: #0F0F0F    /* Primary dark background */
+/* Primary Colors */
+--paper-white: #F8F7F5    /* Near-white paper background */
+--ink-black: #1A1A1A      /* Near-black ink for text/UI */
 
-/* Grays (8 shades) */
---gray-100: #F5F5F3
---gray-200: #E5E5E0
---gray-300: #D0D0C8     /* Borders, dividers */
---gray-400: #A8A8A0
---gray-500: #808078     /* Secondary text */
---gray-600: #606058
---gray-700: #404038     /* Primary text on light */
---gray-800: #252520
---gray-900: #121210
+/* Grayscale (5 levels - simplified from 9) */
+--gray-100: #F0EFEC       /* Lightest gray (subtle backgrounds) */
+--gray-300: #D8D6D2       /* Light gray (borders, dividers) */
+--gray-500: #8B8985       /* Mid gray (secondary text) */
+--gray-700: #4A4845       /* Dark gray (primary text on light) */
+--gray-900: #2A2826       /* Darkest gray (emphasis) */
+
+/* Optional Accent */
+--warm-gray: #8B7355      /* Subtle warm gray (aged paper feel) */
 ```
 
-### Gold/Amber Accent - Prestige & Warmth
+### Removed Colors (v1.0 → v2.0)
 
 ```css
---gold-vibrant: #F59E0B  /* Primary accent, CTAs */
---gold-deep: #D97706     /* Hover states */
---gold-dark: #B45309     /* Active states */
---gold-pale: #FEF3C7     /* Background tint */
+/* ❌ REMOVED - No longer part of design system */
+--gold-vibrant: #F59E0B   /* Removed - too decorative */
+--gold-deep: #D97706      /* Removed - too decorative */
+--gold-dark: #B45309      /* Removed - too decorative */
+--gold-pale: #FEF3C7      /* Removed - too decorative */
+--accent-primary: #3b82f6 /* Removed - blue accent */
 ```
 
 ### Status Colors
@@ -109,15 +116,14 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 ```css
 --success: #10B981
 --error: #EF4444
---warning: #F59E0B
+--warning: #F59E0B  /* Functional only, not decorative */
 ```
 
 ### Semantic Tokens
 
 ```css
-.bg-light    → White warm background + dark text
-.bg-dark     → Black warm background + white text
-.bg-accent   → Gold pale background + dark text
+.bg-light    → Paper white background + dark text
+.bg-dark     → Ink black background + white text
 ```
 
 ---
@@ -148,7 +154,23 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 
 ## 🎭 VISUAL EFFECTS
 
-### 1. Torn Paper Edge Transitions
+### 1. Dotted Background Pattern **[NEW in v2.0]**
+
+**Purpose**: Global paper texture creates editorial magazine feel
+
+**Implementation**:
+```css
+body {
+  background: var(--paper-white);
+  background-image: radial-gradient(circle, var(--gray-300) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
+}
+```
+
+**Visual**: Subtle 1px dots on 24px grid - paper-like texture without overwhelming content
+
+### 2. Torn Paper Edge Transitions
 
 **Purpose**: Section dividers that evoke tactile print magazine aesthetic
 
@@ -165,7 +187,7 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 **Visual**: SVG path creates irregular torn paper effect
 **Color**: Inherits from `currentColor` (matches section background)
 
-### 2. Grain Texture Overlay
+### 3. Grain Texture Overlay
 
 **Purpose**: Subtle tactile feel, print-quality depth
 
@@ -175,28 +197,34 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 </section>
 ```
 
-**Details**: Fractal noise filter, 3% opacity, non-interactive overlay
+**Details**: Fractal noise filter, **0.015 opacity** (reduced from 0.03), non-interactive overlay
 
-### 3. Shadows - Editorial Drama
-
-```css
---shadow-sm:      0 2px 8px rgba(0,0,0,0.08)      /* Subtle lift */
---shadow-md:      0 4px 16px rgba(0,0,0,0.12)     /* Card default */
---shadow-lg:      0 12px 32px rgba(0,0,0,0.16)    /* Hover state */
---shadow-xl:      0 20px 60px rgba(0,0,0,0.24)    /* Modal, drawer */
---shadow-lifted:  0 30px 80px rgba(0,0,0,0.32)    /* Dramatic hover */
---shadow-gold:    0 8px 32px rgba(245,158,11,0.25)  /* Gold glow */
---shadow-gold-strong: 0 12px 48px rgba(245,158,11,0.4) /* CTA hover */
-```
-
-### 4. Hover Effects
+### 4. Shadows - Minimal Restraint **[REDUCED in v2.0]**
 
 ```css
-.lift-hover         → translateY(-8px) + shadow-lifted
-.scale-hover        → scale(1.02)
-.gold-glow-hover    → shadow-gold-strong
-.grayscale-hover    → grayscale(0.6) → grayscale(0) on hover
+--shadow-sm:  0 1px 3px rgba(26,26,26,0.08)     /* Subtle lift */
+--shadow-md:  0 2px 6px rgba(26,26,26,0.12)     /* Card default */
+--shadow-lg:  0 4px 12px rgba(26,26,26,0.16)    /* Hover state */
+--shadow-xl:  0 8px 24px rgba(26,26,26,0.18)    /* Modal, drawer */
+
+/* ❌ REMOVED from v1.0 */
+--shadow-lifted:  /* Was 0.32 opacity - too dramatic */
+--shadow-gold:    /* Removed - no gold accents */
+--shadow-gold-strong: /* Removed - no gold accents */
 ```
+
+### 5. Hover Effects **[SIMPLIFIED in v2.0]**
+
+```css
+.lift-hover         → translateY(-3px) + shadow-lg [REDUCED from -8px]
+.scale-hover        → scale(1.01) [REDUCED from 1.02]
+
+/* ❌ REMOVED from v1.0 */
+.gold-glow-hover    /* Removed - no gold effects */
+.grayscale-hover    /* Removed - images always full color */
+```
+
+**New Principle**: Subtle, refined interactions. Portfolio images display in full color always.
 
 ---
 
@@ -204,27 +232,28 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 
 ### Buttons
 
-#### Primary Button (Gold CTA)
+#### Primary Button (Black CTA) **[CHANGED in v2.0]**
 ```html
 <button class="btn btn-primary">Find Artists</button>
 ```
-- Gradient: gold-vibrant → gold-deep
-- Hover: Lift -2px + gold glow
-- Text: White, JetBrains Mono, uppercase, 0.15em tracking
+- Background: Solid ink black (#1A1A1A)
+- Text: Paper white
+- Hover: Lift -2px + subtle shadow
+- Text: JetBrains Mono, uppercase, 0.15em tracking
 
 #### Secondary Button (Outline)
 ```html
 <button class="btn btn-secondary">Learn More</button>
 ```
-- Border: 2px solid black-warm
-- Hover: Fill black-warm, white text
+- Border: 2px solid ink black
+- Hover: Fill ink black, white text
 
 #### Ghost Button (Subtle)
 ```html
 <button class="btn btn-ghost">Cancel</button>
 ```
 - Border: 1px gray
-- Hover: Gold border
+- Hover: Black border
 
 ### Cards
 
@@ -234,20 +263,20 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
   <!-- Content -->
 </div>
 ```
-- White background
-- 12px border-radius
-- Hover: Lift -8px + shadow-lifted
+- White background with 2px border (gray-300)
+- Hover: Lift -3px + black border **[REDUCED from -8px]**
 
-#### Artist Card
+#### Artist Card **[UPDATED in v2.0]**
 ```html
 <div class="artist-card">
-  <img class="artist-card-image" />
+  <img class="artist-card-image" /> <!-- NO grayscale filter -->
   <!-- Content -->
 </div>
 ```
-- Gold border appears on hover
-- Image scales 1.05x on hover
-- Dramatic lift animation
+- Images display in **full color always** (no grayscale filters)
+- Black border appears on hover (no gold)
+- Image scales 1.03x on hover (subtle)
+- Lift effect: -3px (refined)
 
 ### Inputs
 
@@ -256,16 +285,8 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 <input class="input" type="text" placeholder="Search..." />
 ```
 - 2px border (gray-300)
-- Focus: Gold border + gold shadow
+- Focus: Ink black border + subtle shadow (no gold)
 - Font: Crimson Pro 17px
-
-#### Textarea (Search)
-```html
-<textarea class="input" rows="3"></textarea>
-```
-- Same styling as text input
-- Italic placeholder text
-- Auto-resize functionality
 
 ### Section Labels
 
@@ -274,7 +295,7 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 ```
 - JetBrains Mono, 11px, uppercase
 - 0.2em letter-spacing
-- Decorative lines left/right (40% width)
+- Decorative lines left/right (40% width, gray-300)
 
 ---
 
@@ -294,15 +315,14 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 --duration-fast:      150ms   /* Hover, focus */
 --duration-medium:    300ms   /* Transitions, slides */
 --duration-slow:      500ms   /* Fades, complex */
---duration-dramatic:  800ms   /* Page load, hero */
 ```
 
-### Keyframe Animations
+### Keyframe Animations **[UPDATED in v2.0]**
 
 ```css
-.animate-fade-up      → Fade in from 40px below
+.animate-fade-up      → Fade in from 20px below [REDUCED from 40px]
 .animate-fade-in      → Simple opacity fade
-.animate-scale-in     → Scale from 0.9 to 1.0
+.animate-scale-in     → Scale from 0.95 to 1.0
 .animate-slide-up     → Slide from bottom
 ```
 
@@ -355,28 +375,28 @@ xl: 1280px  /* Wide desktop */
 ### Homepage Structure
 
 ```
-1. Hero Section (White bg, grain overlay)
+1. Hero Section (Paper bg, dotted texture, grain overlay)
    - Oversized headline (Playfair Display)
-   - Search bar (editorial card)
+   - Search bar (minimal black/white)
    - Stats bar (188 artists, 1.2K artworks, ATX)
 
-2. Visual Gallery Strip (Black bg, torn edge top)
+2. Visual Gallery Strip (Light bg, torn edge top)
    - Horizontal scroll
-   - Grayscale → color on hover
+   - Full color images (NO grayscale)
    - "AUSTIN ARTISTS" label
 
-3. Featured Artists Grid (White bg, torn edge top)
+3. Featured Artists Grid (Paper bg, torn edge top)
    - Masonry layout
-   - Artist cards with portfolio previews
+   - Artist cards with portfolio previews (full color)
 
-4. How It Works (Gold accent bg, torn edge top, grain)
+4. How It Works (Light bg, torn edge top, grain) [UPDATED]
    - 3 columns
-   - Large display numbers (01, 02, 03)
-   - CTA button
+   - Gray step numbers (NOT gold)
+   - Black CTA button
 
-5. Footer CTA (Black bg, torn edge top)
+5. Footer CTA (Ink bg, torn edge top)
    - Oversized display headline
-   - Gold gradient text accent
+   - Gray text accent (NOT gold gradient)
    - Social proof
    - Footer metadata
 ```
@@ -386,24 +406,28 @@ xl: 1280px  /* Wide desktop */
 ## ✅ ACCESSIBILITY GUIDELINES
 
 ### Color Contrast
-- Body text: WCAG AAA (7:1+ ratio)
-- Secondary text: WCAG AA (4.5:1+ ratio)
-- Interactive elements: Clear focus states
+
+- Body text: WCAG AAA (7:1+ ratio) - Ink on Paper
+- Secondary text: WCAG AA (4.5:1+ ratio) - Gray-700 on Paper
+- Interactive elements: Clear focus states (ink black)
 
 ### Focus States
+
 ```css
 *:focus-visible {
-  outline: 2px solid var(--gold-vibrant);
+  outline: 2px solid var(--ink-black); /* Changed from gold */
   outline-offset: 3px;
 }
 ```
 
 ### Keyboard Navigation
+
 - All interactive elements focusable
 - Logical tab order
 - Skip links for screen readers
 
 ### Reduced Motion
+
 ```css
 @media (prefers-reduced-motion: reduce) {
   /* Disable animations */
@@ -424,7 +448,7 @@ xl: 1280px  /* Wide desktop */
 ### Performance
 
 - **Font Loading**: `display: swap` for all fonts
-- **Image Optimization**: Use Next.js Image component
+- **Image Optimization**: Use Next.js Image component (preferred over `<img>`)
 - **Animations**: CSS-only for performance
 - **Critical CSS**: Inline above-fold styles
 
@@ -447,12 +471,14 @@ xl: 1280px  /* Wide desktop */
 ## 🎨 BRAND VOICE
 
 ### Messaging Tone
+
 - Friendly, not clinical
 - Visual-first, not jargon-heavy
 - Confident, not pretentious
 - Editorial, not corporate
 
 ### Example Copy
+
 ✅ "Find Your Artist by Vibe"
 ❌ "Advanced AI-Powered Tattoo Artist Matching Platform"
 
@@ -468,29 +494,46 @@ xl: 1280px  /* Wide desktop */
 
 ```
 /app
-  /globals.css         → Design system variables + utilities
-  /layout.tsx          → Font configuration
-  /page.tsx            → Homepage (editorial layout)
+  /globals.css         → Design system variables + utilities (v2.0)
+  /layout.tsx          → Font configuration (Libre Baskerville added)
+  /page.tsx            → Homepage (minimal editorial layout)
 
 /components
   /home
-    /UnifiedSearchBar.tsx → Main search interface
-    /VisualTeaserStrip.tsx → Gallery strip
-    /FeaturedArtistsGrid.tsx → Artist cards
+    /UnifiedSearchBar.tsx → Main search interface (black/white)
+    /VisualTeaserStrip.tsx → Gallery strip (full color images)
+    /FeaturedArtistsGrid.tsx → Artist cards (full color)
   /search
-    /TextSearch.tsx
-    /ImageUpload.tsx
+    /ArtistCard.tsx → Search result cards (no filters)
+  /artist
+    /ArtistHero.tsx → Artist profile header (simplified)
+    /PortfolioGrid.tsx → Image grid (full color)
+  /layout
+    /Navbar.tsx → Navigation (paper/ink colors)
 ```
 
 ---
 
 ## 🔄 VERSION HISTORY
 
-**v1.0** (2025-12-30)
-- Initial "SKIN & PAPER" design system
-- Editorial magazine aesthetic
-- Torn paper transitions
-- Gold accent system
+**v2.0** (2025-12-30) - **"PAPER & INK" Redesign**
+- Near-white (#F8F7F5) / near-black (#1A1A1A) color system
+- Dotted background texture (global, 24px grid)
+- Traditional serif typography (Libre Baskerville for headings)
+- Removed all gold (#F59E0B, #D97706) and blue (#3b82f6) accents
+- Minimal shadows (0.08-0.18 opacity, reduced from 0.32-0.7)
+- Full-color portfolio images always (removed grayscale filters)
+- Subtle hover effects (2-4px lift, reduced from 8-16px)
+- Increased body line-height to 1.8 for editorial spacing
+- Simple interactions: underlines, subtle borders, no glows
+
+**v1.0** (2025-12-30) - **"SKIN & PAPER" Initial Design**
+- Editorial magazine aesthetic with warm tones
+- Gold accent system (primary CTAs, highlights)
+- Blue verification badges
+- Dramatic hover effects (8px lifts, gold glows)
+- Space Grotesk for headings
+- Grayscale image filters on hover
 - Four-font typography hierarchy
 - Responsive mobile-first layouts
 
@@ -498,14 +541,48 @@ xl: 1280px  /* Wide desktop */
 
 ## 💡 FUTURE ENHANCEMENTS
 
-- [ ] Dark mode variant (optional)
-- [ ] Custom cursor on desktop
-- [ ] Parallax scroll effects on hero
-- [ ] Animated torn paper transitions (beyond static SVG)
-- [ ] Artist profile page templates
-- [ ] Search results page design
-- [ ] Mobile app adaptations
+### Considered for v3.0
+
+- [ ] Optimize all `<img>` tags → Next.js `<Image>` components
+- [ ] Custom cursor on desktop (editorial magazines often have custom cursors)
+- [ ] Parallax scroll effects on hero (very subtle, paper-like)
+- [ ] Animated torn paper transitions (SVG animation on scroll)
+- [ ] Hand-drawn underline animations for links
+- [ ] Aged paper texture variations (subtle discoloration)
+- [ ] Print-style pull quotes for artist testimonials
+
+### Not Planned
+
+- ❌ Dark mode variant (contradicts paper aesthetic)
+- ❌ Gold/blue accents (removed intentionally for minimalism)
+- ❌ Dramatic hover effects (contradicts refined editorial approach)
 
 ---
 
-**Remember**: This design system prioritizes **BOLD EDITORIAL CHARACTER** over generic tech aesthetics. Every component should feel like it belongs in a premium tattoo culture magazine, not a standard SaaS platform.
+## 📊 MIGRATION GUIDE (v1.0 → v2.0)
+
+### Breaking Changes
+
+| v1.0 (SKIN & PAPER) | v2.0 (PAPER & INK) | Reason |
+|---------------------|---------------------|---------|
+| `--gold-vibrant` | `--ink-black` | Removed decorative gold |
+| `--gold-deep` | `--gray-700` | Simplified to grayscale |
+| `--accent-primary` (blue) | `--ink-black` | Removed blue accent |
+| Space Grotesk headings | Libre Baskerville | Traditional serif |
+| `.grayscale-hover` | Removed | Images always full color |
+| `-translate-y-8` (32px) | `-translate-y-3` (12px) | Subtle interactions |
+| `shadow-lifted` (0.32 opacity) | `shadow-lg` (0.16 opacity) | Minimal shadows |
+| `--white-warm: #FAFAF8` | `--paper-white: #F8F7F5` | True near-white |
+| `--black-warm: #0F0F0F` | `--ink-black: #1A1A1A` | True near-black |
+
+### Component Updates Required
+
+1. **Images**: Remove ALL `grayscale-hover` classes
+2. **Buttons**: Replace `bg-gradient-to-r from-gold-*` → `bg-ink text-paper`
+3. **Focus states**: Replace `ring-gold-vibrant` → `ring-ink`
+4. **Verification badges**: Replace `bg-accent-primary` (blue) → `bg-ink text-paper`
+5. **Typography**: Update `font-heading` CSS classes (auto-updates with CSS vars)
+
+---
+
+**Remember**: This design system prioritizes **REFINED EDITORIAL MINIMALISM** over decorative tech aesthetics. Every component should feel like it belongs in a premium paper magazine, not a standard SaaS platform. The portfolio work is the hero—everything else recedes to support it.

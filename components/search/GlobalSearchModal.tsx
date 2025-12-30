@@ -78,7 +78,7 @@ export default function GlobalSearchModal() {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black-warm/60 backdrop-blur-sm z-50
+        className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50
                    animate-fade-in"
         onClick={closeSearch}
         aria-hidden="true"
@@ -99,7 +99,7 @@ export default function GlobalSearchModal() {
                    max-md:bottom-0 max-md:left-0 max-md:right-0
                    max-md:animate-slide-up
 
-                   bg-white-warm rounded-t-3xl md:rounded-3xl
+                   bg-paper rounded-t-3xl md:rounded-3xl
                    shadow-xl
                    overflow-hidden"
       >
@@ -118,10 +118,10 @@ export default function GlobalSearchModal() {
           className="absolute top-4 right-4 z-10
                      w-10 h-10 rounded-full
                      flex items-center justify-center
-                     text-gray-600 hover:text-black-warm
+                     text-gray-600 hover:text-ink
                      hover:bg-gray-100
                      transition-all duration-200
-                     focus:outline-none focus:ring-2 focus:ring-gold-vibrant"
+                     focus:outline-none focus:ring-2 focus:ring-ink"
           aria-label="Close search"
         >
           <svg

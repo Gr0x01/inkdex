@@ -115,9 +115,9 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          HOW IT WORKS - Gold Accent Section
+          HOW IT WORKS - Light Accent Section
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-accent torn-edge-top py-16 md:py-24 relative grain-overlay">
+      <section className="bg-light torn-edge-top py-16 md:py-24 relative">
         <div className="container mx-auto relative z-10">
           <div className="max-w-4xl mx-auto">
             {/* Section Header */}
@@ -129,7 +129,7 @@ export default async function Home() {
             <div className="grid md:grid-cols-3 gap-12 md:gap-8">
               {/* Step 1 */}
               <div className="text-center stagger-children">
-                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
                   01
                 </div>
                 <h3 className="font-heading text-h3 mb-4">Upload or Describe</h3>
@@ -140,7 +140,7 @@ export default async function Home() {
 
               {/* Step 2 */}
               <div className="text-center stagger-children" style={{ animationDelay: '100ms' }}>
-                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
                   02
                 </div>
                 <h3 className="font-heading text-h3 mb-4">Visual Matching</h3>
@@ -151,7 +151,7 @@ export default async function Home() {
 
               {/* Step 3 */}
               <div className="text-center stagger-children" style={{ animationDelay: '200ms' }}>
-                <div className="font-display text-[6rem] leading-none text-gold-deep mb-6 opacity-40">
+                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
                   03
                 </div>
                 <h3 className="font-heading text-h3 mb-4">Connect & Book</h3>
@@ -180,12 +180,12 @@ export default async function Home() {
             <h2 className="font-display text-display text-white-pure mb-8 leading-none">
               YOUR NEXT
               <br />
-              <span className="text-gradient-gold">TATTOO AWAITS</span>
+              <span className="text-gray-300">TATTOO AWAITS</span>
             </h2>
             <p className="font-body text-xl text-gray-300 mb-12 leading-relaxed">
               Join hundreds who found their perfect artist through visual search
             </p>
-            <a href="#search" className="btn btn-primary scale-hover gold-glow-hover">
+            <a href="#search" className="btn btn-primary scale-hover">
               Find Your Artist
             </a>
           </div>

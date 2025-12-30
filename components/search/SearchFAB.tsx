@@ -19,14 +19,14 @@ export default function SearchFAB() {
       onClick={openSearch}
       className="fixed bottom-6 right-6 md:hidden
                  w-14 h-14 rounded-full
-                 bg-gradient-to-br from-gold-vibrant to-gold-deep
-                 text-black-warm
-                 shadow-gold-strong
+                 bg-ink
+                 text-paper
+                 shadow-lg
                  hover:scale-105 active:scale-95
                  transition-all duration-200
                  z-40
                  flex items-center justify-center
-                 focus:outline-none focus:ring-2 focus:ring-gold-vibrant focus:ring-offset-2"
+                 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
       aria-label="Open search"
     >
       <svg
