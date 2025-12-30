@@ -453,65 +453,114 @@ def generate_text_query_embedding(text: str):
     return embedding
 
 
-# Expose FastAPI app via Modal
-@app.function(
+# Expose FastAPI app via Modal with persistent model
+@app.cls(
+    gpu="A10G",
     image=image,
     secrets=[modal.Secret.from_name("supabase")],
+    # No keep_warm - pay-per-use only (cold starts 5-10s, but free when idle)
 )
-@modal.asgi_app()
-def fastapi_app():
-    from fastapi import FastAPI, HTTPException
-    from pydantic import BaseModel
-    import base64
-    from PIL import Image
+class Model:
+    @modal.enter()
+    def load_model(self):
+        """Load model once when container starts (cached across requests)"""
+        import torch
+        import open_clip
 
-    web_app = FastAPI()
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f"🔥 Loading CLIP model on {self.device}...")
 
-    class ImageRequest(BaseModel):
-        image_data: str  # base64 encoded
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(
+            "ViT-L-14",
+            pretrained="laion2b_s32b_b82k",
+            device=self.device
+        )
+        self.model.eval()
+        self.tokenizer = open_clip.get_tokenizer("ViT-L-14")
 
-    class TextRequest(BaseModel):
-        text: str
+        print("✅ Model loaded and ready")
 
-    @web_app.post("/generate_single_embedding")
-    def api_generate_single_embedding(request: ImageRequest):
-        """
-        Web endpoint for generating single image embedding via HTTP POST
+    @modal.method()
+    def generate_image_embedding_from_bytes(self, image_data: bytes) -> List[float]:
+        """Generate embedding from image bytes"""
+        import torch
+        from PIL import Image
+        import io
 
-        Request body: {"image_data": "base64_encoded_image"}
-        Response: {"embedding": [768 floats]}
-        """
-        try:
-            # Decode base64 image
-            image_data = base64.b64decode(request.image_data)
-            image = Image.open(io.BytesIO(image_data))
+        image = Image.open(io.BytesIO(image_data)).convert("RGB")
+        image_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
 
-            # Generate embedding
-            embedder = CLIPEmbedder()
-            embedding = embedder.generate_image_embedding.remote(image)
+        with torch.no_grad():
+            embedding = self.model.encode_image(image_tensor)
+            embedding = embedding / embedding.norm(dim=-1, keepdim=True)
+            embedding = embedding.cpu().numpy()[0].tolist()
 
-            return {"embedding": embedding}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        return embedding
 
-    @web_app.post("/generate_text_query_embedding")
-    def api_generate_text_query_embedding(request: TextRequest):
-        """
-        Web endpoint for generating text query embedding via HTTP POST
+    @modal.method()
+    def generate_text_embedding_from_string(self, text: str) -> List[float]:
+        """Generate embedding from text string"""
+        import torch
 
-        Request body: {"text": "tattoo style description"}
-        Response: {"embedding": [768 floats]}
-        """
-        try:
-            # Generate embedding
-            embedder = CLIPEmbedder()
-            embedding = embedder.generate_text_embedding.remote(request.text)
+        text_tokens = self.tokenizer([text]).to(self.device)
 
-            return {"embedding": embedding}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+        with torch.no_grad():
+            embedding = self.model.encode_text(text_tokens)
+            embedding = embedding / embedding.norm(dim=-1, keepdim=True)
+            embedding = embedding.cpu().numpy()[0].tolist()
 
-    return web_app
+        return embedding
+
+    @modal.asgi_app()
+    def fastapi_app(self):
+        from fastapi import FastAPI, HTTPException
+        from pydantic import BaseModel
+        import base64
+
+        web_app = FastAPI()
+
+        class ImageRequest(BaseModel):
+            image_data: str  # base64 encoded
+
+        class TextRequest(BaseModel):
+            text: str
+
+        @web_app.post("/generate_single_embedding")
+        def api_generate_single_embedding(request: ImageRequest):
+            """
+            Web endpoint for generating single image embedding via HTTP POST
+
+            Request body: {"image_data": "base64_encoded_image"}
+            Response: {"embedding": [768 floats]}
+            """
+            try:
+                # Decode base64 image
+                image_bytes = base64.b64decode(request.image_data)
+
+                # Use cached model (no .remote() call - already in same container)
+                embedding = self.generate_image_embedding_from_bytes.local(image_bytes)
+
+                return {"embedding": embedding}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @web_app.post("/generate_text_query_embedding")
+        def api_generate_text_query_embedding(request: TextRequest):
+            """
+            Web endpoint for generating text query embedding via HTTP POST
+
+            Request body: {"text": "tattoo style description"}
+            Response: {"embedding": [768 floats]}
+            """
+            try:
+                # Use cached model (no .remote() call - already in same container)
+                embedding = self.generate_text_embedding_from_string.local(request.text)
+
+                return {"embedding": embedding}
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+
+        return web_app
 
 
 # Local testing function (runs without Modal)
