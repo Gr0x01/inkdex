@@ -2,11 +2,21 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import * as Select from '@radix-ui/react-select'
+import { CITIES, STATES } from '@/lib/constants/cities'
 
-const CITIES = [
-  { value: '', label: 'All Cities' },
-  { value: 'Austin, TX', label: 'Austin, TX' },
-  { value: 'Los Angeles, CA', label: 'Los Angeles, CA' },
+// Build filter options with proper database values
+const FILTER_OPTIONS = [
+  { value: '', label: 'All Locations' },
+  // State filters
+  ...STATES.map(state => ({
+    value: `state:${state.slug}`,
+    label: `All of ${state.name}`,
+  })),
+  // City filters (use slug to match database)
+  ...CITIES.map(city => ({
+    value: city.slug, // 'austin' matches database
+    label: city.fullName, // 'Austin, TX' for display
+  })),
 ]
 
 export default function CityFilter() {
@@ -14,7 +24,6 @@ export default function CityFilter() {
   const searchParams = useSearchParams()
 
   const currentCity = searchParams.get('city') || ''
-  const searchId = searchParams.get('id') || ''
 
   const handleCityChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -34,14 +43,14 @@ export default function CityFilter() {
   return (
     <div className="flex items-center gap-3">
       <label htmlFor="city-filter" className="font-body text-sm font-medium text-text-secondary">
-        City:
+        Location:
       </label>
 
       <Select.Root value={currentCity} onValueChange={handleCityChange}>
         <Select.Trigger
           id="city-filter"
-          className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-surface-mid border border-border-medium rounded-lg font-body text-sm font-medium text-text-primary hover:bg-surface-high hover:border-border-strong focus:outline-none focus:border-accent-primary focus:shadow-glow-accent transition-all duration-fast min-w-[180px]"
-          aria-label="Filter by city"
+          className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-surface-mid border border-border-medium rounded-lg font-body text-sm font-medium text-text-primary hover:bg-surface-high hover:border-border-strong focus:outline-none focus:border-accent-primary focus:shadow-glow-accent transition-all duration-fast min-w-[200px]"
+          aria-label="Filter by location"
         >
           <Select.Value />
           <Select.Icon>
@@ -69,13 +78,13 @@ export default function CityFilter() {
             sideOffset={5}
           >
             <Select.Viewport className="p-1">
-              {CITIES.map((city) => (
+              {FILTER_OPTIONS.map((option) => (
                 <Select.Item
-                  key={city.value}
-                  value={city.value}
+                  key={option.value}
+                  value={option.value}
                   className="relative flex items-center px-8 py-2 font-body text-sm text-text-primary rounded cursor-pointer hover:bg-accent-primary/10 hover:text-accent-primary focus:bg-accent-primary/10 focus:text-accent-primary focus:outline-none data-[highlighted]:bg-accent-primary/10 data-[highlighted]:text-accent-primary transition-colors duration-fast"
                 >
-                  <Select.ItemText>{city.label}</Select.ItemText>
+                  <Select.ItemText>{option.label}</Select.ItemText>
                   <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
                     <svg
                       className="w-4 h-4 text-accent-primary"

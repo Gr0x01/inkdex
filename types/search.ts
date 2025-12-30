@@ -30,7 +30,7 @@ export interface SearchResult {
   profile_image_url: string | null
   instagram_url: string | null
   is_verified: boolean
-  matching_images: MatchingImage[]
+  matching_images?: MatchingImage[]
   similarity: number
 }
 

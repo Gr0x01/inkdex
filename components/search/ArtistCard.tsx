@@ -17,8 +17,10 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     similarity,
   } = artist
 
-  // Take top 4 matching images for gallery display
-  const topImages = matching_images.slice(0, 4)
+  // Take top 4 matching images for gallery display (handle undefined and filter invalid)
+  const topImages = (matching_images || [])
+    .filter(img => img.url && img.instagramUrl)
+    .slice(0, 4)
 
   // Convert similarity to percentage (0.0-1.0 → 0-100%)
   const matchPercentage = Math.round(similarity * 100)
@@ -35,7 +37,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
         <div className="grid grid-cols-2 gap-1 bg-bg-primary p-1">
           {topImages.map((image, index) => (
             <a
-              key={index}
+              key={image.url}
               href={image.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
