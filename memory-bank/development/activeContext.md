@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-30 (Updated: Search threshold optimization)
+Last-Updated: 2025-12-30 (Updated: Next.js 16 upgrade & ESLint 9 migration)
 Maintainer: RB
-Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Improved ✅
+Status: Phase 3-6 COMPLETE ✅, Next.js 16 Upgrade COMPLETE ✅, Production Ready ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
@@ -16,7 +16,7 @@ Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Impro
 1. ✅ **COMPLETED (Phase 1):** Production-ready Supabase database with pgvector
 2. ✅ **COMPLETED (Phase 1):** Complete security hardening (RLS, constraints, type safety)
 3. ✅ **COMPLETED (Phase 1):** Performance optimization (middleware, vector search)
-4. ✅ **COMPLETED (Phase 1):** Next.js 15.5 with strict TypeScript
+4. ✅ **COMPLETED (Phase 1):** Next.js 16.1 with strict TypeScript + Turbopack
 5. ✅ **COMPLETED (Phase 1):** Environment validation and build verification
 6. ✅ **COMPLETED (Phase 2):** Instagram-first discovery approach (Tavily API)
 7. ✅ **COMPLETED (Phase 2):** Query caching system (prevents duplicate API calls)
@@ -115,13 +115,14 @@ Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Impro
 - ✅ **8 migration files** in `supabase/migrations/` (version controlled)
 
 **Next.js Application (Production-Ready):**
-- ✅ Next.js 15.5 project initialized with App Router
+- ✅ Next.js 16.1.1 project with App Router + Turbopack (default bundler)
 - ✅ TypeScript strict mode + Tailwind CSS configured
 - ✅ **Generated TypeScript types** from Supabase schema (`types/database.types.ts`)
 - ✅ Supabase client libraries (@supabase/ssr) with **validated environment variables**
 - ✅ **Optimized middleware** (skips auth on 95% of routes for performance)
 - ✅ Query utilities for vector search
 - ✅ Build succeeds with zero errors ✓
+- ✅ **UPGRADED (Dec 30):** Next.js 15.5.9 → 16.1.1 (Turbopack stable, React 19.2)
 
 **Security & Validation:**
 - ✅ **Environment validation** with Zod (`lib/config/env.ts`)
@@ -131,7 +132,12 @@ Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Impro
 - ✅ **Multi-layer security** (RLS + constraints + TypeScript)
 
 **Developer Experience:**
-- ✅ ESLint + Prettier configured
+- ✅ ESLint 9.39.2 with flat config format (eslint.config.mjs)
+  - Configured for Next.js 16 compatibility
+  - TypeScript ESLint + Next.js plugin
+  - Scripts directory ignored (dev tools, not production code)
+  - 26 remaining any type errors (non-blocking, in complex error handling)
+- ✅ Prettier configured
 - ✅ Path aliases (@/*) set up
 - ✅ Type-checking enabled (strict mode)
 - ✅ Development scripts ready (dev, build, lint, type-check)
