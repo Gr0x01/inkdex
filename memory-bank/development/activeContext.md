@@ -31,7 +31,8 @@ Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Impro
 16. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
 17. ✅ **COMPLETED (Phase 6):** Artist profile pages with state/city SEO hierarchy (188 pages)
 18. ✅ **COMPLETED (Dec 30):** Search quality optimization (threshold 0.25→0.15, query enhancement)
-19. **NEXT:** Phase 7 - Style landing pages & SEO optimization
+19. ✅ **COMPLETED (Dec 30):** Numbered pagination with page buttons (1, 2, 3...10)
+20. **NEXT:** Phase 7 - Style landing pages & SEO optimization
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -55,6 +56,24 @@ Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Impro
   - Google Places shop discovery
   - Shop website scraping with false positive filtering
   - Target: 200-300 artists, estimated cost: ~$3-4
+
+## Future Enhancements (Ideas to Explore)
+
+### Search Result Confidence Sectioning (Dec 30, 2025)
+**Concept:** Section search results by similarity score confidence levels to give users better context.
+
+**Proposed Structure:**
+- **Best Matches** (similarity >0.30): "These are the artists we're most confident match your search"
+- **Similar Styles** (similarity 0.20-0.30): "Good matches but slightly less confident"
+- **You Might Also Like** (similarity 0.15-0.20): "Worth exploring, more experimental matches"
+
+**Open Questions:**
+1. Visual treatment - section headers, background tints, similarity badges on cards?
+2. Pagination interaction - mix tiers on pages or dedicate pages to each tier?
+3. Empty states - how to handle when no "Best Matches" exist?
+4. Threshold tuning - need to test with real searches to find optimal ranges
+
+**Status:** Tabled for now (user working on card redesign), revisit after Phase 7
 
 ## Recently Completed (Dec 29, 2025)
 
