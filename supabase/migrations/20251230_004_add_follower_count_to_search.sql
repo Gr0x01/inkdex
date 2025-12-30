@@ -40,7 +40,7 @@ BEGIN
       pi.artist_id,
       pi.id as image_id,
       pi.instagram_url as image_url,
-      pi.r2_thumbnail_medium,
+      pi.storage_thumb_640,
       pi.likes_count,
       1 - (pi.embedding <=> query_embedding) as similarity_score,
       ROW_NUMBER() OVER (
@@ -64,7 +64,7 @@ BEGIN
         jsonb_build_object(
           'image_id', ri.image_id,
           'image_url', ri.image_url,
-          'thumbnail_url', ri.r2_thumbnail_medium,
+          'thumbnail_url', ri.storage_thumb_640,
           'likes_count', ri.likes_count,
           'similarity', ROUND(ri.similarity_score::numeric, 3)
         )
