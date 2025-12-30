@@ -31,17 +31,17 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     : null
 
   return (
-    <article className="group bg-surface-low rounded-lg border border-border-subtle shadow-md hover:shadow-glow-accent transition-all duration-medium hover:-translate-y-1 overflow-hidden">
+    <article className="group bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-medium hover:-translate-y-1 overflow-hidden border border-gray-200">
       {/* Portfolio Images Grid */}
       {topImages.length > 0 && (
-        <div className="grid grid-cols-2 gap-1 bg-bg-primary p-1">
+        <div className="grid grid-cols-2 gap-1 bg-gray-50 p-1">
           {topImages.map((image, index) => (
             <a
               key={image.url}
               href={image.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="relative aspect-square overflow-hidden bg-surface-mid"
+              className="relative aspect-square overflow-hidden bg-gray-100"
               aria-label={`View ${artist_name}'s portfolio work ${index + 1} on Instagram`}
             >
               <Image
@@ -49,10 +49,10 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
                 alt={`${artist_name} portfolio work ${index + 1}`}
                 fill
                 sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, 15vw"
-                className="object-cover grayscale-hover group-hover:scale-105 transition-all duration-medium"
+                className="object-cover group-hover:scale-105 transition-all duration-medium"
               />
               {/* Hover Overlay with Instagram Icon */}
-              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-medium flex items-center justify-center">
+              <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-40 transition-all duration-medium flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-medium"
                   fill="currentColor"
@@ -68,74 +68,41 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
       )}
 
       {/* Artist Info */}
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          {/* Name and Location */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-display text-xl font-[700] text-text-primary truncate">
-                {artist_name}
-              </h3>
-              {is_verified && (
-                <svg
-                  className="w-5 h-5 text-accent-primary flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-label="Verified artist"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </div>
-
-            {/* Location */}
-            <p className="font-body text-sm text-text-secondary mb-1 flex items-center gap-1">
+      <div className="p-5">
+        {/* Header: Name + Match Badge */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          {/* Name and Verification */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h3 className="font-heading text-lg font-bold text-black-warm truncate">
+              {artist_name}
+            </h3>
+            {is_verified && (
               <svg
-                className="w-4 h-4 text-text-tertiary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+                className="w-4 h-4 text-gold-vibrant flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                aria-label="Verified artist"
               >
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  fillRule="evenodd"
+                  d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
                 />
               </svg>
-              {city}
-            </p>
-
-            {/* Instagram Handle */}
-            {instagramHandle && (
-              <p className="font-body text-sm text-text-tertiary">
-                {instagramHandle}
-              </p>
             )}
           </div>
 
-          {/* Match Score Badge */}
+          {/* Match Score Badge - Top Right */}
           {matchPercentage > 0 && (
             <div
               className={`
-                flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-body font-[600] uppercase tracking-wide
+                flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wide
                 ${
                   matchPercentage >= 80
-                    ? 'bg-status-success/20 text-status-success border border-status-success/30'
+                    ? 'bg-green-100 text-green-700 border border-green-300'
                     : matchPercentage >= 60
-                    ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/30'
-                    : 'bg-surface-mid text-text-secondary border border-border-medium'
+                    ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                    : 'bg-gray-100 text-gray-600 border border-gray-300'
                 }
               `}
               aria-label={`${matchPercentage}% style match`}
@@ -145,14 +112,46 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
+        {/* Location */}
+        <p className="font-body text-sm text-gray-600 mb-1.5 flex items-center gap-1.5">
+          <svg
+            className="w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+          {city}
+        </p>
+
+        {/* Instagram Handle */}
+        {instagramHandle && (
+          <p className="font-body text-sm text-gray-500 mb-4">
+            {instagramHandle}
+          </p>
+        )}
+
+        {/* Action Buttons - PERFECTLY ALIGNED */}
+        <div className="flex gap-2 mt-4">
           {instagram_url && (
             <a
               href={instagram_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 btn btn-primary py-2.5 text-xs justify-center"
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-gold-vibrant to-gold-deep text-white rounded-lg font-mono text-xs font-semibold uppercase tracking-wider hover:shadow-lg hover:-translate-y-0.5 transition-all duration-medium"
             >
               <svg
                 className="w-4 h-4"
@@ -168,7 +167,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
 
           <Link
             href={`/artist/${artist_slug}`}
-            className="btn btn-secondary py-2.5 text-xs"
+            className="inline-flex items-center justify-center px-4 py-2.5 bg-transparent border-2 border-black-warm text-black-warm rounded-lg font-mono text-xs font-semibold uppercase tracking-wider hover:bg-black-warm hover:text-white transition-all duration-medium"
           >
             Profile
           </Link>
