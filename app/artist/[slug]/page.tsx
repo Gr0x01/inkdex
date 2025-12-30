@@ -60,7 +60,7 @@ export async function generateMetadata({
       description,
       type: 'profile',
       images: [{ url: ogImage, width: 1200, height: 630 }],
-      siteName: 'Tattoo Artist Discovery',
+      siteName: 'Inkdex',
     },
     twitter: {
       card: 'summary_large_image',
@@ -246,7 +246,11 @@ export default async function ArtistPage({
             />
 
             {/* Related Artists Section */}
-            <RelatedArtists artistId={artist.id} city={artist.city} />
+            <RelatedArtists
+              artistId={artist.id}
+              artistSlug={artist.slug}
+              city={artist.city}
+            />
           </div>
         </div>
       </main>

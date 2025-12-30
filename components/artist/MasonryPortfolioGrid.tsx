@@ -83,13 +83,6 @@ export default function MasonryPortfolioGrid({
           </a>
         ))}
       </div>
-
-      {/* Portfolio Count */}
-      <div className="mt-12 pt-8 border-t border-gray-300 text-center">
-        <p className="font-body text-[0.875rem] text-gray-500 tracking-wide uppercase">
-          {images.length} {images.length === 1 ? 'Piece' : 'Pieces'} in Portfolio
-        </p>
-      </div>
     </div>
   )
 }

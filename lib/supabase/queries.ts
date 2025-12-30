@@ -105,7 +105,27 @@ export async function searchArtistsByEmbedding(
     throw error
   }
 
-  return data
+  // Transform RPC response: RPC returns matching_images as JSONB (auto-parsed),
+  // but frontend expects it as 'images' with specific structure
+  return (data || []).map((result: any) => ({
+    id: result.artist_id,
+    name: result.artist_name,
+    slug: result.artist_slug,
+    city: result.city,
+    profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count,
+    shop_name: result.shop_name,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    images: (result.matching_images || []).map((img: any) => ({
+      url: img.thumbnail_url,  // Use thumbnail_url (actual image path), not image_url (Instagram post URL)
+      instagramUrl: img.image_url,  // Instagram post URL for linking
+      similarity: img.similarity,
+      likes_count: img.likes_count,
+    })),
+    max_similarity: result.similarity,
+    max_likes: result.max_likes,
+  }))
 }
 
 /**
@@ -400,6 +420,8 @@ export async function getRelatedArtists(
       instagram_url: artist.instagram_url,
       shop_name: artist.shop_name || null,
       verification_status: artist.is_verified ? 'verified' : 'unclaimed',
+      follower_count: artist.follower_count || 0,
+      similarity: artist.similarity || 0,
     }))
 
   return filtered || []

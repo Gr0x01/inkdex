@@ -17,6 +17,7 @@ interface PortfolioGridProps {
   artistName: string
   artistBio?: string | null
   artistId: string
+  artistSlug: string
   city: string
   verificationStatus: string
 }
@@ -26,6 +27,7 @@ export default function PortfolioGrid({
   artistName,
   artistBio,
   artistId,
+  artistSlug,
   city,
   verificationStatus,
 }: PortfolioGridProps) {
@@ -81,7 +83,11 @@ export default function PortfolioGrid({
             {/* Interstitial: Related Artists (after 18th image) */}
             {index === 17 && (
               <div className="col-span-full">
-                <RelatedArtists artistId={artistId} city={city} />
+                <RelatedArtists
+                  artistId={artistId}
+                  artistSlug={artistSlug}
+                  city={city}
+                />
               </div>
             )}
 
@@ -94,11 +100,6 @@ export default function PortfolioGrid({
           </div>
         ))}
       </div>
-
-      {/* Portfolio count */}
-      <p className="font-body text-small text-text-tertiary text-center mt-12">
-        {images.length} {images.length === 1 ? 'piece' : 'pieces'} in portfolio
-      </p>
     </section>
   )
 }
