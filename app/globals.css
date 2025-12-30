@@ -87,7 +87,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  /* overflow-x: hidden removed - breaks sticky positioning */
 }
 
 body {

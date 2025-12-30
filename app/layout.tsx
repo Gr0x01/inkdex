@@ -78,7 +78,7 @@ export default function RootLayout({
       lang="en"
       className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
-      <body className="overflow-x-hidden">
+      <body className="">
         <SearchProvider>
           <Navbar />
           <GlobalSearchModal />
