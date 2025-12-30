@@ -185,53 +185,53 @@ export default async function ArtistPage({
 
       {/* Editorial Magazine Layout */}
       <main className="min-h-screen bg-paper">
-        <div className="flex flex-col lg:flex-row">
-          {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
-          <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-24 lg:self-start lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
-            {/* Breadcrumbs */}
-            <nav className="font-body text-small text-text-secondary px-4 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-3 lg:px-8 lg:pt-8 lg:pb-4" aria-label="Breadcrumb">
-              <ol className="flex items-center gap-2 flex-wrap">
+        {/* Breadcrumbs - Above the flex layout, scrolls away naturally */}
+        <nav className="font-body text-small text-text-secondary px-4 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-3 lg:px-8 lg:pt-8 lg:pb-4" aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 flex-wrap">
+            <li>
+              <Link
+                href="/"
+                className="hover:text-accent-primary transition-colors"
+              >
+                Home
+              </Link>
+            </li>
+            {state && (
+              <>
+                <li>/</li>
                 <li>
                   <Link
-                    href="/"
+                    href={`/${stateSlug}`}
                     className="hover:text-accent-primary transition-colors"
                   >
-                    Home
+                    {state.name}
                   </Link>
                 </li>
-                {state && (
-                  <>
-                    <li>/</li>
-                    <li>
-                      <Link
-                        href={`/${stateSlug}`}
-                        className="hover:text-accent-primary transition-colors"
-                      >
-                        {state.name}
-                      </Link>
-                    </li>
-                  </>
-                )}
-                {city && (
-                  <>
-                    <li>/</li>
-                    <li>
-                      <Link
-                        href={`/${stateSlug}/${citySlug}`}
-                        className="hover:text-accent-primary transition-colors"
-                      >
-                        {city.name}
-                      </Link>
-                    </li>
-                  </>
-                )}
+              </>
+            )}
+            {city && (
+              <>
                 <li>/</li>
-                <li aria-current="page" className="text-text-primary">
-                  @{artist.instagram_handle}
+                <li>
+                  <Link
+                    href={`/${stateSlug}/${citySlug}`}
+                    className="hover:text-accent-primary transition-colors"
+                  >
+                    {city.name}
+                  </Link>
                 </li>
-              </ol>
-            </nav>
+              </>
+            )}
+            <li>/</li>
+            <li aria-current="page" className="text-text-primary">
+              @{artist.instagram_handle}
+            </li>
+          </ol>
+        </nav>
 
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
+          <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-1.5rem)] lg:overflow-y-auto">
             <ArtistInfoColumn
               artist={artist}
               portfolioImages={artist.portfolio_images || []}
