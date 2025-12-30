@@ -42,70 +42,64 @@ export default function CityFilter() {
   }
 
   return (
-    <div className="flex items-center gap-3">
-      <label htmlFor="city-filter" className="font-body text-sm font-medium text-text-secondary">
-        Location:
-      </label>
-
-      <Select.Root value={currentCity} onValueChange={handleCityChange}>
-        <Select.Trigger
-          id="city-filter"
-          className="inline-flex items-center justify-between gap-2 px-4 py-2 bg-surface-mid border border-border-medium rounded-lg font-body text-sm font-medium text-text-primary hover:bg-surface-high hover:border-border-strong focus:outline-none focus:border-accent-primary focus:shadow-glow-accent transition-all duration-fast min-w-[200px]"
-          aria-label="Filter by location"
-        >
-          <Select.Value />
-          <Select.Icon>
-            <svg
-              className="w-4 h-4 text-text-tertiary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </Select.Icon>
-        </Select.Trigger>
-
-        <Select.Portal>
-          <Select.Content
-            className="overflow-hidden bg-surface-low rounded-lg shadow-xl border border-border-medium z-50"
-            position="popper"
-            sideOffset={5}
+    <Select.Root value={currentCity} onValueChange={handleCityChange}>
+      <Select.Trigger
+        id="city-filter"
+        className="inline-flex items-center gap-2 px-3 py-1.5 border border-ink/20 rounded font-body text-sm text-ink hover:border-ink/40 focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/20 transition-all duration-fast min-w-[140px]"
+        aria-label="Filter by location"
+      >
+        <Select.Value />
+        <Select.Icon>
+          <svg
+            className="w-3 h-3 text-ink/40"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
           >
-            <Select.Viewport className="p-1">
-              {FILTER_OPTIONS.map((option) => (
-                <Select.Item
-                  key={option.value}
-                  value={option.value}
-                  className="relative flex items-center px-8 py-2 font-body text-sm text-text-primary rounded cursor-pointer hover:bg-accent-primary/10 hover:text-accent-primary focus:bg-accent-primary/10 focus:text-accent-primary focus:outline-none data-[highlighted]:bg-accent-primary/10 data-[highlighted]:text-accent-primary transition-colors duration-fast"
-                >
-                  <Select.ItemText>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator className="absolute left-2 inline-flex items-center">
-                    <svg
-                      className="w-4 h-4 text-accent-primary"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </Select.ItemIndicator>
-                </Select.Item>
-              ))}
-            </Select.Viewport>
-          </Select.Content>
-        </Select.Portal>
-      </Select.Root>
-    </div>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </Select.Icon>
+      </Select.Trigger>
+
+      <Select.Portal>
+        <Select.Content
+          className="overflow-hidden bg-[#F8F7F5] rounded border border-ink/20 shadow-lg z-50"
+          position="popper"
+          sideOffset={5}
+        >
+          <Select.Viewport className="p-1">
+            {FILTER_OPTIONS.map((option) => (
+              <Select.Item
+                key={option.value}
+                value={option.value}
+                className="relative flex items-center px-7 py-1.5 font-body text-sm text-ink rounded cursor-pointer hover:bg-ink/5 focus:bg-ink/5 focus:outline-none data-[highlighted]:bg-ink/5 transition-colors duration-fast"
+              >
+                <Select.ItemText>{option.label}</Select.ItemText>
+                <Select.ItemIndicator className="absolute left-1.5 inline-flex items-center">
+                  <svg
+                    className="w-3.5 h-3.5 text-ink"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </Select.ItemIndicator>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   )
 }

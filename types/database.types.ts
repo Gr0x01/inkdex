@@ -407,6 +407,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_matching_artists: {
+        Args: {
+          city_filter?: string
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          count: number
+        }[]
+      }
       search_artists_by_embedding: {
         Args: {
           city_filter?: string
@@ -416,15 +426,15 @@ export type Database = {
           query_embedding: string
         }
         Returns: {
-          artist_id: string
-          artist_name: string
-          artist_slug: string
           city: string
+          id: string
+          images: Json
           instagram_url: string
           is_verified: boolean
-          matching_images: Json
+          max_similarity: number
+          name: string
           profile_image_url: string
-          similarity: number
+          slug: string
         }[]
       }
     }
