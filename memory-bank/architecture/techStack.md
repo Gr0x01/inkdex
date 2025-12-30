@@ -9,9 +9,9 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 ## Core Technologies
 
 ### Frontend
-- **Framework**: Next.js 14+ (App Router)
-  - Why: Server Components, ISR, great SEO, Vercel integration
-  - Version: Latest stable (14.x)
+- **Framework**: Next.js 16+ (App Router with Turbopack)
+  - Why: Server Components, ISR, great SEO, Vercel integration, Turbopack stable (faster builds)
+  - Version: 16.1.1 (Turbopack default, React 19.2, file system caching)
 - **Language**: TypeScript (strict mode)
   - Why: Type safety, better DX, fewer runtime errors
   - Config: Strict mode enabled, path aliases configured
@@ -70,9 +70,10 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 ## Development Tools
 
 ### Code Quality
-- **Linting**: ESLint (Next.js config + custom rules)
-  - Config: Strict, enforce accessibility, no unused vars
-  - Run: `npm run lint` (pre-commit hook)
+- **Linting**: ESLint 9+ (Next.js config)
+  - Config: Flat config format (eslint.config.mjs), enforce accessibility, no unused vars
+  - Run: `npm run lint` (currently has ESLint 9 compatibility issues with Next.js - to be resolved)
+  - Note: Type-check (`npm run type-check`) is primary quality gate
 - **Formatting**: Prettier (integrated with ESLint)
   - Config: 2-space indent, single quotes, trailing commas
   - Run: Auto-format on save (VSCode) or `npm run format`

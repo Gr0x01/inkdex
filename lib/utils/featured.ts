@@ -1,27 +1,23 @@
 /**
  * Featured artist utilities
  *
- * An artist is considered "featured" if they have any portfolio image with >10,000 likes.
- * This is a simple engagement-based metric for highlighting high-performing artists.
+ * An artist is considered "featured" if they have 50,000+ Instagram followers.
+ * This highlights established artists with significant reach and credibility.
  */
 
-const FEATURED_LIKES_THRESHOLD = 10000;
+const FEATURED_FOLLOWER_THRESHOLD = 50000;
 
 /**
- * Check if an artist should be marked as "featured" based on their portfolio engagement
- * @param portfolioImages - Array of portfolio images with likes_count
- * @returns true if artist has at least one post with >10k likes
+ * Check if an artist should be marked as "featured" based on their follower count
+ * @param followerCount - Artist's Instagram follower count
+ * @returns true if artist has 50k+ followers
  */
-export function isArtistFeatured(
-  portfolioImages: Array<{ likes_count: number | null }> | undefined
-): boolean {
-  if (!portfolioImages || portfolioImages.length === 0) {
+export function isArtistFeatured(followerCount: number | null | undefined): boolean {
+  if (followerCount === null || followerCount === undefined) {
     return false;
   }
 
-  return portfolioImages.some(
-    (image) => image.likes_count !== null && image.likes_count >= FEATURED_LIKES_THRESHOLD
-  );
+  return followerCount >= FEATURED_FOLLOWER_THRESHOLD;
 }
 
 /**
@@ -45,4 +41,4 @@ export function getMaxLikes(
 /**
  * Featured artist threshold for display
  */
-export { FEATURED_LIKES_THRESHOLD };
+export { FEATURED_FOLLOWER_THRESHOLD };

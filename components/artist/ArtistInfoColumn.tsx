@@ -39,7 +39,7 @@ export default function ArtistInfoColumn({
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
   const isVerified = artist.verification_status === 'verified'
-  const isFeatured = isArtistFeatured(portfolioImages)
+  const isFeatured = isArtistFeatured(artist.follower_count)
   const displayBio = artist.bio_override || artist.bio
 
   // Calculate portfolio stats

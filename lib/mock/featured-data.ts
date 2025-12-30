@@ -15,6 +15,7 @@ export interface FeaturedArtist {
   slug: string
   shop_name: string | null
   verification_status: string
+  follower_count: number | null
   portfolio_images: Array<{
     id: string
     url: string
