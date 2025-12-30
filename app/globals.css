@@ -653,7 +653,7 @@ a:hover {
 .editorial-dropdown-menu {
   position: absolute;
   top: 100%;
-  right: 0;
+  left: 0;
   margin-top: 1rem;
   background: var(--paper-white);
   border: 2px solid var(--ink-black);
@@ -664,7 +664,6 @@ a:hover {
   transition: all var(--duration-medium) var(--ease-smooth);
   min-width: 220px;
   z-index: 50;
-  position: relative;
 }
 
 .group:hover .editorial-dropdown-menu {

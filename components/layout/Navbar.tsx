@@ -52,7 +52,7 @@ export default function Navbar() {
               aria-label="Search"
             >
               <svg
-                className="w-4 h-4 group-hover:scale-110 transition-transform duration-medium"
+                className="w-3 h-3 group-hover:scale-110 transition-transform duration-medium"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -78,7 +78,7 @@ export default function Navbar() {
               >
                 <span className="relative z-10">Browse</span>
                 <svg
-                  className="w-4 h-4 transition-transform duration-medium group-hover:rotate-180"
+                  className="w-3 h-3 transition-transform duration-medium group-hover:rotate-180"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
