@@ -286,38 +286,39 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
     return []
   }
 
-  // Group images by artist and filter those with 4+ images
-  const artistsMap = new Map()
+  // Process artists and their portfolio images
+  // Note: Supabase returns nested arrays for related data
+  const artists = data.map((row: any) => {
+    // row.portfolio_images is an array of images for this artist
+    const portfolioImages = Array.isArray(row.portfolio_images)
+      ? row.portfolio_images.map((img: any) => ({
+          id: img.id,
+          url: getImageUrl(img.storage_thumb_640),
+          likes_count: img.likes_count,
+        }))
+      : []
 
-  data.forEach((row: any) => {
-    if (!artistsMap.has(row.id)) {
-      artistsMap.set(row.id, {
-        id: row.id,
-        name: row.name,
-        slug: row.slug,
-        shop_name: row.shop_name,
-        verification_status: row.verification_status,
-        follower_count: row.follower_count,
-        portfolio_images: [],
-      })
-    }
-
-    const artist = artistsMap.get(row.id)
-    if (row.portfolio_images && row.portfolio_images.id) {
-      const publicUrl = getImageUrl(row.portfolio_images.storage_thumb_640)
-
-      artist.portfolio_images.push({
-        id: row.portfolio_images.id,
-        url: publicUrl,
-        likes_count: row.portfolio_images.likes_count,
-      })
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      shop_name: row.shop_name,
+      verification_status: row.verification_status,
+      follower_count: row.follower_count,
+      portfolio_images: portfolioImages,
     }
   })
 
   // Filter artists with 4+ images and limit results
-  const filteredArtists = Array.from(artistsMap.values())
+  const filteredArtists = artists
     .filter((artist: any) => artist.portfolio_images.length >= 4)
     .slice(0, limit)
+
+  console.log('✅ getFeaturedArtists returning:', {
+    totalArtists: artists.length,
+    artistsWith4Plus: filteredArtists.length,
+    artists: filteredArtists.map((a: any) => ({ name: a.name, imageCount: a.portfolio_images.length }))
+  })
 
   return filteredArtists
 }

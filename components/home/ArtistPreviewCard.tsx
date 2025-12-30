@@ -33,12 +33,14 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
       <div className="portfolio-preview-grid relative">
         {portfolioImages.map((image, index) => (
           <div key={image.id} className="relative overflow-hidden bg-surface-mid">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.url}
               alt={`${artist.name}'s work ${index + 1}`}
               className="w-full h-full object-cover"
               loading="lazy"
             />
+            {/* Note: Using img for simplicity in grid layout - images already optimized in storage */}
           </div>
         ))}
 

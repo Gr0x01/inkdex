@@ -9,6 +9,7 @@ export default [
       "**/out/**",
       "**/build/**",
       "**/.vercel/**",
+      "**/scripts/**", // Ignore scripts directory for now
     ],
   },
   ...tseslint.configs.recommended,
@@ -19,6 +20,14 @@ export default [
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_"
+        }
+      ],
     },
   },
 ];

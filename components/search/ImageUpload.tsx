@@ -104,6 +104,7 @@ export default function ImageUpload({
           <div className={`space-y-3 animate-scale-in ${compact ? 'space-y-2' : 'space-y-4'}`}>
             {/* Image Preview */}
             <div className="relative inline-block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={currentPreview}
                 alt="Upload preview"
@@ -111,6 +112,7 @@ export default function ImageUpload({
                   compact ? 'max-h-32' : 'max-h-80'
                 } max-w-full rounded-lg shadow-lg mx-auto border border-border-subtle`}
               />
+              {/* Note: Using img for blob URL preview - Next/Image doesn't support blob URLs */}
             </div>
 
             {/* File Info */}

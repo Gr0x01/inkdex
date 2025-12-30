@@ -38,12 +38,14 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
             >
               {/* Image Container */}
               <div className="relative overflow-hidden rounded-lg w-[100px] h-[100px] md:w-[120px] md:h-[120px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={image.url}
                   alt={`Tattoo work by ${image.artist_name}`}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
+                {/* Note: Using img - images already optimized in storage */}
 
                 {/* Artist Badge Overlay */}
                 <div className="absolute bottom-0 left-0 right-0 p-2 glass opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-medium">

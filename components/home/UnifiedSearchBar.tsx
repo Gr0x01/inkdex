@@ -163,11 +163,13 @@ export default function UnifiedSearchBar() {
             {imagePreview && (
               <div className="flex-shrink-0 pl-2 sm:pl-3 py-2">
                 <div className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePreview}
                     alt="Reference"
                     className="h-12 w-12 rounded-full object-cover ring-2 ring-ink"
                   />
+                  {/* Note: Using img for blob URL preview */}
                   <button
                     type="button"
                     onClick={removeImage}
