@@ -21,7 +21,12 @@
     "scrape-instagram": "./scripts/scraping/orchestrate-scraping.sh",
     "scrape-instagram:apify": "python3 scripts/scraping/apify-scraper.py",
     "process-images": "tsx scripts/scraping/process-and-upload.ts",
-    "validate-scraped-images": "tsx scripts/scraping/validate-scraped-images.ts"
+    "validate-scraped-images": "tsx scripts/scraping/validate-scraped-images.ts",
+    "seeds:download": "tsx scripts/style-seeds/download-and-upload-seeds.ts",
+    "seeds:prepare-embeddings": "tsx scripts/style-seeds/generate-seed-embeddings.ts",
+    "seeds:generate-embeddings": "python3 -m modal run scripts/style-seeds/generate-seed-embeddings-simple.py",
+    "seeds:populate": "tsx scripts/style-seeds/populate-style-seeds.ts",
+    "seeds:all": "npm run seeds:download && npm run seeds:prepare-embeddings && npm run seeds:generate-embeddings && npm run seeds:populate"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.490.0",
