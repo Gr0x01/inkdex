@@ -129,6 +129,23 @@ def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=No
         conn.commit()
         cursor.close()
 
+def update_artist_profile_metadata(conn, artist_id, profile_image_url, follower_count):
+    """Update artist profile metadata (thread-safe)"""
+    with db_lock:
+        cursor = conn.cursor()
+
+        query = """
+            UPDATE artists
+            SET profile_image_url = %s,
+                follower_count = %s,
+                last_scraped_at = NOW()
+            WHERE id = %s
+        """
+
+        cursor.execute(query, (profile_image_url, follower_count, artist_id))
+        conn.commit()
+        cursor.close()
+
 async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> bool:
     """
     Classify a single image using GPT-5-nano vision (Flex tier).
@@ -242,8 +259,16 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
         profile = results[0]
         posts = profile.get('latestPosts', [])
 
+        # Extract profile metadata
+        profile_pic_url = profile.get('profilePicUrlHD') or profile.get('profilePicUrl')
+        follower_count = profile.get('followersCount', 0)
+
+        print(f"   👤 Profile: {follower_count:,} followers")
+        if profile_pic_url:
+            print(f"   📷 Profile photo: {profile_pic_url[:60]}...")
+
         if not posts:
-            return 0, "No posts found in profile"
+            return 0, "No posts found in profile", profile_pic_url, follower_count
 
         print(f"   📸 Processing {len(posts)} posts...")
 
@@ -323,10 +348,10 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
         print(f"   ✅ Saved {len(downloaded_images)} images")
         print(f"   📊 Total downloaded: {len(downloaded_images)} posts")
 
-        return len(downloaded_images), None
+        return len(downloaded_images), None, profile_pic_url, follower_count
 
     except Exception as e:
-        return 0, str(e)
+        return 0, str(e), None, None
 
 def process_single_artist(artist_data, apify_client, conn):
     """Process a single artist (thread-safe wrapper)"""
@@ -340,14 +365,25 @@ def process_single_artist(artist_data, apify_client, conn):
 
         try:
             # Scrape profile
-            images_scraped, error = scrape_artist_profile(apify_client, instagram_handle, artist_id)
+            images_scraped, error, profile_pic_url, follower_count = scrape_artist_profile(apify_client, instagram_handle, artist_id)
 
             if error:
                 print(f"   ⚠️  Error: {error}")
                 update_scraping_job(conn, job_id, 'failed', images_scraped, error)
+
+                # Still save profile metadata if available (even on error)
+                if profile_pic_url or follower_count:
+                    update_artist_profile_metadata(conn, artist_id, profile_pic_url, follower_count)
+                    print(f"   ✅ Saved profile metadata despite error")
+
                 return {'success': False, 'artist_id': artist_id, 'images': 0}
             else:
                 update_scraping_job(conn, job_id, 'completed', images_scraped)
+
+                # Save profile metadata
+                update_artist_profile_metadata(conn, artist_id, profile_pic_url, follower_count)
+                print(f"   ✅ Saved profile metadata")
+
                 return {'success': True, 'artist_id': artist_id, 'images': images_scraped}
 
         except Exception as e:

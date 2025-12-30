@@ -29,6 +29,7 @@ export interface SearchResult {
   artist_slug: string
   city: string
   profile_image_url: string | null
+  follower_count: number | null
   instagram_url: string | null
   is_verified: boolean
   max_likes?: number  // Maximum likes across all portfolio images (for featured badge)

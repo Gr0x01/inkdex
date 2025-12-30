@@ -18,6 +18,7 @@ interface DbSearchResult {
   slug: string
   city: string
   profile_image_url: string | null
+  follower_count: number | null
   instagram_url: string | null
   is_verified: boolean
   images: Array<{
@@ -168,6 +169,7 @@ export async function GET(
           artist_slug: result.slug,
           city: result.city,
           profile_image_url: result.profile_image_url,
+          follower_count: result.follower_count,
           instagram_url: result.instagram_url,
           is_verified: result.is_verified,
           matching_images: (result.images || []).map((img: any) => ({

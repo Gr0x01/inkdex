@@ -139,6 +139,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     artist_slug: result.slug,
     city: result.city,
     profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count || null,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
     max_likes: result.max_likes || 0,  // For featured artist detection
