@@ -19,7 +19,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
   while (portfolioImages.length < 4) {
     portfolioImages.push({
       id: `placeholder-${portfolioImages.length}`,
-      url: '/placeholder-tattoo.jpg', // You'll want to add a placeholder image
+      url: '/placeholder-tattoo.jpg',
       likes_count: null,
     })
   }
@@ -27,45 +27,36 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
   return (
     <Link
       href={`/artist/${artist.slug}`}
-      className="group block relative overflow-hidden rounded-xl bg-surface-low border border-border-subtle hover:border-border-strong transition-all duration-medium lift-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+      className="group block relative overflow-hidden rounded-lg bg-gray-900/50 border border-gray-800 hover:border-gray-600 transition-all duration-300 lift-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
     >
       {/* Portfolio Preview Grid (2x2) */}
       <div className="portfolio-preview-grid relative">
         {portfolioImages.map((image, index) => (
-          <div key={image.id} className="relative overflow-hidden bg-surface-mid">
+          <div key={image.id} className="relative overflow-hidden bg-gray-900">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.url}
               alt={`${artist.name}'s work ${index + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
             {/* Note: Using img for simplicity in grid layout - images already optimized in storage */}
           </div>
         ))}
-
-        {/* Featured badge - Top-right corner */}
-        {isFeatured && (
-          <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-accent/90 backdrop-blur-sm border border-accent-bright/30 shadow-lg">
-            <span className="font-mono text-[10px] font-bold text-paper tracking-[0.15em] uppercase">
-              Featured
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Glass Morphism Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 glass border-t border-border-subtle translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-medium ease-smooth">
+      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent border-t border-gray-800/50 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {/* Artist Name */}
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-display text-base font-bold text-text-primary truncate">
+            <div className="flex items-center gap-1.5 mb-1">
+              <h3 className="font-heading text-sm font-bold text-white truncate">
                 {artist.name}
               </h3>
               {isVerified && (
                 <svg
-                  className="w-4 h-4 text-accent-primary flex-shrink-0"
+                  className="w-3.5 h-3.5 text-white flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   aria-label="Verified artist"
@@ -81,7 +72,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
 
             {/* Shop Name */}
             {artist.shop_name && (
-              <p className="font-body text-tiny text-text-secondary truncate">
+              <p className="font-mono text-[10px] text-gray-400 truncate tracking-wider uppercase">
                 {artist.shop_name}
               </p>
             )}
@@ -89,7 +80,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
 
           {/* Arrow Icon */}
           <svg
-            className="w-5 h-5 text-accent-primary flex-shrink-0 group-hover:translate-x-1 transition-transform duration-medium"
+            className="w-4 h-4 text-gray-400 group-hover:text-white flex-shrink-0 group-hover:translate-x-1 transition-all duration-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

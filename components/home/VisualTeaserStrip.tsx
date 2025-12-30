@@ -21,41 +21,38 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
   }
 
   return (
-    <section className="w-full py-6 bg-surface-low/50 border-y border-border-subtle" aria-label="Featured tattoo work">
-      <div className="container mx-auto">
-        <h2 className="font-body text-tiny text-text-secondary uppercase tracking-wide mb-4">
-          Trending Styles
-        </h2>
+    <div className="w-full" aria-label="Featured tattoo work">
+      {/* Horizontal Scrolling Strip */}
+      <div className="scroll-x-snap px-4">
+        {images.map((image, index) => (
+          <button
+            key={image.id}
+            onClick={() => handleImageClick(image.id)}
+            className="relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50 rounded-lg"
+            aria-label={`View work by ${image.artist_name}`}
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            {/* Image Container */}
+            <div className="relative overflow-hidden rounded-lg w-[140px] h-[140px] md:w-[160px] md:h-[160px] border-2 border-gray-800 group-hover:border-gray-600 transition-all duration-300">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={image.url}
+                alt={`Tattoo work by ${image.artist_name}`}
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300 group-hover:scale-105"
+                loading="lazy"
+              />
+              {/* Note: Using img - images already optimized in storage */}
 
-        {/* Horizontal Scrolling Strip */}
-        <div className="scroll-x-snap">
-          {images.map((image) => (
-            <button
-              key={image.id}
-              onClick={() => handleImageClick(image.id)}
-              className="relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded-lg"
-              aria-label={`View work by ${image.artist_name}`}
-            >
-              {/* Image Container */}
-              <div className="relative overflow-hidden rounded-lg w-[100px] h-[100px] md:w-[120px] md:h-[120px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image.url}
-                  alt={`Tattoo work by ${image.artist_name}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-                {/* Note: Using img - images already optimized in storage */}
-
-                {/* Artist Badge Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-2 glass opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-medium">
-                  <div className="flex items-center gap-1">
-                    <p className="font-body text-tiny text-text-primary truncate flex-1">
+              {/* Dark Overlay with Artist Badge */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-mono text-[10px] text-white uppercase tracking-wider truncate flex-1">
                       {image.artist_name}
                     </p>
                     {image.verified && (
                       <svg
-                        className="w-3 h-3 text-accent-primary flex-shrink-0"
+                        className="w-3 h-3 text-white flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                         aria-hidden="true"
@@ -70,10 +67,10 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
                   </div>
                 </div>
               </div>
-            </button>
-          ))}
-        </div>
+            </div>
+          </button>
+        ))}
       </div>
-    </section>
+    </div>
   )
 }

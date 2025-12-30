@@ -1,22 +1,14 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
-import VisualTeaserStrip from '@/components/home/VisualTeaserStrip'
 import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
-import { getFeaturedImages, getFeaturedArtists } from '@/lib/supabase/queries'
-import type { FeaturedImage, FeaturedArtist } from '@/lib/mock/featured-data'
+import { getFeaturedArtists } from '@/lib/supabase/queries'
+import type { FeaturedArtist } from '@/lib/mock/featured-data'
 
 // Force dynamic rendering for homepage to allow Supabase queries with cookies
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  // Fetch featured content (with fallback to empty arrays)
-  let featuredImages: FeaturedImage[] = []
+  // Fetch featured artists (with fallback to empty array)
   let featuredArtists: FeaturedArtist[] = []
-
-  try {
-    featuredImages = await getFeaturedImages(30) as FeaturedImage[]
-  } catch (error) {
-    console.error('Failed to fetch featured images:', error)
-  }
 
   try {
     // Query uses lowercase city slug, but we pass capitalized name to component
@@ -26,179 +18,153 @@ export default async function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-light">
+    <main className="min-h-screen bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════
-          HERO SECTION - Dark Cinematic Video Background
+          HERO SECTION - Dark Editorial with Video
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-[90vh] flex items-center overflow-hidden py-20 md:py-24">
-        {/* Video Background Layer - Full Opacity */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Video Background Layer */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
           aria-hidden="true"
         >
           <source src="/videos/hero-tattoo.mp4" type="video/mp4" />
         </video>
 
-        {/* Dark Gradient Vignette Overlay - Creates Depth & Ensures Readability */}
+        {/* Dramatic Vignette - Pure Black Edges */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background: `
-              radial-gradient(ellipse at center, rgba(15, 15, 15, 0.5) 0%, rgba(15, 15, 15, 0.7) 40%, rgba(15, 15, 15, 0.9) 100%),
-              linear-gradient(to bottom, rgba(15, 15, 15, 0.4) 0%, rgba(15, 15, 15, 0.7) 100%)
+              radial-gradient(ellipse at center, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0.95) 100%)
             `
           }}
         />
 
-        {/* Grain Texture for Editorial Feel */}
-        <div className="absolute inset-0 grain-overlay pointer-events-none" />
+        {/* Fine Grain Texture */}
+        <div className="absolute inset-0 grain-overlay pointer-events-none opacity-40" />
 
         {/* Content Layer */}
-        <div className="container mx-auto px-4 relative z-20">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Oversized Editorial Headline - Bright White */}
-            <div className="mb-6 md:mb-8 stagger-children">
+        <div className="container mx-auto px-4 relative z-20 py-32 md:py-40">
+          <div className="max-w-5xl mx-auto">
+            {/* Editorial Headline - Massive Scale */}
+            <div className="mb-12 md:mb-16 stagger-children">
               <h1
-                className="font-display leading-none mb-3 md:mb-4 drop-shadow-2xl"
+                className="font-display leading-[0.85] mb-6 md:mb-8 tracking-tight"
                 style={{
-                  fontSize: 'clamp(2.5rem, 12vw, 7rem)',
+                  fontSize: 'clamp(3.5rem, 14vw, 9rem)',
                   color: '#FFFFFF',
-                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.9)'
+                  textShadow: '0 6px 30px rgba(0, 0, 0, 0.9), 0 3px 15px rgba(0, 0, 0, 0.95)'
                 }}
               >
                 FIND YOUR
                 <br />
                 ARTIST
               </h1>
-              <p className="font-mono text-tiny md:text-small tracking-[0.2em] uppercase drop-shadow-lg" style={{ color: '#FFFFFF', textShadow: '0 2px 8px rgba(0, 0, 0, 0.8)' }}>
-                BY VIBE, NOT VOCABULARY
+
+              {/* Subheading - Refined Serif */}
+              <p
+                className="font-body-medium text-xl md:text-3xl leading-relaxed max-w-3xl animate-fade-up"
+                style={{
+                  animationDelay: '200ms',
+                  color: 'rgba(255, 255, 255, 0.90)',
+                  textShadow: '0 2px 20px rgba(0, 0, 0, 0.9)'
+                }}
+              >
+                Upload an image or describe your style—we'll match you with artists whose work fits your aesthetic.
               </p>
             </div>
 
-            {/* Subheading - Bright White */}
-            <p className="font-body text-base md:text-xl lg:text-2xl mb-8 md:mb-10 px-4 leading-relaxed animate-fade-up drop-shadow-lg" style={{ animationDelay: '200ms', color: '#FFFFFF', textShadow: '0 2px 12px rgba(0, 0, 0, 0.9)' }}>
-              Upload an image or describe your style. We&apos;ll match you with artists whose work fits your aesthetic.
-            </p>
-
-            {/* Unified Search Bar - White Card Floats on Dark */}
+            {/* Search Bar - Glass Morphism Card */}
             <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
               <UnifiedSearchBar />
             </div>
+
+            {/* Decorative Tagline */}
+            <div className="mt-8 md:mt-12 animate-fade-up" style={{ animationDelay: '600ms' }}>
+              <p className="font-mono text-tiny tracking-[0.25em] uppercase text-center" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                BY VIBE, NOT VOCABULARY
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Bottom Fade to Black */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(26, 26, 26, 1) 100%)'
+          }}
+        />
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          VISUAL GALLERY STRIP - Light Section (Inverted Rhythm)
+          FEATURED ARTISTS GRID - Deep Black Background
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-light py-16 md:py-20 relative">
-        <div className="container mx-auto relative z-10">
-          {/* Section Label */}
-          <div className="mb-12">
-            <h2 className="font-mono text-tiny text-gray-600 tracking-widest text-center">
-              FEATURED ARTISTS
-            </h2>
-          </div>
+      <section
+        className="relative py-24 md:py-32"
+        style={{ background: '#0a0a0a' }}
+      >
+        {/* Subtle Top Border */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
 
-          {/* Visual Strip */}
-          <VisualTeaserStrip images={featuredImages} />
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          FEATURED ARTISTS GRID - Dark Section with Torn Edge
-          ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-dark torn-edge-top py-16 md:py-24">
         <div className="container mx-auto">
           <FeaturedArtistsGrid artists={featuredArtists} city="Austin" />
         </div>
+
+        {/* Subtle Bottom Border */}
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          HOW IT WORKS - Light Accent Section
+          FOOTER CTA - Dramatic Editorial Statement
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-light torn-edge-top py-16 md:py-24 relative">
+      <section className="bg-ink relative py-32 md:py-40 overflow-hidden">
+        {/* Background Accent - Subtle Glow */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-5"
+          style={{
+            background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)'
+          }}
+        />
+
         <div className="container mx-auto relative z-10">
-          <div className="max-w-4xl mx-auto">
-            {/* Section Header */}
-            <h2 className="font-heading text-h1 text-center mb-16">
-              How It Works
-            </h2>
-
-            {/* Steps Grid */}
-            <div className="grid md:grid-cols-3 gap-12 md:gap-8">
-              {/* Step 1 */}
-              <div className="text-center stagger-children">
-                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
-                  01
-                </div>
-                <h3 className="font-heading text-h3 mb-4">Upload or Describe</h3>
-                <p className="font-body text-gray-700 leading-relaxed">
-                  Share a reference image or describe your tattoo style in your own words
-                </p>
-              </div>
-
-              {/* Step 2 */}
-              <div className="text-center stagger-children" style={{ animationDelay: '100ms' }}>
-                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
-                  02
-                </div>
-                <h3 className="font-heading text-h3 mb-4">Visual Matching</h3>
-                <p className="font-body text-gray-700 leading-relaxed">
-                  We analyze visual style and find artists whose work matches your aesthetic
-                </p>
-              </div>
-
-              {/* Step 3 */}
-              <div className="text-center stagger-children" style={{ animationDelay: '200ms' }}>
-                <div className="font-display text-[6rem] leading-none text-gray-700 mb-6 opacity-40">
-                  03
-                </div>
-                <h3 className="font-heading text-h3 mb-4">Connect & Book</h3>
-                <p className="font-body text-gray-700 leading-relaxed">
-                  Browse portfolios, visit their Instagram, and reach out to book your appointment
-                </p>
-              </div>
-            </div>
-
-            {/* CTA */}
-            <div className="text-center mt-16">
-              <a href="#search" className="btn btn-primary scale-hover">
-                Start Searching
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          FOOTER CTA - Dark Section
-          ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-dark torn-edge-top py-20 md:py-32 text-center">
-        <div className="container mx-auto">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="font-display text-display text-white-pure mb-8 leading-none">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Massive Display Typography */}
+            <h2
+              className="font-display leading-[0.9] mb-12"
+              style={{
+                fontSize: 'clamp(2.5rem, 10vw, 7rem)',
+                color: '#FFFFFF'
+              }}
+            >
               YOUR NEXT
               <br />
-              <span className="text-gray-300">TATTOO AWAITS</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>TATTOO AWAITS</span>
             </h2>
-            <p className="font-body text-xl text-gray-300 mb-12 leading-relaxed">
-              Join hundreds who found their perfect artist through visual search
+
+            {/* Refined Body Text */}
+            <p className="font-body text-xl md:text-2xl mb-16 leading-relaxed px-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              Join hundreds discovering their perfect artist through visual search
             </p>
-            <a href="#search" className="btn btn-primary scale-hover">
-              Find Your Artist
+
+            {/* Primary CTA */}
+            <a href="#search" className="btn btn-primary scale-hover text-base px-12 py-5">
+              Start Your Search
             </a>
           </div>
         </div>
 
-        {/* Footer Info */}
-        <div className="mt-20 pt-12 border-t border-gray-800">
-          <div className="font-mono text-tiny text-gray-500">
-            <p className="text-gray-600">Visual Search Platform</p>
+        {/* Minimal Footer Info */}
+        <div className="mt-32 pt-12 border-t border-gray-900">
+          <div className="container mx-auto">
+            <p className="font-mono text-tiny text-center tracking-[0.25em] uppercase" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
+              Visual Search Platform
+            </p>
           </div>
         </div>
       </section>

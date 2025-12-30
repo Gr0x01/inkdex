@@ -314,12 +314,6 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
     .filter((artist: any) => artist.portfolio_images.length >= 4)
     .slice(0, limit)
 
-  console.log('✅ getFeaturedArtists returning:', {
-    totalArtists: artists.length,
-    artistsWith4Plus: filteredArtists.length,
-    artists: filteredArtists.map((a: any) => ({ name: a.name, imageCount: a.portfolio_images.length }))
-  })
-
   return filteredArtists
 }
 
