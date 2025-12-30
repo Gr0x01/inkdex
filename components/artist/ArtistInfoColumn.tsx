@@ -44,7 +44,7 @@ export default function ArtistInfoColumn({
   const totalLikes = portfolioImages.reduce((sum, img) => sum + (img.likes_count || 0), 0)
 
   return (
-    <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-0 lg:self-start bg-paper relative">
+    <div className="bg-paper relative">
       {/* Subtle grain texture overlay - reduced on mobile */}
       <div className="grain-overlay absolute inset-0 pointer-events-none opacity-20 sm:opacity-30" />
 
@@ -207,6 +207,6 @@ export default function ArtistInfoColumn({
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   )
 }

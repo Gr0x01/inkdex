@@ -187,15 +187,9 @@ export default async function ArtistPage({
       <main className="min-h-screen bg-paper">
         <div className="flex flex-col lg:flex-row">
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
-          <ArtistInfoColumn
-            artist={artist}
-            portfolioImages={artist.portfolio_images || []}
-          />
-
-          {/* Right: Scrolling Portfolio Grid */}
-          <div className="w-full lg:w-[70%] xl:w-[65%] p-5 sm:p-6 lg:pr-8 lg:pl-12 xl:pr-12 xl:pl-16">
+          <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-0 lg:self-start lg:max-h-screen lg:overflow-y-auto">
             {/* Breadcrumbs */}
-            <nav className="font-body text-small text-text-secondary mb-6" aria-label="Breadcrumb">
+            <nav className="font-body text-small text-text-secondary p-4 sm:p-6 lg:pt-8 lg:px-8" aria-label="Breadcrumb">
               <ol className="flex items-center gap-2 flex-wrap">
                 <li>
                   <Link
@@ -238,6 +232,14 @@ export default async function ArtistPage({
               </ol>
             </nav>
 
+            <ArtistInfoColumn
+              artist={artist}
+              portfolioImages={artist.portfolio_images || []}
+            />
+          </aside>
+
+          {/* Right: Scrolling Portfolio Grid */}
+          <div className="w-full lg:w-[70%] xl:w-[65%] p-5 sm:p-6 lg:pr-8 lg:pl-12 xl:pr-12 xl:pl-16">
             <MasonryPortfolioGrid
               images={artist.portfolio_images || []}
               artistName={artist.name}
