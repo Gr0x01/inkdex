@@ -39,11 +39,11 @@ export async function generateMetadata({
     return { title: 'Artist Not Found' }
   }
 
-  const title = `${artist.name} - Tattoo Artist in ${artist.city}${artist.state ? ', ' + artist.state : ''}`
+  const title = `@${artist.instagram_handle} - Tattoo Artist in ${artist.city}${artist.state ? ', ' + artist.state : ''}`
   const description =
     artist.bio_override ||
     artist.bio ||
-    `Browse ${artist.name}'s tattoo portfolio and connect via Instagram. Based in ${artist.city}${artist.state ? ', ' + artist.state : ''}.`
+    `Browse @${artist.instagram_handle}'s tattoo portfolio and connect via Instagram. Based in ${artist.city}${artist.state ? ', ' + artist.state : ''}.`
 
   // Use profile image or first portfolio image for OG
   let ogImage = artist.profile_image_url || '/og-default.jpg'
@@ -94,7 +94,7 @@ export default async function ArtistPage({
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
-    name: sanitizeForJsonLd(artist.name),
+    name: `@${sanitizeForJsonLd(artist.instagram_handle)}`,
     description: sanitizeForJsonLd(artist.bio_override || artist.bio),
     url: `/artist/${slug}`,
     image: artist.profile_image_url,
@@ -115,7 +115,7 @@ export default async function ArtistPage({
         name: sanitizeForJsonLd(artist.shop_name),
         employee: {
           '@type': 'Person',
-          name: sanitizeForJsonLd(artist.name),
+          name: `@${sanitizeForJsonLd(artist.instagram_handle)}`,
         },
         address: {
           '@type': 'PostalAddress',
@@ -159,7 +159,7 @@ export default async function ArtistPage({
       {
         '@type': 'ListItem',
         position: state && city ? 4 : state || city ? 3 : 2,
-        name: sanitizeForJsonLd(artist.name),
+        name: `@${sanitizeForJsonLd(artist.instagram_handle)}`,
         item: `/artist/${slug}`,
       },
     ],
@@ -225,7 +225,7 @@ export default async function ArtistPage({
               )}
               <li>/</li>
               <li aria-current="page" className="text-text-primary">
-                {artist.name}
+                @{artist.instagram_handle}
               </li>
             </ol>
           </nav>
