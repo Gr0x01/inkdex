@@ -3,6 +3,10 @@ import { notFound } from 'next/navigation'
 import ArtistCard from '@/components/search/ArtistCard'
 import CityFilter from '@/components/search/CityFilter'
 import { SearchResultsResponse } from '@/types/search'
+import { createClient } from '@/lib/supabase/server'
+import { searchArtistsByEmbedding } from '@/lib/supabase/queries'
+import { CITIES, STATES } from '@/lib/constants/cities'
+import { getImageUrl } from '@/lib/utils/images'
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -23,34 +27,74 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Parse pagination
   const currentPage = parseInt(page || '1', 10)
   const limit = 20
+  const offset = (currentPage - 1) * limit
 
-  // Build API URL
-  const apiUrl = new URL(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/search/${id}`)
-  if (city) apiUrl.searchParams.set('city', city)
-  apiUrl.searchParams.set('page', currentPage.toString())
-  apiUrl.searchParams.set('limit', limit.toString())
+  // Fetch search from database (direct access, no HTTP request)
+  const supabase = await createClient()
 
-  // Fetch results
-  let results: SearchResultsResponse
-  try {
-    const response = await fetch(apiUrl.toString(), {
-      cache: 'no-store', // Always get fresh results for now
-    })
+  const { data: search, error: searchError } = await supabase
+    .from('searches')
+    .select('*')
+    .eq('id', id)
+    .single()
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        notFound()
-      }
-      throw new Error(`Failed to fetch results: ${response.statusText}`)
-    }
-
-    results = await response.json()
-  } catch (error) {
-    console.error('Error fetching search results:', error)
-    throw error
+  if (searchError || !search) {
+    notFound()
   }
 
-  const { artists, total, queryType, queryText } = results
+  // Parse embedding
+  let embedding: number[]
+  try {
+    embedding = JSON.parse(search.embedding)
+  } catch (error) {
+    console.error('Failed to parse embedding:', error)
+    throw new Error('Invalid embedding format')
+  }
+
+  // Parse location filter
+  let cities: string[] | null = null
+  if (city) {
+    if (city.startsWith('state:')) {
+      const stateSlug = city.replace('state:', '')
+      const state = STATES.find(s => s.slug === stateSlug)
+      cities = state ? (state.cities as unknown as string[]) : null
+    } else {
+      cities = [city]
+    }
+  }
+  const cityFilter = cities && cities.length > 0 ? cities[0] : null
+
+  // Search artists
+  const startTime = Date.now()
+  const rawResults = await searchArtistsByEmbedding(embedding, {
+    city: cityFilter,
+    limit,
+    offset,
+    threshold: 0.25,
+  })
+  const queryTime = Date.now() - startTime
+
+  // Map results to expected format
+  const artists = (Array.isArray(rawResults) ? rawResults : []).map((result: any) => ({
+    artist_id: result.id,
+    artist_name: result.name,
+    artist_slug: result.slug,
+    city: result.city,
+    profile_image_url: result.profile_image_url,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    matching_images: (result.images || []).map((img: any) => ({
+      url: getImageUrl(img.url),
+      instagramUrl: img.instagramUrl,
+      similarity: img.similarity,
+    })),
+    similarity: result.max_similarity || 0,
+  }))
+
+  // Extract results for rendering
+  const total = artists.length
+  const queryType = search.query_type
+  const queryText = search.query_text
   const hasResults = artists.length > 0
   const totalPages = Math.ceil(total / limit)
 

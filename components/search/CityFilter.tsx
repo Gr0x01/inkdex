@@ -6,7 +6,7 @@ import { CITIES, STATES } from '@/lib/constants/cities'
 
 // Build filter options with proper database values
 const FILTER_OPTIONS = [
-  { value: '', label: 'All Locations' },
+  { value: 'all', label: 'All Locations' }, // Use 'all' instead of empty string
   // State filters
   ...STATES.map(state => ({
     value: `state:${state.slug}`,
@@ -23,12 +23,13 @@ export default function CityFilter() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const currentCity = searchParams.get('city') || ''
+  const currentCity = searchParams.get('city') || 'all'
 
   const handleCityChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
 
-    if (value) {
+    // Treat 'all' as no filter
+    if (value && value !== 'all') {
       params.set('city', value)
     } else {
       params.delete('city')
