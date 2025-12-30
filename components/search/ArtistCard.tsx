@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { SearchResult } from '@/types/search'
+import { FEATURED_LIKES_THRESHOLD } from '@/lib/utils/featured'
 
 interface ArtistCardProps {
   artist: SearchResult
@@ -17,7 +18,11 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
     instagram_url,
     matching_images,
     similarity,
+    max_likes,
   } = artist
+
+  // Check if artist is featured (has posts with >10k likes)
+  const isFeatured = max_likes !== undefined && max_likes >= FEATURED_LIKES_THRESHOLD
 
   // All available images
   const allImages = (matching_images || []).filter(img => img.url && img.instagramUrl)
@@ -102,7 +107,16 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
             className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
           />
 
-          {/* Image counter - Refined */}
+          {/* Featured badge - Top-left */}
+          {isFeatured && (
+            <div className="absolute top-3 left-3 px-2.5 py-1.5 bg-accent/90 backdrop-blur-sm border border-accent-bright/30">
+              <span className="font-mono text-[10px] font-bold text-paper tracking-[0.15em] uppercase">
+                Featured
+              </span>
+            </div>
+          )}
+
+          {/* Image counter - Top-right */}
           {allImages.length > 1 && (
             <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-ink/80 backdrop-blur-sm">
               <span className="font-mono text-[10px] font-medium text-paper tracking-[0.1em] uppercase">

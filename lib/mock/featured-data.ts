@@ -18,6 +18,7 @@ export interface FeaturedArtist {
   portfolio_images: Array<{
     id: string
     url: string
+    likes_count: number | null
   }>
 }
 

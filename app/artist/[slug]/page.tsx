@@ -4,9 +4,8 @@ import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
-import ArtistHero from '@/components/artist/ArtistHero'
-import PortfolioGrid from '@/components/artist/PortfolioGrid'
-import InstagramStickyFooter from '@/components/artist/InstagramStickyFooter'
+import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
+import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
 
 export async function generateStaticParams() {
   // Use service role client for build-time static generation
@@ -131,30 +130,24 @@ export default async function ArtistPage({
         />
       )}
 
-      <main className="min-h-screen bg-bg-primary relative">
-        {/* Hero Section */}
-        <ArtistHero
-          artist={artist}
-          featuredImage={artist.portfolio_images?.[0] || null}
-        />
-
-        {/* Portfolio Grid with Interstitials */}
-        <PortfolioGrid
-          images={artist.portfolio_images || []}
-          artistName={artist.name}
-          artistBio={artist.bio_override || artist.bio}
-          artistId={artist.id}
-          city={artist.city}
-          verificationStatus={artist.verification_status}
-        />
-
-        {/* Mobile Sticky Footer */}
-        {artist.instagram_url && artist.instagram_handle && (
-          <InstagramStickyFooter
-            instagramUrl={artist.instagram_url}
-            instagramHandle={artist.instagram_handle}
+      {/* Editorial Magazine Layout */}
+      <main className="min-h-screen bg-paper">
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
+          <ArtistInfoColumn
+            artist={artist}
+            firstPortfolioImage={artist.portfolio_images?.[0] || null}
+            portfolioImages={artist.portfolio_images || []}
           />
-        )}
+
+          {/* Right: Scrolling Portfolio Grid */}
+          <div className="w-full lg:w-[70%] xl:w-[65%] p-6 sm:p-8 lg:p-12 xl:p-16">
+            <MasonryPortfolioGrid
+              images={artist.portfolio_images || []}
+              artistName={artist.name}
+            />
+          </div>
+        </div>
       </main>
     </>
   )

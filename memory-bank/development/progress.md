@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2025-12-30
 Maintainer: RB
-Status: Phase 3-6 Complete ✅, Search Quality Improved ✅
+Status: Phase 3-6 Complete ✅, Search Quality Improved ✅, Featured Artists ✅
 ---
 
 # Progress Log: Tattoo Artist Discovery Platform
@@ -353,6 +353,70 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - Adding domain context ("tattoo") improves semantic understanding
 - Lower thresholds (0.15) acceptable when results are ranked by similarity
 - Balance between precision (high threshold) and recall (low threshold)
+
+### Featured Artist System (Dec 30, 2025)
+**Status:** ✅ Complete
+
+**Feature Overview:**
+- Artists with high Instagram engagement (posts with >10,000 likes) receive "Featured" badge
+- Highlights high-performing artists for users across all interfaces
+- Fully automated based on existing likes_count data from Instagram scrapes
+
+**Implementation:**
+1. **Database Migration** (`20251230_003_add_likes_to_search_function.sql`):
+   - Updated `search_artists_by_embedding()` RPC function to return `max_likes` field
+   - Aggregates highest like count across all portfolio images per artist
+   - No new database columns needed - uses existing `portfolio_images.likes_count`
+
+2. **Helper Utilities** (`lib/utils/featured.ts`):
+   - `isArtistFeatured()` - Checks if any portfolio image has ≥10,000 likes
+   - `getMaxLikes()` - Returns highest like count from portfolio
+   - `FEATURED_LIKES_THRESHOLD` constant (10,000)
+
+3. **Type Definitions Updated**:
+   - `SearchResult` interface: Added `max_likes?: number`
+   - `MatchingImage` interface: Added `likes_count?: number | null`
+   - `FeaturedArtist` interface: Added `likes_count` to portfolio images
+
+4. **UI Components Enhanced**:
+   - **ArtistCard** (search results): Featured badge in top-left corner with accent background
+   - **ArtistPreviewCard** (city browse): Featured badge overlay on portfolio grid
+   - **ArtistInfoColumn** (profile pages): Featured badge below artist name
+   - Consistent design: Accent color, uppercase "FEATURED" text, tracking spacing
+
+5. **Query Updates**:
+   - `getCityArtists()` - Now includes `likes_count` in portfolio images
+   - Search page mapping updated to include `max_likes` from RPC results
+
+**Current Status:**
+- **1 featured artist** out of 188 Austin artists (0.5%)
+  - **Austin** (@michaelvillalobostattoo) - 23,011 likes
+- Badge displays automatically across all interfaces
+- Zero manual curation required
+
+**Files Modified:**
+- `supabase/migrations/20251230_003_add_likes_to_search_function.sql` (new)
+- `lib/utils/featured.ts` (new)
+- `lib/supabase/queries.ts`
+- `app/search/page.tsx`
+- `components/search/ArtistCard.tsx`
+- `components/home/ArtistPreviewCard.tsx`
+- `components/artist/ArtistInfoColumn.tsx`
+- `app/artist/[slug]/page.tsx`
+- `types/search.ts`
+- `lib/mock/featured-data.ts`
+- `scripts/check-featured-artists.ts` (new - verification script)
+
+**Benefits:**
+- Quick-and-dirty MVP feature (minimal implementation)
+- Leverages existing data (no additional API calls)
+- Scalable threshold (can adjust 10k limit as dataset grows)
+- Future-ready for manual curation via `portfolio_images.featured` boolean
+
+**Next Steps (Future Enhancement):**
+- Consider lowering threshold to 5k or 7.5k to feature more artists
+- Add manual override via `portfolio_images.featured` field
+- Track click-through rates on featured artists
 
 ### Phase 2: Artist Discovery (Dec 29, 2025 - In Progress)
 

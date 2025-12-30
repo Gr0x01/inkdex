@@ -458,7 +458,8 @@ export async function getCityArtists(
       instagram_handle,
       portfolio_images!inner (
         id,
-        storage_thumb_640
+        storage_thumb_640,
+        likes_count
       )
     `,
       { count: 'exact' }
@@ -500,6 +501,7 @@ export async function getCityArtists(
       artist.portfolio_images.push({
         id: row.portfolio_images.id,
         url: publicUrl,
+        likes_count: row.portfolio_images.likes_count,
       })
     }
   })

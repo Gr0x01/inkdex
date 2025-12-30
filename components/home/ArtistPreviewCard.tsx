@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
+import { isArtistFeatured } from '@/lib/utils/featured'
 
 interface ArtistPreviewCardProps {
   artist: FeaturedArtist
@@ -9,6 +10,7 @@ interface ArtistPreviewCardProps {
 
 export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
   const isVerified = artist.verification_status === 'verified'
+  const isFeatured = isArtistFeatured(artist.portfolio_images)
 
   // Get first 4 portfolio images
   const portfolioImages = artist.portfolio_images.slice(0, 4)
@@ -18,6 +20,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
     portfolioImages.push({
       id: `placeholder-${portfolioImages.length}`,
       url: '/placeholder-tattoo.jpg', // You'll want to add a placeholder image
+      likes_count: null,
     })
   }
 
@@ -27,7 +30,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
       className="group block relative overflow-hidden rounded-xl bg-surface-low border border-border-subtle hover:border-border-strong transition-all duration-medium lift-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
     >
       {/* Portfolio Preview Grid (2x2) */}
-      <div className="portfolio-preview-grid">
+      <div className="portfolio-preview-grid relative">
         {portfolioImages.map((image, index) => (
           <div key={image.id} className="relative overflow-hidden bg-surface-mid">
             <img
@@ -38,6 +41,15 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
             />
           </div>
         ))}
+
+        {/* Featured badge - Top-right corner */}
+        {isFeatured && (
+          <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-accent/90 backdrop-blur-sm border border-accent-bright/30 shadow-lg">
+            <span className="font-mono text-[10px] font-bold text-paper tracking-[0.15em] uppercase">
+              Featured
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Glass Morphism Info Overlay */}

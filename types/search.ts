@@ -20,6 +20,7 @@ export interface MatchingImage {
   url: string
   instagramUrl: string
   similarity: number
+  likes_count?: number | null
 }
 
 export interface SearchResult {
@@ -30,6 +31,7 @@ export interface SearchResult {
   profile_image_url: string | null
   instagram_url: string | null
   is_verified: boolean
+  max_likes?: number  // Maximum likes across all portfolio images (for featured badge)
   matching_images?: MatchingImage[]
   similarity: number
 }

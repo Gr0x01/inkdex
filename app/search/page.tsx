@@ -141,10 +141,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     profile_image_url: result.profile_image_url,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
+    max_likes: result.max_likes || 0,  // For featured artist detection
     matching_images: (result.images || []).map((img: any) => ({
       url: getImageUrl(img.url),
       instagramUrl: img.instagramUrl,
       similarity: img.similarity,
+      likes_count: img.likes_count || null,
     })),
     similarity: result.max_similarity || 0,
   }))
