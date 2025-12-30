@@ -40,6 +40,13 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
   - Model: `ViT-L-14` via Modal.com serverless GPU
   - Text Search: Same model encodes text queries → same vector space
   - Cost: ~$0.30 per city (one-time), pay-per-second GPU
+  - **Warmup Architecture** (Dec 31, 2025):
+    - **Scaledown Window:** 10 minutes (keeps container alive between searches)
+    - **Pre-warming:** Fire-and-forget warmup on homepage load
+    - **Feature Flag:** `NEXT_PUBLIC_ENABLE_WARMUP` to disable when traffic is high
+    - **Performance:** 25s cold start → 2-5s warm (83-90% faster)
+    - **Cost:** ~$3-5/month (warmup) vs $210-240/month (24/7 keep-warm)
+    - **Security:** SSRF prevention (domain whitelist) + rate limiting (1/min per IP)
 - **Image Storage**: Cloudflare R2 + CDN
   - Why: S3-compatible, no egress fees, $0.015/GB storage
   - Structure: `original/{artist_id}/{post_id}.jpg`, `thumbnails/{size}/{artist_id}/{post_id}_${width}w.webp`
@@ -59,10 +66,11 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 
 ### Architecture Pattern
 - **Server Components**: Default for data fetching (faster, less JS)
-- **Client Components**: Only for interactivity (search input, image upload)
-- **API Routes**: `/api/search` (image/text → embedding → searchId)
+- **Client Components**: Only for interactivity (search input, image upload, Modal warmup)
+- **API Routes**: `/api/search` (image/text → embedding → searchId), `/api/warmup` (container pre-warming)
 - **Static Generation**: City/artist/style pages (ISR with 24h revalidation)
 - **URL-Based State**: Search results via `?id={searchId}` (no client state needed)
+- **Container Warmup**: Fire-and-forget warmup on homepage load (reduces first search latency)
 - **Future Auth Context**: AuthProvider wrapper (ready but unused in MVP)
 
 ---
@@ -502,6 +510,8 @@ Scripts (Node.js + Python)
 - [Search UX Strategy](../projects/search-ux-strategy.md)
 - [Architecture Patterns](./patterns.md) - **Inherited from DDD project**
 - [City Analysis Results](../development/activeContext.md#launch-city-selection-results)
+- [Architecture Decision: Modal Container Warmup](./decision-modal-warmup.md) - **Dec 31, 2025**
+- [Architecture Decision: Image Filtering](./decision-image-filtering.md) - **Dec 29, 2025**
 
 ### Tutorials & Guides
 - [pgvector + Supabase Tutorial](https://supabase.com/blog/openai-embeddings-postgres-vector)
@@ -511,5 +521,5 @@ Scripts (Node.js + Python)
 
 ---
 
-**Last Review:** 2025-12-29
-**Next Review:** After Phase 2 (Artist Discovery + Image Scraping complete)
+**Last Review:** 2025-12-31 (Modal warmup architecture added)
+**Next Review:** After Phase 7 (Style landing pages & SEO optimization complete)

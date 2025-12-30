@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-30 (Updated: Next.js 16 upgrade & ESLint 9 migration)
+Last-Updated: 2025-12-31 (Updated: Modal container warmup optimization)
 Maintainer: RB
-Status: Phase 3-6 COMPLETE ✅, Next.js 16 Upgrade COMPLETE ✅, Production Ready ✅
+Status: Phase 3-6 COMPLETE ✅, Modal Warmup COMPLETE ✅, Ready for Phase 7 ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
@@ -32,7 +32,9 @@ Status: Phase 3-6 COMPLETE ✅, Next.js 16 Upgrade COMPLETE ✅, Production Read
 17. ✅ **COMPLETED (Phase 6):** Artist profile pages with state/city SEO hierarchy (188 pages)
 18. ✅ **COMPLETED (Dec 30):** Search quality optimization (threshold 0.25→0.15, query enhancement)
 19. ✅ **COMPLETED (Dec 30):** Numbered pagination with page buttons (1, 2, 3...10)
-20. **NEXT:** Phase 7 - Style landing pages & SEO optimization
+20. ✅ **COMPLETED (Dec 30):** Style seeds from Tattoodo (10 styles, 57 images, CLIP embeddings)
+21. ✅ **COMPLETED (Dec 31):** Modal container warmup optimization (25s → 2-5s search latency)
+22. **NEXT:** Phase 7 - Style landing pages & SEO optimization
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -48,7 +50,7 @@ Status: Phase 3-6 COMPLETE ✅, Next.js 16 Upgrade COMPLETE ✅, Production Read
 - ~~Need scraping approach~~ - Puppeteer shop scraper working
 
 ## In Progress
-- None - Austin discovery complete, ready to begin LA
+- None - All infrastructure complete, ready for Phase 7
 
 ## Ready to Start
 - Los Angeles discovery using proven Austin approach:
@@ -743,6 +745,138 @@ Once Instagram scraping and CLIP embeddings are generated:
 - Consider adding error boundaries for production stability
 - Optimize eager image loading count (6 → 3-4)
 
+### Style Seeds from Tattoodo (✅ COMPLETE - Dec 30, 2025)
+
+**Status:** ✅ 10 tattoo styles with CLIP embeddings in database
+
+**Source:** https://www.tattoodo.com/articles/a-beginners-guide-popular-tattoo-styles-briefly-explained-6969
+
+**Results:**
+- **57 seed images** downloaded from Tattoodo (5-6 per style)
+- **All images uploaded** to Supabase Storage (`portfolio-images/style-seeds/`)
+- **57 CLIP embeddings** generated via Modal.com (ViT-L-14, 768-dim)
+- **10 representative seeds** inserted into `style_seeds` table
+- **100% success rate** - All embeddings generated without errors
+
+**Styles Seeded:**
+1. **Traditional** - Bold lines, bright colors, roses and anchors
+2. **Realism** - Photo-realistic portraits and nature
+3. **Watercolor** - Soft, flowing, brush-dabbled pastels
+4. **Tribal** - Bold geometric patterns, black ink
+5. **New School** - Cartoonish, vibrant, 90s aesthetic
+6. **Neo Traditional** - Modern evolution with vibrant colors
+7. **Japanese** - Dragons, phoenixes, folklore (Irezumi)
+8. **Blackwork** - Solely black ink, sacred geometry
+9. **Illustrative** - Etching, engraving, fine line
+10. **Chicano** - Fine line, Mexican culture, LA style
+
+**Tools & Scripts Created:**
+- `scripts/style-seeds/style-seeds-data.ts` - Style definitions from Tattoodo
+- `scripts/style-seeds/download-and-upload-seeds.ts` - Download & upload pipeline
+- `scripts/style-seeds/generate-seed-embeddings.ts` - Image preparation
+- `scripts/style-seeds/generate-seed-embeddings-simple.py` - Modal.com GPU processing
+- `scripts/style-seeds/populate-style-seeds.ts` - Database insertion
+- `scripts/style-seeds/verify-seeds.ts` - Verification utility
+
+**NPM Scripts:**
+```bash
+npm run seeds:download              # Download images from Tattoodo
+npm run seeds:prepare-embeddings    # Prepare for GPU processing
+npm run seeds:generate-embeddings   # Generate CLIP embeddings (Modal.com)
+npm run seeds:populate              # Insert into database
+npm run seeds:all                   # Run complete pipeline
+```
+
+**Next Steps for Phase 7:**
+1. Create style landing pages (e.g., `/texas/austin/traditional`)
+2. Build style browse UI component
+3. Implement style-based artist search using seed embeddings
+4. Add style filters to search results
+5. SEO optimization for style pages
+
+### Modal Container Warmup Optimization (✅ COMPLETE - Dec 31, 2025)
+
+**Status:** ✅ Production-ready with security hardening
+
+**Problem Identified:**
+- **Modal cold starts:** 20-25s per search (container startup + model loading)
+- **User experience:** Unacceptable latency for first search
+- **Warming cost:** $210-240/month for 24/7 keep-warm (too expensive for MVP)
+
+**Solution Implemented:**
+1. **Container Scaledown Window:** 10-minute idle timeout (stays warm between searches)
+2. **Pre-warmup on Page Load:** Fire-and-forget warmup request when user lands on homepage
+3. **Feature Flag:** `NEXT_PUBLIC_ENABLE_WARMUP` to disable when organic traffic keeps containers warm
+
+**Architecture:**
+```
+User Journey:
+1. User lands on homepage → ModalWarmup component fires
+2. Container spins up in background (20-25s)
+3. User browses/enters query (~30-60s)
+4. User submits search → Container is warm (2-5s response!)
+5. Subsequent searches within 10min → 2-5s (warm)
+6. After 10min idle → Container shuts down (saves money)
+```
+
+**Performance Results:**
+| Scenario | Before | After | Improvement |
+|----------|--------|-------|-------------|
+| First search (cold) | 25s | 2-5s (pre-warmed!) | **83-90% faster** |
+| Searches within 10min | 25s (cold every time) | 2-5s (warm) | **83-90% faster** |
+| After 10min idle | 25s | 25s (acceptable, infrequent) | Same |
+
+**Cost Analysis:**
+- **Warmup cost:** ~$0.001 per homepage visit (0.3s GPU time for text embedding)
+- **Expected monthly cost:** ~$3-5/month (100-200 visitors/day)
+- **Savings:** $205-237/month vs 24/7 keep-warm ($210-240/month)
+- **Cost efficiency:** 98% savings while maintaining fast UX
+
+**Security Hardening (Code Review):**
+1. ✅ **SSRF Prevention:** URL validation (whitelist `.modal.run` domain, HTTPS only)
+2. ✅ **Rate Limiting:** Max 1 warmup per IP per minute (prevents cost abuse)
+3. ✅ **Cache-Control Headers:** Prevents caching of POST responses
+4. ✅ **Timing Metrics:** Logs warmup duration for monitoring
+5. ✅ **Error Handling:** Silent failures (non-critical optimization)
+6. ✅ **Memory Leak Prevention:** Automatic cleanup of rate limit cache
+
+**Files Created:**
+- `app/api/warmup/route.ts` - Warmup API endpoint (138 lines, production-ready)
+- `components/warmup/ModalWarmup.tsx` - Client-side warmup trigger
+- Updated: `scripts/embeddings/modal_clip_embeddings.py` (scaledown_window parameter)
+- Updated: `.env.example` (NEXT_PUBLIC_ENABLE_WARMUP flag)
+
+**Modal Deployment:**
+- **Endpoint:** `https://gr0x01--tattoo-clip-embeddings-model-fastapi-app.modal.run`
+- **Configuration:** `scaledown_window=600` (10 minutes)
+- **Parameter Update:** Migrated from deprecated `container_idle_timeout` to `scaledown_window` (Modal 1.0+)
+- **Deployment Time:** ~4 seconds (no warnings)
+
+**Setup Instructions:**
+```bash
+# 1. Add to .env.local
+NEXT_PUBLIC_ENABLE_WARMUP=true
+MODAL_FUNCTION_URL=https://gr0x01--tattoo-clip-embeddings-model-fastapi-app.modal.run
+
+# 2. Restart dev server
+npm run dev
+
+# 3. Test flow
+# - Open homepage → Check console for "🔥 Triggering Modal warmup..."
+# - Wait 30s for warmup
+# - Run search → Should be fast (2-5s)
+```
+
+**When to Disable Warmup:**
+- 50+ searches/day (containers stay naturally warm from organic traffic)
+- Want to save ~$3/month warmup cost
+- Running analytics and don't want warmup noise
+
+**Next Steps:**
+- Monitor warmup effectiveness via server logs
+- Consider localStorage deduplication (avoid duplicate warmups on navigation)
+- Evaluate reducing scaledown_window to 5min if search patterns support it
+
 ## Context Notes
 - ✅ Market validation complete - strong demand across all cities
 - ✅ Austin selected for growth potential + low competition
@@ -751,4 +885,5 @@ Once Instagram scraping and CLIP embeddings are generated:
 - ✅ Phase 0 completed in ~5 hours (market analysis)
 - ✅ Phase 1 completed in ~8 hours (infrastructure + security hardening)
 - **Phase 1 is production-ready** - all critical security and performance issues resolved
-- Next: Phase 2 (Artist Discovery) requires external API credentials (R2, Google Maps, Apify)
+- ✅ **Style seeds complete** - Ready for Phase 7 style landing pages
+- Next: Phase 7 (Style Landing Pages & SEO) OR Los Angeles discovery

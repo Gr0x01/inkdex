@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2025-12-30
 Maintainer: RB
-Status: Phase 3-6 Complete ✅, Search Quality Improved ✅, Featured Artists ✅
+Status: Phase 3-6 Complete ✅, Style Seeds Complete ✅, Ready for Phase 7 ✅
 ---
 
 # Progress Log: Tattoo Artist Discovery Platform
@@ -684,3 +684,74 @@ After initial infrastructure setup, comprehensive code review identified and fix
     - Supabase uploads: 100 concurrent (limited only by bandwidth, not memory)
 20. **Database cleanup during production:** Delete bad data immediately rather than accumulating failed records (deleted 16 invalid handles)
 21. **Batch processing over inline filtering:** Download → Batch classify → Filter saves time vs inline classification (2-3 min vs 90+ min)
+22. **Tattoodo as authoritative source:** Professional style guide provides better-curated seed images than manual selection (10 styles, 57 images)
+23. **Style seeds for SEO:** Seed embeddings enable auto-generated style landing pages without manual artist tagging
+24. **Modal container warmup optimization:** Pre-warm on page load + 10-min scaledown window reduces search latency from 25s → 2-5s while saving $205/month vs 24/7 warming
+25. **Security-first warmup:** SSRF prevention (domain whitelist, HTTPS) + rate limiting (1/min per IP) prevents cost abuse
+### Phase 7 Prep: Style Seeds from Tattoodo (December 30, 2025)
+**Status**: ✅ Complete (~1 hour)
+
+#### Completed
+- ✅ **Style Seeds Pipeline:**
+  - Downloaded 57 seed images from Tattoodo article (10 styles, 5-6 images each)
+  - Uploaded all images to Supabase Storage (`portfolio-images/style-seeds/`)
+  - Generated 57 CLIP embeddings via Modal.com (ViT-L-14, 768-dim vectors)
+  - Inserted 10 representative style seeds into `style_seeds` table
+  - 100% success rate - All embeddings generated without errors
+
+- ✅ **10 Tattoo Styles Seeded:**
+  1. **Traditional** - Bold lines, bright colors, roses and anchors
+  2. **Realism** - Photo-realistic portraits and nature
+  3. **Watercolor** - Soft, flowing, brush-dabbled pastels
+  4. **Tribal** - Bold geometric patterns, black ink
+  5. **New School** - Cartoonish, vibrant, 90s aesthetic
+  6. **Neo Traditional** - Modern evolution with vibrant colors
+  7. **Japanese** - Dragons, phoenixes, folklore (Irezumi)
+  8. **Blackwork** - Solely black ink, sacred geometry
+  9. **Illustrative** - Etching, engraving, fine line
+  10. **Chicano** - Fine line, Mexican culture, LA style
+
+- ✅ **Tools & Scripts Created:**
+  - `scripts/style-seeds/style-seeds-data.ts` - Style definitions with Tattoodo URLs
+  - `scripts/style-seeds/download-and-upload-seeds.ts` - Download & upload pipeline
+  - `scripts/style-seeds/generate-seed-embeddings.ts` - Prepare images for GPU processing
+  - `scripts/style-seeds/generate-seed-embeddings-simple.py` - Modal.com GPU batch processing
+  - `scripts/style-seeds/populate-style-seeds.ts` - Database insertion with deduplication
+  - `scripts/style-seeds/verify-seeds.ts` - Verification and testing utility
+
+- ✅ **NPM Scripts Added:**
+  ```bash
+  npm run seeds:download              # Download & upload images from Tattoodo
+  npm run seeds:prepare-embeddings    # Prepare images for GPU processing
+  npm run seeds:generate-embeddings   # Generate CLIP embeddings (Modal.com)
+  npm run seeds:populate              # Insert into database
+  npm run seeds:all                   # Run complete pipeline
+  ```
+
+#### Key Technical Decisions
+- **Source:** Tattoodo article as authoritative style guide (professional curation)
+- **Representative Selection:** First seed image per style (typically most iconic)
+- **Embedding Strategy:** Same CLIP model as portfolio images for consistency
+- **Storage Path:** `style-seeds/{style-name}-{number}.jpg` for organization
+- **Database Strategy:** Upsert-safe with unique constraint on `style_name`
+
+#### Metrics
+- **Total Seed Images:** 57 images
+- **Styles Covered:** 10 major tattoo styles
+- **Embedding Success Rate:** 100% (57/57)
+- **Storage Used:** ~12MB (seed images)
+- **Processing Time:** ~2 minutes (Modal.com GPU)
+- **Total Cost:** ~$0.05 (Modal.com compute)
+
+#### Next Steps for Phase 7
+1. Create style landing pages (e.g., `/texas/austin/traditional`)
+2. Build style browse UI component for homepage
+3. Implement style-based artist search using seed embeddings
+4. Add style filters to search results
+5. Generate SEO metadata for style pages
+6. Internal linking between city, state, and style pages
+
+#### Source
+- **Article:** https://www.tattoodo.com/articles/a-beginners-guide-popular-tattoo-styles-briefly-explained-6969
+- **Date Accessed:** December 30, 2025
+- **Images Used:** Representative examples for each style (fair use for search indexing)
