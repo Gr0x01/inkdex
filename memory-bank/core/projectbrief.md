@@ -1,15 +1,16 @@
 ---
-Last-Updated: 2025-12-29
+Last-Updated: 2025-12-31
 Maintainer: RB
 Status: Active Development
 ---
 
-# Project Brief: Tattoo Artist Discovery Platform
+# Project Brief: Inkdex
 
 ## Project Overview
-AI-powered tattoo artist discovery platform that revolutionizes how people find tattoo artists by letting them search in *their language* (images, vibes, plain descriptions) rather than forcing them to learn tattoo industry terminology.
+Inkdex is an AI-powered tattoo artist discovery platform that revolutionizes how people find tattoo artists by letting them search in *their language* (images, vibes, plain descriptions) rather than forcing them to learn tattoo industry terminology.
 
-**Product Name:** TBD (to be determined with branding)
+**Product Name:** Inkdex
+**Domain:** inkdex.io
 
 ## Core Purpose
 

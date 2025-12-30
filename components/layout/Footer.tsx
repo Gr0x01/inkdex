@@ -10,7 +10,7 @@ export default function Footer() {
           <div>
             <Link href="/" className="group">
               <h3 className="font-libre-baskerville text-xl font-bold tracking-tight text-white transition-colors group-hover:text-accent">
-                Tattoo Artist Discovery
+                Inkdex
               </h3>
             </Link>
             <p className="mt-4 font-jetbrains-mono text-sm text-stone-400">
@@ -81,7 +81,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 border-t border-stone-800 pt-8">
           <p className="font-jetbrains-mono text-center text-xs text-stone-500">
-            © {new Date().getFullYear()} Tattoo Artist Discovery. Visual search
+            © {new Date().getFullYear()} Inkdex. Visual search
             platform for finding tattoo artists.
           </p>
         </div>

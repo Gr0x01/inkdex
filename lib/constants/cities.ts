@@ -1,5 +1,5 @@
 /**
- * Supported cities for tattoo artist discovery
+ * Supported cities for Inkdex
  * Based on Phase 0 market analysis (Dec 29, 2025)
  */
 
@@ -22,6 +22,15 @@ export const CITIES = [
     monthlySearches: 261920,
     competition: 52,
   },
+  {
+    name: 'Atlanta',
+    slug: 'atlanta',
+    state: 'GA',
+    fullName: 'Atlanta, GA',
+    opportunityScore: 75, // Estimated (not from Phase 0 analysis)
+    monthlySearches: 250000, // Estimated
+    competition: 50, // Estimated
+  },
 ] as const
 
 export const STATES = [
@@ -36,6 +45,12 @@ export const STATES = [
     code: 'CA',
     slug: 'california',
     cities: ['los-angeles'],
+  },
+  {
+    name: 'Georgia',
+    code: 'GA',
+    slug: 'georgia',
+    cities: ['atlanta'],
   },
 ] as const
 

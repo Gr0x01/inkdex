@@ -1,14 +1,14 @@
-# Tattoo Artist Discovery Platform - Implementation Plan
+# Inkdex - Implementation Plan
 
-**Last Updated:** 2025-12-29
+**Last Updated:** 2025-12-31
 **Status:** Planning Phase
-**Project Name:** TBD (to be determined with branding)
+**Project Name:** Inkdex
 
 ---
 
 ## Project Overview
 
-**Vision:** AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) and we translate that into finding the right artist.
+**Vision:** Inkdex is an AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) and we translate that into finding the right artist.
 
 **Core Problem We're Solving:**
 Users DON'T know:

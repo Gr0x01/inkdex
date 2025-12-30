@@ -1,10 +1,10 @@
 ---
-Last-Updated: 2025-12-30
+Last-Updated: 2025-12-31
 Maintainer: RB
 Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 ---
 
-# Technology Stack: Tattoo Artist Discovery Platform
+# Technology Stack: Inkdex
 
 ## Core Technologies
 

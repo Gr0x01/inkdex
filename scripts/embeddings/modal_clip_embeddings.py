@@ -1,5 +1,5 @@
 """
-Modal.com CLIP Embedding Generation for Tattoo Artist Discovery Platform
+Modal.com CLIP Embedding Generation for Inkdex
 
 This script uses Modal.com's serverless GPU infrastructure to generate CLIP embeddings
 for tattoo portfolio images using OpenCLIP ViT-L-14 (768 dimensions).

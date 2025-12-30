@@ -1,10 +1,10 @@
 ---
-Last-Updated: 2025-12-29
+Last-Updated: 2025-12-31
 Maintainer: RB
 Status: Phase 0 Complete → Phase 1 Starting
 ---
 
-# Quickstart: Tattoo Artist Discovery Platform
+# Quickstart: Inkdex
 
 ## Current Status
 - **Phase**: Phase 1 - Infrastructure Setup
@@ -13,7 +13,7 @@ Status: Phase 0 Complete → Phase 1 Starting
 - **Next Phase**: Database & infrastructure setup, then artist discovery pipeline
 
 ## Project Summary
-AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) using multi-modal CLIP embeddings. Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
+Inkdex - AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) using multi-modal CLIP embeddings. Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
 
 ## Launch Cities (Selected Dec 29, 2025)
 1. **Austin, TX** - Score: 78/100 (lowest competition, strong growth)

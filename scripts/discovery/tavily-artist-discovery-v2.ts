@@ -65,8 +65,8 @@ interface CityConfig {
 // ============================================================================
 
 const CITIES: CityConfig[] = [
-  { name: 'Austin', state: 'TX', slug: 'austin' },
-  // { name: 'Los Angeles', state: 'CA', slug: 'los-angeles' },
+  { name: 'Atlanta', state: 'GA', slug: 'atlanta' },
+  { name: 'Los Angeles', state: 'CA', slug: 'los-angeles' },
 ];
 
 // ============================================================================

@@ -1,6 +1,8 @@
 {
-  "name": "tattoo-artist-discovery",
+  "name": "inkdex",
   "version": "0.1.0",
+  "description": "Find tattoo artists by vibe, powered by visual AI",
+  "homepage": "https://inkdex.io",
   "private": true,
   "scripts": {
     "dev": "next dev",

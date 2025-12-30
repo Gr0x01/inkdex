@@ -186,6 +186,16 @@ function getCityNeighborhoods(cityName: string): string[] {
       'Pasadena',
       'Burbank',
     ],
+    Atlanta: [
+      'Downtown Atlanta',
+      'Midtown',
+      'Buckhead',
+      'Little Five Points',
+      'East Atlanta',
+      'Virginia Highland',
+      'Old Fourth Ward',
+      'Inman Park',
+    ],
   };
 
   return neighborhoods[cityName] || [];

@@ -38,25 +38,25 @@ const crimsonPro = Crimson_Pro({
 })
 
 export const metadata: Metadata = {
-  title: 'Find Your Tattoo Artist by Vibe',
+  title: 'Inkdex - Find Your Tattoo Artist',
   description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
   openGraph: {
-    title: 'Find Your Tattoo Artist by Vibe',
+    title: 'Inkdex - Find Your Tattoo Artist',
     description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
     type: 'website',
-    siteName: 'Tattoo Artist Discovery',
+    siteName: 'Inkdex',
     images: [
       {
         url: '/og-default.jpg', // TODO: Create homepage OG image
         width: 1200,
         height: 630,
-        alt: 'Tattoo Artist Discovery - Find artists by visual search',
+        alt: 'Inkdex - Find artists by visual search',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Find Your Tattoo Artist by Vibe',
+    title: 'Inkdex - Find Your Tattoo Artist',
     description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
     images: ['/og-default.jpg'],
   },

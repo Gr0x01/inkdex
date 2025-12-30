@@ -23,7 +23,7 @@ export default async function Home() {
   const organizationSchema = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'Tattoo Artist Discovery',
+    name: 'Inkdex',
     description: 'Visual search platform for discovering tattoo artists. Find artists by uploading images or describing your style in natural language.',
     url: '/',
     logo: '/og-default.jpg', // TODO: Create actual logo file
@@ -112,13 +112,6 @@ export default async function Home() {
             {/* Search Bar - Glass Morphism Card */}
             <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
               <UnifiedSearchBar />
-            </div>
-
-            {/* Decorative Tagline */}
-            <div className="mt-8 md:mt-12 animate-fade-up" style={{ animationDelay: '600ms' }}>
-              <p className="font-mono text-tiny tracking-[0.25em] uppercase text-center" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                BY VIBE, NOT VOCABULARY
-              </p>
             </div>
           </div>
         </div>

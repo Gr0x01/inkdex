@@ -29,7 +29,7 @@ export async function generateMetadata({
     return { title: 'City Not Found' }
   }
 
-  const title = `Tattoo Artists in ${city.name}, ${state.code} | Browse Local Portfolios`
+  const title = `Tattoo Artists in ${city.name}, ${state.code} | Inkdex`
   const description = `Discover talented tattoo artists in ${city.name}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
 
   return {
@@ -39,7 +39,7 @@ export async function generateMetadata({
       title,
       description,
       type: 'website',
-      siteName: 'Tattoo Artist Discovery',
+      siteName: 'Inkdex',
       images: [
         {
           url: '/og-city-default.jpg', // TODO: Create city-specific OG image

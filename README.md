@@ -1,7 +1,11 @@
-# Chefs
+# Inkdex
+
+Find tattoo artists through visual search and natural language. Upload an image or describe your vision - no tattoo terminology required.
+
+**Live Site:** https://inkdex.io
 
 ## Overview
-[Project description to be added based on requirements]
+Inkdex is an AI-powered tattoo artist discovery platform that revolutionizes how people find tattoo artists. Search using images or natural language instead of industry jargon.
 
 ## Getting Started
 
