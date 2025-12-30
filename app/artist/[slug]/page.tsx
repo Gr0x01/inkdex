@@ -136,7 +136,6 @@ export default async function ArtistPage({
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
           <ArtistInfoColumn
             artist={artist}
-            firstPortfolioImage={artist.portfolio_images?.[0] || null}
             portfolioImages={artist.portfolio_images || []}
           />
 

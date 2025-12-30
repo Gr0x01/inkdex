@@ -1,5 +1,4 @@
 import Image from 'next/image'
-import { getPortfolioImageUrl } from '@/lib/utils/images'
 import { isArtistFeatured } from '@/lib/utils/featured'
 
 interface PortfolioImage {
@@ -29,13 +28,11 @@ interface ArtistInfoColumnProps {
     follower_count: number | null
     verification_status: string
   }
-  firstPortfolioImage?: PortfolioImage | null
   portfolioImages?: PortfolioImage[]
 }
 
 export default function ArtistInfoColumn({
   artist,
-  firstPortfolioImage,
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
   const isVerified = artist.verification_status === 'verified'

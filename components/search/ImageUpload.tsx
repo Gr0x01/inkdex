@@ -69,8 +69,6 @@ export default function ImageUpload({
     onImageSelect(null, '')
   }
 
-  const heightClass = compact ? 'min-h-[180px]' : 'p-8 md:p-12'
-
   return (
     <div className="w-full">
       <div

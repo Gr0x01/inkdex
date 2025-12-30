@@ -3,12 +3,7 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/modal-client'
 
-// Validation schemas
-const imageSearchSchema = z.object({
-  type: z.literal('image'),
-  city: z.string().optional(),
-})
-
+// Validation schema
 const textSearchSchema = z.object({
   type: z.literal('text'),
   text: z.string().min(3).max(200),
@@ -31,7 +26,6 @@ export async function POST(request: NextRequest) {
     let searchType: 'image' | 'text'
     let embedding: number[]
     let queryText: string | null = null
-    let city: string | null = null
 
     // Handle multipart/form-data (image upload)
     if (contentType.includes('multipart/form-data')) {
@@ -39,7 +33,6 @@ export async function POST(request: NextRequest) {
 
       const type = formData.get('type') as string
       const imageFile = formData.get('image') as File | null
-      const cityParam = formData.get('city') as string | null
 
       // Validate
       if (type !== 'image') {
@@ -73,7 +66,6 @@ export async function POST(request: NextRequest) {
       }
 
       searchType = 'image'
-      city = cityParam || null
 
       // Generate image embedding
       embedding = await generateImageEmbedding(imageFile)
@@ -93,7 +85,6 @@ export async function POST(request: NextRequest) {
 
       searchType = 'text'
       queryText = parsed.data.text
-      city = parsed.data.city || null
 
       // Enhance query for better CLIP understanding
       // Add "tattoo" context if not present to help with niche style queries

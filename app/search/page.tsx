@@ -109,8 +109,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const cityFilter = cities && cities.length > 0 ? cities[0] : null
 
   // Count total matching artists (for pagination)
-  const startTime = Date.now()
-
   const { data: countData, error: countError } = await supabase
     .rpc('count_matching_artists', {
       query_embedding: `[${embedding.join(',')}]`,

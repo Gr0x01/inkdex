@@ -195,7 +195,9 @@ export async function getFeaturedImages(limit: number = 30) {
     throw new Error('Invalid limit parameter: must be an integer between 1 and 100')
   }
 
-  const supabase = await createClient()
+  // Use service client to bypass RLS for public featured images data
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const supabase = createServiceClient()
 
   const { data, error } = await supabase
     .from('portfolio_images')
@@ -251,7 +253,9 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
     throw new Error('Invalid limit parameter: must be an integer between 1 and 100')
   }
 
-  const supabase = await createClient()
+  // Use service client to bypass RLS for public featured artists data
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const supabase = createServiceClient()
 
   // Get featured artists (50k+ followers) with their portfolio images
   const { data, error } = await supabase
