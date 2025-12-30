@@ -185,52 +185,6 @@ export default async function ArtistPage({
 
       {/* Editorial Magazine Layout */}
       <main className="min-h-screen bg-paper">
-        {/* Breadcrumbs */}
-        <div className="px-4 pt-6 sm:px-6 lg:px-8">
-          <nav className="font-body text-small text-text-secondary mb-4" aria-label="Breadcrumb">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li>
-                <Link
-                  href="/"
-                  className="hover:text-accent-primary transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              {state && (
-                <>
-                  <li>/</li>
-                  <li>
-                    <Link
-                      href={`/${stateSlug}`}
-                      className="hover:text-accent-primary transition-colors"
-                    >
-                      {state.name}
-                    </Link>
-                  </li>
-                </>
-              )}
-              {city && (
-                <>
-                  <li>/</li>
-                  <li>
-                    <Link
-                      href={`/${stateSlug}/${citySlug}`}
-                      className="hover:text-accent-primary transition-colors"
-                    >
-                      {city.name}
-                    </Link>
-                  </li>
-                </>
-              )}
-              <li>/</li>
-              <li aria-current="page" className="text-text-primary">
-                @{artist.instagram_handle}
-              </li>
-            </ol>
-          </nav>
-        </div>
-
         <div className="flex flex-col lg:flex-row">
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
           <ArtistInfoColumn
@@ -240,6 +194,50 @@ export default async function ArtistPage({
 
           {/* Right: Scrolling Portfolio Grid */}
           <div className="w-full lg:w-[70%] xl:w-[65%] p-5 sm:p-6 lg:pr-8 lg:pl-12 xl:pr-12 xl:pl-16">
+            {/* Breadcrumbs */}
+            <nav className="font-body text-small text-text-secondary mb-6" aria-label="Breadcrumb">
+              <ol className="flex items-center gap-2 flex-wrap">
+                <li>
+                  <Link
+                    href="/"
+                    className="hover:text-accent-primary transition-colors"
+                  >
+                    Home
+                  </Link>
+                </li>
+                {state && (
+                  <>
+                    <li>/</li>
+                    <li>
+                      <Link
+                        href={`/${stateSlug}`}
+                        className="hover:text-accent-primary transition-colors"
+                      >
+                        {state.name}
+                      </Link>
+                    </li>
+                  </>
+                )}
+                {city && (
+                  <>
+                    <li>/</li>
+                    <li>
+                      <Link
+                        href={`/${stateSlug}/${citySlug}`}
+                        className="hover:text-accent-primary transition-colors"
+                      >
+                        {city.name}
+                      </Link>
+                    </li>
+                  </>
+                )}
+                <li>/</li>
+                <li aria-current="page" className="text-text-primary">
+                  @{artist.instagram_handle}
+                </li>
+              </ol>
+            </nav>
+
             <MasonryPortfolioGrid
               images={artist.portfolio_images || []}
               artistName={artist.name}
