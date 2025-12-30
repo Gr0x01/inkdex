@@ -93,10 +93,6 @@ body {
   margin: 0;
   padding: 0;
   background: var(--paper-white);
-  /* Dotted background pattern (global) */
-  background-image: radial-gradient(circle, var(--gray-300) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: 0 0;
   color: var(--ink-black);
   font-family: 'Crimson Pro', serif;
   font-size: 1.0625rem; /* 17px */
@@ -334,6 +330,16 @@ a:hover {
   .scroll-x-snap > * {
     scroll-snap-align: start;
     flex-shrink: 0;
+  }
+
+  /* Hide Scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 
   /* Section Backgrounds */
@@ -620,10 +626,109 @@ a:hover {
 .stagger-children > *:nth-child(10) { animation-delay: 900ms; }
 
 /* ═══════════════════════════════════════════════════════════════
-   NAVIGATION STYLES
+   NAVIGATION STYLES - EDITORIAL MAGAZINE MASTHEAD
    ═══════════════════════════════════════════════════════════════ */
 
-/* Navigation Links */
+/* Editorial Navigation Links - Magazine Style */
+.editorial-nav-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-black);
+  background: transparent;
+  border: none;
+  transition: all var(--duration-medium) var(--ease-smooth);
+  padding-bottom: 4px;
+}
+
+.editorial-nav-link:hover {
+  text-decoration: none;
+  letter-spacing: 0.15em;
+  color: var(--ink-black);
+}
+
+/* Editorial Dropdown Menu - Refined */
+.editorial-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 1rem;
+  background: var(--paper-white);
+  border: 2px solid var(--ink-black);
+  box-shadow: 4px 4px 0 rgba(26, 26, 26, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all var(--duration-medium) var(--ease-smooth);
+  min-width: 220px;
+  z-index: 50;
+  position: relative;
+}
+
+.group:hover .editorial-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Editorial Dropdown Header - State/Region Headers */
+.editorial-dropdown-header {
+  display: block;
+  padding: 0.75rem 1rem;
+  font-family: 'Libre Baskerville', serif;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--ink-black);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  border-left: 3px solid transparent;
+}
+
+.editorial-dropdown-header:hover {
+  background: var(--gray-100);
+  border-left-color: var(--ink-black);
+  text-decoration: none;
+}
+
+/* Editorial Dropdown Item - City Links */
+.editorial-dropdown-item {
+  display: block;
+  padding: 0.5rem 1rem 0.5rem 1.5rem;
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9375rem;
+  color: var(--gray-700);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  border-left: 3px solid transparent;
+}
+
+.editorial-dropdown-item:hover {
+  background: var(--gray-100);
+  color: var(--ink-black);
+  border-left-color: var(--gray-500);
+  text-decoration: none;
+  padding-left: 1.75rem;
+}
+
+/* Editorial Mobile Navigation Links */
+.editorial-mobile-link {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.125rem;
+  font-weight: 400;
+  color: var(--ink-black);
+  transition: all var(--duration-fast) var(--ease-smooth);
+  padding: 0.5rem 0;
+  border-left: 3px solid transparent;
+  padding-left: 0.75rem;
+}
+
+.editorial-mobile-link:hover {
+  border-left-color: var(--ink-black);
+  padding-left: 1rem;
+  text-decoration: none;
+}
+
+/* Legacy Navigation Styles (Backwards Compatibility) */
 .nav-link {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.6875rem;
@@ -639,7 +744,6 @@ a:hover {
   text-underline-offset: 4px;
 }
 
-/* Desktop Dropdown Menu */
 .dropdown-menu {
   position: absolute;
   top: 100%;

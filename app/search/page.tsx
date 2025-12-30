@@ -166,17 +166,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <main className="min-h-screen bg-light">
-      {/* COMPACT EDITORIAL FILTER BAR */}
+      {/* COMPACT EDITORIAL FILTER BAR - Mobile Optimized */}
       <div className="sticky top-0 z-40 bg-[#F8F7F5] backdrop-blur-md border-b border-ink/10 shadow-sm">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center gap-4 h-14">
-            {/* Back Link - Compact */}
+        <div className="w-full px-4 md:container md:mx-auto md:px-6">
+          <div className="flex items-center gap-2 md:gap-4 h-16 md:h-14 overflow-x-auto scrollbar-hide">
+            {/* Back Link - Mobile Friendly */}
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.15em]"
+              className="inline-flex items-center gap-1.5 font-mono text-xs md:text-[10px] font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.1em] md:tracking-[0.15em]"
             >
               <svg
-                className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
+                className="w-4 h-4 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -193,12 +193,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </Link>
 
             {/* Vertical Divider */}
-            <div className="h-4 w-px bg-ink/10" aria-hidden="true" />
+            <div className="h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
 
-            {/* Query Info - Inline & Compact */}
+            {/* Query Info - Mobile Responsive */}
             {queryType === 'text' && queryText && (
               <>
-                <div className="flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
                   <svg
                     className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
                     fill="none"
@@ -217,13 +217,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     Searched for: <span className="font-body-medium text-ink">&ldquo;{queryText}&rdquo;</span>
                   </span>
                 </div>
-                <div className="h-4 w-px bg-ink/10" aria-hidden="true" />
+                <div className="hidden sm:block h-4 w-px bg-ink/10" aria-hidden="true" />
               </>
             )}
 
             {queryType === 'image' && (
               <>
-                <div className="flex items-center gap-2 font-body text-sm text-ink/60">
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60">
                   <svg
                     className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
                     fill="none"
@@ -240,51 +240,53 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   </svg>
                   <span>Image search</span>
                 </div>
-                <div className="h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
               </>
             )}
 
-            {/* Results Count - Compact */}
-            <div className="font-mono text-[10px] font-medium text-ink/70 uppercase tracking-[0.15em] whitespace-nowrap">
+            {/* Results Count - Mobile Friendly */}
+            <div className="font-mono text-xs md:text-[10px] font-medium text-ink/70 uppercase tracking-[0.1em] md:tracking-[0.15em] whitespace-nowrap flex-shrink-0">
               {total} {total === 1 ? 'Artist' : 'Artists'}
             </div>
 
             {/* Vertical Divider */}
-            <div className="h-4 w-px bg-ink/10" aria-hidden="true" />
+            <div className="h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
 
-            {/* City Filter - Compact */}
-            <CityFilter />
+            {/* City Filter - Mobile Optimized */}
+            <div className="flex-shrink-0">
+              <CityFilter />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* RESULTS GRID - Starts Immediately */}
-      <div className="container mx-auto px-6 py-8">
+      {/* RESULTS GRID - Mobile Optimized */}
+      <div className="w-full px-4 md:container md:mx-auto md:px-6 py-6 md:py-12">
         {hasResults ? (
           <>
-            {/* Artist Grid */}
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 mb-12">
+            {/* Artist Grid - Editorial 2-Column Mobile */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8 mb-12">
               {artists.map((artist) => (
                 <ArtistCard key={artist.artist_id} artist={artist} />
               ))}
             </div>
 
-            {/* Pagination */}
+            {/* Pagination - Editorial Magazine Style */}
             {totalPages > 1 && (
               <nav
-                className="flex items-center justify-center gap-2 flex-wrap"
+                className="flex items-center justify-center gap-3 flex-wrap mt-16"
                 role="navigation"
                 aria-label="Search results pagination"
               >
-                {/* Previous Button */}
+                {/* Previous Button - Editorial */}
                 {currentPage > 1 ? (
                   <Link
                     href={buildSearchUrl(currentPage - 1)}
-                    className="btn btn-secondary py-2.5"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
                     aria-label="Go to previous page"
                   >
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -293,19 +295,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         d="M15 19l-7-7 7-7"
                       />
                     </svg>
-                    Previous
+                    <span>Previous</span>
                   </Link>
                 ) : (
                   <div
-                    className="px-6 py-2.5 bg-gray-100 border border-gray-200 rounded-lg font-mono text-xs font-medium text-gray-400 uppercase tracking-wide cursor-not-allowed opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-gray-400 border-2 border-gray-200 cursor-not-allowed"
                     aria-disabled="true"
                   >
                     <svg
-                      className="w-4 h-4 inline-block mr-2"
+                      className="w-3.5 h-3.5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -314,22 +316,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         d="M15 19l-7-7 7-7"
                       />
                     </svg>
-                    Previous
+                    <span>Previous</span>
                   </div>
                 )}
 
-                {/* Numbered Page Buttons */}
-                <div className="flex items-center gap-1">
+                {/* Numbered Page Buttons - Clean Editorial */}
+                <div className="flex items-center gap-1.5">
                   {generatePageNumbers(currentPage, totalPages).map((pageNum, index) => {
                     if (pageNum === '...') {
                       return (
                         <span
                           key={`ellipsis-${index}`}
-                          className="px-3 py-2 font-mono text-xs text-gray-500"
+                          className="px-2 font-body text-lg text-gray-500"
                           aria-hidden="true"
                         >
                           &hellip;
@@ -345,11 +347,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         key={page}
                         href={buildSearchUrl(page)}
                         className={`
-                          min-w-[40px] px-3 py-2.5 rounded-lg font-mono text-xs font-medium
-                          transition-all duration-fast border-2
+                          min-w-[44px] h-[44px] flex items-center justify-center
+                          font-body text-[17px] font-medium
+                          border-2 transition-all duration-fast
                           ${isActive
-                            ? 'bg-ink border-ink text-paper-white cursor-default'
-                            : 'bg-white border-gray-200 text-gray-700 hover:border-ink hover:text-ink'
+                            ? 'bg-ink border-ink text-paper shadow-sm cursor-default'
+                            : 'bg-paper border-ink/20 text-ink hover:border-ink hover:-translate-y-[2px] hover:shadow-md'
                           }
                         `}
                         aria-label={`Go to page ${page}`}
@@ -362,16 +365,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   })}
                 </div>
 
-                {/* Next Button */}
+                {/* Next Button - Editorial */}
                 {currentPage < totalPages ? (
                   <Link
                     href={buildSearchUrl(currentPage + 1)}
-                    className="btn btn-secondary py-2.5"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
                     aria-label="Go to next page"
                   >
-                    Next
+                    <span>Next</span>
                     <svg
-                      className="w-4 h-4"
+                      className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-fast"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -380,19 +383,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         d="M9 5l7 7-7 7"
                       />
                     </svg>
                   </Link>
                 ) : (
                   <div
-                    className="px-6 py-2.5 bg-gray-100 border border-gray-200 rounded-lg font-mono text-xs font-medium text-gray-400 uppercase tracking-wide cursor-not-allowed opacity-50"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-gray-400 border-2 border-gray-200 cursor-not-allowed"
                     aria-disabled="true"
                   >
-                    Next
+                    <span>Next</span>
                     <svg
-                      className="w-4 h-4 inline-block ml-2"
+                      className="w-3.5 h-3.5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -401,7 +404,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.5}
                         d="M9 5l7 7-7 7"
                       />
                     </svg>

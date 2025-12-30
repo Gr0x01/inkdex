@@ -45,13 +45,13 @@ export default function CityFilter() {
     <Select.Root value={currentCity} onValueChange={handleCityChange}>
       <Select.Trigger
         id="city-filter"
-        className="inline-flex items-center gap-2 px-3 py-1.5 border border-ink/20 rounded font-body text-sm text-ink hover:border-ink/40 focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/20 transition-all duration-fast min-w-[140px]"
+        className="inline-flex items-center gap-2 px-2.5 md:px-3 py-2 md:py-1.5 border border-ink/20 rounded font-body text-xs md:text-sm text-ink hover:border-ink/40 focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink/20 transition-all duration-fast min-w-[120px] md:min-w-[140px]"
         aria-label="Filter by location"
       >
         <Select.Value />
         <Select.Icon>
           <svg
-            className="w-3 h-3 text-ink/40"
+            className="w-3.5 h-3.5 md:w-3 md:h-3 text-ink/40 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
