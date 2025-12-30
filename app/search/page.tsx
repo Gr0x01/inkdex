@@ -264,7 +264,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <div className="w-full px-4 md:container md:mx-auto md:px-6 py-6 md:py-12">
         {hasResults ? (
           <>
-            {/* Artist Grid - Editorial 2-Column Mobile */}
+            {/* Artist Grid - Unified, sorted by match percentage */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8 mb-12">
               {artists.map((artist) => (
                 <ArtistCard key={artist.artist_id} artist={artist} />

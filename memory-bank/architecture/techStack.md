@@ -164,7 +164,10 @@ WITH (lists = GREATEST(FLOOR(SQRT(COUNT(*))), 10));
 **Search Function:**
 - `search_artists_by_embedding()`: ✅ Optimized Postgres function (see migration 007)
 - Returns: Top 20 artists with top 3 matching images each
-- Filters: City, similarity threshold (default 0.5)
+- Filters: City, similarity threshold (0.15)
+- **Similarity Score Display:** Raw CLIP scores (0.15-0.40) rescaled to 60-95% for UI
+  - See: `/memory-bank/architecture/decision-similarity-scoring.md`
+  - Ranking uses raw scores, display uses rescaled percentages
 - Performance Optimizations:
   - Early city filtering (reduces dataset before vector ops)
   - CTE-based query planning
