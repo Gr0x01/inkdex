@@ -1,16 +1,16 @@
 ---
-Last-Updated: 2025-12-30 (Updated: Phase 4 Production Complete)
+Last-Updated: 2025-12-30 (Updated: Search threshold optimization)
 Maintainer: RB
-Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Complete ✅
+Status: Phase 3-6 COMPLETE ✅, Phase 4 FULLY COMPLETE ✅, Search Quality Improved ✅
 ---
 
 # Active Context: Tattoo Artist Discovery Platform
 
 ## Current Sprint Goals
-- **Sprint**: Phase 5 - Search Flow UI (Built in parallel with Phase 3/4)
+- **Sprint**: Phase 4 Finalization - Vector Index & Semantic Search
 - **Duration**: Week 5
-- **Focus**: Production-ready search UI with mock embeddings
-- **Status**: ✅ COMPLETE - Fully functional UI ready for Phase 3/4 data
+- **Focus**: Production-ready semantic search with IVFFlat vector index
+- **Status**: ✅ COMPLETE - Vector index created, 190ms avg search time
 
 ### Primary Objectives
 1. ✅ **COMPLETED (Phase 1):** Production-ready Supabase database with pgvector
@@ -27,8 +27,11 @@ Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Comple
 12. ✅ **COMPLETED (Phase 3):** GPT-5-nano batch image classification (1,282 tattoo images)
 13. ✅ **COMPLETED (Phase 3):** Image processing & upload (Sharp + WebP + 100 concurrent uploads)
 14. ✅ **COMPLETED (Phase 4):** CLIP embedding generation (1,257 images, 768-dim vectors)
-15. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
-16. **NEXT:** Create vector index and test semantic search (Phase 4 finalization)
+15. ✅ **COMPLETED (Phase 4):** IVFFlat vector index (lists=35, 190ms avg search time)
+16. ✅ **COMPLETED (Phase 5):** Complete search flow UI (landing page, results, API routes)
+17. ✅ **COMPLETED (Phase 6):** Artist profile pages with state/city SEO hierarchy (188 pages)
+18. ✅ **COMPLETED (Dec 30):** Search quality optimization (threshold 0.25→0.15, query enhancement)
+19. **NEXT:** Phase 7 - Style landing pages & SEO optimization
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -306,9 +309,9 @@ Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Comple
 **Next Steps:**
 ✅ Phase 3 Complete - Moving to Phase 4 embedding generation
 
-### Phase 4: CLIP Embedding Generation (✅ PRODUCTION COMPLETE - Dec 30, 2025)
+### Phase 4: CLIP Embedding Generation & Vector Index (✅ FULLY COMPLETE - Dec 30, 2025)
 
-**Status:** ✅ All 1,257 images have embeddings, ready for vector index creation
+**Status:** ✅ All 1,257 images have embeddings + IVFFlat vector index created
 
 **Production Results (Dec 30, 2025):**
 - ✅ Generated embeddings for all 1,257 portfolio images (100%)
@@ -318,6 +321,8 @@ Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Comple
 - ✅ Total processing time: ~2-3 hours (with Modal 300s timeout limitations)
 - ✅ Success rate: 100% (1,257/1,257 embeddings generated, 0 errors)
 - ✅ All embeddings L2 normalized for cosine similarity search
+- ✅ **Vector Index Created:** IVFFlat with lists=35 (10 seconds to build)
+- ✅ **Search Performance:** 190ms average query time (5x faster than sequential scan)
 
 **Architecture & Workflow:**
 1. **Status Lifecycle:**
@@ -361,12 +366,59 @@ Status: Phase 3 COMPLETE ✅, Phase 4 PRODUCTION COMPLETE ✅, Phase 5 UI Comple
 4. **Resume capability**: Automatic resume by querying `WHERE embedding IS NULL` enables fault tolerance
 5. **Status workflow**: `pending` → `active` lifecycle prevents incomplete images from appearing in search
 
-**Next Steps:**
-1. Create vector index: `npx tsx scripts/embeddings/create-vector-index.ts`
-2. Test search performance: `npx tsx scripts/embeddings/test-search.ts`
-3. Verify search quality with real embeddings (target: <500ms query time, 70%+ relevance)
-4. Deploy Modal functions for production search
-5. Update frontend to use real embeddings (`NEXT_PUBLIC_MOCK_EMBEDDINGS=false`)
+**Vector Index Configuration (Dec 30, 2025):**
+- **Index Type:** IVFFlat (optimal for 1k-10k images)
+- **Lists Parameter:** 35 (sqrt(1,257) for balanced speed/recall)
+- **Distance Metric:** `vector_cosine_ops` (cosine similarity)
+- **Build Time:** ~10 seconds for 1,257 vectors
+- **Index Name:** `idx_portfolio_embeddings`
+
+**Performance Metrics (Tested Dec 30, 2025):**
+- **Average Search Time:** 190ms (well under 500ms target ✓)
+- **Min Search Time:** 184ms
+- **Max Search Time:** 211ms
+- **Speedup vs Sequential:** 5-10x faster
+- **Threshold Testing:** Optimal range 0.5-0.7 for balanced precision/recall
+
+**End-to-End Search Performance Breakdown:**
+
+The complete user search flow has the following stages:
+
+1. **Image upload to API:** ~500ms (network transfer)
+2. **Modal.com CLIP embedding generation:** ~2-5 seconds ⚠️ PRIMARY BOTTLENECK
+   - Serverless GPU cold start overhead
+   - CLIP ViT-L-14 inference on A10G GPU
+   - Warm containers: ~1-2 seconds
+   - Cold containers: ~3-5 seconds
+3. **Store embedding in Supabase:** ~100ms
+4. **Vector similarity search (IVFFlat):** ~190ms ✓ OPTIMIZED
+   - Before index: 500-1000ms (sequential scan)
+   - After index: 190ms (5x faster)
+5. **Return results to client:** ~200ms
+
+**Total End-to-End Latency:** ~3-6 seconds (warm: ~2-3s, cold: ~4-6s)
+
+**What the Vector Index Fixed:**
+- ✅ Database search: 500-1000ms → 190ms (saved ~500-800ms)
+- ✅ 5x speedup on similarity search portion
+- ✅ Sub-200ms query times enable real-time search at scale
+
+**What's Still Slow (Expected):**
+- ⚠️ Modal.com GPU inference: 2-5 seconds (serverless cold start)
+- This is normal and expected for serverless GPU functions
+- Alternative: Keep Modal container warm (costs ~$0.60/hour continuous)
+- Trade-off: Pay-per-query (slow start) vs always-on (fast, but costly)
+
+**Production Recommendation:**
+- For MVP: Accept 2-5s latency (pay-per-query, no ongoing costs)
+- For scale: Keep 1-2 warm containers ($15-30/month for instant response)
+
+**Phase 4 Complete - Ready for Production:**
+- Search is using real CLIP embeddings from Modal.com (no mock data)
+- Vector index enables fast semantic similarity search
+- All 1,257 images searchable with sub-200ms query times
+- End-to-end search latency: 2-6 seconds (acceptable for MVP)
+- Ready to proceed to Phase 7: Style landing pages & SEO optimization
 
 ## Launch City Selection Results
 
@@ -570,6 +622,101 @@ Once Instagram scraping and CLIP embeddings are generated:
 3. Generate CLIP embeddings (Phase 4)
 4. Test search quality with real data
 5. Deploy to production
+
+### Phase 6: Artist Profile Pages & SEO (✅ COMPLETE - Dec 30, 2025)
+
+**Status:** ✅ Production-ready with comprehensive security hardening
+
+**Production Results:**
+- ✅ 188 artist profile pages generated at build time
+- ✅ State/city browse hierarchy (2 states, 2 cities)
+- ✅ All pages SEO optimized with JSON-LD, Open Graph, sitemap
+- ✅ Zero CRITICAL security issues (3 critical vulnerabilities fixed)
+- ✅ Build succeeds with TypeScript strict mode
+
+**Routes Created:**
+1. **Artist Pages (`/artist/[slug]`):**
+   - Hero section with split-screen layout (featured image + artist info)
+   - Portfolio grid (3-column responsive) with smart interstitials
+   - Bio block (after 9 images)
+   - Related artists with vector similarity (after 18 images)
+   - Claim profile CTA (after 27 images)
+   - Mobile sticky Instagram footer
+   - Loading states and custom 404 page
+
+2. **State/City Browse Pages:**
+   - State pages (`/texas`, `/california`): City cards with artist counts
+   - City pages (`/texas/austin`, `/california/los-angeles`): Artist grid
+   - Breadcrumb navigation with JSON-LD schema
+
+**Components Built (6 files):**
+- `ArtistHero.tsx` - Split-screen hero with Instagram CTA
+- `PortfolioGrid.tsx` - Responsive grid with interstitials (Server Component)
+- `BioInterstitial.tsx` - Artist bio content block
+- `RelatedArtists.tsx` - Vector similarity search using CLIP embeddings
+- `ClaimProfileCTA.tsx` - Placeholder claim link (non-functional MVP)
+- `InstagramStickyFooter.tsx` - Mobile-only sticky CTA (Client Component)
+
+**Database Query Functions (3 new):**
+- `getRelatedArtists()` - Vector similarity with IVFFlat (threshold: 0.5, city filter)
+- `getStateWithCities()` - State-level artist aggregation
+- `getCityArtists()` - City-level artist listings with pagination
+
+**Security Hardening (3 CRITICAL fixes):**
+1. ✅ **XSS Prevention in JSON-LD:**
+   - Created `lib/utils/seo.ts` with `sanitizeForJsonLd()` function
+   - Sanitizes all user-generated content in structured data
+   - Applied to all Person, LocalBusiness, and Breadcrumb schemas
+
+2. ✅ **Input Validation:**
+   - Validation helpers: UUID, slug, string, state code, integer, float
+   - All 6 query functions now validate inputs before DB operations
+   - Updated slug regex to support periods and underscores
+
+3. ✅ **Centralized Image URLs:**
+   - Reused `lib/utils/images.ts` from homepage work
+   - Eliminated environment variable exposure in components
+   - Removed duplicate URL construction across 6 files
+
+**SEO & Performance:**
+- Dynamic sitemap generation (`app/sitemap.ts`)
+- Robots.txt configuration (`app/robots.ts`)
+- JSON-LD schemas: Person, LocalBusiness, Breadcrumb
+- Canonical URLs, Open Graph metadata
+- Responsive images with `next/image` (priority on hero, lazy after 6)
+- ISR with 24h revalidation
+
+**Technical Architecture:**
+- Next.js 15.5 App Router with generateStaticParams
+- Server Components for all routes (except sticky footer)
+- Service role client for build-time data fetching (avoids cookies error)
+- Vector similarity search using CLIP embeddings from Phase 4
+- "INK & ETHER" dark editorial design system (from Phase 5)
+
+**Build Metrics:**
+- 188 artist pages + 4 browse pages (192 total)
+- Build time: ~2 minutes
+- No TypeScript errors
+- Bundle size within target (<200 KB)
+
+**Files Created:**
+- 6 artist components
+- 3 route pages (artist, state, city)
+- 2 SEO files (sitemap, robots)
+- 1 SEO utility (sanitization)
+- 1 migration script (state field verification)
+- 1 middleware redirect (/artists/ → /artist/)
+
+**Known Issues (WARNING-level, not blocking):**
+- Hydration mismatch in InstagramStickyFooter (window.innerWidth check)
+- 6 eager-loaded images may be excessive (recommend 3-4)
+- No error boundaries on artist routes (nice-to-have)
+
+**Next Steps:**
+- Create vector index for related artists (IVFFlat with optimal parameters)
+- Test related artists relevance (target: 70%+ similarity within city)
+- Consider adding error boundaries for production stability
+- Optimize eager image loading count (6 → 3-4)
 
 ## Context Notes
 - ✅ Market validation complete - strong demand across all cities

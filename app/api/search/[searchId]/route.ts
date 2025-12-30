@@ -144,7 +144,7 @@ export async function GET(
       city: cityFilter,
       limit,
       offset,
-      threshold: 0.25, // Optimized for CLIP cosine similarity (typical range: 0.3-0.4 for good matches)
+      threshold: 0.15, // Lowered to capture niche queries (CLIP cosine similarity range: 0.15-0.4)
     })
     const queryTime = Date.now() - startTime
 

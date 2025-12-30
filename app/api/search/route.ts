@@ -95,8 +95,14 @@ export async function POST(request: NextRequest) {
       queryText = parsed.data.text
       city = parsed.data.city || null
 
-      // Generate text embedding
-      embedding = await generateTextEmbedding(queryText)
+      // Enhance query for better CLIP understanding
+      // Add "tattoo" context if not present to help with niche style queries
+      const enhancedQuery = queryText.toLowerCase().includes('tattoo')
+        ? queryText
+        : `${queryText} tattoo`
+
+      // Generate text embedding with enhanced query
+      embedding = await generateTextEmbedding(enhancedQuery)
     }
     else {
       return NextResponse.json(
