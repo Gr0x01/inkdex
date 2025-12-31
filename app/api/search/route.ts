@@ -28,6 +28,12 @@ const instagramProfileSchema = z.object({
   city: z.string().optional(),
 })
 
+const similarArtistSchema = z.object({
+  type: z.literal('similar_artist'),
+  artist_id: z.string().uuid(),
+  city: z.string().optional(),
+})
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
@@ -41,11 +47,12 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
 
-    let searchType: 'image' | 'text' | 'instagram_post' | 'instagram_profile'
+    let searchType: 'image' | 'text' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
     let embedding: number[]
     let queryText: string | null = null
     let instagramUsername: string | null = null
     let instagramPostUrl: string | null = null
+    let artistIdSource: string | null = null
 
     // Handle multipart/form-data (image upload)
     if (contentType.includes('multipart/form-data')) {
@@ -289,6 +296,84 @@ export async function POST(request: NextRequest) {
           }
           throw error
         }
+      }
+      // Try similar artist schema
+      else if (similarArtistSchema.safeParse(body).success) {
+        const artistParsed = similarArtistSchema.safeParse(body)
+        if (!artistParsed.success) {
+          return NextResponse.json(
+            { error: 'Invalid similar artist request' },
+            { status: 400 }
+          )
+        }
+
+        searchType = 'similar_artist'
+
+        try {
+          const artistId = artistParsed.data.artist_id
+
+          console.log(`[Similar Artist] Fetching portfolio for artist ${artistId}...`)
+
+          // Fetch artist with portfolio images and embeddings
+          const supabase = await createClient()
+          const { data: artist, error: artistError } = await supabase
+            .from('artists')
+            .select(`
+              id,
+              name,
+              slug,
+              instagram_handle,
+              city,
+              portfolio_images!inner (
+                id,
+                embedding,
+                status
+              )
+            `)
+            .eq('id', artistId)
+            .eq('portfolio_images.status', 'active')
+            .not('portfolio_images.embedding', 'is', null)
+            .single()
+
+          if (artistError || !artist) {
+            return NextResponse.json(
+              { error: 'Artist not found or has no portfolio images' },
+              { status: 404 }
+            )
+          }
+
+          if (artist.portfolio_images.length < 3) {
+            return NextResponse.json(
+              { error: 'Artist must have at least 3 portfolio images for similarity search' },
+              { status: 400 }
+            )
+          }
+
+          console.log(`[Similar Artist] Found ${artist.portfolio_images.length} images, aggregating embeddings...`)
+
+          // Parse embeddings
+          const embeddings = artist.portfolio_images.map((img: any) => {
+            if (typeof img.embedding === 'string') {
+              return JSON.parse(img.embedding)
+            }
+            return img.embedding
+          })
+
+          // Aggregate embeddings (same as Instagram profile search)
+          embedding = aggregateEmbeddings(embeddings)
+
+          // Store attribution data
+          queryText = `Artists similar to ${artist.name}`
+          artistIdSource = artistId
+
+          console.log(`[Similar Artist] Aggregated ${embeddings.length} embeddings`)
+        } catch (error) {
+          console.error('[Similar Artist] Error:', error)
+          return NextResponse.json(
+            { error: 'Failed to process similar artist search' },
+            { status: 500 }
+          )
+        }
       } else {
         // Try text search schema
         const textParsed = textSearchSchema.safeParse(body)
@@ -335,6 +420,7 @@ export async function POST(request: NextRequest) {
         query_text: queryText,
         instagram_username: instagramUsername,
         instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
+        artist_id_source: artistIdSource,
       })
       .select('id')
       .single()

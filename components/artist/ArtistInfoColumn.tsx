@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { isArtistFeatured } from '@/lib/utils/featured'
+import FindSimilarArtistsButton from './FindSimilarArtistsButton'
 
 interface PortfolioImage {
   id: string
@@ -194,6 +195,15 @@ export default function ArtistInfoColumn({
                 Website
               </a>
             )}
+          </div>
+
+          {/* Tertiary CTA: Find Similar Artists */}
+          <div className="pt-3 border-t border-gray-300">
+            <FindSimilarArtistsButton
+              artistId={artist.id}
+              artistName={artist.name}
+              city={artist.city}
+            />
           </div>
         </div>
       </div>

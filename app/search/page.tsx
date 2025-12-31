@@ -95,6 +95,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     throw new Error('Invalid embedding format')
   }
 
+  // Extract artist_id_source for exclusion (similar_artist searches)
+  const excludeArtistId = search.artist_id_source || null
+
   // Parse location filter
   let cities: string[] | null = null
   if (city) {
@@ -131,7 +134,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   })
 
   // Map results to expected format
-  const artists = (Array.isArray(rawResults) ? rawResults : []).map((result: any) => ({
+  const allResults = (Array.isArray(rawResults) ? rawResults : []).map((result: any) => ({
     artist_id: result.id,
     artist_name: result.name,
     artist_slug: result.slug,
@@ -149,6 +152,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     })),
     similarity: result.max_similarity || 0,
   }))
+
+  // Exclude source artist for similar_artist searches
+  const artists = excludeArtistId
+    ? allResults.filter(artist => artist.artist_id !== excludeArtistId)
+    : allResults
 
   // Extract results for rendering
   const total = totalCount  // ✓ FIXED: Use total count from count query
@@ -286,6 +294,29 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                       @{instagramUsername}
                     </a>
                   </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
+            {queryType === 'similar_artist' && queryText && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
+                  <svg
+                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <span className="truncate">{queryText}</span>
                 </div>
                 <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
               </>
