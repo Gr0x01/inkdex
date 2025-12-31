@@ -692,6 +692,12 @@ a:hover {
   z-index: 50;
 }
 
+.editorial-dropdown-menu-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .group:hover .editorial-dropdown-menu {
   opacity: 1;
   visibility: visible;

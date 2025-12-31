@@ -174,7 +174,7 @@ export default function Navbar() {
 
               {/* Editorial Dropdown Menu */}
               <div
-                className={`editorial-dropdown-menu ${isDropdownOpen ? 'block' : 'hidden'}`}
+                className={`editorial-dropdown-menu ${isDropdownOpen ? 'editorial-dropdown-menu-open' : ''}`}
                 role="menu"
               >
                 {/* Decorative top border */}
