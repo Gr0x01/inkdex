@@ -548,13 +548,18 @@ export async function getCityArtists(
     }
 
     const artist = artistsMap.get(row.id)
-    if (row.portfolio_images && row.portfolio_images.id) {
-      const publicUrl = getImageUrl(row.portfolio_images.storage_thumb_640)
 
-      artist.portfolio_images.push({
-        id: row.portfolio_images.id,
-        url: publicUrl,
-        likes_count: row.portfolio_images.likes_count,
+    // portfolio_images is an array from the INNER JOIN
+    if (Array.isArray(row.portfolio_images)) {
+      row.portfolio_images.forEach((image: any) => {
+        if (image?.id) {
+          const publicUrl = getImageUrl(image.storage_thumb_640)
+          artist.portfolio_images.push({
+            id: image.id,
+            url: publicUrl,
+            likes_count: image.likes_count,
+          })
+        }
       })
     }
   })
