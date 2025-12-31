@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useSearch } from '@/components/search/SearchProvider'
+import { STATES, CITIES } from '@/lib/constants/cities'
 
 /**
  * Global navigation header - Editorial Magazine Masthead
@@ -96,30 +97,36 @@ export default function Navbar() {
                 <div className="absolute top-0 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-ink/30 to-transparent" aria-hidden="true" />
 
                 <div className="p-1">
-                  {/* Texas Section */}
-                  <div className="mb-2">
-                    <Link href="/texas" className="editorial-dropdown-header" role="menuitem">
-                      Texas
-                    </Link>
-                    <Link href="/texas/austin" className="editorial-dropdown-item group" role="menuitem">
-                      <span className="font-mono text-[9px] text-gray-400 mr-2 group-hover:text-ink transition-colors">→</span>
-                      Austin
-                    </Link>
-                  </div>
-
-                  {/* Divider */}
-                  <div className="h-[1px] bg-gray-200 my-2 mx-3" aria-hidden="true" />
-
-                  {/* California Section */}
-                  <div>
-                    <Link href="/california" className="editorial-dropdown-header" role="menuitem">
-                      California
-                    </Link>
-                    <Link href="/california/los-angeles" className="editorial-dropdown-item group" role="menuitem">
-                      <span className="font-mono text-[9px] text-gray-400 mr-2 group-hover:text-ink transition-colors">→</span>
-                      Los Angeles
-                    </Link>
-                  </div>
+                  {/* Dynamic State/City Sections */}
+                  {STATES.map((state, index) => (
+                    <div key={state.slug}>
+                      {index > 0 && (
+                        <div className="h-[1px] bg-gray-200 my-2 mx-3" aria-hidden="true" />
+                      )}
+                      <div className={index < STATES.length - 1 ? 'mb-2' : ''}>
+                        <Link href={`/${state.slug}`} className="editorial-dropdown-header" role="menuitem">
+                          {state.name}
+                        </Link>
+                        {state.cities.map((citySlug) => {
+                          const city = CITIES.find((c) => c.slug === citySlug)
+                          if (!city) return null
+                          return (
+                            <Link
+                              key={citySlug}
+                              href={`/${state.slug}/${citySlug}`}
+                              className="editorial-dropdown-item group"
+                              role="menuitem"
+                            >
+                              <span className="font-mono text-[9px] text-gray-400 mr-2 group-hover:text-ink transition-colors">
+                                →
+                              </span>
+                              {city.name}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -204,46 +211,38 @@ export default function Navbar() {
             Home
           </Link>
 
-          {/* Texas */}
-          <div className="space-y-3">
-            <Link
-              href="/texas"
-              className="block editorial-mobile-link font-bold"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              Texas
-            </Link>
-            <Link
-              href="/texas/austin"
-              className="block editorial-mobile-link pl-6 text-gray-600 relative"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <span className="font-mono text-[9px] text-gray-400 absolute left-3">→</span>
-              Austin
-            </Link>
-          </div>
-
-          {/* Divider */}
-          <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
-
-          {/* California */}
-          <div className="space-y-3">
-            <Link
-              href="/california"
-              className="block editorial-mobile-link font-bold"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              California
-            </Link>
-            <Link
-              href="/california/los-angeles"
-              className="block editorial-mobile-link pl-6 text-gray-600 relative"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <span className="font-mono text-[9px] text-gray-400 absolute left-3">→</span>
-              Los Angeles
-            </Link>
-          </div>
+          {/* Dynamic State/City Sections */}
+          {STATES.map((state, index) => (
+            <div key={state.slug}>
+              {index > 0 && (
+                <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
+              )}
+              <div className="space-y-3">
+                <Link
+                  href={`/${state.slug}`}
+                  className="block editorial-mobile-link font-bold"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {state.name}
+                </Link>
+                {state.cities.map((citySlug) => {
+                  const city = CITIES.find((c) => c.slug === citySlug)
+                  if (!city) return null
+                  return (
+                    <Link
+                      key={citySlug}
+                      href={`/${state.slug}/${citySlug}`}
+                      className="block editorial-mobile-link pl-6 text-gray-600 relative"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <span className="font-mono text-[9px] text-gray-400 absolute left-3">→</span>
+                      {city.name}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </nav>
     </header>

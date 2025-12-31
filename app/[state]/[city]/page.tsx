@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import Image from 'next/image'
 import { getCityArtists, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
@@ -161,9 +162,12 @@ export default async function CityPage({
               <p className="font-body text-body text-text-secondary">
                 No artists found in {city.name} yet.
               </p>
-              <Link href={`/${stateSlug}`} className="btn btn-secondary mt-6">
-                View Other Cities in {state.name}
-              </Link>
+              {/* Only show button if state has multiple cities */}
+              {state.cities.length > 1 && (
+                <Link href={`/${stateSlug}`} className="btn btn-secondary mt-6">
+                  View Other Cities in {state.name}
+                </Link>
+              )}
             </div>
           )}
 
@@ -183,9 +187,25 @@ export default async function CityPage({
                   <Link
                     key={style.style_name}
                     href={`/${stateSlug}/${citySlug}/${style.style_name}`}
-                    className="group relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/50 p-4 hover:border-accent-primary hover:bg-neutral-800 transition-all duration-200"
+                    className="group relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/50 hover:border-accent-primary transition-all duration-200"
                   >
-                    <div className="flex flex-col items-center text-center">
+                    {/* Hero Image with Editorial Overlay */}
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      <Image
+                        src={style.seed_image_url}
+                        alt={`Browse ${style.display_name} tattoo artists in ${city.name}, ${state.code}`}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                        loading="lazy"
+                        quality={85}
+                      />
+                      {/* Dark gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/60 to-transparent" />
+                    </div>
+
+                    {/* Text Content - Positioned over image */}
+                    <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col items-center text-center">
                       <h3 className="font-display text-body-large font-[600] text-text-primary group-hover:text-accent-primary transition-colors mb-1">
                         {style.display_name}
                       </h3>

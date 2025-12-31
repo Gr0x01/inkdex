@@ -560,7 +560,7 @@ export async function getCityArtists(
   })
 
   const artists = Array.from(artistsMap.values()).filter(
-    (artist: any) => artist.portfolio_images.length >= 4
+    (artist: any) => artist.portfolio_images.length >= 1
   )
 
   return {

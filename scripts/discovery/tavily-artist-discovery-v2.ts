@@ -66,8 +66,11 @@ interface CityConfig {
 // ============================================================================
 
 const CITIES: CityConfig[] = [
-  { name: 'Atlanta', state: 'GA', slug: 'atlanta' },
-  { name: 'Los Angeles', state: 'CA', slug: 'los-angeles' },
+  { name: 'Chicago', state: 'IL', slug: 'chicago' },
+  { name: 'New York', state: 'NY', slug: 'new-york' },
+  { name: 'Seattle', state: 'WA', slug: 'seattle' },
+  { name: 'Portland', state: 'OR', slug: 'portland' },
+  { name: 'Miami', state: 'FL', slug: 'miami' },
 ];
 
 // ============================================================================
@@ -258,7 +261,7 @@ async function discoverArtistsForCity(
               name: extractArtistName(result.title),
               instagramHandle: handle,
               instagramUrl: `https://instagram.com/${handle}`,
-              city: `${city.name}, ${city.state}`,
+              city: city.name,  // Use proper city name for database (e.g., "Austin", not "Austin, TX")
               discoverySource: `tavily_${category}`,
               discoveryQuery: query,
               score: result.score,
@@ -320,12 +323,16 @@ async function saveArtistsToDatabase(
       continue;
     }
 
+    // Find the corresponding city config to get state code
+    const cityConfig = CITIES.find(c => c.slug === citySlug);
+
     const { error } = await supabase.from('artists').insert({
       name: artist.name,
       slug,
       instagram_handle: artist.instagramHandle,
       instagram_url: artist.instagramUrl,
-      city: citySlug,
+      city: artist.city,  // Use proper case city name: "Austin", "Atlanta", etc.
+      state: cityConfig?.state || null,  // Add state code: "TX", "GA", "CA", etc.
       discovery_source: artist.discoverySource,
       verification_status: 'unclaimed',
       instagram_private: false,
