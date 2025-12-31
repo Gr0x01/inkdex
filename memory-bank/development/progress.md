@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-01
 Maintainer: RB
-Status: Active - Phase 4 Complete, Awaiting Local GPU Setup
+Status: Production Ready - All Features Complete
 ---
 
 # Progress Log: Inkdex
@@ -9,29 +9,39 @@ Status: Active - Phase 4 Complete, Awaiting Local GPU Setup
 ## Current Status (Jan 1, 2026)
 
 **Platform State:**
-- **3 Cities:** Austin TX (complete), Atlanta GA, Los Angeles CA
+- **3 Cities:** Austin TX, Atlanta GA, Los Angeles CA (all complete ✅)
 - **545 Total Artists:** 188 Austin + 171 Atlanta + 186 LA
-- **Austin:** 1,257 images with embeddings ✅ (fully searchable)
-- **Atlanta + LA:** 2,376 images processed, awaiting embeddings
-- **Vector Index:** IVFFlat (lists=35, 190ms avg search time)
+- **3,614 Portfolio Images:** 100% with embeddings ✅ (all searchable)
+- **Vector Index:** IVFFlat (lists=60, 190ms avg search time, optimized)
 
 **Ready for Production:**
-- Search flow (image + text + Instagram links)
-- Artist profiles (188 pages)
+- Multi-modal search (image + text + Instagram post/profile links)
+- Smart unified input (auto-detects all search types)
+- Artist profiles (545 pages across 3 cities)
 - City browse pages (3 cities)
 - Style landing pages (30 pages: 10 styles × 3 cities)
+- "Find Similar Artists" button on all profiles
 - Security hardening complete (A rating)
-- Hybrid CLIP system implemented (local GPU + Modal fallback)
+- Hybrid CLIP system (local GPU + Modal fallback)
 
-**Next Steps:**
-1. Configure local GPU service at https://clip.inkdex.io (user responsibility)
-2. Test embedding parity (>99% similarity with Modal)
-3. Generate embeddings for Atlanta + LA (2,376 images)
-4. Update IVFFlat index (optimal lists ≈ 60 for 3,633 total images)
+**Instagram Link Support (ALL 4 PHASES COMPLETE):**
+- Phase 1 ✅ Instagram Post Search (Dec 31)
+- Phase 2 ✅ Instagram Profile Search (Jan 1)
+- Phase 3 ✅ "Find Similar Artists" Button (Dec 31)
+- Phase 4 ✅ Smart Unified Input (Jan 1)
 
 ---
 
 ## Recent Milestones
+
+### Smart Unified Input - Phase 4 ✅ (Jan 1, 2026)
+- Single input field with intelligent detection
+- Auto-detects: images, text, Instagram post URLs, Instagram profile URLs
+- Enhanced UX: "Similar to @username" badge for profile searches
+- Search priority: Image > Post > Profile > Text
+- Loading messages customized per search type
+- TypeScript strict mode: PASS
+- Production build: SUCCESS (617 static pages)
 
 ### Phase 7: Style Landing Pages ✅ (Dec 31, 2025)
 - 30 SEO-optimized style pages (10 styles × 3 cities)

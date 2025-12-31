@@ -29,9 +29,16 @@ const INSTAGRAM_POST_MESSAGES: LoadingMessage[] = [
   { text: "Almost there...", duration: 2500 }
 ]
 
+const INSTAGRAM_PROFILE_MESSAGES: LoadingMessage[] = [
+  { text: "Fetching portfolio from Instagram...", duration: 2500 },
+  { text: "Analyzing recent posts...", duration: 2500 },
+  { text: "Finding artists with similar style...", duration: 2500 },
+  { text: "Almost there...", duration: 2500 }
+]
+
 interface LoadingSearchCardProps {
   isVisible: boolean
-  searchType: 'image' | 'text' | 'instagram_post'
+  searchType: 'image' | 'text' | 'instagram_post' | 'instagram_profile'
 }
 
 export default function LoadingSearchCard({
@@ -43,6 +50,7 @@ export default function LoadingSearchCard({
   const messages =
     searchType === 'image' ? IMAGE_SEARCH_MESSAGES :
     searchType === 'instagram_post' ? INSTAGRAM_POST_MESSAGES :
+    searchType === 'instagram_profile' ? INSTAGRAM_PROFILE_MESSAGES :
     TEXT_SEARCH_MESSAGES
 
   // Message rotation

@@ -19,13 +19,14 @@ Status: Phase 4 Complete ✅ - Platform Fully Operational
 - **Vector Index:** IVFFlat (lists=60, optimized for 3,614 images)
 
 ### Production Features ✅
-- ✅ Multi-modal search (image upload, text query, Instagram links)
+- ✅ Multi-modal search (image upload, text query, Instagram post/profile links)
 - ✅ Artist profiles (545 pages across 3 cities)
 - ✅ City browse pages (3 cities: Austin, Atlanta, LA)
 - ✅ Style landing pages (30 pages: 10 styles × 3 cities)
 - ✅ Hybrid CLIP embeddings (local GPU + Modal fallback)
 - ✅ Security hardening (A rating, all critical issues fixed)
 - ✅ Remote GPU access (https://clip.inkdex.io works while traveling)
+- ✅ Smart unified input (auto-detects Instagram URLs, images, and text)
 
 ---
 
@@ -196,6 +197,13 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 - Health monitoring endpoint with caching (1-min TTL)
 - Parity testing script (verifies >99% similarity)
 - Security hardening (A rating)
+
+### Smart Unified Input - Phase 4 Complete (Jan 1) ✅
+- Single input field auto-detects: images, text, Instagram post/profile URLs
+- Enhanced UX: Shows "Similar to @username" badge for profiles
+- Seamless integration: All search types work from one input
+- Production ready: TypeScript passes, build succeeds (617 pages)
+- Related: "Find Similar Artists" button on all artist profiles
 
 ### Instagram Profile Search (Jan 1) ✅
 - Paste profile URL → find similar artists

@@ -97,8 +97,9 @@ export default function UnifiedSearchBar() {
     const hasImage = imageFile !== null
     const hasText = textQuery.trim().length >= 3
     const hasInstagramPost = detectedInstagramUrl?.type === 'post'
+    const hasInstagramProfile = detectedInstagramUrl?.type === 'profile'
 
-    if (!hasImage && !hasText && !hasInstagramPost) {
+    if (!hasImage && !hasText && !hasInstagramPost && !hasInstagramProfile) {
       setError('Please upload an image or describe what you\'re looking for')
       return
     }
@@ -108,7 +109,7 @@ export default function UnifiedSearchBar() {
     try {
       let response: Response
 
-      // Priority: Image > Instagram Post > Text
+      // Priority: Image > Instagram Post > Instagram Profile > Text
       if (hasImage) {
         const formData = new FormData()
         formData.append('type', 'image')
@@ -126,6 +127,17 @@ export default function UnifiedSearchBar() {
           },
           body: JSON.stringify({
             type: 'instagram_post',
+            instagram_url: detectedInstagramUrl!.originalUrl,
+          }),
+        })
+      } else if (hasInstagramProfile) {
+        response = await fetch('/api/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'instagram_profile',
             instagram_url: detectedInstagramUrl!.originalUrl,
           }),
         })
@@ -167,7 +179,8 @@ export default function UnifiedSearchBar() {
   const canSubmit = (
     imageFile !== null ||
     textQuery.trim().length >= 3 ||
-    detectedInstagramUrl?.type === 'post'
+    detectedInstagramUrl?.type === 'post' ||
+    detectedInstagramUrl?.type === 'profile'
   ) && !isSubmitting
 
   return (
@@ -237,7 +250,9 @@ export default function UnifiedSearchBar() {
               {detectedInstagramUrl && !imageFile && (
                 <div className="flex-shrink-0 px-2 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
                   <span className="text-xs font-mono font-bold text-white uppercase tracking-wider whitespace-nowrap">
-                    {detectedInstagramUrl.type === 'post' ? 'IG Post' : 'IG Profile'}
+                    {detectedInstagramUrl.type === 'post'
+                      ? 'IG Post'
+                      : `Similar to @${detectedInstagramUrl.id}`}
                   </span>
                 </div>
               )}
@@ -309,6 +324,7 @@ export default function UnifiedSearchBar() {
             searchType={
               imageFile ? 'image' :
               detectedInstagramUrl?.type === 'post' ? 'instagram_post' :
+              detectedInstagramUrl?.type === 'profile' ? 'instagram_profile' :
               'text'
             }
           />
