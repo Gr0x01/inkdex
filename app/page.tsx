@@ -1,7 +1,7 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
-import FeaturedArtistsGrid from '@/components/home/FeaturedArtistsGrid'
-import { getFeaturedArtists } from '@/lib/supabase/queries'
-import type { FeaturedArtist } from '@/lib/mock/featured-data'
+import FeaturedArtistsByState from '@/components/home/FeaturedArtistsByState'
+import { getFeaturedArtistsByStates } from '@/lib/supabase/queries'
+import { STATES } from '@/lib/constants/cities'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 
@@ -9,12 +9,12 @@ import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
-  // Fetch featured artists (with fallback to empty array)
-  let featuredArtists: FeaturedArtist[] = []
+  // Fetch featured artists grouped by state (with fallback to empty object)
+  let featuredArtistsByState: Record<string, any[]> = {}
 
   try {
-    // Query uses lowercase city slug, but we pass capitalized name to component
-    featuredArtists = await getFeaturedArtists('austin', 12) as FeaturedArtist[]
+    // Fetch 4 randomized featured artists per state (100k+ followers)
+    featuredArtistsByState = await getFeaturedArtistsByStates(4)
   } catch (error) {
     console.error('Failed to fetch featured artists:', error)
   }
@@ -126,21 +126,26 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          FEATURED ARTISTS GRID - Deep Black Background
+          FEATURED ARTISTS BY STATE - Editorial Horizontal Sections
           ═══════════════════════════════════════════════════════════════ */}
       <section
-        className="relative py-24 md:py-32"
-        style={{ background: '#0a0a0a' }}
+        className="relative py-16 md:py-20 bg-paper"
       >
         {/* Subtle Top Border */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
 
-        <div className="container mx-auto">
-          <FeaturedArtistsGrid artists={featuredArtists} city="Austin" />
+        <div className="container mx-auto px-4 space-y-12 md:space-y-16">
+          {STATES.map((state) => (
+            <FeaturedArtistsByState
+              key={state.code}
+              state={state}
+              artists={featuredArtistsByState[state.code] || []}
+            />
+          ))}
         </div>
 
         {/* Subtle Bottom Border */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════

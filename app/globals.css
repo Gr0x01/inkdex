@@ -314,6 +314,16 @@ a:hover {
     transform: scale(1.01); /* Reduced from 1.02 */
   }
 
+  /* Hide Scrollbar */
+  .scrollbar-hide {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+  }
+
   /* Horizontal Scroll */
   .scroll-x-snap {
     display: flex;

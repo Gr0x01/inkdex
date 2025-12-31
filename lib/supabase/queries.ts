@@ -345,6 +345,102 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
 }
 
 /**
+ * Get featured artists grouped by state for homepage (randomized)
+ * @param limitPerState - Number of artists to fetch per state (default 4)
+ * @returns Object with state codes as keys and arrays of artists as values
+ */
+export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
+  // Validate inputs
+  if (!Number.isInteger(limitPerState) || limitPerState < 1 || limitPerState > 20) {
+    throw new Error('Invalid limitPerState parameter: must be an integer between 1 and 20')
+  }
+
+  // Use service client to bypass RLS for public featured artists data
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const supabase = createServiceClient()
+
+  // Get all featured artists (100k+ followers) across all cities
+  // Using a larger limit and randomizing in JS for better distribution per state
+  const { data, error } = await supabase
+    .from('artists')
+    .select(`
+      id,
+      name,
+      slug,
+      city,
+      state,
+      shop_name,
+      verification_status,
+      follower_count,
+      portfolio_images!inner (
+        id,
+        storage_thumb_640,
+        status,
+        likes_count
+      )
+    `)
+    .gte('follower_count', 100000)
+    .eq('portfolio_images.status', 'active')
+    .not('portfolio_images.storage_thumb_640', 'is', null)
+
+  if (error) {
+    console.error('Error fetching featured artists by states:', error)
+    return {}
+  }
+
+  // Process all artists first
+  const allArtists = data.map((row: any) => {
+    const portfolioImages = Array.isArray(row.portfolio_images)
+      ? row.portfolio_images.map((img: any) => ({
+          id: img.id,
+          url: getImageUrl(img.storage_thumb_640),
+          likes_count: img.likes_count,
+        }))
+      : []
+
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      city: row.city,
+      state: row.state,
+      shop_name: row.shop_name,
+      verification_status: row.verification_status,
+      follower_count: row.follower_count,
+      portfolio_images: portfolioImages,
+    }
+  }).filter((artist: any) => artist.portfolio_images.length >= 4)
+
+  // Randomize using Fisher-Yates shuffle
+  const shuffled = [...allArtists]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+
+  // Group randomized artists by state (taking first limitPerState per state)
+  const artistsByState: Record<string, any[]> = {}
+
+  shuffled.forEach((artist: any) => {
+    const stateCode = artist.state
+
+    if (!stateCode) return
+
+    // Initialize state array if needed
+    if (!artistsByState[stateCode]) {
+      artistsByState[stateCode] = []
+    }
+
+    // Add artist if we don't have enough for this state yet
+    if (artistsByState[stateCode].length < limitPerState) {
+      artistsByState[stateCode].push(artist)
+    }
+  })
+
+  return artistsByState
+}
+
+/**
  * Get related artists using vector similarity search
  * Uses the artist's first portfolio image embedding to find similar artists
  * @param artistId - Artist ID to find similar artists for
