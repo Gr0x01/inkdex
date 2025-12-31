@@ -1,52 +1,120 @@
 ---
-Last-Updated: 2026-01-01
+Last-Updated: 2025-12-31
 Maintainer: RB
-Status: Phase 4 Complete ✅, Awaiting Local GPU Setup
+Status: Phase 4 Complete ✅ - Platform Fully Operational
 ---
 
 # Active Context: Inkdex
 
-## Current Sprint Focus
+## Current Platform Status
 
-**Sprint:** Embedding Generation for Atlanta + LA
-**Status:** PAUSED - Awaiting local GPU configuration
-**Priority:** Complete multi-city platform for production launch
-
-### Primary Objective
-Generate CLIP embeddings for 2,376 images (Atlanta + LA) using hybrid local GPU + Modal.com system.
-
-**Blockers:**
-- Local GPU service at https://clip.inkdex.io needs configuration (user responsibility)
-
-**Next Actions:**
-1. User configures local GPU with Modal-compatible API endpoints
-2. Test embedding parity (must achieve >99% similarity with Modal)
-3. Run batch embedding generation: `python scripts/embeddings/local_batch_embeddings.py --parallel 4`
-4. Update IVFFlat vector index with optimal lists parameter (≈ 60 for 3,633 images)
-
----
-
-## Current Platform State
+**Status:** PRODUCTION READY - All 3 cities fully operational
 
 ### Database Overview
 - **Total Artists:** 545 (188 Austin + 171 Atlanta + 186 LA)
-- **Total Images:** ~3,633 portfolio images
-- **Austin:** 1,257 images with embeddings ✅ (fully searchable)
-- **Atlanta + LA:** 2,376 images uploaded, awaiting embeddings
-- **Vector Index:** IVFFlat (lists=35, optimized for Austin's 1,257 images)
+- **Total Images:** 3,614 portfolio images (100% with embeddings ✅)
+- **Austin:** 1,257 images (100% searchable)
+- **Atlanta:** 1,073 images (100% searchable)
+- **Los Angeles:** 1,284 images (100% searchable)
+- **Vector Index:** IVFFlat (lists=60, optimized for 3,614 images)
 
-### Production-Ready Features
-- ✅ Search flow (image, text, Instagram post/profile links)
-- ✅ Artist profiles (188 Austin pages)
-- ✅ City browse (3 cities: Austin, Atlanta, LA)
+### Production Features ✅
+- ✅ Multi-modal search (image upload, text query, Instagram links)
+- ✅ Artist profiles (545 pages across 3 cities)
+- ✅ City browse pages (3 cities: Austin, Atlanta, LA)
 - ✅ Style landing pages (30 pages: 10 styles × 3 cities)
 - ✅ Hybrid CLIP embeddings (local GPU + Modal fallback)
 - ✅ Security hardening (A rating, all critical issues fixed)
+- ✅ Remote GPU access (https://clip.inkdex.io works while traveling)
 
-### Pending Work
-- ⏳ Atlanta + LA embeddings (2,376 images)
-- ⏳ Vector index update (lists parameter adjustment)
-- ⏳ Atlanta + LA style pages population (auto-updates via ISR after embeddings)
+---
+
+## Adding New Cities
+
+### Overview
+When you add a new city to the `CITIES` constant, Next.js **automatically generates** all necessary pages at build time using `generateStaticParams()`. No manual page creation needed.
+
+### One-Time Setup (Per City)
+1. **Add city to constants:**
+   ```typescript
+   // /lib/constants/cities.ts
+   export const CITIES = [
+     // ... existing cities
+     {
+       name: 'New City',
+       slug: 'new-city',
+       state: 'XX',
+       fullName: 'New City, XX',
+       opportunityScore: 75,
+       monthlySearches: 250000,
+       competition: 50,
+     },
+   ]
+
+   // Add state if new
+   export const STATES = [
+     // ... existing states
+     {
+       name: 'State Name',
+       code: 'XX',
+       slug: 'state-name',
+       cities: ['new-city'],
+     },
+   ]
+   ```
+
+2. **Run discovery & data pipeline:**
+   ```bash
+   # Phase 1: Discover artists
+   npm run discover-artists -- --city "New City" --state "XX"
+
+   # Phase 2: Scrape portfolios
+   npm run scrape-shops -- --city "new-city"
+
+   # Phase 3: Classify images
+   python scripts/classification/batch-classify.py --city "new-city"
+
+   # Phase 4: Generate embeddings
+   python scripts/embeddings/local_batch_embeddings.py --parallel 8 --batch-size 100
+
+   # Phase 5: Update vector index
+   npx tsx scripts/embeddings/create-vector-index.ts
+   # Then execute the SQL it generates via Supabase dashboard or MCP tool
+   ```
+
+3. **Rebuild and deploy:**
+   ```bash
+   npm run build
+   # Deploy to production
+   ```
+
+### What's Automatically Generated
+
+After adding to `CITIES` constant and rebuilding:
+
+- **City Browse Page:** `/{state}/{city}` (e.g., `/texas/austin`)
+  - Generated via `app/[state]/[city]/page.tsx`
+  - Uses `generateStaticParams()` to loop through `CITIES`
+  - ISR: 24-hour revalidation
+
+- **10 Style Pages per City:** `/{state}/{city}/{style}` (e.g., `/texas/austin/traditional`)
+  - Generated via `app/[state]/[city]/[style]/page.tsx`
+  - Automatically creates all CITIES × STYLES combinations
+  - ISR: 24-hour revalidation
+
+- **Artist Profiles:** `/{state}/{city}/artists/{slug}` (e.g., `/texas/austin/artists/john-doe`)
+  - Dynamic route - generates on-demand via ISR
+  - No build-time generation needed
+
+- **SEO Metadata:** All pages have:
+  - Title, description, Open Graph tags
+  - JSON-LD breadcrumbs and structured data
+  - Canonical URLs
+
+### What's NOT Automatic
+- **Data collection:** Must run discovery/scraping/classification/embeddings pipeline
+- **CITIES constant:** Must manually add city to `/lib/constants/cities.ts`
+- **Build & deploy:** Must rebuild Next.js app after adding city
 
 ---
 
@@ -57,16 +125,16 @@ Generate CLIP embeddings for 2,376 images (Atlanta + LA) using hybrid local GPU 
 - **Primary:** Local A2000 GPU at 10.2.20.20 (https://clip.inkdex.io)
 - **Fallback:** Modal.com serverless GPU (automatic 5s timeout)
 - **Model:** OpenCLIP ViT-L-14 (laion2b_s32b_b82k) - 768 dimensions
+- **Remote Access:** ✅ Confirmed working while traveling
 
 **Performance:**
-- Local GPU: <2s latency (no cold starts)
-- Modal fallback: 2-5s (warm) or 20-25s (cold)
-- Expected: 95%+ requests handled by local GPU
+- Local GPU: 0.48-0.92s per embedding
+- 100% local GPU usage in production (0 Modal fallback needed)
+- No cold starts (local GPU always warm)
 
-**Cost Savings:**
-- Before: ~$6/month (Modal warmup)
-- After: <$1/month (Modal fallback only when local fails)
-- Savings: 90% reduction
+**Cost:**
+- Monthly: <$1 (Modal fallback only if local GPU fails)
+- Savings: 90% reduction from Modal-only approach
 
 **Security:**
 - API key authentication (Bearer token)
@@ -80,20 +148,12 @@ Generate CLIP embeddings for 2,376 images (Atlanta + LA) using hybrid local GPU 
 - `/scripts/embeddings/test_embedding_parity.py` - Parity verification
 - `/scripts/embeddings/local_batch_embeddings.py` - Batch processing
 
-### Local GPU Requirements
-**User must implement on their local GPU server (10.2.20.20):**
-
-1. **Endpoint:** `https://clip.inkdex.io`
-2. **API Routes:**
-   - `POST /generate_single_embedding` - Single image embedding
-   - `POST /generate_text_query_embedding` - Text query embedding
-3. **Model:** OpenCLIP ViT-L-14 with laion2b_s32b_b82k weights (same as Modal)
-4. **Authentication:** Bearer token via `CLIP_API_KEY` environment variable
-5. **Output Format:** JSON with `embedding` array (768-dim, L2 normalized)
-
-**Testing:**
-- Run `python scripts/embeddings/test_embedding_parity.py`
-- Must achieve >99% cosine similarity between local and Modal embeddings
+### Vector Index Configuration
+**Current:** IVFFlat with lists=60 (optimal for 3,614 images)
+**Formula:** lists = √total_images (rounded)
+**Update Process:**
+1. Run: `npx tsx scripts/embeddings/create-vector-index.ts`
+2. Execute generated SQL via Supabase dashboard or `mcp__supabase__execute_sql`
 
 ---
 
@@ -103,7 +163,7 @@ Generate CLIP embeddings for 2,376 images (Atlanta + LA) using hybrid local GPU 
 ```bash
 # Local GPU (Primary)
 LOCAL_CLIP_URL=https://clip.inkdex.io
-CLIP_API_KEY=your-api-key-here
+CLIP_API_KEY=<your-clip-api-key>
 LOCAL_CLIP_TIMEOUT=5000  # milliseconds
 
 # Modal.com (Fallback)
@@ -117,7 +177,19 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 
 ---
 
-## Recent Completions (Past 48 Hours)
+## Recent Completions (Dec 31 - Jan 1)
+
+### All Embeddings Complete (Dec 31) ✅
+- **3,614 total embeddings** generated (Austin + Atlanta + LA)
+- 100% local GPU usage (0 Modal fallback)
+- Average: 0.48-0.92s per embedding
+- 1 minor connection reset (auto-recovered)
+- **Remote access confirmed:** Local GPU worked perfectly while traveling
+
+### Vector Index Updated (Dec 31) ✅
+- Upgraded from lists=35 (Austin only) to lists=60 (all cities)
+- Optimal configuration for 3,614 images
+- Executed via Supabase MCP tool
 
 ### Hybrid CLIP System (Jan 1) ✅
 - Integrated local A2000 GPU with automatic Modal fallback
@@ -141,7 +213,7 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 - 386 artists discovered (193 each)
 - 357 successfully scraped (92.5% success rate)
 - 2,378 tattoo images classified and uploaded
-- All images ready for embedding generation
+- All images embedded and searchable
 
 ---
 
@@ -149,21 +221,26 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 
 ### Key Commands
 ```bash
-# Embedding Generation (after local GPU setup)
-python scripts/embeddings/test_embedding_parity.py           # Test parity first
-python scripts/embeddings/local_batch_embeddings.py --parallel 4  # Generate embeddings
+# Embedding Generation
+python scripts/embeddings/test_embedding_parity.py                     # Test parity
+python scripts/embeddings/local_batch_embeddings.py --parallel 8       # Generate embeddings
 
 # Vector Index Update
-npx tsx scripts/embeddings/create-vector-index.ts            # Recreate with optimal lists
+npx tsx scripts/embeddings/create-vector-index.ts                      # Generate SQL
+# Then execute SQL via Supabase dashboard or MCP tool
 
 # Health Check
-curl http://localhost:3000/api/embeddings/health             # Check system status
+curl https://clip.inkdex.io/health                                     # Check local GPU
+curl http://localhost:3000/api/embeddings/health                       # Check hybrid system
+
+# Status Checks
+node check-final-status.mjs                                            # Check all embeddings
 ```
 
 ### Database Queries
 ```bash
-# Check embedding progress
-node scripts/utilities/check-embedding-progress.mjs
+# Check embedding progress by city
+node check-final-status.mjs
 
 # Check scraping status
 node scripts/utilities/check-scrape-status.mjs
@@ -181,30 +258,27 @@ node scripts/utilities/check-db.mjs
 
 ## Known Issues & Limitations
 
-### Current
-- **Atlanta/LA style pages:** Show empty state until embeddings generated (expected)
-- **Rate limiter:** In-memory (resets on redeploy, acceptable for MVP)
-- **Local GPU:** Not yet configured (user responsibility)
-
 ### Non-Blocking
-- ESLint warnings in `scripts/` directory (dev tools, not production code)
-- Some TypeScript `any` types in error handling (26 remaining, non-critical)
+- **Rate limiter:** In-memory (resets on redeploy, acceptable for MVP)
+- **ESLint warnings:** In `scripts/` directory (dev tools, not production code)
+- **TypeScript `any` types:** 26 remaining in error handling (non-critical)
 
 ---
 
-## Success Criteria for Current Sprint
+## Next Development Priorities
 
-1. ✅ Local GPU service configured at https://clip.inkdex.io
-2. ✅ Embedding parity test passes (>99% similarity)
-3. ✅ All 2,376 Atlanta/LA images have embeddings
-4. ✅ IVFFlat index updated with optimal parameters (lists ≈ 60)
-5. ✅ All 3 cities fully searchable
-6. ✅ Atlanta/LA style pages auto-populate via ISR
+### Immediate
+- Monitor search performance with full dataset (target: <500ms p95)
+- Track local GPU uptime and Modal fallback usage
+- Gather user feedback on search quality
 
-**Timeline:** Dependent on local GPU configuration completion
-**Estimated:** 2-4 hours after GPU service is ready
+### Future Enhancements
+- Add more cities (follow "Adding New Cities" process above)
+- Persistent rate limiting (Redis/database-backed)
+- Custom OG images per city/style
+- Advanced filters (price range, availability, style sub-categories)
 
 ---
 
-**Last Updated:** January 1, 2026
-**Next Update:** After local GPU configuration and embedding generation complete
+**Last Updated:** December 31, 2025
+**Next Review:** After next city expansion or major feature addition

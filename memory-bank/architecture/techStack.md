@@ -35,18 +35,36 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
   - Why: Better for 10k-100k+ vectors, good recall/speed tradeoff
   - Index Config: `lists = 100` for MVP (10k images), scale to `lists = 316` for 100k
   - Alternative Considered: HNSW (better for <10k, more memory)
-- **Image Embeddings**: OpenCLIP ViT-L-14 (768 dimensions)
+- **Image Embeddings**: OpenCLIP ViT-L-14 (768 dimensions) - **Hybrid Architecture** (Jan 1, 2026)
   - Why: CLIP is multimodal (text + image share same vector space!)
-  - Model: `ViT-L-14` via Modal.com serverless GPU
+  - Model: `ViT-L-14` with `laion2b_s32b_b82k` weights (768-dim L2 normalized vectors)
   - Text Search: Same model encodes text queries → same vector space
-  - Cost: ~$0.30 per city (one-time), pay-per-second GPU
-  - **Warmup Architecture** (Dec 31, 2025):
-    - **Scaledown Window:** 10 minutes (keeps container alive between searches)
-    - **Pre-warming:** Fire-and-forget warmup on homepage load
-    - **Feature Flag:** `NEXT_PUBLIC_ENABLE_WARMUP` to disable when traffic is high
-    - **Performance:** 25s cold start → 2-5s warm (83-90% faster)
-    - **Cost:** ~$3-5/month (warmup) vs $210-240/month (24/7 keep-warm)
-    - **Security:** SSRF prevention (domain whitelist) + rate limiting (1/min per IP)
+  - **Hybrid Architecture:**
+    - **Primary:** Local GPU (A2000 12GB) at 10.2.20.20 on Proxmox
+      - Endpoint: `https://clip.inkdex.io`
+      - Authentication: `CLIP_API_KEY` via Bearer token
+      - Performance: <2s latency (no cold starts)
+      - Cost: $0 per request (~$6/month electricity)
+    - **Fallback:** Modal.com serverless GPU (automatic failover)
+      - GPU: A10G (~$0.60/hour, pay-per-second)
+      - Timeout: 5s on local, then automatic failover to Modal
+      - Expected: 95%+ requests handled by local GPU
+      - Cost: <$1/month (only used when local GPU fails)
+  - **Failover Logic:**
+    - Try local GPU first with 5s timeout
+    - Automatic failover to Modal on timeout/error
+    - Health check caching (1-minute TTL)
+    - Structured logging for observability (local vs Modal usage tracking)
+  - **Security:**
+    - API key authentication on local GPU
+    - SSRF protection (domain whitelist for health checks)
+    - Browser context protection (prevents client-side execution)
+    - Input validation (embedding dimension, finite number checks)
+    - Timeout handling (Modal: 30s, Local: 5s)
+  - **Cost Analysis:**
+    - Before: ~$6/month (Modal warmup) + usage
+    - After: ~$6/month (local electricity) + <$1/month (Modal fallback)
+    - Savings: 90% reduction in Modal costs
 - **Image Storage**: Cloudflare R2 + CDN
   - Why: S3-compatible, no egress fees, $0.015/GB storage
   - Structure: `original/{artist_id}/{post_id}.jpg`, `thumbnails/{size}/{artist_id}/{post_id}_${width}w.webp`
@@ -355,7 +373,16 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
-# OpenAI (for CLIP embeddings)
+# CLIP Embedding - Hybrid Configuration (Jan 1, 2026)
+LOCAL_CLIP_URL=https://clip.inkdex.io          # Local A2000 GPU (10.2.20.20 on Proxmox)
+CLIP_API_KEY=your-api-key-here                  # API key for local GPU authentication
+LOCAL_CLIP_TIMEOUT=5000                         # 5s timeout before Modal fallback
+MODAL_FUNCTION_URL=https://xxx.modal.run        # Modal.com fallback endpoint
+PREFER_LOCAL_CLIP=true                          # Try local GPU first
+ENABLE_MODAL_FALLBACK=true                      # Use Modal if local fails
+NEXT_PUBLIC_ENABLE_WARMUP=false                 # Disabled (local GPU has no cold starts)
+
+# OpenAI (for GPT-5-nano image classification only)
 OPENAI_API_KEY=sk-...
 
 # Google APIs
