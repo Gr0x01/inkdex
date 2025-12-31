@@ -1,32 +1,38 @@
 ---
-Last-Updated: 2025-12-31
+Last-Updated: 2026-01-01
 Maintainer: RB
-Status: Phase 4 Complete ✅ - Platform Fully Operational
+Status: Production Ready - 8 Cities Live ✅
 ---
 
 # Active Context: Inkdex
 
 ## Current Platform Status
 
-**Status:** PRODUCTION READY - All 3 cities fully operational
+**Status:** PRODUCTION READY - 8 cities fully operational
 
 ### Database Overview
-- **Total Artists:** 545 (188 Austin + 171 Atlanta + 186 LA)
-- **Total Images:** 3,614 portfolio images (100% with embeddings ✅)
-- **Austin:** 1,257 images (100% searchable)
-- **Atlanta:** 1,073 images (100% searchable)
-- **Los Angeles:** 1,284 images (100% searchable)
-- **Vector Index:** IVFFlat (lists=60, optimized for 3,614 images)
+- **Total Artists:** 1,474 (545 original + 929 expansion)
+- **Total Images:** 11,167 portfolio images (100% with embeddings ✅)
+- **Austin, TX:** 188 artists, 1,257 images
+- **Atlanta, GA:** 171 artists, 1,073 images
+- **Los Angeles, CA:** 186 artists, 1,284 images
+- **New York, NY:** 219 artists, 1,705 images
+- **Chicago, IL:** 194 artists, 1,655 images
+- **Portland, OR:** 199 artists, 1,578 images
+- **Seattle, WA:** 172 artists, 1,507 images
+- **Miami, FL:** 145 artists, 1,075 images
+- **Vector Index:** IVFFlat (lists=105, optimized for 11,167 images)
 
 ### Production Features ✅
 - ✅ Multi-modal search (image upload, text query, Instagram post/profile links)
-- ✅ Artist profiles (545 pages across 3 cities)
-- ✅ City browse pages (3 cities: Austin, Atlanta, LA)
-- ✅ Style landing pages (30 pages: 10 styles × 3 cities)
+- ✅ Artist profiles (1,474 pages across 8 cities)
+- ✅ City browse pages (8 cities: Austin, Atlanta, LA, NYC, Chicago, Portland, Seattle, Miami)
+- ✅ Style landing pages (80 pages: 10 styles × 8 cities)
 - ✅ Hybrid CLIP embeddings (local GPU + Modal fallback)
 - ✅ Security hardening (A rating, all critical issues fixed)
 - ✅ Remote GPU access (https://clip.inkdex.io works while traveling)
 - ✅ Smart unified input (auto-detects Instagram URLs, images, and text)
+- ✅ Incremental pipeline (process while scraping continues)
 
 ---
 
@@ -180,16 +186,33 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 
 ## Recent Completions (Dec 31 - Jan 1)
 
-### All Embeddings Complete (Dec 31) ✅
-- **3,614 total embeddings** generated (Austin + Atlanta + LA)
+### 5-City Expansion Complete (Jan 1) ✅
+- **929 new artists** discovered across 5 cities (NYC, Chicago, Portland, Seattle, Miami)
+- **7,520 new images** scraped and processed
+- **Incremental pipeline:** Process-batch.ts runs every 10 artists, embeddings every 50
+- **100% local GPU:** All embeddings generated on local A2000 (0 Modal fallback)
+- **Vector index:** Upgraded from lists=60 to lists=105 for 11,167 images
+- **Build:** 1,105 static pages generated successfully
+- **Total time:** ~4 hours (discovery: 20 min, scraping: 2 hours, embeddings: 1.5 hours)
+
+### Incremental Pipeline Refactor (Jan 1) ✅
+- **Lock file mechanism:** `.complete` files prevent race conditions
+- **Batch processing:** Process every 10 artists during download
+- **Embedding batches:** Generate every 50 artists (no 2-hour wait)
+- **Memory efficient:** Only 10-20 artists in /tmp at once
+- **Code reviewed:** Fixed critical issues (race conditions, subprocess paths)
+- **Reusable:** Same pipeline for single-artist additions
+
+### All Embeddings Complete (Jan 1) ✅
+- **11,167 total embeddings** generated (100% complete)
 - 100% local GPU usage (0 Modal fallback)
-- Average: 0.48-0.92s per embedding
-- 1 minor connection reset (auto-recovered)
+- Average: 0.50-0.87s per embedding
+- 5 batches processed incrementally
 - **Remote access confirmed:** Local GPU worked perfectly while traveling
 
-### Vector Index Updated (Dec 31) ✅
-- Upgraded from lists=35 (Austin only) to lists=60 (all cities)
-- Optimal configuration for 3,614 images
+### Vector Index Updated (Jan 1) ✅
+- Upgraded from lists=60 (3,614 images) to lists=105 (11,167 images)
+- Optimal configuration using sqrt(total_images) formula
 - Executed via Supabase MCP tool
 
 ### Hybrid CLIP System (Jan 1) ✅

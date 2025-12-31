@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-01
 Maintainer: RB
-Status: Production Ready - All Features Complete
+Status: Production Ready - 8 Cities Live
 ---
 
 # Progress Log: Inkdex
@@ -9,20 +9,21 @@ Status: Production Ready - All Features Complete
 ## Current Status (Jan 1, 2026)
 
 **Platform State:**
-- **3 Cities:** Austin TX, Atlanta GA, Los Angeles CA (all complete ✅)
-- **545 Total Artists:** 188 Austin + 171 Atlanta + 186 LA
-- **3,614 Portfolio Images:** 100% with embeddings ✅ (all searchable)
-- **Vector Index:** IVFFlat (lists=60, 190ms avg search time, optimized)
+- **8 Cities:** Austin TX, Atlanta GA, Los Angeles CA, New York NY, Chicago IL, Portland OR, Seattle WA, Miami FL (all complete ✅)
+- **1,474 Total Artists:** 545 original + 929 expansion
+- **11,167 Portfolio Images:** 100% with embeddings ✅ (all searchable)
+- **Vector Index:** IVFFlat (lists=105, optimized for 11,167 images)
 
 **Ready for Production:**
 - Multi-modal search (image + text + Instagram post/profile links)
 - Smart unified input (auto-detects all search types)
-- Artist profiles (545 pages across 3 cities)
-- City browse pages (3 cities)
-- Style landing pages (30 pages: 10 styles × 3 cities)
+- Artist profiles (1,474 pages across 8 cities)
+- City browse pages (8 cities)
+- Style landing pages (80 pages: 10 styles × 8 cities)
 - "Find Similar Artists" button on all profiles
 - Security hardening complete (A rating)
 - Hybrid CLIP system (local GPU + Modal fallback)
+- Incremental pipeline (process while scraping)
 
 **Instagram Link Support (ALL 4 PHASES COMPLETE):**
 - Phase 1 ✅ Instagram Post Search (Dec 31)
@@ -33,6 +34,18 @@ Status: Production Ready - All Features Complete
 ---
 
 ## Recent Milestones
+
+### 5-City Expansion ✅ (Jan 1, 2026)
+- **929 new artists** discovered (NYC: 219, Chicago: 194, Portland: 199, Seattle: 172, Miami: 145)
+- **7,520 new images** scraped and classified (100% tattoo images)
+- **Incremental pipeline:** Refactored to process while scraping (no 2-hour wait)
+- **Lock file mechanism:** Race condition prevention with `.complete` files
+- **Batch processing:** Process every 10 artists, embeddings every 50
+- **100% local GPU:** All embeddings on A2000 (0 Modal fallback)
+- **Vector index:** Rebuilt with lists=105 (optimized for 11,167 images)
+- **Next.js build:** 1,105 static pages generated
+- **Total time:** ~4 hours end-to-end (discovery → production ready)
+- **Code review:** Fixed critical issues (race conditions, subprocess paths)
 
 ### Smart Unified Input - Phase 4 ✅ (Jan 1, 2026)
 - Single input field with intelligent detection
@@ -165,23 +178,31 @@ Detailed implementation history for Phases 0-4 has been moved to:
 ## Quick Reference
 
 ### Database State
-- **Austin:** 188 artists, 1,257 images with embeddings ✅
-- **Atlanta:** 171 artists, ~1,200 images (awaiting embeddings)
-- **Los Angeles:** 186 artists, ~1,176 images (awaiting embeddings)
-- **Storage:** ~8-10 GB (WebP compressed)
+- **Austin, TX:** 188 artists, 1,257 images ✅
+- **Atlanta, GA:** 171 artists, 1,073 images ✅
+- **Los Angeles, CA:** 186 artists, 1,284 images ✅
+- **New York, NY:** 219 artists, 1,705 images ✅
+- **Chicago, IL:** 194 artists, 1,655 images ✅
+- **Portland, OR:** 199 artists, 1,578 images ✅
+- **Seattle, WA:** 172 artists, 1,507 images ✅
+- **Miami, FL:** 145 artists, 1,075 images ✅
+- **Total:** 1,474 artists, 11,167 images (100% with embeddings)
+- **Storage:** ~25-30 GB (WebP compressed)
 
 ### Performance Metrics
-- Vector search: 190ms average
-- End-to-end search: 2-6s (local GPU: 2-3s, Modal cold: 4-6s)
-- Build time: ~8 minutes (617 pages)
+- Vector search: ~200ms average (estimated with lists=105)
+- End-to-end search: 2-3s (100% local GPU)
+- Build time: ~8-10 minutes (1,105 pages)
 - Bundle size: 130-138 KB first load
+- Embedding generation: 0.50-0.87s per image (local GPU)
 
-### Cost Summary (MVP)
-- **Discovery:** ~$10 (3 cities × $3.30 Tavily queries)
-- **Scraping:** ~$40-60 (Apify for 545 artists)
-- **Classification:** ~$1.50 (GPT-5-nano for 4,642 images)
-- **Embeddings:** ~$2 (Modal.com for Austin only, local GPU for Atlanta/LA)
+### Cost Summary (8 Cities)
+- **Discovery:** ~$26 (8 cities × $3.30 Tavily queries)
+- **Scraping:** ~$160-200 (Apify for 1,474 artists)
+- **Classification:** ~$4 (GPT-5-nano for 11,167 images)
+- **Embeddings:** ~$2 (Modal.com for Austin only, local GPU for 7 cities)
 - **Monthly:** ~$6-7 (local GPU electricity + <$1 Modal fallback)
+- **Total one-time:** ~$192-232 for all 8 cities
 
 ---
 

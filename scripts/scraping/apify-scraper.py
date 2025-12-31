@@ -19,6 +19,9 @@ from apify_client import ApifyClient
 from openai import AsyncOpenAI
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
+from typing import List, Dict
+import subprocess
+import time
 
 # Load environment variables
 load_dotenv('.env.local')
@@ -39,6 +42,115 @@ BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
 # Parallel scraping settings
 CONCURRENT_APIFY_CALLS = 8  # Run 8 in parallel (balance speed vs memory)
 db_lock = Lock()  # Thread-safe database operations
+
+# Get project root (2 levels up from this script)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+
+class BackgroundProcessManager:
+    """Manages non-blocking subprocess execution with concurrent process limits"""
+
+    def __init__(self, max_concurrent: int = 2):
+        self.active_processes: List[Dict] = []
+        self.max_concurrent = max_concurrent
+        self.completed_processes: List[Dict] = []
+
+    def launch_process(
+        self,
+        command_args: List[str],
+        name: str,
+        timeout: int = 600
+    ) -> None:
+        """Launch subprocess in background, blocking if too many running"""
+        # Validate input type
+        if not isinstance(command_args, list):
+            raise TypeError(f"command_args must be a list, got {type(command_args)}")
+
+        if not command_args:
+            raise ValueError("command_args cannot be empty")
+
+        if not all(isinstance(arg, str) for arg in command_args):
+            raise TypeError("All command arguments must be strings")
+
+        # Wait for available slot
+        while len(self.active_processes) >= self.max_concurrent:
+            self._cleanup_finished()
+            if len(self.active_processes) >= self.max_concurrent:
+                time.sleep(2)  # Check every 2 seconds
+
+        # Launch non-blocking process (redirect to DEVNULL to prevent pipe deadlock)
+        process = subprocess.Popen(
+            command_args,
+            cwd=str(PROJECT_ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        self.active_processes.append({
+            'process': process,
+            'name': name,
+            'start_time': time.time(),
+            'timeout': timeout
+        })
+
+        print(f"   🔄 Launched background: {name}")
+
+    def _cleanup_finished(self) -> None:
+        """Remove completed processes from active list"""
+        still_running = []
+        for p_info in self.active_processes:
+            returncode = p_info['process'].poll()
+
+            # Check timeout
+            elapsed = time.time() - p_info['start_time']
+            if elapsed > p_info['timeout'] and returncode is None:
+                p_info['process'].kill()
+                p_info['process'].wait()  # Reap zombie process
+                duration = time.time() - p_info['start_time']
+                print(f"   ⚠️  {p_info['name']} timed out after {duration:.1f}s")
+                self.completed_processes.append(p_info)
+            elif returncode is not None:
+                # Process finished - reap zombie
+                p_info['process'].wait()
+                duration = time.time() - p_info['start_time']
+                if returncode == 0:
+                    print(f"   ✅ {p_info['name']} completed in {duration:.1f}s")
+                else:
+                    print(f"   ❌ {p_info['name']} failed after {duration:.1f}s (exit code {returncode})")
+                self.completed_processes.append(p_info)
+            else:
+                # Still running
+                still_running.append(p_info)
+
+        self.active_processes = still_running
+
+    def wait_all(self, timeout: int = 3600) -> Dict[str, int]:
+        """Wait for all background processes to complete, return stats"""
+        start_wait = time.time()
+
+        while self.active_processes:
+            self._cleanup_finished()
+
+            if time.time() - start_wait > timeout:
+                # Force kill remaining
+                for p_info in self.active_processes:
+                    p_info['process'].kill()
+                    print(f"   ⚠️  Force killed {p_info['name']} (global timeout)")
+                self.active_processes = []
+                break
+
+            time.sleep(2)
+
+        # Return stats
+        successful = sum(1 for p in self.completed_processes if p['process'].returncode == 0)
+        failed = len(self.completed_processes) - successful
+
+        return {
+            'total': len(self.completed_processes),
+            'successful': successful,
+            'failed': failed
+        }
+
 
 def validate_instagram_handle(handle: str) -> bool:
     """Validate Instagram handle format"""
@@ -401,12 +513,6 @@ def process_single_artist(artist_data, apify_client, conn):
 
 def main():
     """Main scraping workflow (incremental processing)"""
-    import subprocess
-    import time
-
-    # Get project root (absolute path for subprocess calls)
-    PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
-
     print("🤖 Instagram Portfolio Scraper (Apify - Incremental)\n")
 
     # Check for Apify token
@@ -430,9 +536,9 @@ def main():
         conn = connect_db()
         print("✅ Connected\n")
 
-        # Get pending artists (FULL PRODUCTION RUN)
+        # Get pending artists (TEST RUN - 20 artists)
         print("📋 Finding artists to scrape...")
-        TEST_LIMIT = None  # Full production run - all artists
+        TEST_LIMIT = None  # Set to an integer to limit artists for testing
         artists = get_pending_artists(conn, limit=TEST_LIMIT)
         if TEST_LIMIT:
             print(f"⚠️  TEST MODE: Limited to {TEST_LIMIT} artists")
@@ -462,6 +568,9 @@ def main():
         total_errors = 0
         completed_count = 0
 
+        # Initialize background process manager for concurrent processing
+        process_manager = BackgroundProcessManager(max_concurrent=2)
+
         try:
             with ThreadPoolExecutor(max_workers=CONCURRENT_APIFY_CALLS) as executor:
                 # Submit all tasks
@@ -485,42 +594,21 @@ def main():
                         percentage = (completed_count / len(artists)) * 100
                         print(f"   📊 Progress: {percentage:.1f}% ({completed_count}/{len(artists)}) - {total_images} images total\n")
 
-                        # INCREMENTAL PROCESSING: Process and upload every 10 artists
+                        # INCREMENTAL PROCESSING: Process and upload every 10 artists (NON-BLOCKING)
                         if completed_count % PROCESS_BATCH_SIZE == 0:
-                            print(f"\n🖼️  Processing batch of {PROCESS_BATCH_SIZE} artists...")
-                            try:
-                                subprocess.run(
-                                    ["npm", "run", "process-batch"],
-                                    check=True,
-                                    cwd=str(PROJECT_ROOT),
-                                    timeout=600  # 10 minute timeout
-                                )
-                                print(f"✅ Batch processed and uploaded\n")
-                            except subprocess.TimeoutExpired:
-                                print(f"❌ Batch processing timed out after 10 minutes\n")
-                                print(f"   ⚠️  Some images may remain in /tmp/instagram - manual review required\n")
-                            except subprocess.CalledProcessError as e:
-                                print(f"❌ Batch processing failed: {e}\n")
-                                print(f"   ⚠️  Pausing for 10 seconds before continuing...\n")
-                                time.sleep(10)
+                            process_manager.launch_process(
+                                ["npm", "run", "process-batch"],
+                                name=f"Process batch (artists {completed_count-9}-{completed_count})",
+                                timeout=600
+                            )
 
-                        # INCREMENTAL PROCESSING: Generate embeddings every 50 artists
+                        # INCREMENTAL PROCESSING: Generate embeddings every 50 artists (NON-BLOCKING)
                         if completed_count % EMBED_BATCH_SIZE == 0:
-                            print(f"\n🔮 Generating embeddings for batch...")
-                            try:
-                                subprocess.run(
-                                    ["npm", "run", "generate-embeddings-batch"],
-                                    check=True,
-                                    cwd=str(PROJECT_ROOT),
-                                    timeout=1200  # 20 minute timeout for embeddings
-                                )
-                                print(f"✅ Embeddings generated\n")
-                            except subprocess.TimeoutExpired:
-                                print(f"❌ Embedding generation timed out after 20 minutes\n")
-                                print(f"   ⚠️  Will retry in final embedding pass\n")
-                            except subprocess.CalledProcessError as e:
-                                print(f"❌ Embedding generation failed: {e}\n")
-                                print(f"   ⚠️  Will retry in final embedding pass\n")
+                            process_manager.launch_process(
+                                ["npm", "run", "generate-embeddings-batch"],
+                                name=f"Embed batch (artists 1-{completed_count})",
+                                timeout=1200
+                            )
 
                     except Exception as e:
                         print(f"   ❌ Future execution error: {e}")
@@ -530,8 +618,13 @@ def main():
             print("\n\n⚠️  Interrupted by user")
             executor.shutdown(wait=False, cancel_futures=True)
 
+        # Wait for all background processes to finish
+        print("\n⏳ Waiting for background processes to complete...")
+        stats = process_manager.wait_all(timeout=3600)  # 1 hour max
+        print(f"   Background processes: {stats['successful']}/{stats['total']} successful\n")
+
         # Final cleanup: process remaining artists
-        print("\n🖼️  Processing final batch...")
+        print("🖼️  Processing final batch...")
         try:
             subprocess.run(
                 ["npm", "run", "process-batch"],

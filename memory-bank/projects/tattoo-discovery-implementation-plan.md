@@ -600,7 +600,7 @@ Ensure `artists.instagram_id` is populated during discovery. This will enable au
 
 ### Phase 3: Data Pipeline - Instagram Scraping (Week 3-4)
 
-**Goal:** Collect 20-50 portfolio images per artist
+**Goal:** Collect ~12 portfolio images per artist (Instagram public API limit)
 
 **Tasks:**
 
@@ -1198,7 +1198,7 @@ Homepage
 3. Verification badge if `verification_status = 'verified'`
 4. Custom bio if `bio_override` exists (from claimed profile)
 5. Booking link if `booking_url` exists
-6. Portfolio grid shows 20-50 images
+6. Portfolio grid shows ~12 images (Instagram public API limit)
 7. User clicks portfolio image → opens Instagram post (external link)
 8. User clicks "Follow on Instagram" → opens Instagram profile
 

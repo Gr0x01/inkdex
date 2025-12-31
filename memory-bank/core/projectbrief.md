@@ -64,7 +64,7 @@ Let users express themselves naturally:
 
 2. **Artist Profiles**
    - Name, location, shop, Instagram link
-   - 20-50 portfolio images from Instagram
+   - ~12 portfolio images from Instagram (Instagram public API limit)
    - Verification badge (for claimed profiles - infrastructure ready)
    - Custom bio/booking link (for claimed artists - infrastructure ready)
 
@@ -175,9 +175,9 @@ Let users express themselves naturally:
 - Manual curation: 400-600 verified artists
 
 ### Phase 3: Instagram Scraping (Weeks 3-4)
-- Apify integration: 20-50 images per artist
+- Apify integration: ~12 images per artist (Instagram public API limit)
 - Image processing: WebP thumbnails (3 sizes)
-- Supabase Storage upload: ~8,000-12,000 images
+- Supabase Storage upload: ~5,000-7,000 images per city
 - Error handling + resumability
 
 ### Phase 4: Embedding Generation (Weeks 4-5)
@@ -227,7 +227,7 @@ Let users express themselves naturally:
 
 ### Data Constraints
 - Instagram public data only (respect TOS)
-- 20-50 images per artist (representative sample)
+- ~12 images per artist (Instagram public API limit - representative sample)
 - Monthly re-scraping for freshness
 - Artist opt-out mechanism (post-MVP claiming)
 
