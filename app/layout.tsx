@@ -38,6 +38,7 @@ const crimsonPro = Crimson_Pro({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'Inkdex - Find Your Tattoo Artist',
   description: 'Discover tattoo artists through visual search and natural language. No tattoo terminology required - upload an image or describe your vision.',
   openGraph: {

@@ -15,6 +15,7 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database.types';
 import { generateQueriesForCity, getQueryStats } from './query-generator';
+import { generateSlugFromInstagram } from '../../lib/utils/slug';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
@@ -310,7 +311,7 @@ async function saveArtistsToDatabase(
       continue;
     }
 
-    const slug = generateSlug(artist.name, artist.instagramHandle);
+    const slug = generateSlugFromInstagram(artist.instagramHandle);
 
     const { error } = await supabase.from('artists').insert({
       name: artist.name,
@@ -338,17 +339,6 @@ async function saveArtistsToDatabase(
   console.log(`   ✅ Complete: ${inserted} inserted, ${skipped} skipped`);
 
   return { inserted, skipped };
-}
-
-function generateSlug(name: string, instagramHandle: string): string {
-  const baseSlug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  const hash = instagramHandle.substring(0, 6);
-
-  return `${baseSlug}-${hash}`;
 }
 
 // ============================================================================

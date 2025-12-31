@@ -14,6 +14,7 @@ import * as path from 'path';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database.types';
+import { generateSlugFromInstagram } from '../../lib/utils/slug';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
@@ -169,17 +170,6 @@ function extractInstagramFromWebsite(website: string | undefined): string | null
   return null;
 }
 
-function generateSlug(name: string, placeId: string): string {
-  const baseSlug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  const hash = placeId.substring(0, 6);
-
-  return `${baseSlug}-${hash}`;
-}
-
 // ============================================================================
 // Discovery Logic
 // ============================================================================
@@ -266,7 +256,7 @@ async function discoverArtistsForCity(city: CityConfig): Promise<number> {
 
       if (!existing) {
         // Add new artist
-        const slug = generateSlug(place.name, placeId);
+        const slug = generateSlugFromInstagram(handle);
 
         const { error } = await supabase.from('artists').insert({
           name: place.name,
