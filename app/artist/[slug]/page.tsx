@@ -16,13 +16,38 @@ export async function generateStaticParams() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-  const { data: artists } = await supabase.from('artists').select('slug')
 
-  return (
-    artists?.map((artist) => ({
-      slug: artist.slug,
-    })) ?? []
-  )
+  // Fetch all artists using pagination (no limit)
+  let allArtists: { slug: string }[] = []
+  let page = 0
+  const pageSize = 1000
+
+  while (true) {
+    const { data: artists, error } = await supabase
+      .from('artists')
+      .select('slug')
+      .range(page * pageSize, (page + 1) * pageSize - 1)
+
+    if (error) {
+      console.error('Error fetching artists for static generation:', error)
+      break
+    }
+
+    if (!artists || artists.length === 0) break
+
+    allArtists = allArtists.concat(artists)
+
+    // If we got fewer than pageSize, we've reached the end
+    if (artists.length < pageSize) break
+
+    page++
+  }
+
+  console.log(`Generated static params for ${allArtists.length} artists`)
+
+  return allArtists.map((artist) => ({
+    slug: artist.slug,
+  }))
 }
 
 export const revalidate = 86400 // 24 hours

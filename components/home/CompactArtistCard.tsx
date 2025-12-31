@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
-import { STATES } from '@/lib/constants/cities'
 
 interface CompactArtistCardProps {
   artist: FeaturedArtist & { city: string; state: string }
@@ -18,12 +17,8 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
     return currentLikes > prevLikes ? current : prev
   }, artist.portfolio_images[0])
 
-  // Compute artist profile URL
-  const stateData = STATES.find(s => s.code === artist.state)
-  const citySlug = artist.city.toLowerCase().replace(/\s+/g, '-')
-  const artistUrl = stateData
-    ? `/${stateData.slug}/${citySlug}/artists/${artist.slug}`
-    : `/artists/${artist.slug}`
+  // Artist profile URL - flat structure (artists can move cities/states)
+  const artistUrl = `/artist/${artist.slug}`
 
   return (
     <Link
