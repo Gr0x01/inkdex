@@ -22,6 +22,9 @@ archive/        → historical narrative and deprecated guidance
 
 Read additional docs only if needed (`architecture/patterns.md`, `development/daily-log/`, etc.). Long-form history now lives under `memory-bank/archive/` and is optional.
 
+**Archive Contents:**
+- `archive/phase-0-4-implementation.md` - Detailed Phase 0-4 history (Dec 29-31, 2025) with implementation notes, lessons learned, and troubleshooting
+
 ### Documentation Updates
 Update the memory bank when:
 - You finish a feature or change operational flow.

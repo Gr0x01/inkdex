@@ -215,59 +215,69 @@ async function discoverArtistsForCity(
   });
   console.log();
 
-  let queriesExecuted = 0;
+  // Filter out cached queries first
+  const uncachedQueries = [];
   let queriesCached = 0;
-  let totalCost = 0;
 
-  for (const { query, category } of queries) {
-    // Check cache first
-    const cached = await isQueryCached(query, city.slug);
-
+  for (const queryData of queries) {
+    const cached = await isQueryCached(queryData.query, city.slug);
     if (cached) {
-      console.log(`   💾 Cached: "${query}"`);
       queriesCached++;
-      continue;
+    } else {
+      uncachedQueries.push(queryData);
     }
+  }
 
-    console.log(`   🔍 Searching: "${query}"`);
+  console.log(`   💾 ${queriesCached} queries cached (skipped)`);
+  console.log(`   🔍 ${uncachedQueries.length} queries to execute\n`);
 
-    const results = await searchTavily(query);
-    queriesExecuted++;
-    totalCost += TAVILY_COST_PER_QUERY;
+  let totalCost = 0;
+  const BATCH_SIZE = 50; // Tavily supports 1000 RPM, so 50 concurrent is safe
 
-    const artistsFoundInQuery: string[] = [];
+  // Process queries in batches
+  for (let i = 0; i < uncachedQueries.length; i += BATCH_SIZE) {
+    const batch = uncachedQueries.slice(i, i + BATCH_SIZE);
+    console.log(`📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(uncachedQueries.length / BATCH_SIZE)} (${batch.length} queries)...`);
 
-    for (const result of results.results) {
-      const handle = extractInstagramHandle(result.url, result.content);
-      if (!handle) continue;
+    const batchResults = await Promise.all(
+      batch.map(async ({ query, category }) => {
+        const results = await searchTavily(query);
+        totalCost += TAVILY_COST_PER_QUERY;
 
-      artistsFoundInQuery.push(handle);
+        const artistsFoundInQuery: string[] = [];
 
-      if (!discovered.has(handle)) {
-        discovered.set(handle, {
-          name: extractArtistName(result.title),
-          instagramHandle: handle,
-          instagramUrl: `https://instagram.com/${handle}`,
-          city: `${city.name}, ${city.state}`,
-          discoverySource: `tavily_${category}`,
-          discoveryQuery: query,
-          score: result.score,
-        });
-      }
-    }
+        for (const result of results.results) {
+          const handle = extractInstagramHandle(result.url, result.content);
+          if (!handle) continue;
 
-    // Cache the query
-    await cacheQuery(query, city.slug, artistsFoundInQuery, results.results.length);
+          artistsFoundInQuery.push(handle);
 
-    console.log(`      Found ${results.results.length} results, ${discovered.size} unique artists total`);
+          if (!discovered.has(handle)) {
+            discovered.set(handle, {
+              name: extractArtistName(result.title),
+              instagramHandle: handle,
+              instagramUrl: `https://instagram.com/${handle}`,
+              city: `${city.name}, ${city.state}`,
+              discoverySource: `tavily_${category}`,
+              discoveryQuery: query,
+              score: result.score,
+            });
+          }
+        }
 
-    // Rate limiting
-    await sleep(500);
+        // Cache the query
+        await cacheQuery(query, city.slug, artistsFoundInQuery, results.results.length);
+
+        return { query, resultsCount: results.results.length };
+      })
+    );
+
+    console.log(`   ✅ Batch complete: ${discovered.size} unique artists total\n`);
   }
 
   console.log(`\n📊 Query Summary:`);
   console.log(`   Total queries: ${stats.total}`);
-  console.log(`   Executed: ${queriesExecuted}`);
+  console.log(`   Executed: ${uncachedQueries.length}`);
   console.log(`   Cached (skipped): ${queriesCached}`);
   console.log(`   Estimated cost: $${totalCost.toFixed(2)}`);
   console.log(`\n✅ Discovery complete for ${city.name}: ${discovered.size} unique artists`);
@@ -354,7 +364,7 @@ function sleep(ms: number): Promise<void> {
 // ============================================================================
 
 async function main() {
-  console.log('🚀 Tattoo Artist Discovery V2 - Cached + Expanded Queries');
+  console.log('🚀 Tattoo Artist Discovery V2 - Parallel Batched Queries');
   console.log(`${'='.repeat(60)}\n`);
 
   const totalStats = {
@@ -363,23 +373,32 @@ async function main() {
     skipped: 0,
   };
 
-  for (const city of CITIES) {
-    try {
-      const artists = await discoverArtistsForCity(city);
-      totalStats.discovered += artists.length;
+  // Process all cities in parallel
+  const cityResults = await Promise.all(
+    CITIES.map(async (city) => {
+      try {
+        const artists = await discoverArtistsForCity(city);
+        const { inserted, skipped } = await saveArtistsToDatabase(artists, city.slug);
 
-      const { inserted, skipped } = await saveArtistsToDatabase(artists, city.slug);
-      totalStats.inserted += inserted;
-      totalStats.skipped += skipped;
+        console.log(`\n📊 ${city.name} Summary:`);
+        console.log(`   Discovered: ${artists.length}`);
+        console.log(`   Inserted: ${inserted}`);
+        console.log(`   Skipped: ${skipped}`);
 
-      console.log(`\n📊 ${city.name} Summary:`);
-      console.log(`   Discovered: ${artists.length}`);
-      console.log(`   Inserted: ${inserted}`);
-      console.log(`   Skipped: ${skipped}`);
-    } catch (error: any) {
-      console.error(`\n❌ Error processing ${city.name}: ${error.message}`);
-    }
-  }
+        return { discovered: artists.length, inserted, skipped };
+      } catch (error: any) {
+        console.error(`\n❌ Error processing ${city.name}: ${error.message}`);
+        return { discovered: 0, inserted: 0, skipped: 0 };
+      }
+    })
+  );
+
+  // Aggregate results
+  cityResults.forEach((result) => {
+    totalStats.discovered += result.discovered;
+    totalStats.inserted += result.inserted;
+    totalStats.skipped += result.skipped;
+  });
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`✅ DISCOVERY COMPLETE`);

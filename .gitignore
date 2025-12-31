@@ -83,3 +83,6 @@ build-output.txt
 pre-upgrade-versions.txt
 *.bak
 .env.local.bak
+
+# Scripts - utilities and debug helpers
+scripts/utilities/

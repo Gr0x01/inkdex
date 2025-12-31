@@ -20,11 +20,11 @@ load_dotenv('.env.local')
 # Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TEMP_DIR = Path('/tmp/instagram')
-BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
+BATCH_SIZE = 500  # Process in smaller batches to avoid overwhelming API
 
 async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> tuple[Path, bool]:
     """
-    Classify a single image using GPT-5-nano vision (Flex tier).
+    Classify a single image using GPT-5-nano vision (Standard tier).
     Returns (image_path, is_tattoo).
     """
     try:
@@ -32,7 +32,7 @@ async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> tuple[P
         with open(image_path, 'rb') as f:
             image_data = base64.b64encode(f.read()).decode()
 
-        # Call GPT-5-nano with Flex tier
+        # Call GPT-5-nano with Standard tier
         response = await client.chat.completions.create(
             model="gpt-5-nano",
             messages=[{
@@ -51,8 +51,7 @@ async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> tuple[P
                     }
                 ]
             }],
-            max_completion_tokens=500,  # Allow for reasoning tokens + output
-            service_tier="flex"  # Use Flex tier (1-5 min latency, 50% discount)
+            max_completion_tokens=500  # Allow for reasoning tokens + output
         )
 
         # Parse response
@@ -66,7 +65,7 @@ async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> tuple[P
 
 async def batch_classify_all_images(image_paths: list[Path]) -> dict[Path, bool]:
     """
-    Classify ALL images in parallel using GPT-5-nano Flex tier.
+    Classify ALL images in batches using GPT-5-nano Standard tier.
     Returns dict mapping image_path → is_tattoo.
     """
     if not OPENAI_API_KEY:
@@ -130,7 +129,7 @@ def main():
 
     # Classify ALL images in one massive batch
     print(f"🚀 Starting batch classification of {len(all_image_paths)} images...")
-    print(f"   Using GPT-5-nano Flex tier (batches of {BATCH_SIZE})\n")
+    print(f"   Using GPT-5-nano Standard tier (batches of {BATCH_SIZE})\n")
 
     classifications = asyncio.run(batch_classify_all_images(all_image_paths))
 
