@@ -44,14 +44,14 @@ npx supabase gen types typescript --local > types/database.ts
 - ✅ Austin + LA selected as launch cities
 - 🔄 Infrastructure setup (Phase 1)
   - Supabase project + pgvector setup
-  - Cloudflare R2 configuration
+  - Supabase Storage configuration
   - Next.js project initialization
   - Instagram OAuth configuration (for post-MVP)
 
 ## Critical Architecture Points
 - **Search**: Multi-modal (image + text) using CLIP embeddings
 - **Database**: Supabase PostgreSQL + pgvector with IVFFlat indexing
-- **Images**: Cloudflare R2 + CDN (WebP thumbnails)
+- **Images**: Supabase Storage (WebP thumbnails)
 - **Embeddings**: Modal.com serverless GPU (OpenCLIP ViT-L-14, 768-dim)
 - **Frontend**: Next.js 14+ App Router, TypeScript, Tailwind CSS
 - **Auth**: Supabase Auth with Instagram OAuth (post-MVP)
@@ -82,12 +82,8 @@ GOOGLE_PLACES_API_KEY=
 DATAFORSEO_LOGIN=
 DATAFORSEO_PASSWORD=
 
-# Cloudflare R2
-R2_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_ENDPOINT=
-R2_PUBLIC_URL=
+# Supabase Storage (uses same Supabase credentials above)
+# No additional environment variables needed
 
 # Instagram OAuth (for post-MVP)
 INSTAGRAM_CLIENT_ID=
@@ -129,7 +125,7 @@ NEXT_PUBLIC_APP_URL=
 ## Next Immediate Steps
 1. Create Supabase project with pgvector extension
 2. Run database schema migrations
-3. Set up Cloudflare R2 bucket
+3. Set up Supabase Storage buckets
 4. Initialize Next.js project
 5. Configure Instagram OAuth in Supabase
 6. Begin artist discovery for Austin + LA

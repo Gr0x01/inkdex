@@ -140,7 +140,7 @@ Follow Conventional Commits format:
 ```
 feat: Add image upload search component
 fix: Fix vector search performance issue
-docs: Update techStack.md with R2 configuration
+docs: Update techStack.md with Supabase Storage configuration
 refactor: Simplify artist card component
 perf: Optimize IVFFlat index for 100k images
 chore: Update dependencies
@@ -220,7 +220,7 @@ npm run validate-instagram  # Validate Instagram handles
 
 # Phase 3: Instagram Scraping
 npm run scrape-instagram    # Apify Instagram scraper
-npm run process-images      # Download + process + upload to R2
+npm run process-images      # Download + process + upload to Supabase Storage
 
 # Phase 4: Embedding Generation
 npm run generate-embeddings # Modal.com CLIP embeddings (Python)
@@ -482,7 +482,7 @@ vercel env pull             # Pull environment variables
 - **Caching**:
   - ISR with 24h revalidation for artist/city pages
   - Edge caching for static assets (Vercel CDN)
-  - R2 CDN for portfolio images (Cloudflare)
+  - Supabase Storage CDN for portfolio images
   - Database query caching (post-MVP: Redis)
 
 ### After Optimization

@@ -65,12 +65,12 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
     - Before: ~$6/month (Modal warmup) + usage
     - After: ~$6/month (local electricity) + <$1/month (Modal fallback)
     - Savings: 90% reduction in Modal costs
-- **Image Storage**: Cloudflare R2 + CDN
-  - Why: S3-compatible, no egress fees, $0.015/GB storage
-  - Structure: `original/{artist_id}/{post_id}.jpg`, `thumbnails/{size}/{artist_id}/{post_id}_${width}w.webp`
+- **Image Storage**: Supabase Storage
+  - Why: Integrated with Supabase, built-in CDN, PostgreSQL RLS policies
+  - Structure: `portfolio-images/{artist_id}/{image_id}.webp`
   - Sizes: 320w, 640w, 1280w (small, medium, large)
   - Format: WebP 85% quality (JPEG fallback)
-  - Cost: ~$0.53/month for 35GB (MVP)
+  - Cost: Included in Supabase plan (100GB free tier)
 - **Authentication**: Supabase Auth with Instagram OAuth provider
   - Why: Built into Supabase, handles OAuth flow, RLS integration
   - MVP Status: Configured but not exposed in UI
@@ -128,7 +128,7 @@ Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
 ### Specialized Tools
 - **Image Processing**: Sharp (Node.js)
   - Why: Fast, good quality, supports WebP
-  - Use: Resize + format conversion before R2 upload
+  - Use: Resize + format conversion before Supabase Storage upload
 - **Web Scraping**:
   - Cheerio (static HTML parsing)
   - Puppeteer (dynamic sites, artist roster pages)
@@ -284,15 +284,15 @@ POST /api/claim-profile (POST-MVP)
 - **ISR (Incremental Static Regeneration)**: 24h revalidation for artist/city pages
   - Why: Content changes slowly (daily Instagram scrapes)
   - Fallback: Stale-while-revalidate (serve cached, rebuild in background)
-- **Edge Caching**: Vercel CDN for static assets (images, CSS, JS)
-- **R2 CDN**: Cloudflare CDN for portfolio images (low-latency global delivery)
+- **Edge Caching**: Vercel CDN for static assets (CSS, JS)
+- **Image CDN**: Supabase Storage CDN for portfolio images (global delivery)
 - **Database Caching**: Supabase read replicas (post-MVP for scaling)
 
 **Image Optimization:**
 - WebP format (85% quality, ~70% smaller than JPEG)
 - Three sizes: 320w (mobile), 640w (tablet), 1280w (desktop)
 - Next.js Image component: Lazy loading, blur placeholders, responsive `srcset`
-- R2 + Cloudflare CDN: Global edge caching (<100ms latency)
+- Supabase Storage CDN: Global edge caching (<100ms latency)
 
 **Bundle Optimization:**
 - Code splitting: Dynamic imports for heavy components (search, image upload)
@@ -325,7 +325,6 @@ POST /api/claim-profile (POST-MVP)
 ```json
 {
   "@supabase/ssr": "^0.x",                    // ✅ Supabase client for Next.js App Router
-  "@aws-sdk/client-s3": "^3.x",              // R2 uploads (S3-compatible) - Phase 2
   "sharp": "^0.33.x",                         // Image processing - Phase 2
   "openai": "^4.x",                           // CLIP embeddings (or alternative) - Phase 2
   "zod": "^3.x",                              // ✅ Schema validation (env vars)
@@ -353,8 +352,7 @@ POST /api/claim-profile (POST-MVP)
 ```
 
 ### External Services (API Keys Required)
-- Supabase (free tier, no card required)
-- Cloudflare R2 (free 10GB/month)
+- Supabase (free tier with 100GB storage, no card required)
 - OpenAI API or alternative (for CLIP embeddings)
 - Google Places API ($200/month free credit)
 - DataForSEO (pay-per-query, ~$1-2 per city)
@@ -392,12 +390,8 @@ GOOGLE_PLACES_API_KEY=AIzaSy...
 DATAFORSEO_LOGIN=your-email
 DATAFORSEO_PASSWORD=your-password
 
-# Cloudflare R2
-R2_ACCOUNT_ID=xxx
-R2_ACCESS_KEY_ID=xxx
-R2_SECRET_ACCESS_KEY=xxx
-R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
-R2_PUBLIC_URL=https://cdn.yourdomain.com
+# Supabase Storage (uses same Supabase credentials above)
+# No additional environment variables needed
 
 # Instagram OAuth (for post-MVP)
 INSTAGRAM_CLIENT_ID=xxx
@@ -432,10 +426,10 @@ Database (Supabase)
   ├─ Connection pooling (Supabase Pooler)
   └─ Auto-backups (daily)
 
-Image Storage (Cloudflare R2)
-  ├─ S3-compatible object storage
-  ├─ Cloudflare CDN (global edge caching)
-  └─ Custom domain: cdn.yourdomain.com
+Image Storage (Supabase Storage)
+  ├─ Integrated object storage (100GB free tier)
+  ├─ Built-in CDN (global edge caching)
+  └─ RLS policies for security
 
 Embeddings (Modal.com)
   ├─ Serverless Python functions
@@ -455,7 +449,7 @@ Embeddings (Modal.com)
 Scripts (Node.js + Python)
   ├─ Run locally or on server (not Vercel)
   ├─ Google Maps discovery → Supabase
-  ├─ Instagram scraping → R2 + Supabase
+  ├─ Instagram scraping → Supabase Storage + Database
   ├─ Embedding generation (Modal.com) → Supabase
   └─ Scheduled re-scraping: Cron job (post-MVP)
 ```
@@ -481,9 +475,10 @@ Scripts (Node.js + Python)
 - ❌ HNSW: Slower build time, more memory, better for <10k vectors
 - ✅ IVFFlat: Faster build, good recall with tuning, scales to 100k+
 
-**Vercel Blob instead of Cloudflare R2?**
-- ❌ Vercel Blob: More expensive egress fees
-- ✅ R2: No egress fees, S3-compatible, same Cloudflare CDN
+**Vercel Blob or Cloudflare R2 instead of Supabase Storage?**
+- ❌ Vercel Blob: More expensive, separate service
+- ❌ Cloudflare R2: Separate service, additional complexity
+- ✅ Supabase Storage: Integrated with database, RLS policies, built-in CDN, included in plan
 
 **Firebase instead of Supabase?**
 - ❌ Firebase: No pgvector, NoSQL (harder for relational data)
@@ -503,10 +498,10 @@ Scripts (Node.js + Python)
 
 ### Scaling to 10+ Cities (100k+ Images)
 1. **Database**: Upgrade Supabase to Pro ($25/mo), increase `lists` to 316 for IVFFlat
-2. **Image Storage**: R2 scales automatically (pay-per-GB)
+2. **Image Storage**: Supabase Storage scales automatically (Pro plan: 100GB included, $0.021/GB beyond)
 3. **Embedding Generation**: Modal.com scales to millions of images (pay-per-second)
 4. **Caching**: Add Redis for search result caching (hot queries)
-5. **CDN**: Cloudflare already global, no changes needed
+5. **CDN**: Supabase Storage CDN already global, no changes needed
 
 ### Post-MVP Features (Weeks 9-12)
 1. **User Authentication**: Enable Supabase Auth UI, Instagram OAuth flow
@@ -527,7 +522,7 @@ Scripts (Node.js + Python)
 ### Official Docs
 - [Next.js 14 App Router](https://nextjs.org/docs)
 - [Supabase PostgreSQL + pgvector](https://supabase.com/docs/guides/database/extensions/pgvector)
-- [Cloudflare R2](https://developers.cloudflare.com/r2/)
+- [Supabase Storage](https://supabase.com/docs/guides/storage)
 - [OpenCLIP Models](https://github.com/mlfoundations/open_clip)
 - [Modal.com Python Functions](https://modal.com/docs)
 

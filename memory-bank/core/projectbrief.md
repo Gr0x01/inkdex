@@ -164,7 +164,7 @@ Let users express themselves naturally:
 
 ### Phase 1: Infrastructure Setup (Weeks 1-2)
 - Supabase project + pgvector
-- Cloudflare R2 configuration
+- Supabase Storage configuration
 - Next.js project initialization
 - Instagram OAuth configuration (for post-MVP)
 
@@ -177,7 +177,7 @@ Let users express themselves naturally:
 ### Phase 3: Instagram Scraping (Weeks 3-4)
 - Apify integration: 20-50 images per artist
 - Image processing: WebP thumbnails (3 sizes)
-- R2 upload: ~8,000-12,000 images
+- Supabase Storage upload: ~8,000-12,000 images
 - Error handling + resumability
 
 ### Phase 4: Embedding Generation (Weeks 4-5)
@@ -233,7 +233,7 @@ Let users express themselves naturally:
 
 ### Infrastructure Constraints
 - Supabase free tier (MVP) → Pro ($25/mo) for post-MVP
-- Cloudflare R2: ~35GB for 2 cities
+- Supabase Storage: 100GB included in free tier
 - Modal.com GPU: Pay-per-second (~$0.30 per city)
 - Vercel hobby (MVP) → Pro ($20/mo) for post-MVP
 
@@ -246,16 +246,15 @@ Let users express themselves naturally:
 ## Business Constraints
 
 ### Budget
-- **MVP Launch:** ~$60-110 one-time + $6-11/month
+- **MVP Launch:** ~$60-110 one-time + $0-5/month
   - City discovery: $10-20 (Google Maps API)
   - Scraping: $40-80 (Apify for 2 cities)
   - Embeddings: $0.60 (Modal GPU)
-  - Monthly: $6-11 (R2 storage + re-scraping)
+  - Monthly: $0-5 (re-scraping only, storage included in Supabase free tier)
 
-- **Post-MVP (10 Cities):** ~$98/month recurring
-  - Supabase Pro: $25/mo
+- **Post-MVP (10 Cities):** ~$95/month recurring
+  - Supabase Pro: $25/mo (includes 100GB storage)
   - Vercel Pro: $20/mo
-  - R2: $2.63/mo
   - Re-scraping: $50/mo
 
 ### Resource Limitations
