@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { SearchResult } from '@/types/search'
 import { FEATURED_FOLLOWER_THRESHOLD } from '@/lib/utils/featured'
+import { getImageUrl } from '@/lib/utils/images'
 
 interface ArtistCardProps {
   artist: SearchResult
@@ -100,7 +101,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           onClick={handleImageClick}
         >
           <Image
-            src={currentImage.url}
+            src={getImageUrl(currentImage.url)}
             alt={`${artist_name} portfolio`}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

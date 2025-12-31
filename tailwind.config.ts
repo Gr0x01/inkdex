@@ -26,6 +26,12 @@ const config: Config = {
         // Optional warm gray accent
         'warm-gray': '#8B7355',
 
+        // Accent colors (for featured badges, highlights)
+        accent: {
+          DEFAULT: '#8B7355',  // Warm gray
+          bright: '#A68968',   // Lighter warm gray
+        },
+
         // Status colors
         status: {
           success: '#10b981',

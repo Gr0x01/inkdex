@@ -662,22 +662,22 @@ export async function getArtistsByStyle(
 
   // Transform to match SearchResult interface
   const artists = (data || []).map((result: any) => ({
-    id: result.artist_id,
-    name: result.artist_name,
-    slug: result.artist_slug,
+    artist_id: result.artist_id,
+    artist_name: result.artist_name,
+    artist_slug: result.artist_slug,
     city: result.city,
     profile_image_url: result.profile_image_url,
     follower_count: result.follower_count,
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
-    images: (result.matching_images || []).map((img: any) => ({
+    matching_images: (result.matching_images || []).map((img: any) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
       similarity: img.similarity,
       likes_count: img.likes_count,
     })),
-    max_similarity: result.similarity,
+    similarity: result.similarity,
     max_likes: result.max_likes,
   }))
 
