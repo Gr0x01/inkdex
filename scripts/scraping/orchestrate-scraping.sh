@@ -1,15 +1,19 @@
 #!/bin/bash
-# Orchestration Script for Instagram Scraping Pipeline
-# Runs Python scraper, Node.js processor, and validation in sequence
+# Orchestration Script for Instagram Scraping Pipeline (Incremental)
+# Runs Python scraper with built-in batch processing, then rebuilds index
 
 set -e  # Exit on error
 
-echo "🤖 Instagram Scraping Pipeline"
-echo "=============================="
+echo "🤖 Instagram Scraping Pipeline (Incremental)"
+echo "=============================================="
 echo ""
 
-# Step 1: Run Python scraper (Apify)
-echo "📥 Step 1: Downloading Instagram images via Apify..."
+# Step 1: Run incremental scraper (downloads + processes in batches)
+echo "📥 Step 1: Downloading and processing (incremental)..."
+echo "   - Downloads images via Apify"
+echo "   - Processes and uploads every 10 artists"
+echo "   - Generates embeddings every 50 artists"
+echo ""
 python3 scripts/scraping/apify-scraper.py
 
 # Check if scraping was successful
@@ -19,31 +23,27 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "✅ Scraping complete"
+echo "✅ Incremental processing complete"
 echo ""
 
-# Step 2: Process and upload images
-echo "🖼️  Step 2: Processing and uploading images..."
-npx tsx scripts/scraping/process-and-upload.ts
+# Step 2: Final index rebuild
+echo "🔮 Step 2: Rebuilding vector index..."
+npx tsx scripts/embeddings/create-vector-index.ts
 
-# Check if processing was successful
+# Check if indexing was successful
 if [ $? -ne 0 ]; then
-    echo "❌ Processing failed. Exiting..."
+    echo "❌ Indexing failed. Exiting..."
     exit 1
 fi
 
 echo ""
-echo "✅ Processing complete"
-echo ""
-
-# Step 3: Validate results
-echo "🔍 Step 3: Validating results..."
-npx tsx scripts/scraping/validate-scraped-images.ts
-
-echo ""
 echo "✅ Pipeline complete!"
 echo ""
-echo "📋 Next steps:"
-echo "   1. Review validation report above"
-echo "   2. If needed, re-run: npm run scrape-instagram (auto-resumes)"
-echo "   3. When ready, proceed to Phase 4: Generate embeddings"
+echo "📋 Summary:"
+echo "   - Images downloaded, processed, and uploaded"
+echo "   - Embeddings generated incrementally"
+echo "   - Vector index rebuilt"
+echo ""
+echo "📊 Next steps:"
+echo "   1. Validate results: npm run validate-scraped-images"
+echo "   2. Build Next.js: npm run build"

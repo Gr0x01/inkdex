@@ -31,7 +31,7 @@ TEMP_DIR = Path('/tmp/instagram')
 
 # Apify Actor ID for Instagram Profile Scraper
 APIFY_ACTOR = 'apify/instagram-profile-scraper'
-MAX_POSTS = 50
+MAX_POSTS = 12  # Instagram's public API only exposes ~12 recent posts without auth
 
 # GPT-5-nano classification settings
 BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
@@ -345,6 +345,10 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
         with open(metadata_file, 'w') as f:
             json.dump(metadata_list, f, indent=2)
 
+        # Create lock file to signal completion (prevents race condition with process-batch.ts)
+        lock_file = artist_dir / '.complete'
+        lock_file.touch()
+
         print(f"   ✅ Saved {len(downloaded_images)} images")
         print(f"   📊 Total downloaded: {len(downloaded_images)} posts")
 
@@ -396,8 +400,14 @@ def process_single_artist(artist_data, apify_client, conn):
         return {'success': False, 'artist_id': artist_id, 'images': 0}
 
 def main():
-    """Main scraping workflow"""
-    print("🤖 Instagram Portfolio Scraper (Apify)\n")
+    """Main scraping workflow (incremental processing)"""
+    import subprocess
+    import time
+
+    # Get project root (absolute path for subprocess calls)
+    PROJECT_ROOT = Path(__file__).parent.parent.parent.absolute()
+
+    print("🤖 Instagram Portfolio Scraper (Apify - Incremental)\n")
 
     # Check for Apify token
     if not APIFY_API_TOKEN:
@@ -422,7 +432,7 @@ def main():
 
         # Get pending artists (FULL PRODUCTION RUN)
         print("📋 Finding artists to scrape...")
-        TEST_LIMIT = None  # Full production run - all 204 artists
+        TEST_LIMIT = None  # Full production run - all artists
         artists = get_pending_artists(conn, limit=TEST_LIMIT)
         if TEST_LIMIT:
             print(f"⚠️  TEST MODE: Limited to {TEST_LIMIT} artists")
@@ -433,12 +443,19 @@ def main():
 
         print(f"Found {len(artists)} artists to scrape\n")
         print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
+        print(f"📦 Incremental processing:")
+        print(f"   - Process/upload every 10 artists")
+        print(f"   - Generate embeddings every 50 artists\n")
 
         # Prepare artist data with indices
         artist_data_list = [
             (artist_id, instagram_handle, artist_name, index, len(artists))
             for index, (artist_id, instagram_handle, artist_name) in enumerate(artists, 1)
         ]
+
+        # Incremental processing settings
+        PROCESS_BATCH_SIZE = 10   # Process/upload every 10 artists
+        EMBED_BATCH_SIZE = 50      # Generate embeddings every 50 artists
 
         # Process artists in parallel using ThreadPoolExecutor
         total_images = 0
@@ -468,6 +485,43 @@ def main():
                         percentage = (completed_count / len(artists)) * 100
                         print(f"   📊 Progress: {percentage:.1f}% ({completed_count}/{len(artists)}) - {total_images} images total\n")
 
+                        # INCREMENTAL PROCESSING: Process and upload every 10 artists
+                        if completed_count % PROCESS_BATCH_SIZE == 0:
+                            print(f"\n🖼️  Processing batch of {PROCESS_BATCH_SIZE} artists...")
+                            try:
+                                subprocess.run(
+                                    ["npm", "run", "process-batch"],
+                                    check=True,
+                                    cwd=str(PROJECT_ROOT),
+                                    timeout=600  # 10 minute timeout
+                                )
+                                print(f"✅ Batch processed and uploaded\n")
+                            except subprocess.TimeoutExpired:
+                                print(f"❌ Batch processing timed out after 10 minutes\n")
+                                print(f"   ⚠️  Some images may remain in /tmp/instagram - manual review required\n")
+                            except subprocess.CalledProcessError as e:
+                                print(f"❌ Batch processing failed: {e}\n")
+                                print(f"   ⚠️  Pausing for 10 seconds before continuing...\n")
+                                time.sleep(10)
+
+                        # INCREMENTAL PROCESSING: Generate embeddings every 50 artists
+                        if completed_count % EMBED_BATCH_SIZE == 0:
+                            print(f"\n🔮 Generating embeddings for batch...")
+                            try:
+                                subprocess.run(
+                                    ["npm", "run", "generate-embeddings-batch"],
+                                    check=True,
+                                    cwd=str(PROJECT_ROOT),
+                                    timeout=1200  # 20 minute timeout for embeddings
+                                )
+                                print(f"✅ Embeddings generated\n")
+                            except subprocess.TimeoutExpired:
+                                print(f"❌ Embedding generation timed out after 20 minutes\n")
+                                print(f"   ⚠️  Will retry in final embedding pass\n")
+                            except subprocess.CalledProcessError as e:
+                                print(f"❌ Embedding generation failed: {e}\n")
+                                print(f"   ⚠️  Will retry in final embedding pass\n")
+
                     except Exception as e:
                         print(f"   ❌ Future execution error: {e}")
                         total_errors += 1
@@ -476,16 +530,45 @@ def main():
             print("\n\n⚠️  Interrupted by user")
             executor.shutdown(wait=False, cancel_futures=True)
 
+        # Final cleanup: process remaining artists
+        print("\n🖼️  Processing final batch...")
+        try:
+            subprocess.run(
+                ["npm", "run", "process-batch"],
+                check=True,
+                cwd=str(PROJECT_ROOT),
+                timeout=600
+            )
+            print("✅ Final batch processed\n")
+        except subprocess.TimeoutExpired:
+            print(f"❌ Final batch processing timed out\n")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Final batch processing failed: {e}\n")
+
+        # Final embeddings
+        print("🔮 Generating final embeddings...")
+        try:
+            subprocess.run(
+                ["python3", "scripts/embeddings/local_batch_embeddings.py"],
+                check=True,
+                cwd=str(PROJECT_ROOT),
+                timeout=3600  # 1 hour for final embedding pass
+            )
+            print("✅ Final embeddings generated\n")
+        except subprocess.TimeoutExpired:
+            print(f"❌ Final embedding generation timed out\n")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Final embedding generation failed: {e}\n")
+
         # Summary
-        print("\n✅ Scraping session complete!")
+        print("\n✅ Incremental scraping complete!")
         print(f"📁 Images saved to: {TEMP_DIR}")
         print(f"📊 Total images downloaded: {total_images}")
         print(f"✅ Successful: {completed_count - total_errors}")
         print(f"⚠️  Errors: {total_errors}")
         print("\n📋 Next steps:")
-        print("   1. Batch classify all images with GPT-5-nano: python3 scripts/scraping/batch-classify.py")
-        print("   2. Process and upload filtered images: npm run process-images")
-        print("   3. Validate results: npm run validate-scraped-images")
+        print("   1. Rebuild vector index: npx tsx scripts/embeddings/create-vector-index.ts")
+        print("   2. Validate results: npm run validate-scraped-images")
 
     except KeyboardInterrupt:
         print("\n\n⚠️  Interrupted by user")
