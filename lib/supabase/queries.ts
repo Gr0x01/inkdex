@@ -681,3 +681,62 @@ export async function getArtistsByStyle(
     total: artists.length,
   }
 }
+
+/**
+ * Get artist by Instagram handle with portfolio embeddings
+ * Used for Instagram profile searches to check if artist already exists in DB
+ * @param handle - Instagram handle (with or without @ prefix)
+ * @returns Artist with portfolio images and embeddings, or null if not found
+ */
+export async function getArtistByInstagramHandle(handle: string) {
+  // Validate and normalize handle
+  if (typeof handle !== 'string' || handle.length === 0) {
+    throw new Error('Invalid Instagram handle: must be a non-empty string')
+  }
+
+  // Remove @ prefix if present
+  const normalizedHandle = handle.replace(/^@/, '')
+
+  // Validate format (alphanumeric + dots/underscores, 1-30 chars)
+  const INSTAGRAM_HANDLE_REGEX = /^[a-zA-Z0-9._]{1,30}$/
+  if (!INSTAGRAM_HANDLE_REGEX.test(normalizedHandle)) {
+    throw new Error(
+      'Invalid Instagram handle format: must be 1-30 characters (alphanumeric, dots, underscores only)'
+    )
+  }
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('artists')
+    .select(`
+      id,
+      name,
+      slug,
+      instagram_handle,
+      city,
+      state,
+      portfolio_images!inner (
+        id,
+        embedding,
+        status,
+        instagram_url,
+        storage_thumb_640
+      )
+    `)
+    .eq('instagram_handle', normalizedHandle)
+    .eq('portfolio_images.status', 'active')
+    .not('portfolio_images.embedding', 'is', null)
+    .single()
+
+  if (error) {
+    // Not found is expected for new profiles
+    if (error.code === 'PGRST116') {
+      return null
+    }
+    console.error('Error fetching artist by Instagram handle:', error)
+    return null
+  }
+
+  return data
+}

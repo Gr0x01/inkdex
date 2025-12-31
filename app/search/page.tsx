@@ -271,6 +271,26 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </>
             )}
 
+            {queryType === 'instagram_profile' && instagramUsername && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
+                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <span className="truncate">
+                    Artists similar to{' '}
+                    <a
+                      href={`https://instagram.com/${instagramUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body-medium text-ink hover:text-purple-600 transition-colors"
+                    >
+                      @{instagramUsername}
+                    </a>
+                  </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
             {/* Results Count - Mobile Friendly */}
             <div className="font-mono text-xs md:text-[10px] font-medium text-ink/70 uppercase tracking-[0.1em] md:tracking-[0.15em] whitespace-nowrap flex-shrink-0">
               {total} {total === 1 ? 'Artist' : 'Artists'}

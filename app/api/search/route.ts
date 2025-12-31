@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
-import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/modal-client'
+import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
 import { detectInstagramUrl, extractPostId } from '@/lib/instagram/url-detector'
 import { fetchInstagramPostImage, downloadImageAsBuffer, InstagramError, ERROR_MESSAGES } from '@/lib/instagram/post-fetcher'
+import { fetchInstagramProfileImages, PROFILE_ERROR_MESSAGES } from '@/lib/instagram/profile-fetcher'
+import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
+import { getArtistByInstagramHandle } from '@/lib/supabase/queries'
 import { checkInstagramSearchRateLimit, getClientIp } from '@/lib/rate-limiter'
 
 // Validation schemas
@@ -15,6 +18,12 @@ const textSearchSchema = z.object({
 
 const instagramPostSchema = z.object({
   type: z.literal('instagram_post'),
+  instagram_url: z.string().min(1),
+  city: z.string().optional(),
+})
+
+const instagramProfileSchema = z.object({
+  type: z.literal('instagram_profile'),
   instagram_url: z.string().min(1),
   city: z.string().optional(),
 })
@@ -32,7 +41,7 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
 
-    let searchType: 'image' | 'text' | 'instagram_post'
+    let searchType: 'image' | 'text' | 'instagram_post' | 'instagram_profile'
     let embedding: number[]
     let queryText: string | null = null
     let instagramUsername: string | null = null
@@ -148,6 +157,133 @@ export async function POST(request: NextRequest) {
           if (error instanceof InstagramError) {
             return NextResponse.json(
               { error: ERROR_MESSAGES[error.code] || error.message },
+              { status: 400 }
+            )
+          }
+          throw error
+        }
+      }
+      // Try Instagram profile schema
+      else if (instagramProfileSchema.safeParse(body).success) {
+        const profileParsed = instagramProfileSchema.safeParse(body)
+        if (!profileParsed.success) {
+          return NextResponse.json(
+            { error: 'Invalid Instagram profile URL request' },
+            { status: 400 }
+          )
+        }
+
+        searchType = 'instagram_profile'
+
+        // Detect and validate Instagram URL
+        const detectedUrl = detectInstagramUrl(profileParsed.data.instagram_url)
+        if (!detectedUrl || detectedUrl.type !== 'profile') {
+          return NextResponse.json(
+            { error: 'Invalid Instagram profile URL. Please provide a valid profile link or @username.' },
+            { status: 400 }
+          )
+        }
+
+        // Rate limiting for Instagram searches (10 per hour per IP)
+        const clientIp = getClientIp(request)
+        const rateLimitResult = checkInstagramSearchRateLimit(clientIp)
+
+        if (!rateLimitResult.success) {
+          return NextResponse.json(
+            {
+              error: 'Too many Instagram searches. Please try again later.',
+              retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
+            },
+            {
+              status: 429,
+              headers: {
+                'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
+                'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+                'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+                'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+              },
+            }
+          )
+        }
+
+        try {
+          const username = detectedUrl.id
+
+          // OPTIMIZATION: Check if artist exists in DB first (instant search)
+          console.log(`[Profile Search] Checking DB for @${username}...`)
+          const existingArtist = await getArtistByInstagramHandle(username)
+
+          if (existingArtist && existingArtist.portfolio_images && existingArtist.portfolio_images.length >= 3) {
+            // Use existing embeddings - instant search!
+            console.log(`[Profile Search] Found in DB with ${existingArtist.portfolio_images.length} images - using existing embeddings`)
+
+            const embeddings = existingArtist.portfolio_images.map((img: any) => {
+              // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
+              if (typeof img.embedding === 'string') {
+                return JSON.parse(img.embedding)
+              }
+              return img.embedding
+            })
+
+            // Aggregate embeddings
+            embedding = aggregateEmbeddings(embeddings)
+
+            // Store attribution data
+            instagramUsername = username
+            queryText = `Artists similar to @${username}`
+
+            console.log(`[Profile Search] Instant search completed (DB lookup)`)
+          } else {
+            // Scrape profile via Apify
+            console.log(`[Profile Search] Not in DB - scraping via Apify...`)
+            const profileData = await fetchInstagramProfileImages(username, 6)
+
+            if (profileData.images.length < 3) {
+              return NextResponse.json(
+                { error: PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS },
+                { status: 400 }
+              )
+            }
+
+            console.log(`[Profile Search] Downloaded ${profileData.images.length} images, generating embeddings...`)
+
+            // Download images in parallel
+            const imageBuffers = await Promise.all(
+              profileData.images.map(url => downloadImageAsBuffer(url))
+            )
+
+            // Convert buffers to Files for embedding generation
+            const imageFiles = imageBuffers.map((buffer, i) => {
+              const arrayBuffer = buffer.buffer.slice(
+                buffer.byteOffset,
+                buffer.byteOffset + buffer.byteLength
+              ) as ArrayBuffer
+
+              return new File([arrayBuffer], `profile-${i}.jpg`, {
+                type: 'image/jpeg'
+              })
+            })
+
+            // Generate embeddings in parallel
+            const embeddings = await Promise.all(
+              imageFiles.map(file => generateImageEmbedding(file))
+            )
+
+            console.log(`[Profile Search] Generated ${embeddings.length} embeddings, aggregating...`)
+
+            // Aggregate embeddings
+            embedding = aggregateEmbeddings(embeddings)
+
+            // Store attribution data
+            instagramUsername = username
+            queryText = `Artists similar to @${username}`
+
+            console.log(`[Profile Search] Apify scraping completed`)
+          }
+        } catch (error) {
+          if (error instanceof InstagramError) {
+            return NextResponse.json(
+              { error: PROFILE_ERROR_MESSAGES[error.code] || error.message },
               { status: 400 }
             )
           }
