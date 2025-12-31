@@ -5,7 +5,7 @@ import { getImageUrl } from '@/lib/utils/images'
  * Validation helpers
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const SLUG_REGEX = /^[a-z0-9._-]+$/
+const SLUG_REGEX = /^[a-z0-9-]+$/ // Removed periods and underscores for security
 const STATE_CODE_REGEX = /^[A-Z]{2}$/
 
 function validateUUID(id: string, fieldName: string = 'ID'): void {
@@ -15,8 +15,15 @@ function validateUUID(id: string, fieldName: string = 'ID'): void {
 }
 
 function validateSlug(slug: string): void {
-  if (typeof slug !== 'string' || !SLUG_REGEX.test(slug) || slug.length === 0 || slug.length > 100) {
-    throw new Error('Invalid slug: must be lowercase alphanumeric with hyphens, periods, or underscores, max 100 characters')
+  if (
+    typeof slug !== 'string' ||
+    !SLUG_REGEX.test(slug) ||
+    slug.length === 0 ||
+    slug.length > 50 || // Reduced from 100 for tighter validation
+    slug.startsWith('-') ||
+    slug.endsWith('-')
+  ) {
+    throw new Error('Invalid slug: must be lowercase alphanumeric with hyphens only, max 50 characters, no leading/trailing hyphens')
   }
 }
 
@@ -559,5 +566,118 @@ export async function getCityArtists(
   return {
     artists,
     total: count ?? 0,
+  }
+}
+
+/**
+ * Get style seed by slug for SEO landing pages
+ * @param styleSlug - Style slug (e.g., 'traditional', 'neo-traditional')
+ */
+export async function getStyleSeedBySlug(styleSlug: string) {
+  // Validate slug
+  validateSlug(styleSlug)
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('style_seeds')
+    .select('*')
+    .eq('style_name', styleSlug)
+    .single()
+
+  if (error) {
+    console.error('Error fetching style seed:', error)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * Get artists by style using style seed embedding
+ * @param styleSlug - Style slug (e.g., 'traditional', 'realism')
+ * @param city - Optional city filter
+ * @param limit - Number of artists to return (default 20)
+ * @param offset - Pagination offset (default 0)
+ */
+export async function getArtistsByStyle(
+  styleSlug: string,
+  city: string | null = null,
+  limit: number = 20,
+  offset: number = 0
+) {
+  // Validate inputs
+  validateSlug(styleSlug)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+  if (city !== null) {
+    validateString(city, 'city', 100)
+  }
+
+  // Get style seed
+  const styleSeed = await getStyleSeedBySlug(styleSlug)
+  if (!styleSeed || !styleSeed.embedding) {
+    console.error(`Style seed not found or missing embedding: ${styleSlug}`)
+    return { artists: [], total: 0 }
+  }
+
+  // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
+  let embeddingString: string
+  if (typeof styleSeed.embedding === 'string') {
+    // Already a string, use as-is (strip brackets if present)
+    embeddingString = styleSeed.embedding.replace(/^\[|\]$/g, '')
+  } else if (Array.isArray(styleSeed.embedding)) {
+    // Array format, sanitize and join
+    embeddingString = styleSeed.embedding.map((n: number) => {
+      if (!Number.isFinite(n)) {
+        throw new Error('Invalid embedding value in style seed')
+      }
+      return n.toString()
+    }).join(',')
+  } else {
+    console.error('Unexpected embedding format:', typeof styleSeed.embedding)
+    return { artists: [], total: 0 }
+  }
+
+  const supabase = await createClient()
+
+  // Use vector similarity search with style seed embedding
+  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
+    query_embedding: `[${embeddingString}]`,
+    match_threshold: 0.15, // Same threshold as regular search
+    match_count: limit,
+    city_filter: city,
+    offset_param: offset,
+  })
+
+  if (error) {
+    console.error('Error searching artists by style:', error)
+    return { artists: [], total: 0 }
+  }
+
+  // Transform to match SearchResult interface
+  const artists = (data || []).map((result: any) => ({
+    id: result.artist_id,
+    name: result.artist_name,
+    slug: result.artist_slug,
+    city: result.city,
+    profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count,
+    shop_name: result.shop_name,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    images: (result.matching_images || []).map((img: any) => ({
+      url: img.thumbnail_url,
+      instagramUrl: img.image_url,
+      similarity: img.similarity,
+      likes_count: img.likes_count,
+    })),
+    max_similarity: result.similarity,
+    max_likes: result.max_likes,
+  }))
+
+  return {
+    artists,
+    total: artists.length,
   }
 }

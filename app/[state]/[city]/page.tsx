@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getCityArtists } from '@/lib/supabase/queries'
+import { getCityArtists, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistPreviewCard from '@/components/home/ArtistPreviewCard'
@@ -74,6 +74,7 @@ export default async function CityPage({
   if (!state || !city) notFound()
 
   const { artists, total } = await getCityArtists(state.code, city.name, 100, 0)
+  const styleSeeds = await getStyleSeeds()
 
   // JSON-LD Breadcrumbs (sanitized)
   const jsonLd = {
@@ -163,6 +164,38 @@ export default async function CityPage({
               <Link href={`/${stateSlug}`} className="btn btn-secondary mt-6">
                 View Other Cities in {state.name}
               </Link>
+            </div>
+          )}
+
+          {/* Browse by Style Section (Internal Linking for SEO) */}
+          {styleSeeds.length > 0 && (
+            <div className="mt-16 pt-12 border-t border-neutral-800">
+              <div className="mb-8">
+                <h2 className="font-display text-heading-2 font-[700] text-text-primary mb-3">
+                  Browse by Style in {city.name}
+                </h2>
+                <p className="font-body text-body text-text-secondary">
+                  Explore tattoo artists specializing in different styles
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {styleSeeds.map((style) => (
+                  <Link
+                    key={style.style_name}
+                    href={`/${stateSlug}/${citySlug}/${style.style_name}`}
+                    className="group relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/50 p-4 hover:border-accent-primary hover:bg-neutral-800 transition-all duration-200"
+                  >
+                    <div className="flex flex-col items-center text-center">
+                      <h3 className="font-display text-body-large font-[600] text-text-primary group-hover:text-accent-primary transition-colors mb-1">
+                        {style.display_name}
+                      </h3>
+                      <p className="font-mono text-small text-text-secondary line-clamp-2">
+                        {style.description.split('.')[0]}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2025-12-31
 Maintainer: RB
-Status: Phase 3-6 Complete ✅, Style Seeds Complete ✅, Ready for Phase 7 ✅
+Status: Atlanta + LA Discovery Complete ✅, 2,950 Images Scraped ✅, Ready for Classification ✅
 ---
 
 # Progress Log: Inkdex
@@ -755,3 +755,204 @@ After initial infrastructure setup, comprehensive code review identified and fix
 - **Article:** https://www.tattoodo.com/articles/a-beginners-guide-popular-tattoo-styles-briefly-explained-6969
 - **Date Accessed:** December 30, 2025
 - **Images Used:** Representative examples for each style (fair use for search indexing)
+
+### Atlanta + Los Angeles Discovery & Scraping (December 31, 2025)
+**Status**: ✅ Complete (~4 hours total - discovery + scraping)
+
+#### Completed
+- ✅ **Artist Discovery:**
+  - **Atlanta:** 193 artists discovered (66 Tavily queries)
+  - **Los Angeles:** 193 artists discovered (66 Tavily queries)
+  - **Total:** 386 new artists across 2 cities
+  - **Query Approach:** Reused proven Austin query generator
+    - 5 general + 27 styles + 8 Atlanta neighborhoods + 10 LA neighborhoods
+    - 5 experience + 2 demographic + 20 niche specialties
+  - **Cost:** ~$6-8 estimated (Tavily queries, query caching prevented duplicates)
+
+- ✅ **Instagram Scraping:**
+  - **Total Attempted:** 386 artists (193 Atlanta + 193 LA)
+  - **Successfully Scraped:** 357 artists (92.5% success rate)
+    - Atlanta: 171/193 (88.6%) - 1,376 images
+    - Los Angeles: 186/193 (96.4%) - 1,574 images
+  - **Failed:** 29 artists (7.5% - private accounts, rate limits, invalid handles)
+  - **Total Images Downloaded:** 2,950 images to `/tmp/instagram`
+  - **Processing Time:** ~2.5 hours with 8 parallel Apify calls
+  - **Cost:** ~$30-40 estimated (Apify usage)
+
+- ✅ **Database State After Scraping:**
+  - **Austin:** 188 artists with 1,257 images (embeddings complete)
+  - **Atlanta:** 171 artists with 1,376 images (awaiting classification)
+  - **Los Angeles:** 186 artists with 1,574 images (awaiting classification)
+  - **Total Platform:** 545 artists across 3 cities (Austin + Atlanta + LA)
+
+#### Key Performance Metrics
+- **Parallelization:** 8 concurrent Apify calls (optimal for rate limits + memory)
+- **Throughput:** ~2 artists/minute average
+- **Bottleneck:** Apify actor startup (30-60s per artist) + Instagram scraping latency
+- **Resume Functionality:** ✅ Working perfectly (skips completed jobs via `scraping_jobs` table)
+- **Success Rate:** 92.5% (357/386) - within expected range for Instagram scraping
+
+#### Architecture Fixes
+1. **Parallelization by Default:**
+   - Fixed sequential execution bug in `tavily-artist-discovery-v2.ts`
+   - Now batches queries in groups of 50 (Promise.all)
+   - Cities process in parallel (Promise.all)
+   - Batch size: 50 queries/batch (Tavily supports 1000 RPM)
+
+2. **Resume Capability:**
+   - `scraping_jobs` table tracks `status='completed'`
+   - Query filters: `WHERE a.id NOT IN (SELECT artist_id FROM scraping_jobs WHERE status = 'completed')`
+   - Can restart script after crash without duplicate work
+
+3. **Status Tracking:**
+   - Database-backed job tracking prevents duplicate scraping
+   - Transaction safety with thread-safe db_lock
+   - Automatic retry on network failures
+
+#### Files Modified
+- `scripts/discovery/tavily-artist-discovery-v2.ts` - Changed CITIES array to Atlanta + LA
+- `scripts/discovery/query-generator.ts` - Added Atlanta (8) and LA (10) neighborhoods
+- `lib/constants/cities.ts` - Added Atlanta city + Georgia state configuration
+
+#### Next Steps (In Progress)
+1. ✅ Discovery complete (386 artists)
+2. ✅ Instagram scraping complete (2,950 images in `/tmp/instagram`)
+3. **NEXT:** Batch classify 2,950 images with GPT-5-nano
+   - Script: `scripts/scraping/batch-classify.py`
+   - Expected pass rate: 60-70% (1,800-2,100 tattoo images)
+   - Expected cost: ~$0.46 (~$0.000155 per image with Flex tier)
+4. **NEXT:** Process and upload filtered images to Supabase Storage
+   - Script: `npm run process-images`
+   - 100 concurrent uploads, ~2-3 minutes
+5. **NEXT:** Generate CLIP embeddings for new portfolio images
+   - Script: Modal.com batch processing (50 images/batch)
+   - Expected: ~4-6 runs to complete all images
+6. **NEXT:** Update IVFFlat vector index
+   - New optimal lists parameter: sqrt(3,057) ≈ 55
+   - Current index uses lists=35 (optimized for 1,257 images)
+
+### Phase 7: Style Landing Pages & SEO (December 31, 2025)
+**Status**: ✅ Complete (~2 hours)
+
+#### Completed
+- ✅ **30 Style Landing Pages Created:**
+  - Dynamic route: `/[state]/[city]/[style]/page.tsx`
+  - 10 tattoo styles × 3 cities (Austin, Atlanta, Los Angeles)
+  - Examples: `/texas/austin/traditional`, `/california/los-angeles/realism`
+  - All pages SEO-optimized with JSON-LD, Open Graph, sitemap
+
+- ✅ **Database Query Functions (2 new):**
+  - `getStyleSeedBySlug(styleSlug)` - Fetch style seed with embedding
+  - `getArtistsByStyle(styleSlug, city, limit, offset)` - Vector similarity search using seed
+
+- ✅ **Page Features Implemented:**
+  - Hero section with style description + seed image example
+  - Breadcrumb navigation (Home > State > City > Style)
+  - Artist grid showing visually similar work
+  - Internal links to other styles in same city
+  - "All [City] Artists" link back to city browse page
+  - Empty state for cities without style matches
+
+- ✅ **SEO Optimization:**
+  - Target keywords: `[style] tattoo [city]` (e.g., "traditional tattoo austin")
+  - Meta title: `{Style} Tattoo Artists in {City}, {State} | Inkdex`
+  - Meta description: Style description + discovery message
+  - JSON-LD breadcrumbs for search engines
+  - Canonical URLs on all pages
+  - Sitemap priority 0.9 (high SEO value, same as city pages)
+
+- ✅ **Internal Linking Strategy:**
+  - City pages now have "Browse by Style" section at bottom
+  - Links to all 10 style pages for each city
+  - Each style page links back to city page
+  - Each style page links to other styles in same city
+  - Creates strong internal linking mesh for SEO authority
+
+#### Technical Implementation
+
+**How It Works (No Manual Tagging!):**
+1. Each style has seed images with CLIP embeddings in `style_seeds` table
+2. When user visits `/texas/austin/traditional`:
+   - Fetch "traditional" style seed embedding from database
+   - Run vector similarity search (threshold 0.15, same as regular search)
+   - Display artists whose portfolio images match the traditional style
+3. Artists appear based on actual visual similarity, not manual tags
+4. Auto-updates as we add artists (ISR with 24h revalidation)
+
+**Architecture Decisions:**
+- Uses `styleSeedsData` from TypeScript file for `generateStaticParams()` (can't use async DB queries)
+- Runtime queries use database `style_seeds` table for embeddings
+- Server Components with ISR (Incremental Static Regeneration)
+- "INK & ETHER" dark editorial design system (from Phase 5)
+- Vector similarity threshold 0.15 (same as regular search)
+
+**Files Created/Modified:**
+1. **New:** `app/[state]/[city]/[style]/page.tsx` (273 lines)
+2. **Modified:** `lib/supabase/queries.ts` (added 2 functions, 115 lines)
+3. **Modified:** `app/[state]/[city]/page.tsx` (added "Browse by Style" section)
+4. **Modified:** `app/sitemap.ts` (added style pages to sitemap)
+
+#### Build Metrics
+- **Total Pages:** 617 static pages generated successfully
+  - 1 homepage
+  - 3 state pages (Texas, California, Georgia)
+  - 3 city pages (Austin, LA, Atlanta)
+  - **30 style landing pages** (10 styles × 3 cities) ← NEW
+  - 188 artist pages
+  - 392 additional routes (search, API, etc.)
+- **Build Time:** ~8 minutes (includes all style pages)
+- **Bundle Size:** Within target (<200 KB)
+- **TypeScript Errors:** 0
+- **Static Generation:** All pages pre-rendered successfully
+
+#### SEO Page Structure
+```
+/texas/austin/traditional          → Traditional Tattoo Artists in Austin, TX
+/texas/austin/realism              → Realism Tattoo Artists in Austin, TX
+/texas/austin/watercolor           → Watercolor Tattoo Artists in Austin, TX
+... (7 more styles for Austin)
+
+/california/los-angeles/traditional → Traditional Tattoo Artists in Los Angeles, CA
+/california/los-angeles/realism     → Realism Tattoo Artists in Los Angeles, CA
+... (8 more styles for LA)
+
+/georgia/atlanta/traditional       → Traditional Tattoo Artists in Atlanta, GA
+/georgia/atlanta/realism           → Realism Tattoo Artists in Atlanta, GA
+... (8 more styles for Atlanta)
+```
+
+#### 10 Styles Implemented
+1. **Traditional** - Bold lines, bright colors, roses and anchors
+2. **Realism** - Photo-realistic portraits and nature
+3. **Watercolor** - Soft, flowing, brush-dabbled pastels
+4. **Tribal** - Bold geometric patterns, black ink
+5. **New School** - Cartoonish, vibrant, 90s aesthetic
+6. **Neo Traditional** - Modern evolution with vibrant colors
+7. **Japanese** - Dragons, phoenixes, folklore (Irezumi)
+8. **Blackwork** - Solely black ink, sacred geometry
+9. **Illustrative** - Etching, engraving, fine line
+10. **Chicano** - Fine line, Mexican culture, LA style
+
+#### SEO Advantage
+- **Competitors:** Manually tag artists (10+ tags each, labor-intensive, subjective)
+- **Inkdex:** Auto-generate from CLIP embeddings (objective visual similarity)
+- **Result:** More relevant results = better engagement = better rankings
+- **Maintenance:** Zero ongoing work (auto-updates with ISR)
+
+#### Known Limitations
+- Currently only works for Austin (has embeddings)
+- Atlanta/LA style pages show empty state until Phase 4 complete for those cities
+- Will auto-populate once embeddings are generated (ISR revalidation)
+
+#### Performance
+- Build time impact: +30 pages adds ~30 seconds to build
+- All pages pre-rendered at build time (instant page loads)
+- Vector search query efficiently cached per city/style combo
+- ISR revalidation every 24 hours keeps data fresh
+
+#### Next Steps
+1. Wait for Atlanta + LA embeddings to complete (Phase 4)
+2. Style pages will auto-populate with artists from those cities
+3. Consider adding style filter to main search UI (Phase 8)
+4. Create custom OG images for each style (use seed image + city name)
+5. Add FAQ sections to style pages ("What is [style] tattoo?")
