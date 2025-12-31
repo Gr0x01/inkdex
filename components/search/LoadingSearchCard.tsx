@@ -22,9 +22,16 @@ const TEXT_SEARCH_MESSAGES: LoadingMessage[] = [
   { text: "Curating your results...", duration: 2500 }
 ]
 
+const INSTAGRAM_POST_MESSAGES: LoadingMessage[] = [
+  { text: "Fetching from Instagram...", duration: 2500 },
+  { text: "Analyzing the post...", duration: 2500 },
+  { text: "Finding similar artists...", duration: 2500 },
+  { text: "Almost there...", duration: 2500 }
+]
+
 interface LoadingSearchCardProps {
   isVisible: boolean
-  searchType: 'image' | 'text'
+  searchType: 'image' | 'text' | 'instagram_post'
 }
 
 export default function LoadingSearchCard({
@@ -33,7 +40,10 @@ export default function LoadingSearchCard({
 }: LoadingSearchCardProps) {
   const [messageIndex, setMessageIndex] = useState(0)
 
-  const messages = searchType === 'image' ? IMAGE_SEARCH_MESSAGES : TEXT_SEARCH_MESSAGES
+  const messages =
+    searchType === 'image' ? IMAGE_SEARCH_MESSAGES :
+    searchType === 'instagram_post' ? INSTAGRAM_POST_MESSAGES :
+    TEXT_SEARCH_MESSAGES
 
   // Message rotation
   useEffect(() => {

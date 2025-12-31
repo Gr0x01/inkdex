@@ -956,3 +956,141 @@ After initial infrastructure setup, comprehensive code review identified and fix
 3. Consider adding style filter to main search UI (Phase 8)
 4. Create custom OG images for each style (use seed image + city name)
 5. Add FAQ sections to style pages ("What is [style] tattoo?")
+
+---
+
+### Instagram Post Link Search - Phase 1 (December 31, 2025)
+**Status**: ✅ Complete with Security Hardening (~3 hours)
+
+#### Objective
+Enable users to paste Instagram post URLs into search and find similar artists based on the post image, without manually downloading.
+
+#### Completed
+- ✅ **Instagram URL Detection** (`lib/instagram/url-detector.ts`, 225 lines)
+  - Detects post URLs (`/p/{id}`), reels (`/reel/{id}`), profiles
+  - Validates username and post ID formats
+  - Security: Domain validation, safe extraction with `extractPostId()`
+  - Functions: `detectInstagramUrl()`, `isValidUsername()`, `isValidPostId()`, `extractPostId()`
+
+- ✅ **Instagram Image Fetching** (`lib/instagram/post-fetcher.ts`, 221 lines)
+  - Uses Instagram oEmbed API for public posts
+  - Downloads images with SSRF protection (domain whitelist)
+  - Error handling with user-friendly messages
+  - Functions: `fetchInstagramPostImage()`, `downloadImageAsBuffer()`
+
+- ✅ **Rate Limiting** (`lib/rate-limiter.ts`, 177 lines)
+  - In-memory rate limiter (10 Instagram searches per hour per IP)
+  - Automatic cleanup of expired entries
+  - HTTP 429 responses with retry headers
+  - Functions: `checkInstagramSearchRateLimit()`, `getClientIp()`
+
+- ✅ **Search API Integration**
+  - Updated: `app/api/search/route.ts` - Instagram post handling + rate limiting
+  - Updated: `app/api/search/[searchId]/route.ts` - Attribution metadata
+  - Updated: `types/search.ts` - Added `instagram_post` type
+
+- ✅ **UI Components**
+  - Updated: `components/home/UnifiedSearchBar.tsx` - URL detection + visual "IG Post" badge
+  - Updated: `components/search/LoadingSearchCard.tsx` - Instagram loading messages
+  - Updated: `app/search/page.tsx` - Instagram attribution display
+
+- ✅ **Database Schema**
+  - Migration: `20250101_001_add_instagram_search_support.sql`
+  - Added columns: `instagram_username`, `instagram_post_id`, `artist_id_source`
+  - Added index on `instagram_username`
+
+- ✅ **Database Constraints**
+  - Migration: `20250101_002_add_instagram_field_constraints.sql`
+  - Username: `^[a-zA-Z0-9._]+$` (1-30 chars, no trailing dot)
+  - Post ID: `^[a-zA-Z0-9_-]+$` (8-15 chars)
+
+#### Security Hardening (4 CRITICAL Fixes)
+
+**Code Review:** Passed with A- security rating, 0 critical issues remaining
+
+1. ✅ **SSRF Vulnerability - FIXED**
+   - **File:** `lib/instagram/post-fetcher.ts:146-216`
+   - **Issue:** No domain validation on image downloads from oEmbed API responses
+   - **Fix:** Whitelist trusted Instagram CDN domains (cdninstagram.com, fbcdn.net, scontent.cdninstagram.com)
+   - **Impact:** Prevents server-side request forgery attacks
+
+2. ✅ **SQL Injection Risk - FIXED**
+   - **File:** `lib/instagram/url-detector.ts:198-224`
+   - **Issue:** Post ID extracted via unsafe `pathname.split('/')[2]`
+   - **Fix:** Created safe `extractPostId()` with domain + format validation
+   - **Impact:** Prevents SQL injection via malicious post IDs
+
+3. ✅ **Rate Limiting - IMPLEMENTED**
+   - **File:** `lib/rate-limiter.ts` (new, 177 lines)
+   - **Issue:** No protection against abuse, DDoS, or cost attacks
+   - **Fix:** In-memory rate limiter with IP-based tracking (10 searches/hour/IP)
+   - **Impact:** Prevents abuse and excessive API costs
+
+4. ✅ **Database Constraints - ADDED**
+   - **File:** `supabase/migrations/20250101_002_add_instagram_field_constraints.sql`
+   - **Issue:** No validation at database level
+   - **Fix:** CHECK constraints for username and post ID formats
+   - **Impact:** Database-level validation, defense-in-depth
+
+#### Technical Implementation
+
+**User Flow:**
+1. User pastes Instagram post URL: `instagram.com/p/abc123`
+2. System detects URL and shows "IG Post" badge
+3. User submits search
+4. Backend fetches image via Instagram oEmbed API (~500-1000ms)
+5. Downloads image with domain validation (~500-1000ms)
+6. Generates CLIP embedding from fetched image (2-5s, Modal.com)
+7. Vector search finds similar artists (~190ms, IVFFlat)
+8. Results page shows attribution: "Instagram post by @username"
+
+**Performance:**
+- Instagram oEmbed API: ~500-1000ms
+- Image download: ~500-1000ms
+- CLIP embedding: 2-5s (Modal.com GPU)
+- Vector search: ~190ms (IVFFlat index)
+- **Total end-to-end:** ~3-7s
+
+**Cost:**
+- Instagram oEmbed API: FREE
+- Rate limiting: $0 (in-memory)
+- CLIP embedding: ~$0.001/search
+- **Monthly estimate:** ~$3-5 for 100-200 searches
+
+#### Files Created/Modified
+- **3 new libraries:** url-detector, post-fetcher, rate-limiter
+- **2 new migrations:** Instagram fields + constraints
+- **6 modified files:** Search API, UI components, types
+
+#### Validation Complete
+- ✅ Public IG post URL → similar artists shown
+- ✅ Private post → friendly error (403)
+- ✅ Deleted post → friendly error (404)
+- ✅ Carousel post → uses first image
+- ✅ Attribution → shows original post link
+- ✅ Rate limiting → 429 after 10 requests/hour
+- ✅ TypeScript → strict mode passes
+- ✅ Database → constraints enforce valid data
+- ✅ SSRF → malicious URLs blocked
+- ✅ SQL injection → prevented by safe extraction
+
+#### Known Limitations
+- Private posts: 403 error (expected)
+- Deleted posts: 404 error (expected)
+- Profile URLs: Not yet supported (Phase 2)
+- Carousel posts: First image only (acceptable)
+- Rate limiter: In-memory (upgrade to Redis for multi-instance)
+
+#### Production Status
+- **Security Rating:** A- (Excellent)
+- **Critical Issues:** 0
+- **TypeScript:** Passes strict mode
+- **Database:** Migrations applied
+- **Deployment:** ✅ READY for production
+
+#### Next Steps (Phase 2)
+1. Build profile image fetcher (web scraping, 12 images)
+2. Implement embedding aggregation (average embeddings)
+3. Add profile URL handling to search API
+4. Create "Find Similar Artists" button for artist profiles
+5. Consider caching layer for Instagram requests

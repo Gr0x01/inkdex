@@ -192,6 +192,11 @@ export async function GET(
       queryType: search.query_type,
       queryText: search.query_text,
       city: locationParam, // Return original filter parameter
+      // Instagram attribution (if applicable)
+      instagramUsername: search.instagram_username || undefined,
+      instagramPostUrl: search.instagram_post_id
+        ? `https://instagram.com/p/${search.instagram_post_id}`
+        : undefined,
     })
   } catch (error) {
     console.error('Search results API error:', error)

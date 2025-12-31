@@ -2,12 +2,14 @@
  * Search type definitions for Phase 5: Search Flow
  */
 
-export type SearchQueryType = 'image' | 'text' | 'hybrid'
+export type SearchQueryType = 'image' | 'text' | 'hybrid' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
 
 export interface SearchRequest {
   type: SearchQueryType
   image?: File
   text?: string
+  instagram_url?: string
+  artist_id?: string  // For similar_artist searches
   city?: string
 }
 
@@ -46,6 +48,10 @@ export interface SearchResultsResponse {
   queryType: SearchQueryType
   queryText?: string
   city?: string | null
+  // Instagram attribution metadata
+  instagramUsername?: string
+  instagramPostUrl?: string
+  artistName?: string  // For similar_artist searches
 }
 
 export interface SearchFormData {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingSearchCard from '@/components/search/LoadingSearchCard'
+import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 
 export default function UnifiedSearchBar() {
   const router = useRouter()
@@ -13,6 +14,11 @@ export default function UnifiedSearchBar() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [textQuery, setTextQuery] = useState('')
+  const [detectedInstagramUrl, setDetectedInstagramUrl] = useState<{
+    type: 'post' | 'profile' | null
+    id: string
+    originalUrl: string
+  } | null>(null)
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -27,6 +33,12 @@ export default function UnifiedSearchBar() {
       }
     }
   }, [imagePreview])
+
+  // Detect Instagram URLs in text input
+  useEffect(() => {
+    const detected = detectInstagramUrl(textQuery)
+    setDetectedInstagramUrl(detected)
+  }, [textQuery])
 
   const handleImageSelect = (file: File) => {
     // Revoke previous blob URL if it exists
@@ -84,8 +96,9 @@ export default function UnifiedSearchBar() {
     // Validate: at least one input method
     const hasImage = imageFile !== null
     const hasText = textQuery.trim().length >= 3
+    const hasInstagramPost = detectedInstagramUrl?.type === 'post'
 
-    if (!hasImage && !hasText) {
+    if (!hasImage && !hasText && !hasInstagramPost) {
       setError('Please upload an image or describe what you\'re looking for')
       return
     }
@@ -95,7 +108,7 @@ export default function UnifiedSearchBar() {
     try {
       let response: Response
 
-      // Prioritize image if both are provided
+      // Priority: Image > Instagram Post > Text
       if (hasImage) {
         const formData = new FormData()
         formData.append('type', 'image')
@@ -104,6 +117,17 @@ export default function UnifiedSearchBar() {
         response = await fetch('/api/search', {
           method: 'POST',
           body: formData,
+        })
+      } else if (hasInstagramPost) {
+        response = await fetch('/api/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'instagram_post',
+            instagram_url: detectedInstagramUrl!.originalUrl,
+          }),
         })
       } else {
         response = await fetch('/api/search', {
@@ -140,7 +164,11 @@ export default function UnifiedSearchBar() {
     }
   }
 
-  const canSubmit = (imageFile !== null || textQuery.trim().length >= 3) && !isSubmitting
+  const canSubmit = (
+    imageFile !== null ||
+    textQuery.trim().length >= 3 ||
+    detectedInstagramUrl?.type === 'post'
+  ) && !isSubmitting
 
   return (
     <div className="w-full max-w-3xl mx-auto px-0 sm:px-4" id="search">
@@ -200,10 +228,19 @@ export default function UnifiedSearchBar() {
                   setTextQuery(e.target.value)
                   setError(null)
                 }}
-                placeholder="Describe your style or upload an image..."
+                placeholder="Paste an Instagram link, describe your style, or upload an image..."
                 maxLength={200}
                 className="flex-1 py-2.5 sm:py-3 bg-transparent font-body text-sm sm:text-lg text-black placeholder:text-gray-400 focus:outline-none min-w-0"
               />
+
+              {/* Instagram URL Detected Badge */}
+              {detectedInstagramUrl && !imageFile && (
+                <div className="flex-shrink-0 px-2 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
+                  <span className="text-xs font-mono font-bold text-white uppercase tracking-wider whitespace-nowrap">
+                    {detectedInstagramUrl.type === 'post' ? 'IG Post' : 'IG Profile'}
+                  </span>
+                </div>
+              )}
 
               {/* Upload Button */}
               <input
@@ -269,7 +306,11 @@ export default function UnifiedSearchBar() {
           /* Loading State - Replaces Search Bar */
           <LoadingSearchCard
             isVisible={isSubmitting}
-            searchType={imageFile ? 'image' : 'text'}
+            searchType={
+              imageFile ? 'image' :
+              detectedInstagramUrl?.type === 'post' ? 'instagram_post' :
+              'text'
+            }
           />
         )}
 

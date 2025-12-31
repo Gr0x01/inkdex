@@ -154,6 +154,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const total = totalCount  // ✓ FIXED: Use total count from count query
   const queryType = search.query_type
   const queryText = search.query_text
+  const instagramUsername = search.instagram_username
+  const instagramPostId = search.instagram_post_id
   const hasResults = artists.length > 0
   const totalPages = Math.ceil(total / limit)  // ✓ FIXED: Now calculates correctly
 
@@ -240,6 +242,30 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     />
                   </svg>
                   <span>Image search</span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
+            {queryType === 'instagram_post' && instagramUsername && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
+                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <span className="truncate">
+                    Instagram post by{' '}
+                    {instagramPostId ? (
+                      <a
+                        href={`https://instagram.com/p/${instagramPostId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-body-medium text-ink hover:text-purple-600 transition-colors"
+                      >
+                        @{instagramUsername}
+                      </a>
+                    ) : (
+                      <span className="font-body-medium text-ink">@{instagramUsername}</span>
+                    )}
+                  </span>
                 </div>
                 <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
               </>

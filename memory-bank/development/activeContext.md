@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-31 (Updated: Style Landing Pages Complete - Phase 7)
+Last-Updated: 2025-12-31 (Updated: Atlanta + LA Images Processed - Ready for Embeddings)
 Maintainer: RB
-Status: Phase 3-7 COMPLETE ✅, Instagram Post Search COMPLETE ✅, Atlanta + LA Scraped ✅
+Status: Atlanta + LA Complete ✅, 2,376 Images Uploaded ✅, Ready for Local Embeddings ✅
 ---
 
 # Active Context: Inkdex
@@ -37,11 +37,12 @@ Status: Phase 3-7 COMPLETE ✅, Instagram Post Search COMPLETE ✅, Atlanta + LA
 22. ✅ **COMPLETED (Dec 31):** Atlanta discovery (193 artists - 66 Tavily queries)
 23. ✅ **COMPLETED (Dec 31):** Los Angeles discovery (193 artists - 66 Tavily queries)
 24. ✅ **COMPLETED (Dec 31):** Instagram scraping for Atlanta + LA (357/386 artists, 2,950 images)
-25. ✅ **COMPLETED (Dec 31):** Instagram Post Link Search - Phase 1 (URL detection, oEmbed fetcher, search integration) + Security hardening (4 critical fixes)
-26. ✅ **COMPLETED (Dec 31):** Phase 7 - Style landing pages & SEO (10 styles × 3 cities = 30 pages)
-27. **NEXT:** Batch classify 2,950 images with GPT-5-nano (filter non-tattoo content)
-28. **NEXT:** Generate CLIP embeddings for Atlanta + LA portfolio images
-29. **NEXT:** Update IVFFlat vector index with new city data
+25. ✅ **COMPLETED (Dec 31):** GPT-5-nano classification (2,378 tattoos kept, 80.6% pass rate)
+26. ✅ **COMPLETED (Dec 31):** Image processing & upload (2,376 images to Supabase Storage)
+27. ✅ **COMPLETED (Dec 31):** Instagram Post Link Search - Phase 1 (URL detection, oEmbed fetcher, search integration)
+28. ✅ **COMPLETED (Dec 31):** Phase 7 - Style landing pages & SEO (10 styles × 3 cities = 30 pages)
+29. **PAUSED:** Generate CLIP embeddings for Atlanta + LA (2,376 images) - Waiting for local GPU setup
+30. **NEXT:** Update IVFFlat vector index with new embeddings (after local embedding generation)
 
 ### Secondary Objectives
 - ✅ Test and validate Tavily vs Google Places approach
@@ -57,13 +58,19 @@ Status: Phase 3-7 COMPLETE ✅, Instagram Post Search COMPLETE ✅, Atlanta + LA
 - ~~Need scraping approach~~ - Puppeteer shop scraper working
 
 ## In Progress
-- Batch classification of 2,950 images with GPT-5-nano (filter non-tattoo content)
-- CLIP embedding generation for new portfolio images
-- Vector index update with Atlanta + LA data
+- **PAUSED:** CLIP embedding generation (waiting for local GPU setup - 2,376 images ready)
 
 ## Ready to Start
+- Vector index update with new embeddings (after local embedding generation completes)
 - Phase 8: Additional city expansion (Phase 0 analysis identified 6+ viable markets)
 - Additional SEO enhancements (structured data improvements, OG images)
+
+## Current Database State (Dec 31, 2025)
+- **Austin:** 188 artists, 1,257 images with embeddings ✅
+- **Atlanta:** 171 artists, ~1,200 images uploaded (awaiting embeddings)
+- **Los Angeles:** 186 artists, ~1,176 images uploaded (awaiting embeddings)
+- **Total Platform:** 545 artists, ~3,633 images
+- **Storage Used:** ~8-10 GB (WebP compressed)
 
 ## Future Enhancements (Ideas to Explore)
 
@@ -1063,9 +1070,9 @@ npm run dev
 - Database constraints ensure data integrity
 - Code reviewed and approved (A- security rating)
 
-### Atlanta + Los Angeles Discovery & Scraping (✅ COMPLETE - Dec 31, 2025)
+### Atlanta + Los Angeles Discovery & Image Processing (✅ COMPLETE - Dec 31, 2025)
 
-**Status:** ✅ Discovery and Instagram scraping complete, ready for classification
+**Status:** ✅ Discovery, scraping, classification, and upload complete - ready for local embedding generation
 
 **Discovery Results:**
 - **Atlanta:** 193 artists discovered (66 Tavily queries)
@@ -1100,29 +1107,43 @@ npm run dev
 - `scripts/discovery/query-generator.ts` - Added Atlanta neighborhoods (8) and LA neighborhoods (10)
 - `lib/constants/cities.ts` - Added Atlanta city + Georgia state configuration
 
-**Database State:**
-- **Austin:** 188 artists with 1,257 images (Phase 4 complete - embeddings exist)
-- **Atlanta:** 171 artists with 1,376 images (awaiting classification)
-- **Los Angeles:** 186 artists with 1,574 images (awaiting classification)
-- **Total Artists:** 545 (Austin + Atlanta + LA)
-- **Total Images Pending Classification:** 2,950 (Atlanta + LA only, Austin already processed)
+**GPT-5-nano Classification Results (Dec 31, 2025):**
+- **Total Images Classified:** 2,950
+- **Tattoo Images Kept:** 2,378 (80.6% pass rate - better than Austin's 75.8%)
+- **Non-Tattoo Deleted:** 572 (19.4%)
+- **Processing Time:** ~15 minutes (6 batches of 500 images)
+- **Configuration:** Standard tier (not Flex), 500 images/batch to avoid API overwhelming
+- **Cost:** ~$0.92 (Standard tier, faster response than Flex tier's 1-5 min latency)
 
-**Next Steps:**
-1. ✅ Discovery complete
-2. ✅ Instagram scraping complete
-3. **NEXT:** Batch classify 2,950 images with GPT-5-nano to filter non-tattoo content
-   - Script: `scripts/scraping/batch-classify.py`
-   - Expected: ~60-70% pass rate (1,800-2,100 tattoo images)
-   - Cost: ~$0.46 total (~$0.000155 per image)
-4. **NEXT:** Process and upload filtered images to Supabase Storage
-   - Script: `npm run process-images`
-   - Expected: 100 concurrent uploads, ~2-3 minutes
-5. **NEXT:** Generate CLIP embeddings for new portfolio images
-   - Script: `python3 -m modal run scripts/embeddings/modal_clip_embeddings.py::generate_embeddings_batch`
-   - Expected: ~4-6 runs (50 images/batch, 2 batches/run)
-6. **NEXT:** Update IVFFlat vector index with new embeddings
+**Image Processing & Upload Results (Dec 31, 2025):**
+- **Total Images Processed:** 2,376 (from 2,378 classified)
+- **All 386 Artists:** 100% processed
+- **Processing Errors:** 31 minor errors (upload/processing failures)
+- **Thumbnails Generated:** 3 sizes per image (320w, 640w, 1280w WebP)
+- **Upload Method:** 100 concurrent uploads to Supabase Storage
+- **Processing Time:** ~8-10 minutes
+
+**Final Database State:**
+- **Austin:** 188 artists, 1,257 images with embeddings ✅
+- **Atlanta:** 171 artists, ~1,200 images uploaded (awaiting embeddings)
+- **Los Angeles:** 186 artists, ~1,176 images uploaded (awaiting embeddings)
+- **Total Platform:** 545 artists, ~3,633 images
+- **Storage Used:** ~8-10 GB (WebP compressed)
+
+**Completed Steps:**
+1. ✅ Discovery complete (386 artists, 66 Tavily queries per city)
+2. ✅ Instagram scraping complete (357/386 artists, 2,950 images)
+3. ✅ GPT-5-nano classification complete (2,378 tattoos kept, 80.6% pass rate)
+4. ✅ Image processing & upload complete (2,376 images to Supabase Storage)
+
+**Next Steps (PAUSED - Waiting for Local GPU):**
+5. **PAUSED:** Generate CLIP embeddings for 2,376 new images
+   - User has local computer with 100% uptime available for embedding generation
+   - Will run locally instead of Modal.com serverless GPU
+   - Expected: ~2,376 images need embeddings (Atlanta + LA)
+6. **AFTER EMBEDDINGS:** Update IVFFlat vector index with new embeddings
    - Script: `npx tsx scripts/embeddings/create-vector-index.ts`
-   - New optimal lists parameter: sqrt(1,257 + 1,800) = sqrt(3,057) ≈ 55
+   - New optimal lists parameter: sqrt(1,257 + 2,376) = sqrt(3,633) ≈ 60
 
 ## Context Notes
 - ✅ Market validation complete - strong demand across all cities
