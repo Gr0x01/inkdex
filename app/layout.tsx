@@ -7,7 +7,7 @@ import { SearchProvider } from '@/components/search/SearchProvider'
 import GlobalSearchModal from '@/components/search/GlobalSearchModal'
 import SearchFAB from '@/components/search/SearchFAB'
 
-// Font configurations for "PAPER & INK" design system
+// Font configurations for "Inkdex" design system
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   weight: ['900'],

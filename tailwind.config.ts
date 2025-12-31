@@ -8,7 +8,7 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Color System - Paper & Ink
+      // Color System - Inkdex
       colors: {
         // Base colors
         paper: '#F8F7F5',

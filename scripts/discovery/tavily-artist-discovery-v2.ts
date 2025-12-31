@@ -311,7 +311,14 @@ async function saveArtistsToDatabase(
       continue;
     }
 
-    const slug = generateSlugFromInstagram(artist.instagramHandle);
+    let slug: string;
+    try {
+      slug = generateSlugFromInstagram(artist.instagramHandle);
+    } catch (slugError: any) {
+      console.error(`   ❌ Invalid Instagram handle @${artist.instagramHandle}: ${slugError.message}`);
+      skipped++;
+      continue;
+    }
 
     const { error } = await supabase.from('artists').insert({
       name: artist.name,

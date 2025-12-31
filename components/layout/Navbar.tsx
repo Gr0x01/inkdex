@@ -6,7 +6,7 @@ import { useSearch } from '@/components/search/SearchProvider'
 
 /**
  * Global navigation header - Editorial Magazine Masthead
- * Design: "PAPER & INK v2.0" - Refined editorial aesthetic
+ * Design: "Inkdex v2.0" - Refined editorial aesthetic
  * Features: Magazine-style masthead + sophisticated dropdown + global search
  */
 export default function Navbar() {
@@ -25,7 +25,7 @@ export default function Navbar() {
             <div className="relative">
               {/* Main logo */}
               <div className="font-display text-3xl md:text-4xl font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-medium">
-                PAPER & INK
+                INKDEX
               </div>
 
               {/* Subtle tagline */}

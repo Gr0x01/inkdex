@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
-   DESIGN SYSTEM: "PAPER & INK"
-   Editorial Minimal × Inkdex
+   DESIGN SYSTEM: "Inkdex"
+   Editorial Minimal × Tattoo Artist Discovery
    Version 2.0 - December 30, 2025
    ═══════════════════════════════════════════════════════════════ */
 
 /* CSS Variables */
 :root {
-  /* Base Colors - Paper & Ink */
+  /* Base Colors - Inkdex (Paper & Ink aesthetic) */
   --paper-white: #F8F7F5;
   --ink-black: #1A1A1A;
 

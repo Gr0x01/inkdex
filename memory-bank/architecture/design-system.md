@@ -1,4 +1,4 @@
-# PAPER & INK - Design System Documentation
+# Inkdex - Design System Documentation
 
 **Version**: 2.0
 **Last Updated**: 2025-12-30
@@ -82,7 +82,7 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 
 ## 🎨 COLOR PALETTE
 
-### Base System - Paper & Ink **[COMPLETELY REVISED in v2.0]**
+### Base System - Inkdex Colors **[COMPLETELY REVISED in v2.0]**
 
 ```css
 /* Primary Colors */
@@ -509,14 +509,14 @@ xl: 1280px  /* Wide desktop */
     /ArtistHero.tsx → Artist profile header (simplified)
     /PortfolioGrid.tsx → Image grid (full color)
   /layout
-    /Navbar.tsx → Navigation (paper/ink colors)
+    /Navbar.tsx → Navigation (Inkdex colors)
 ```
 
 ---
 
 ## 🔄 VERSION HISTORY
 
-**v2.0** (2025-12-30) - **"PAPER & INK" Redesign**
+**v2.0** (2025-12-30) - **"Inkdex" Redesign**
 - Near-white (#F8F7F5) / near-black (#1A1A1A) color system
 - Dotted background texture (global, 24px grid)
 - Traditional serif typography (Libre Baskerville for headings)
@@ -563,7 +563,7 @@ xl: 1280px  /* Wide desktop */
 
 ### Breaking Changes
 
-| v1.0 (SKIN & PAPER) | v2.0 (PAPER & INK) | Reason |
+| v1.0 (SKIN & PAPER) | v2.0 (Inkdex) | Reason |
 |---------------------|---------------------|---------|
 | `--gold-vibrant` | `--ink-black` | Removed decorative gold |
 | `--gold-deep` | `--gray-700` | Simplified to grayscale |

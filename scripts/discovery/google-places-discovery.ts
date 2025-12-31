@@ -256,7 +256,13 @@ async function discoverArtistsForCity(city: CityConfig): Promise<number> {
 
       if (!existing) {
         // Add new artist
-        const slug = generateSlugFromInstagram(handle);
+        let slug: string;
+        try {
+          slug = generateSlugFromInstagram(handle);
+        } catch (slugError: any) {
+          console.error(`   ❌ Invalid Instagram handle @${handle}: ${slugError.message}`);
+          continue;
+        }
 
         const { error } = await supabase.from('artists').insert({
           name: place.name,
