@@ -1,9 +1,38 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useSearch } from '@/components/search/SearchProvider'
-import { STATES, CITIES } from '@/lib/constants/cities'
+import { CITIES, type City } from '@/lib/constants/cities'
+import { getStateSlug } from '@/lib/utils/city-helpers'
+
+/**
+ * Shared city link component for consistency between desktop and mobile
+ */
+function CityLink({
+  city,
+  onClick,
+  className = "editorial-dropdown-item group"
+}: {
+  city: City
+  onClick?: () => void
+  className?: string
+}) {
+  return (
+    <Link
+      key={city.slug}
+      href={`/${getStateSlug(city.state)}/${city.slug}`}
+      className={className}
+      role="menuitem"
+      onClick={onClick}
+    >
+      <span className="font-semibold">{city.name}</span>
+      <span className="font-mono text-[10px] text-gray-400 ml-1.5 group-hover:text-gray-600 transition-colors">
+        {city.state}
+      </span>
+    </Link>
+  )
+}
 
 /**
  * Global navigation header - Editorial Magazine Masthead
@@ -12,7 +41,53 @@ import { STATES, CITIES } from '@/lib/constants/cities'
  */
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const { openSearch } = useSearch()
+  const dropdownButtonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Memoize sorted cities - only compute once
+  const sortedCities = useMemo(
+    () => [...CITIES].sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  )
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isDropdownOpen) return
+
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        dropdownButtonRef.current &&
+        !dropdownButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isDropdownOpen])
+
+  // Handle dropdown keyboard navigation
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      setIsDropdownOpen(!isDropdownOpen)
+    } else if (e.key === 'Escape') {
+      setIsDropdownOpen(false)
+      dropdownButtonRef.current?.focus()
+    }
+  }
+
+  // Close mobile menu and return focus
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false)
+    mobileMenuButtonRef.current?.focus()
+  }
 
   return (
     <header className="bg-paper-white border-b-2 border-ink/10 relative">
@@ -71,15 +146,21 @@ export default function Navbar() {
             </button>
 
             {/* Browse Dropdown - Editorial */}
-            <div className="relative group">
+            <div className="relative" ref={dropdownRef}>
               <button
+                ref={dropdownButtonRef}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onKeyDown={handleDropdownKeyDown}
                 className="editorial-nav-link flex items-center gap-2 cursor-pointer relative"
                 aria-label="Browse cities"
                 aria-haspopup="true"
+                aria-expanded={isDropdownOpen}
               >
                 <span className="relative z-10">Browse</span>
                 <svg
-                  className="w-3 h-3 transition-transform duration-medium group-hover:rotate-180"
+                  className={`w-3 h-3 transition-transform duration-medium ${
+                    isDropdownOpen ? 'rotate-180' : ''
+                  }`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -92,40 +173,21 @@ export default function Navbar() {
               </button>
 
               {/* Editorial Dropdown Menu */}
-              <div className="editorial-dropdown-menu" role="menu">
+              <div
+                className={`editorial-dropdown-menu ${isDropdownOpen ? 'block' : 'hidden'}`}
+                role="menu"
+              >
                 {/* Decorative top border */}
                 <div className="absolute top-0 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-ink/30 to-transparent" aria-hidden="true" />
 
                 <div className="p-1">
-                  {/* Dynamic State/City Sections */}
-                  {STATES.map((state, index) => (
-                    <div key={state.slug}>
-                      {index > 0 && (
-                        <div className="h-[1px] bg-gray-200 my-2 mx-3" aria-hidden="true" />
-                      )}
-                      <div className={index < STATES.length - 1 ? 'mb-2' : ''}>
-                        <Link href={`/${state.slug}`} className="editorial-dropdown-header" role="menuitem">
-                          {state.name}
-                        </Link>
-                        {state.cities.map((citySlug) => {
-                          const city = CITIES.find((c) => c.slug === citySlug)
-                          if (!city) return null
-                          return (
-                            <Link
-                              key={citySlug}
-                              href={`/${state.slug}/${citySlug}`}
-                              className="editorial-dropdown-item group"
-                              role="menuitem"
-                            >
-                              <span className="font-mono text-[9px] text-gray-400 mr-2 group-hover:text-ink transition-colors">
-                                →
-                              </span>
-                              {city.name}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </div>
+                  {/* Flat Alphabetical City List */}
+                  {sortedCities.map((city) => (
+                    <CityLink
+                      key={city.slug}
+                      city={city}
+                      onClick={() => setIsDropdownOpen(false)}
+                    />
                   ))}
                 </div>
               </div>
@@ -158,6 +220,7 @@ export default function Navbar() {
 
             {/* Mobile Menu Toggle */}
             <button
+              ref={mobileMenuButtonRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="cursor-pointer p-2.5 hover:bg-gray-100 rounded-md transition-all duration-fast active:scale-95"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
@@ -206,43 +269,29 @@ export default function Navbar() {
           <Link
             href="/"
             className="block editorial-mobile-link"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={closeMobileMenu}
           >
             Home
           </Link>
 
-          {/* Dynamic State/City Sections */}
-          {STATES.map((state, index) => (
-            <div key={state.slug}>
-              {index > 0 && (
-                <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
-              )}
-              <div className="space-y-3">
-                <Link
-                  href={`/${state.slug}`}
-                  className="block editorial-mobile-link font-bold"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {state.name}
-                </Link>
-                {state.cities.map((citySlug) => {
-                  const city = CITIES.find((c) => c.slug === citySlug)
-                  if (!city) return null
-                  return (
-                    <Link
-                      key={citySlug}
-                      href={`/${state.slug}/${citySlug}`}
-                      className="block editorial-mobile-link pl-6 text-gray-600 relative"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <span className="font-mono text-[9px] text-gray-400 absolute left-3">→</span>
-                      {city.name}
-                    </Link>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
+          <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
+
+          {/* Browse Cities Header */}
+          <div className="editorial-mobile-link font-bold text-gray-900 cursor-default">
+            Browse Cities
+          </div>
+
+          {/* Flat Alphabetical City List */}
+          <div className="space-y-2 pl-3">
+            {sortedCities.map((city) => (
+              <CityLink
+                key={city.slug}
+                city={city}
+                className="block editorial-mobile-link text-gray-600 hover:text-ink transition-colors"
+                onClick={closeMobileMenu}
+              />
+            ))}
+          </div>
         </div>
       </nav>
     </header>

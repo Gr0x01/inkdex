@@ -1,7 +1,17 @@
+'use client'
+
 import Link from 'next/link'
-import { STATES, CITIES } from '@/lib/constants/cities'
+import { useMemo } from 'react'
+import { CITIES } from '@/lib/constants/cities'
+import { getStateSlug } from '@/lib/utils/city-helpers'
 
 export default function Footer() {
+  // Memoize sorted cities - only compute once
+  const sortedCities = useMemo(
+    () => [...CITIES].sort((a, b) => a.name.localeCompare(b.name)),
+    []
+  )
+
   return (
     <footer className="border-t border-stone-800 bg-black">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -19,37 +29,21 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Browse by State */}
+          {/* Browse Cities - Flat Alphabetical List */}
           <div>
             <h4 className="font-jetbrains-mono text-sm font-medium uppercase tracking-wider text-stone-400">
-              Browse by State
+              Browse Cities
             </h4>
-            <ul className="mt-4 space-y-3">
-              {STATES.map((state) => (
-                <li key={state.slug}>
+            <ul className="mt-4 space-y-2.5">
+              {sortedCities.map((city) => (
+                <li key={city.slug}>
                   <Link
-                    href={`/${state.slug}`}
-                    className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                    href={`/${getStateSlug(city.state)}/${city.slug}`}
+                    className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent inline-flex items-baseline gap-1.5"
                   >
-                    {state.name}
+                    <span className="font-medium">{city.name}</span>
+                    <span className="text-xs text-stone-500">{city.state}</span>
                   </Link>
-                  <ul className="mt-2 ml-4 space-y-2">
-                    {state.cities.map((citySlug) => {
-                      // Find city from CITIES constant
-                      const city = CITIES.find((c) => c.slug === citySlug)
-                      const cityName = city?.name || citySlug
-                      return (
-                        <li key={citySlug}>
-                          <Link
-                            href={`/${state.slug}/${citySlug}`}
-                            className="font-jetbrains-mono text-xs text-stone-400 transition-colors hover:text-stone-300"
-                          >
-                            {cityName}
-                          </Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
                 </li>
               ))}
             </ul>
