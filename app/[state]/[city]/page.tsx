@@ -213,36 +213,52 @@ export default async function CityPage({
                   Explore tattoo artists specializing in different styles
                 </p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 {styleSeeds.map((style) => (
                   <Link
                     key={style.style_name}
                     href={`/${stateSlug}/${citySlug}/${style.style_name}`}
-                    className="group relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900/50 hover:border-accent-primary transition-all duration-200"
+                    className="group block relative"
                   >
-                    {/* Hero Image with Editorial Overlay */}
-                    <div className="aspect-[4/3] relative overflow-hidden">
+                    {/* Image Container - Clean, no heavy overlay */}
+                    <div className="aspect-[3/4] relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 mb-3 group-hover:border-accent-primary transition-all duration-300">
                       <Image
                         src={style.seed_image_url}
                         alt={`Browse ${style.display_name} tattoo artists in ${city.name}, ${state.code}`}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         loading="lazy"
-                        quality={85}
+                        quality={90}
                       />
-                      {/* Dark gradient overlay for text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/60 to-transparent" />
+                      {/* Subtle vignette only - lets tattoo shine */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+
+                      {/* Hover state accent bar */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent-primary transform translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </div>
 
-                    {/* Text Content - Positioned over image */}
-                    <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col items-center text-center">
-                      <h3 className="font-display text-body-large font-[600] text-text-primary group-hover:text-accent-primary transition-colors mb-1">
+                    {/* Text Content - Below image, editorial style */}
+                    <div className="space-y-1">
+                      <h3 className="font-display text-body-large font-[700] text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
                         {style.display_name}
                       </h3>
-                      <p className="font-mono text-small text-text-secondary line-clamp-2">
+                      <p className="font-body text-small text-text-secondary line-clamp-2 leading-relaxed">
                         {style.description.split('.')[0]}
                       </p>
+                    </div>
+
+                    {/* Arrow indicator on hover */}
+                    <div className="mt-2 flex items-center gap-1 text-text-secondary group-hover:text-accent-primary transition-colors">
+                      <span className="font-mono text-xs uppercase tracking-wider">Explore</span>
+                      <svg
+                        className="w-3 h-3 transform group-hover:translate-x-1 transition-transform duration-300"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
                   </Link>
                 ))}
