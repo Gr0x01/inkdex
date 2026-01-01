@@ -7,11 +7,39 @@ import { SearchResult } from '@/types/search'
 import { FEATURED_FOLLOWER_THRESHOLD } from '@/lib/utils/featured'
 import { getImageUrl } from '@/lib/utils/images'
 
-interface ArtistCardProps {
-  artist: SearchResult
+/**
+ * Format follower count for display
+ * Examples: 1234 -> "1.2K", 50000 -> "50K", 1500000 -> "1.5M"
+ */
+function formatFollowerCount(count: number): string {
+  // Handle invalid input defensively
+  if (count < 0 || !Number.isFinite(count)) {
+    console.warn(`Invalid follower count: ${count}`)
+    return '0'
+  }
+
+  // Handle billions (unlikely but defensive)
+  if (count >= 1_000_000_000) {
+    return `${(count / 1_000_000_000).toFixed(1).replace(/\.0$/, '')}B`
+  }
+
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
+  }
+
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}K`
+  }
+
+  return count.toString()
 }
 
-export default function ArtistCard({ artist }: ArtistCardProps) {
+interface ArtistCardProps {
+  artist: SearchResult
+  displayMode?: 'search' | 'browse'
+}
+
+export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCardProps) {
   const {
     artist_slug,
     artist_name,
@@ -142,29 +170,37 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
           <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
             {city}
           </p>
-          {/* Match percentage with tooltip */}
-          <div
-            className="relative"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <span className="font-mono text-[10px] text-ink font-medium">
-              {matchPercentage}%
-            </span>
+          {/* Right metric - Match % (search) or Follower count (browse) */}
+          {displayMode === 'search' ? (
+            <div
+              className="relative"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <span className="font-mono text-[10px] text-ink font-medium">
+                {matchPercentage}%
+              </span>
 
-            {/* Tooltip - appears after 2s hover */}
-            {showTooltip && (
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-ink text-paper text-[11px] font-body whitespace-nowrap rounded-sm shadow-lg z-10 animate-fade-in">
-                <div className="text-center">
-                  How closely this artist&apos;s work
-                  <br />
-                  matches your search
+              {/* Tooltip - appears after 2s hover */}
+              {showTooltip && (
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-ink text-paper text-[11px] font-body whitespace-nowrap rounded-sm shadow-lg z-10 animate-fade-in">
+                  <div className="text-center">
+                    How closely this artist&apos;s work
+                    <br />
+                    matches your search
+                  </div>
+                  {/* Arrow pointing down */}
+                  <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-ink" />
                 </div>
-                {/* Arrow pointing down */}
-                <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-ink" />
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            follower_count !== null && follower_count > 0 && (
+              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
+                {formatFollowerCount(follower_count)}
+              </span>
+            )
+          )}
         </div>
       </div>
     </Link>

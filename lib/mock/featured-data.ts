@@ -16,9 +16,12 @@ export interface FeaturedArtist {
   shop_name: string | null
   verification_status: string
   follower_count: number | null
+  instagram_handle?: string
+  profile_image_url?: string | null
   portfolio_images: Array<{
     id: string
     url: string
+    instagram_url?: string
     likes_count: number | null
   }>
 }

@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { getCityArtists, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
-import ArtistPreviewCard from '@/components/home/ArtistPreviewCard'
+import ArtistCard from '@/components/search/ArtistCard'
+import { transformToSearchResult } from '@/lib/utils/artists'
 import { getCityEditorialContent } from '@/lib/content/editorial/cities'
 import EditorialContent from '@/components/editorial/EditorialContent'
 import Pagination from '@/components/pagination/Pagination'
@@ -100,6 +101,12 @@ export default async function CityPage({
   const offset = (currentPage - 1) * limit
 
   const { artists, total } = await getCityArtists(state.code, city.name, limit, offset)
+
+  // Transform to SearchResult format for ArtistCard
+  const searchResults = artists.map(artist =>
+    transformToSearchResult(artist as any, city.name)
+  )
+
   const styleSeeds = await getStyleSeeds()
   const totalPages = Math.ceil(total / limit)
 
@@ -203,9 +210,13 @@ export default async function CityPage({
           {/* Artists Grid */}
           {artists.length > 0 ? (
             <>
-              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {artists.map((artist) => (
-                  <ArtistPreviewCard key={artist.id} artist={artist} />
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {searchResults.map((artist) => (
+                  <ArtistCard
+                    key={artist.artist_id}
+                    artist={artist}
+                    displayMode="browse"
+                  />
                 ))}
               </div>
 

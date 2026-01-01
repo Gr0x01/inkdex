@@ -638,6 +638,7 @@ export async function getCityArtists(
       portfolio_images!inner (
         id,
         storage_thumb_640,
+        instagram_url,
         likes_count
       )
     `,
@@ -669,6 +670,7 @@ export async function getCityArtists(
         verification_status: row.verification_status,
         profile_image_url: row.profile_image_url,
         instagram_handle: row.instagram_handle,
+        follower_count: row.follower_count,
         portfolio_images: [],
       })
     }
@@ -683,6 +685,7 @@ export async function getCityArtists(
           artist.portfolio_images.push({
             id: image.id,
             url: publicUrl,
+            instagram_url: image.instagram_url,
             likes_count: image.likes_count,
           })
         }
