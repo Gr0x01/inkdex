@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import styles from './LoadingSearchCard.module.css'
+import shimmerStyles from '../home/ShimmerSearch.module.css'
 
 interface LoadingMessage {
   text: string
@@ -72,11 +73,20 @@ export default function LoadingSearchCard({
   if (!isVisible) return null
 
   return (
-    <div className="bg-white rounded-full shadow-2xl px-6 py-5 border border-gray-200 animate-fade-in flex items-center justify-center">
-      <div key={messageIndex} className={styles.messageRotate}>
-        <p className="font-body text-base sm:text-lg text-gray-600">
-          {currentMessage.text}
-        </p>
+    <div className="relative">
+      {/* Glowing aura behind search bar - AI power bleeding out */}
+      <div className={shimmerStyles.loadingGlow} />
+
+      <div className="relative bg-white rounded-full shadow-2xl px-6 py-5 border border-gray-200 animate-fade-in flex items-center justify-center overflow-hidden">
+        {/* Particle Field Background */}
+        <div className={shimmerStyles.particleField} />
+
+        {/* Loading Text - clean, no shimmer */}
+        <div key={messageIndex} className={`${styles.messageRotate} relative z-10`}>
+          <p className="font-body text-base sm:text-lg text-gray-600">
+            {currentMessage.text}
+          </p>
+        </div>
       </div>
     </div>
   )

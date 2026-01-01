@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import LoadingSearchCard from '@/components/search/LoadingSearchCard'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
+import styles from './ShimmerSearch.module.css'
 
 export default function UnifiedSearchBar() {
   const router = useRouter()
@@ -24,6 +25,7 @@ export default function UnifiedSearchBar() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [particleBurst, setParticleBurst] = useState(false)
 
   // Cleanup blob URL on unmount
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function UnifiedSearchBar() {
     setDetectedInstagramUrl(detected)
   }, [textQuery])
 
-  const handleImageSelect = (file: File) => {
+  const handleImageSelect = (file: File, isDropped = false) => {
     // Revoke previous blob URL if it exists
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
@@ -50,6 +52,12 @@ export default function UnifiedSearchBar() {
     setImageFile(file)
     setImagePreview(preview)
     setError(null)
+
+    // Trigger particle burst if image was dropped
+    if (isDropped) {
+      setParticleBurst(true)
+      setTimeout(() => setParticleBurst(false), 800)
+    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +73,7 @@ export default function UnifiedSearchBar() {
 
     const file = e.dataTransfer.files?.[0]
     if (file && file.type.startsWith('image/')) {
-      handleImageSelect(file)
+      handleImageSelect(file, true)
     }
   }
 
@@ -202,6 +210,8 @@ export default function UnifiedSearchBar() {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
             >
+              {/* Particle burst effect when image is dropped */}
+              {particleBurst && <div className={`${styles.particleField} ${styles.particleBurst}`} />}
               {/* Image Preview Thumbnail (if uploaded) */}
               {imagePreview && (
                 <div className="flex-shrink-0 pl-2 sm:pl-3 py-2">

@@ -1,0 +1,180 @@
+/* Shimmer Search - Luxe Editorial with AI Touch */
+
+/* Iridescent shimmer border - subtle rainbow gradient */
+.shimmerBorder {
+  position: relative;
+}
+
+.shimmerBorder::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  padding: 2px;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(138, 43, 226, 0.15) 0deg,
+    rgba(75, 0, 130, 0.12) 60deg,
+    rgba(0, 0, 255, 0.1) 120deg,
+    rgba(0, 255, 255, 0.12) 180deg,
+    rgba(0, 255, 0, 0.1) 240deg,
+    rgba(255, 255, 0, 0.12) 300deg,
+    rgba(138, 43, 226, 0.15) 360deg
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.shimmerBorder:hover::before {
+  animation: shimmerRotate 3s linear infinite;
+}
+
+@keyframes shimmerRotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Keystroke shimmer pulse */
+.shimmerPulse::before {
+  animation: shimmerPulseAnimation 0.4s ease-out;
+}
+
+@keyframes shimmerPulseAnimation {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+}
+
+/* Particle field for loading state */
+.particleField {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 15% 25%, rgba(229, 217, 242, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 82% 18%, rgba(196, 230, 212, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 45% 65%, rgba(247, 209, 209, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 68% 78%, rgba(209, 231, 247, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 28% 42%, rgba(229, 217, 242, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 91% 55%, rgba(196, 230, 212, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 12% 88%, rgba(247, 209, 209, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 55% 12%, rgba(209, 231, 247, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 38% 92%, rgba(229, 217, 242, 0.3) 0%, transparent 3%),
+    radial-gradient(circle at 72% 35%, rgba(196, 230, 212, 0.3) 0%, transparent 3%);
+  background-size: 200% 200%;
+  animation: particleDrift 15s ease-in-out infinite;
+}
+
+@keyframes particleDrift {
+  0%, 100% {
+    background-position: 0% 0%, 100% 0%, 50% 50%, 75% 75%, 25% 40%, 90% 55%, 10% 90%, 60% 10%, 40% 95%, 70% 30%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    background-position: 20% 30%, 80% 25%, 40% 70%, 65% 85%, 35% 50%, 85% 60%, 15% 80%, 50% 20%, 30% 85%, 75% 40%;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+}
+
+/* CSS Custom Property for gradient rotation */
+@property --gradient-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Glowing border - AI power radiating */
+.loadingGlow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  padding: 8px;
+  background: conic-gradient(
+    from var(--gradient-angle) at 50% 50%,
+    rgba(147, 51, 234, 1),
+    rgba(249, 115, 22, 1),
+    rgba(234, 179, 8, 1),
+    rgba(147, 51, 234, 1)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  filter: blur(8px) brightness(1.5);
+  z-index: -1;
+  --gradient-angle: 0deg;
+  animation: glowFadeIn 0.6s ease-out forwards, glowRotate 4s linear infinite 0.6s, glowPulse 2s ease-in-out infinite 0.6s;
+}
+
+@keyframes glowFadeIn {
+  0% {
+    opacity: 0;
+    filter: blur(4px) brightness(1.2);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(8px) brightness(1.5);
+  }
+}
+
+@keyframes glowRotate {
+  0% {
+    --gradient-angle: 0deg;
+  }
+  100% {
+    --gradient-angle: 360deg;
+  }
+}
+
+@keyframes glowPulse {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Image drop burst animation */
+.particleBurst {
+  animation: particleBurst 0.8s ease-out;
+}
+
+@keyframes particleBurst {
+  0% {
+    background-position: 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%, 50% 50%;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    background-position: 0% 0%, 100% 0%, 50% 50%, 75% 75%, 25% 40%, 90% 55%, 10% 90%, 60% 10%, 40% 95%, 70% 30%;
+    transform: scale(1);
+  }
+}
