@@ -5,7 +5,6 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import { SearchProvider } from '@/components/search/SearchProvider'
 import GlobalSearchModal from '@/components/search/GlobalSearchModal'
-import SearchFAB from '@/components/search/SearchFAB'
 
 // Font configurations for "Inkdex" design system
 const playfairDisplay = Playfair_Display({
@@ -85,7 +84,6 @@ export default function RootLayout({
           <GlobalSearchModal />
           {children}
           <Footer />
-          <SearchFAB />
         </SearchProvider>
       </body>
     </html>

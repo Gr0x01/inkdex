@@ -91,6 +91,7 @@ export default function GlobalSearchModal() {
         aria-modal="true"
         aria-labelledby="search-modal-title"
         aria-describedby="search-modal-description"
+        onClick={(e) => e.stopPropagation()}
         className="fixed z-50
                    md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2
                    md:w-full md:max-w-3xl md:max-h-[90vh]
