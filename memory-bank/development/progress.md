@@ -1,18 +1,19 @@
 ---
-Last-Updated: 2026-01-01
+Last-Updated: 2026-01-02
 Maintainer: RB
-Status: Production Ready - 8 Cities + SEO Editorial Content Complete
+Status: Production Ready - 8 Cities + Phase 1 Account Foundation Complete
 ---
 
 # Progress Log: Inkdex
 
-## Current Status (Jan 1, 2026)
+## Current Status (Jan 2, 2026)
 
 **Platform State:**
 - **8 Cities:** Austin TX, Atlanta GA, Los Angeles CA, New York NY, Chicago IL, Portland OR, Seattle WA, Miami FL (all complete ✅)
-- **1,474 Total Artists:** 545 original + 929 expansion
-- **11,167 Portfolio Images:** 100% with embeddings ✅ (all searchable)
-- **Vector Index:** IVFFlat (lists=105, optimized for 11,167 images)
+- **1,501 Total Artists:** Database ready for user accounts and subscriptions
+- **9,803 Portfolio Images:** 100% with embeddings ✅ (all searchable, cleaned Jan 1)
+- **Vector Index:** IVFFlat (lists=105, optimized for 9,803 images)
+- **Account System:** Phase 1 database foundation complete (4 new tables, RLS policies, analytics)
 
 **Ready for Production:**
 - Multi-modal search (image + text + Instagram post/profile links)
@@ -36,6 +37,30 @@ Status: Production Ready - 8 Cities + SEO Editorial Content Complete
 ---
 
 ## Recent Milestones
+
+### Phase 1: User & Artist Account Database ✅ (Jan 2, 2026)
+- **Database foundation complete:** 3 production migrations applied
+- **4 new tables:** artist_subscriptions, promo_codes, artist_analytics, instagram_sync_log
+- **3 tables updated:** users (OAuth tokens), artists (Pro/Featured flags), portfolio_images (pinning system)
+- **Security hardening:** 15+ RLS policies, timing attack prevention, race condition protection
+- **Analytics system:** Daily aggregation (profile views, clicks, search appearances)
+- **Subscription tracking:** Free/Pro tiers ($15/month), Stripe integration ready
+- **Promo code system:** Validation with security (prevents code enumeration)
+- **Portfolio management:** Pin images, hide from public, track import source
+- **Code review:** All critical security issues fixed (missing INSERT policy, batch optimization, timing attacks)
+- **Key functions:** 8 helper functions for analytics, portfolio display, account management
+- **Performance:** increment_search_appearances optimized (single batch INSERT, 10x faster)
+- **Next steps:** Phase 2 - OAuth flow, artist claim, Stripe webhooks, portfolio UI
+
+### Image Quality Cleanup ✅ (Jan 1, 2026)
+- **Removed 1,364 non-portfolio images** (personal photos, lifestyle content)
+- **Before:** 11,167 images (mixed quality)
+- **After:** 9,803 images (portfolio-only, 0% false positives)
+- **Classification:** Re-classified all images with improved prompt (gpt-5-mini)
+- **Accuracy:** 87.8% kept, 0% false positives (verified on sample sets)
+- **Time:** ~4 hours classification + 25 minutes deletion
+- **Cost:** ~$15 in OpenAI API (gpt-5-mini Flex tier)
+- **Bug fixed:** Search function crash due to missing column reference
 
 ### SEO Editorial Content - Complete ✅ (Jan 1, 2026)
 - **80 style×city pages:** ~38,000 words of culturally-specific content (10 styles × 8 cities)
@@ -192,17 +217,18 @@ Detailed implementation history for Phases 0-4 has been moved to:
 
 ## Quick Reference
 
-### Database State
-- **Austin, TX:** 188 artists, 1,257 images ✅
-- **Atlanta, GA:** 171 artists, 1,073 images ✅
-- **Los Angeles, CA:** 186 artists, 1,284 images ✅
-- **New York, NY:** 219 artists, 1,705 images ✅
-- **Chicago, IL:** 194 artists, 1,655 images ✅
-- **Portland, OR:** 199 artists, 1,578 images ✅
-- **Seattle, WA:** 172 artists, 1,507 images ✅
-- **Miami, FL:** 145 artists, 1,075 images ✅
-- **Total:** 1,474 artists, 11,167 images (100% with embeddings)
-- **Storage:** ~25-30 GB (WebP compressed)
+### Database State (Post-Cleanup)
+- **Austin, TX:** 188 artists, 1,204 images ✅
+- **Atlanta, GA:** 191 artists, 1,040 images ✅
+- **Los Angeles, CA:** 193 artists, 1,239 images ✅
+- **New York, NY:** 219 artists, 1,409 images ✅
+- **Chicago, IL:** 194 artists, 1,395 images ✅
+- **Portland, OR:** 199 artists, 1,336 images ✅
+- **Seattle, WA:** 172 artists, 1,264 images ✅
+- **Miami, FL:** 145 artists, 916 images ✅
+- **Total:** 1,501 artists, 9,803 images (100% with embeddings)
+- **Storage:** ~20-25 GB (WebP compressed, post-cleanup)
+- **Account System:** 4 new tables (subscriptions, promo_codes, analytics, sync_log)
 
 ### Performance Metrics
 - Vector search: ~200ms average (estimated with lists=105)
@@ -221,5 +247,5 @@ Detailed implementation history for Phases 0-4 has been moved to:
 
 ---
 
-**Last Updated:** January 1, 2026
-**Next Review:** After local GPU configuration and embedding generation complete
+**Last Updated:** January 2, 2026
+**Next Review:** After Phase 2 OAuth and Stripe integration

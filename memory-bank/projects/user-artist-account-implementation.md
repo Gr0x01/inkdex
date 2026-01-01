@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-01
+Last-Updated: 2026-01-02
 Maintainer: RB
-Status: Planning
+Status: Phase 1 Complete - Database Foundation Ready (Security Issues Documented)
 ---
 
 # User & Artist Account Implementation Plan
@@ -814,13 +814,36 @@ CREATE POLICY "Artists can read own analytics"
 
 ---
 
+## Outstanding Security Issues
+
+### Critical: OAuth Token Encryption (Phase 2)
+**Problem:** Instagram OAuth tokens (`instagram_access_token`, `instagram_refresh_token`) are currently stored as plaintext TEXT columns in the database. If database is compromised, attackers gain access to users' Instagram accounts.
+
+**Impact:**
+- Attackers can post to Instagram as the user
+- Access private messages and data
+- Revoke legitimate access
+
+**Solution Options:**
+1. **Supabase Vault (Recommended):** Use Supabase's built-in encryption for secrets
+2. **Application-layer encryption:** Encrypt/decrypt tokens in Next.js API routes before storing
+3. **External secrets manager:** AWS Secrets Manager, HashiCorp Vault
+
+**Must Fix Before:** Phase 2 OAuth integration starts storing real tokens
+
+**References:**
+- Schema: `users` table columns with "encrypted in application layer" comments (not implemented)
+- Technical Questions section: "Should we encrypt access tokens in the database? (Recommended: YES)"
+
+---
+
 ## Implementation Phases
 
-### Phase 1: Foundation (Week 1)
-- [ ] Database schema migrations
-- [ ] Update RLS policies
-- [ ] Environment setup (Stripe test keys, Instagram OAuth)
-- [ ] Supabase Auth Instagram provider verification
+### Phase 1: Foundation (Week 1) ✅ COMPLETE
+- [x] Database schema migrations (3 files applied to production)
+- [x] Update RLS policies (15+ policies created/updated)
+- [ ] Environment setup (Stripe test keys, Instagram OAuth) - DEFERRED to Phase 8
+- [ ] Supabase Auth Instagram provider verification - DEFERRED to Phase 2
 
 ### Phase 2: Auth & Basic Flows (Week 2)
 - [ ] Instagram OAuth callback handler
@@ -1300,4 +1323,4 @@ When Pro subscription ends or is canceled:
 - Keep page live until artist manually deletes or subscription expires
 - Artist must cancel subscription manually (Stripe Customer Portal)
 
-**Last Updated:** 2026-01-02
+**Last Updated:** 2026-01-02 (Phase 1 complete, security issues documented)
