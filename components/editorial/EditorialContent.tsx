@@ -16,17 +16,17 @@ const EditorialContent = memo(function EditorialContent({
 }: EditorialContentProps) {
   return (
     <article
-      className={`editorial-content space-y-8 ${className}`}
+      className={`editorial-content space-y-6 ${className}`}
       aria-label="Editorial content about tattoo artists in this area"
     >
       {sections.map((section, sectionIdx) => (
-        <section key={section.heading || `section-${sectionIdx}`} className="space-y-4">
+        <section key={section.heading || `section-${sectionIdx}`} className="space-y-3">
           {section.heading && (
-            <h3 className="font-display text-h3 font-[700] text-text-primary">
+            <h3 className="font-display text-h3 font-[700] text-text-primary mb-3">
               {section.heading}
             </h3>
           )}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {section.paragraphs.map((paragraph, paraIdx) => (
               <p
                 key={`para-${sectionIdx}-${paraIdx}`}

@@ -8,6 +8,7 @@ import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistPreviewCard from '@/components/home/ArtistPreviewCard'
 import { getCityEditorialContent } from '@/lib/content/editorial/cities'
 import EditorialContent from '@/components/editorial/EditorialContent'
+import Pagination from '@/components/pagination/Pagination'
 
 export async function generateStaticParams() {
   return CITIES.map((city) => ({
@@ -20,10 +21,14 @@ export const revalidate = 86400 // 24 hours
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ state: string; city: string }>
+  searchParams: Promise<{ page?: string }>
 }): Promise<Metadata> {
   const { state: stateSlug, city: citySlug } = await params
+  const { page } = await searchParams
+  const currentPage = parseInt(page || '1', 10)
 
   const state = STATES.find((s) => s.slug === stateSlug)
   const city = CITIES.find((c) => c.slug === citySlug)
@@ -39,6 +44,11 @@ export async function generateMetadata({
   const description = editorialContent
     ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
     : `Discover talented tattoo artists in ${city.name}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
+
+  // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
+  const canonical = currentPage === 1
+    ? `https://inkdex.io/${stateSlug}/${citySlug}`
+    : `https://inkdex.io/${stateSlug}/${citySlug}?page=${currentPage}`
 
   return {
     title,
@@ -64,25 +74,34 @@ export async function generateMetadata({
       images: ['/og-city-default.jpg'],
     },
     alternates: {
-      canonical: `/${stateSlug}/${citySlug}`,
+      canonical,
     },
   }
 }
 
 export default async function CityPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ state: string; city: string }>
+  searchParams: Promise<{ page?: string }>
 }) {
   const { state: stateSlug, city: citySlug } = await params
+  const { page } = await searchParams
 
   const state = STATES.find((s) => s.slug === stateSlug)
   const city = CITIES.find((c) => c.slug === citySlug)
 
   if (!state || !city) notFound()
 
-  const { artists, total } = await getCityArtists(state.code, city.name, 100, 0)
+  // Parse pagination
+  const currentPage = parseInt(page || '1', 10)
+  const limit = 20
+  const offset = (currentPage - 1) * limit
+
+  const { artists, total } = await getCityArtists(state.code, city.name, limit, offset)
   const styleSeeds = await getStyleSeeds()
+  const totalPages = Math.ceil(total / limit)
 
   // JSON-LD Breadcrumbs (sanitized)
   const jsonLd = {
@@ -118,9 +137,9 @@ export default async function CityPage({
       />
 
       <main className="min-h-screen bg-bg-primary relative noise-overlay">
-        <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="container mx-auto px-4 py-6 md:py-8">
           {/* Breadcrumbs */}
-          <nav className="font-body text-small text-text-secondary mb-6" aria-label="Breadcrumb">
+          <nav className="font-body text-small text-text-secondary mb-4" aria-label="Breadcrumb">
             <ol className="flex items-center gap-2">
               <li>
                 <Link
@@ -147,8 +166,8 @@ export default async function CityPage({
           </nav>
 
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="font-display text-display font-[700] text-text-primary mb-4">
+          <div className="mb-8">
+            <h1 className="font-display text-display font-[700] text-text-primary mb-3">
               {city.name}, {state.code} Tattoo Artists
             </h1>
             <p className="font-body text-body-large text-text-secondary">
@@ -164,7 +183,7 @@ export default async function CityPage({
               if (!editorialContent) return null
 
               return (
-                <div className="mb-16 max-w-4xl">
+                <div className="mb-12 max-w-4xl">
                   <EditorialContent
                     sections={[
                       editorialContent.hero,
@@ -183,11 +202,24 @@ export default async function CityPage({
 
           {/* Artists Grid */}
           {artists.length > 0 ? (
-            <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {artists.map((artist) => (
-                <ArtistPreviewCard key={artist.id} artist={artist} />
-              ))}
-            </div>
+            <>
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {artists.map((artist) => (
+                  <ArtistPreviewCard key={artist.id} artist={artist} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildUrl={(pageNum) =>
+                  pageNum === 1
+                    ? `/${stateSlug}/${citySlug}`
+                    : `/${stateSlug}/${citySlug}?page=${pageNum}`
+                }
+              />
+            </>
           ) : (
             <div className="text-center py-16">
               <p className="font-body text-body text-text-secondary">

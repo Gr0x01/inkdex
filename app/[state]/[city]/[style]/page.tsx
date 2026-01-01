@@ -11,6 +11,7 @@ import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
 import { getStyleEditorialContent } from '@/lib/content/editorial/styles'
 import EditorialContent from '@/components/editorial/EditorialContent'
 import type { SearchResult } from '@/types/search'
+import Pagination from '@/components/pagination/Pagination'
 
 export async function generateStaticParams() {
   // Use static style data instead of database query (can't use async queries in generateStaticParams)
@@ -36,10 +37,14 @@ export const revalidate = 86400 // 24 hours
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ state: string; city: string; style: string }>
+  searchParams: Promise<{ page?: string }>
 }): Promise<Metadata> {
   const { state: stateSlug, city: citySlug, style: styleSlug } = await params
+  const { page } = await searchParams
+  const currentPage = parseInt(page || '1', 10)
 
   const state = STATES.find((s) => s.slug === stateSlug)
   const city = CITIES.find((c) => c.slug === citySlug)
@@ -54,6 +59,11 @@ export async function generateMetadata({
   const description = sanitizeForJsonLd(
     `${styleSeed.description} Discover ${styleSeed.display_name.toLowerCase()} tattoo artists in ${city.name}, ${state.code}. Browse portfolios and connect via Instagram.`
   )
+
+  // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
+  const canonical = currentPage === 1
+    ? `https://inkdex.io/${stateSlug}/${citySlug}/${styleSlug}`
+    : `https://inkdex.io/${stateSlug}/${citySlug}/${styleSlug}?page=${currentPage}`
 
   return {
     title,
@@ -79,17 +89,20 @@ export async function generateMetadata({
       images: ['/og-style-default.jpg'],
     },
     alternates: {
-      canonical: `/${stateSlug}/${citySlug}/${styleSlug}`,
+      canonical,
     },
   }
 }
 
 export default async function StylePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ state: string; city: string; style: string }>
+  searchParams: Promise<{ page?: string }>
 }) {
   const { state: stateSlug, city: citySlug, style: styleSlug } = await params
+  const { page } = await searchParams
 
   const state = STATES.find((s) => s.slug === stateSlug)
   const city = CITIES.find((c) => c.slug === citySlug)
@@ -97,8 +110,14 @@ export default async function StylePage({
 
   if (!state || !city || !styleSeed) notFound()
 
+  // Parse pagination
+  const currentPage = parseInt(page || '1', 10)
+  const limit = 20
+  const offset = (currentPage - 1) * limit
+
   // Get artists whose work matches this style (using pre-fetched style seed embedding)
-  const { artists } = await getArtistsByStyleSeed(styleSeed, city.name, 100, 0)
+  const { artists, total } = await getArtistsByStyleSeed(styleSeed, city.name, limit, offset)
+  const totalPages = Math.ceil(total / limit)
 
   // Get editorial content for potential use in schema
   const editorialContent = getStyleEditorialContent(styleSlug, citySlug)
@@ -248,7 +267,7 @@ export default async function StylePage({
                 }
               })()}
               <p className="mt-6 text-base text-neutral-500">
-                Showing <span className="font-medium text-white">{artists.length}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {city.name}.
+                Showing <span className="font-medium text-white">{total.toLocaleString()}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {city.name}.
               </p>
 
               {/* Internal Links */}
@@ -327,13 +346,24 @@ export default async function StylePage({
                 <h2 className="font-display text-2xl font-bold text-white">
                   {styleSeed.display_name} Artists in {city.name}
                 </h2>
-                <p className="text-sm text-neutral-500">{artists.length} results</p>
+                <p className="text-sm text-neutral-500">{total} total results</p>
               </div>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {artists.map((artist: SearchResult) => (
                   <ArtistCard key={artist.artist_id} artist={artist} />
                 ))}
               </div>
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                buildUrl={(pageNum) =>
+                  pageNum === 1
+                    ? `/${stateSlug}/${citySlug}/${styleSlug}`
+                    : `/${stateSlug}/${citySlug}/${styleSlug}?page=${pageNum}`
+                }
+              />
             </>
           )}
         </div>
