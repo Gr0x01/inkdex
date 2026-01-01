@@ -29,7 +29,7 @@ BEGIN
   WITH ranked_images AS (
     SELECT
       pi.artist_id,
-      pi.thumbnail_url,
+      pi.storage_thumb_640 AS thumbnail_url,
       pi.instagram_url AS image_url,
       pi.likes_count,
       (1 - (pi.embedding <=> query_embedding)) AS similarity,

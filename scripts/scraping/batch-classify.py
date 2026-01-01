@@ -2,7 +2,8 @@
 """
 Batch Image Classifier using GPT-5-nano
 Classifies ALL downloaded images in one massive parallel batch
-Filters out non-tattoo images after classification completes
+Filters out non-portfolio images (personal photos, lifestyle, promotional content)
+Uses improved prompt to distinguish portfolio work from personal content
 """
 
 import os
@@ -40,7 +41,21 @@ async def classify_image_async(client: AsyncOpenAI, image_path: Path) -> tuple[P
                 "content": [
                     {
                         "type": "text",
-                        "text": "Is this a photo of a tattoo (ink on someone's body)? Answer only 'yes' or 'no'."
+                        "text": """Is this an image showcasing tattoo work? Answer 'yes' if the primary purpose is to display a tattoo (finished or in-progress).
+
+Answer 'YES' if:
+- Shows a completed tattoo on someone's body (any angle or quality)
+- Shows a tattoo being worked on (in-progress shop photo)
+- The main subject is the tattoo artwork itself
+
+Answer 'NO' if:
+- Personal selfie/portrait where tattoos are just visible but not the focus
+- Lifestyle photos (beach, family gatherings, parties) where person happens to have tattoos
+- Promotional graphics (text announcements, flyers, event posters)
+- Holiday/celebration posts without tattoo focus
+- Photos where tattoos are purely incidental background elements
+
+Answer only 'yes' or 'no'."""
                     },
                     {
                         "type": "image_url",

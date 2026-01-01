@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-01
+Last-Updated: 2026-01-01 (Image Quality Cleanup)
 Maintainer: RB
 Status: Production Ready - 8 Cities Live + SEO Editorial Content Complete ✅
 ---
@@ -11,21 +11,22 @@ Status: Production Ready - 8 Cities Live + SEO Editorial Content Complete ✅
 **Status:** PRODUCTION READY - 8 cities fully operational
 
 ### Database Overview
-- **Total Artists:** 1,474 (545 original + 929 expansion)
-- **Total Images:** 11,167 portfolio images (100% with embeddings ✅)
-- **Austin, TX:** 188 artists, 1,257 images
-- **Atlanta, GA:** 171 artists, 1,073 images
-- **Los Angeles, CA:** 186 artists, 1,284 images
-- **New York, NY:** 219 artists, 1,705 images
-- **Chicago, IL:** 194 artists, 1,655 images
-- **Portland, OR:** 199 artists, 1,578 images
-- **Seattle, WA:** 172 artists, 1,507 images
-- **Miami, FL:** 145 artists, 1,075 images
+- **Total Artists:** 1,501 artists across 8 cities
+- **Total Images:** 9,803 portfolio images (100% with embeddings ✅)
+- **Austin, TX:** 188 artists, 1,204 images
+- **Atlanta, GA:** 191 artists, 1,040 images
+- **Los Angeles, CA:** 193 artists, 1,239 images
+- **New York, NY:** 219 artists, 1,409 images
+- **Chicago, IL:** 194 artists, 1,395 images
+- **Portland, OR:** 199 artists, 1,336 images
+- **Seattle, WA:** 172 artists, 1,264 images
+- **Miami, FL:** 145 artists, 916 images
 - **Vector Index:** IVFFlat (lists=105, optimized for 11,167 images)
+- **Last Cleanup:** Jan 1, 2026 - Removed 1,364 non-portfolio images (personal photos, lifestyle content)
 
 ### Production Features ✅
 - ✅ Multi-modal search (image upload, text query, Instagram post/profile links)
-- ✅ Artist profiles (1,474 pages across 8 cities)
+- ✅ Artist profiles (1,501 pages across 8 cities)
 - ✅ City browse pages (8 cities: Austin, Atlanta, LA, NYC, Chicago, Portland, Seattle, Miami)
 - ✅ State browse pages (8 states with editorial content)
 - ✅ Style landing pages (80 pages: 10 styles × 8 cities)
@@ -234,6 +235,40 @@ NEXT_PUBLIC_ENABLE_WARMUP=false  # Disabled (local GPU has no cold starts)
 2. Spot-check content quality (especially culturally-sensitive Chicano entries)
 3. Deploy to production
 4. Monitor SEO impact over 3 months (target: +30-50% organic impressions)
+
+---
+
+### Image Quality Cleanup (Jan 1) ✅
+**Problem:** Instagram scraping imported non-portfolio images (personal photos, lifestyle content, promotional graphics) where tattooed artists just happened to appear.
+
+**Root Cause:** Old classification prompt was too broad - "Is this a photo of a tattoo?" caught personal photos where tattooed people appeared.
+
+**Solution:**
+- Improved classification prompt to distinguish portfolio work from personal content
+- Tested gpt-5-nano (82% kept, 30% false positive rate) vs gpt-5-mini (87.8% kept, 0% false positives)
+- Re-classified all 11,167 images using gpt-5-mini with improved prompt
+- Deleted 1,364 non-portfolio images from both database and Supabase Storage
+
+**Results:**
+- **Before:** 11,167 images (mixed quality)
+- **After:** 9,803 images (portfolio-only)
+- **Accuracy:** 0% false positives (verified on sample sets)
+- **Time:** ~4 hours classification + 25 minutes deletion
+- **Cost:** ~$15 in OpenAI API (gpt-5-mini Flex tier)
+
+**Key Files:**
+- `scripts/scraping/batch-classify.py` - Updated classification prompt for future scrapes
+- `scripts/cleanup/reclassify-existing-images.py` - Re-classification utility
+- `scripts/cleanup/delete-from-audit.py` - Safe deletion from audit logs
+
+**Improved Classification Prompt Pattern:**
+```
+"Is this an image showcasing tattoo work? Answer 'yes' if the primary purpose is to display a tattoo.
+Answer YES if: completed tattoo, in-progress shop photo, tattoo is main subject
+Answer NO if: personal selfie, lifestyle photos, promotional graphics where tattoos are incidental"
+```
+
+**Bug Fixed:** Search function crash due to `pi.thumbnail_url` column not existing - changed to `pi.storage_thumb_640`
 
 ---
 
