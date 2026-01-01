@@ -5,8 +5,8 @@ import { STATES } from '@/lib/constants/cities'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 
-// Force dynamic rendering for homepage to allow Supabase queries with cookies
-export const dynamic = 'force-dynamic'
+// ISR: Revalidate homepage every hour (featured artists are stable)
+export const revalidate = 3600 // 1 hour
 
 export default async function Home() {
   // Fetch featured artists grouped by state (with fallback to empty object)

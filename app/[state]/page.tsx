@@ -4,6 +4,14 @@ import Link from 'next/link'
 import { getStateWithCities } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { STATES } from '@/lib/constants/cities'
+import { getStateEditorialContent } from '@/lib/content/editorial/states'
+import EditorialContent from '@/components/editorial/EditorialContent'
+
+interface CityData {
+  name: string
+  slug: string
+  artistCount: number
+}
 
 export async function generateStaticParams() {
   return STATES.map((state) => ({
@@ -26,7 +34,12 @@ export async function generateMetadata({
   }
 
   const title = `Tattoo Artists in ${state.name} | Inkdex`
-  const description = `Discover talented tattoo artists across ${state.name}. Browse portfolios, find artists by city, and connect via Instagram.`
+
+  // Use editorial content for meta description if available
+  const editorialContent = getStateEditorialContent(stateSlug)
+  const description = editorialContent
+    ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
+    : `Discover talented tattoo artists across ${state.name}. Browse portfolios, find artists by city, and connect via Instagram.`
 
   return {
     title,
@@ -68,6 +81,13 @@ export default async function StatePage({
   if (!state) notFound()
 
   const stateData = await getStateWithCities(state.code)
+
+  // Type-safe city data from database
+  interface CityWithCount {
+    name: string
+    slug: string
+    artistCount: number
+  }
 
   // JSON-LD Breadcrumbs (sanitized)
   const jsonLd = {
@@ -129,9 +149,33 @@ export default async function StatePage({
             </p>
           </div>
 
+          {/* Editorial Content */}
+          {(() => {
+            try {
+              const editorialContent = getStateEditorialContent(stateSlug)
+              if (!editorialContent) return null
+
+              return (
+                <div className="mb-16 max-w-4xl">
+                  <EditorialContent
+                    sections={[
+                      editorialContent.hero,
+                      editorialContent.cultural,
+                      editorialContent.overview,
+                      editorialContent.finding,
+                    ]}
+                  />
+                </div>
+              )
+            } catch (error) {
+              console.error('Error loading editorial content:', error)
+              return null
+            }
+          })()}
+
           {/* Cities Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {stateData.cities.map((city) => (
+            {stateData.cities.map((city: CityWithCount) => (
               <Link
                 key={city.slug}
                 href={`/${stateSlug}/${city.slug}`}

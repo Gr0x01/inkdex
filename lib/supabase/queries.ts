@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
+import { unstable_cache } from 'next/cache'
 
 /**
  * Validation helpers
@@ -136,6 +137,83 @@ export async function searchArtistsByEmbedding(
 }
 
 /**
+ * Search artists by CLIP embedding with total count
+ * Optimized version - single RPC call returns both results and count
+ * @param embedding - 768-dimensional CLIP embedding vector
+ * @param options - Search options (threshold, limit, city, offset)
+ * @returns Object with artists array and totalCount
+ */
+export async function searchArtistsWithCount(
+  embedding: number[],
+  options: {
+    threshold?: number
+    limit?: number
+    city?: string | null
+    offset?: number
+  } = {}
+) {
+  // Validate embedding
+  if (!Array.isArray(embedding) || embedding.length !== 768) {
+    throw new Error('Invalid embedding: must be an array of 768 numbers')
+  }
+  if (!embedding.every(n => typeof n === 'number' && Number.isFinite(n))) {
+    throw new Error('Invalid embedding: all elements must be finite numbers')
+  }
+
+  const supabase = await createClient()
+  const { threshold = 0.7, limit = 20, city = null, offset = 0 } = options
+
+  validateFloat(threshold, 'threshold', 0, 1)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+  if (city !== null) validateString(city, 'city', 100)
+
+  const sanitizedEmbedding = embedding.map(n => {
+    if (!Number.isFinite(n)) throw new Error('Invalid embedding value')
+    return n.toString()
+  }).join(',')
+
+  const { data, error } = await supabase.rpc('search_artists_with_count', {
+    query_embedding: `[${sanitizedEmbedding}]`,
+    match_threshold: threshold,
+    match_count: limit,
+    city_filter: city,
+    offset_param: offset,
+  })
+
+  if (error) {
+    console.error('Error searching artists with count:', error)
+    throw error
+  }
+
+  // Extract total count from first row
+  const totalCount = data && data.length > 0 ? data[0].total_count : 0
+
+  // Transform results
+  const artists = (data || []).map((result: any) => ({
+    id: result.artist_id,
+    name: result.artist_name,
+    slug: result.artist_slug,
+    city: result.city,
+    profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count,
+    shop_name: result.shop_name,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    images: (result.matching_images || []).map((img: any) => ({
+      url: img.thumbnail_url,
+      instagramUrl: img.image_url,
+      similarity: img.similarity,
+      likes_count: img.likes_count,
+    })),
+    max_similarity: result.similarity,
+    max_likes: result.max_likes,
+  }))
+
+  return { artists, totalCount }
+}
+
+/**
  * Get artist by slug
  */
 export async function getArtistBySlug(slug: string) {
@@ -195,8 +273,9 @@ export async function getArtistsByCity(city: string) {
 
 /**
  * Get all style seeds (for SEO landing pages)
+ * Cached for 24 hours - style seeds are static data
  */
-export async function getStyleSeeds() {
+async function getStyleSeedsUncached() {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -211,6 +290,16 @@ export async function getStyleSeeds() {
 
   return data
 }
+
+// Cached wrapper with 24-hour TTL
+export const getStyleSeeds = unstable_cache(
+  getStyleSeedsUncached,
+  ['style-seeds'],
+  {
+    revalidate: 86400, // 24 hours
+    tags: ['style-seeds']
+  }
+)
 
 /**
  * Get featured portfolio images for homepage teaser strip
@@ -442,7 +531,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
 
 /**
  * Get related artists using vector similarity search
- * Uses the artist's first portfolio image embedding to find similar artists
+ * Optimized version using combined RPC function
  * @param artistId - Artist ID to find similar artists for
  * @param city - City to filter by
  * @param limit - Number of related artists to return (default 3)
@@ -459,79 +548,39 @@ export async function getRelatedArtists(
 
   const supabase = await createClient()
 
-  // 1. Get the artist's first portfolio image embedding
-  const { data: firstImage, error: imageError } = await supabase
-    .from('portfolio_images')
-    .select('embedding')
-    .eq('artist_id', artistId)
-    .eq('status', 'active')
-    .not('embedding', 'is', null)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single()
-
-  if (imageError || !firstImage?.embedding) {
-    console.error('Error fetching artist embedding:', imageError)
-    return []
-  }
-
-  // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
-  let embeddingString: string
-  if (typeof firstImage.embedding === 'string') {
-    // Already a string, use as-is (strip brackets if present)
-    embeddingString = firstImage.embedding.replace(/^\[|\]$/g, '')
-  } else if (Array.isArray(firstImage.embedding)) {
-    // Array format, sanitize and join
-    embeddingString = firstImage.embedding.map((n: number) => {
-      if (!Number.isFinite(n)) {
-        throw new Error('Invalid embedding value in database')
-      }
-      return n.toString()
-    }).join(',')
-  } else {
-    console.error('Unexpected embedding format:', typeof firstImage.embedding)
-    return []
-  }
-
-  // 2. Use RPC function to find similar artists in same city
-  const { data: similarArtists, error: searchError } = await supabase.rpc(
-    'search_artists_by_embedding',
+  // Use optimized RPC function that combines embedding fetch + search
+  const { data: relatedArtists, error } = await supabase.rpc(
+    'find_related_artists',
     {
-      query_embedding: `[${embeddingString}]`,
-      match_threshold: 0.5, // Lower threshold for same-city artists
-      match_count: limit + 1, // +1 to account for filtering out current artist
+      source_artist_id: artistId,
       city_filter: city,
-      offset_param: 0,
+      match_count: limit,
     }
   )
 
-  if (searchError) {
-    console.error('Error searching similar artists:', searchError)
+  if (error) {
+    console.error('Error finding related artists:', error)
     return []
   }
 
-  // 3. Filter out current artist and limit results
-  const filtered = similarArtists
-    ?.filter((artist: any) => artist.artist_id !== artistId)
-    .slice(0, limit)
-    .map((artist: any) => ({
-      id: artist.artist_id,
-      name: artist.artist_name,
-      slug: artist.artist_slug,
-      city: artist.city,
-      profile_image_url: artist.profile_image_url,
-      instagram_url: artist.instagram_url,
-      shop_name: artist.shop_name || null,
-      verification_status: artist.is_verified ? 'verified' : 'unclaimed',
-      follower_count: artist.follower_count || 0,
-      similarity: artist.similarity || 0,
-    }))
-
-  return filtered || []
+  // Transform to expected format
+  return (relatedArtists || []).map((artist: any) => ({
+    id: artist.artist_id,
+    name: artist.artist_name,
+    slug: artist.artist_slug,
+    city: artist.city,
+    profile_image_url: artist.profile_image_url,
+    instagram_url: artist.instagram_url,
+    shop_name: artist.shop_name || null,
+    verification_status: artist.is_verified ? 'verified' : 'unclaimed',
+    follower_count: artist.follower_count || 0,
+    similarity: artist.similarity || 0,
+  }))
 }
 
 /**
  * Get state with cities and artist counts
+ * Optimized version using SQL GROUP BY instead of JavaScript aggregation
  * @param state - State code (e.g., 'TX', 'CA')
  */
 export async function getStateWithCities(state: string) {
@@ -540,36 +589,27 @@ export async function getStateWithCities(state: string) {
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('artists')
-    .select('city')
-    .eq('state', state)
+  // Use SQL GROUP BY to aggregate in database
+  const { data, error } = await supabase.rpc('get_state_cities_with_counts', {
+    state_code: state
+  })
 
   if (error) {
     console.error('Error fetching state cities:', error)
     return { cities: [], total: 0 }
   }
 
-  // Group by city and count artists
-  const cityMap = new Map<string, number>()
-  data.forEach((row) => {
-    const city = row.city
-    cityMap.set(city, (cityMap.get(city) || 0) + 1)
-  })
-
-  const cities = Array.from(cityMap.entries()).map(([name, count]) => ({
-    name,
-    slug: name.toLowerCase().replace(/\s+/g, '-'),
-    artistCount: count,
+  // Transform to expected format
+  const cities = (data || []).map((row: any) => ({
+    name: row.city,
+    slug: row.city.toLowerCase().replace(/\s+/g, '-'),
+    artistCount: row.artist_count,
   }))
 
-  // Sort by artist count (descending)
-  cities.sort((a, b) => b.artistCount - a.artistCount)
+  // Calculate total
+  const total = cities.reduce((sum: number, city: any) => sum + city.artistCount, 0)
 
-  return {
-    cities,
-    total: data.length,
-  }
+  return { cities, total }
 }
 
 /**
@@ -781,6 +821,96 @@ export async function getArtistsByStyle(
     artists,
     total: artists.length,
   }
+}
+
+/**
+ * Get artists by style seed (optimized version)
+ * Takes a pre-fetched style seed object to avoid redundant DB query
+ * @param styleSeed - Style seed object with embedding
+ * @param city - City to filter by (optional)
+ * @param limit - Number of artists to return (default 20)
+ * @param offset - Pagination offset (default 0)
+ */
+export async function getArtistsByStyleSeed(
+  styleSeed: { embedding: any },
+  city: string | null = null,
+  limit: number = 20,
+  offset: number = 0
+) {
+  // Validate inputs
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+  if (city !== null) validateString(city, 'city', 100)
+
+  if (!styleSeed?.embedding) {
+    return { artists: [], total: 0 }
+  }
+
+  // Parse and validate embedding with proper security checks
+  let embeddingString: string
+  if (typeof styleSeed.embedding === 'string') {
+    // Parse string as JSON and validate as array
+    try {
+      const parsed = JSON.parse(styleSeed.embedding)
+      if (!Array.isArray(parsed) || parsed.length !== 768) {
+        throw new Error('Invalid embedding format: must be array of 768 numbers')
+      }
+      embeddingString = parsed
+        .map((n: number) => {
+          if (!Number.isFinite(n)) throw new Error('Invalid embedding value')
+          return n.toString()
+        })
+        .join(',')
+    } catch (error) {
+      console.error('Error parsing style seed embedding:', error)
+      return { artists: [], total: 0 }
+    }
+  } else if (Array.isArray(styleSeed.embedding)) {
+    embeddingString = styleSeed.embedding
+      .map((n: number) => {
+        if (!Number.isFinite(n)) throw new Error('Invalid embedding')
+        return n.toString()
+      })
+      .join(',')
+  } else {
+    return { artists: [], total: 0 }
+  }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
+    query_embedding: `[${embeddingString}]`,
+    match_threshold: 0.15,
+    match_count: limit,
+    city_filter: city,
+    offset_param: offset,
+  })
+
+  if (error) {
+    console.error('Error searching artists by style:', error)
+    return { artists: [], total: 0 }
+  }
+
+  const artists = (data || []).map((result: any) => ({
+    artist_id: result.artist_id,
+    artist_name: result.artist_name,
+    artist_slug: result.artist_slug,
+    city: result.city,
+    profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count,
+    shop_name: result.shop_name,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    matching_images: (result.matching_images || []).map((img: any) => ({
+      url: img.thumbnail_url,
+      instagramUrl: img.image_url,
+      similarity: img.similarity,
+      likes_count: img.likes_count,
+    })),
+    similarity: result.similarity,
+    max_likes: result.max_likes,
+  }))
+
+  return { artists, total: artists.length }
 }
 
 /**

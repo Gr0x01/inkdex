@@ -431,10 +431,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Return search ID
-    return NextResponse.json({
-      searchId: data.id,
-      queryType: searchType,
-    })
+    return NextResponse.json(
+      {
+        searchId: data.id,
+        queryType: searchType,
+      },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    )
   } catch (error) {
     console.error('Search API error:', error)
 

@@ -2,12 +2,15 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getArtistsByStyle, getStyleSeedBySlug, getStyleSeeds } from '@/lib/supabase/queries'
+import { getArtistsByStyleSeed, getStyleSeedBySlug, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistCard from '@/components/search/ArtistCard'
 import { getImageUrl } from '@/lib/utils/images'
 import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
+import { getStyleEditorialContent } from '@/lib/content/editorial/styles'
+import EditorialContent from '@/components/editorial/EditorialContent'
+import type { SearchResult } from '@/types/search'
 
 export async function generateStaticParams() {
   // Use static style data instead of database query (can't use async queries in generateStaticParams)
@@ -94,8 +97,11 @@ export default async function StylePage({
 
   if (!state || !city || !styleSeed) notFound()
 
-  // Get artists whose work matches this style (using style seed embedding)
-  const { artists } = await getArtistsByStyle(styleSlug, city.name, 100, 0)
+  // Get artists whose work matches this style (using pre-fetched style seed embedding)
+  const { artists } = await getArtistsByStyleSeed(styleSeed, city.name, 100, 0)
+
+  // Get editorial content for potential use in schema
+  const editorialContent = getStyleEditorialContent(styleSlug, citySlug)
 
   // JSON-LD Breadcrumbs (sanitized)
   const jsonLd = {
@@ -131,13 +137,53 @@ export default async function StylePage({
     ],
   }
 
+  // JSON-LD Article schema (if editorial content exists)
+  const articleJsonLd = editorialContent
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: sanitizeForJsonLd(`${styleSeed.display_name} Tattoo Artists in ${city.name}, ${state.code}`),
+        description: sanitizeForJsonLd(editorialContent.intro.paragraphs[0]),
+        articleBody: sanitizeForJsonLd(
+          [
+            ...editorialContent.intro.paragraphs,
+            ...editorialContent.cityContext.paragraphs,
+            ...editorialContent.expectations.paragraphs,
+            ...editorialContent.finding.paragraphs,
+          ].join(' ')
+        ),
+        author: {
+          '@type': 'Organization',
+          name: 'Inkdex',
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'Inkdex',
+          logo: {
+            '@type': 'ImageObject',
+            url: sanitizeForJsonLd(`${process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'}/logo.png`),
+          },
+        },
+        datePublished: new Date().toISOString(),
+        dateModified: new Date().toISOString(),
+      }
+    : null
+
   return (
     <div className="min-h-screen">
-      {/* JSON-LD */}
+      {/* JSON-LD Breadcrumbs */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
+
+      {/* JSON-LD Article Schema (if editorial content exists) */}
+      {articleJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(articleJsonLd) }}
+        />
+      )}
 
       {/* Breadcrumbs */}
       <div className="border-b border-neutral-800 bg-[#0a0a0a]">
@@ -172,9 +218,35 @@ export default async function StylePage({
               <p className="mt-4 font-display text-xl text-neutral-300">
                 in {city.name}, {state.code}
               </p>
-              <p className="mt-6 text-lg leading-relaxed text-neutral-400">
-                {styleSeed.description}
-              </p>
+              {/* Editorial intro content or fallback to description */}
+              {(() => {
+                try {
+                  const editorialContent = getStyleEditorialContent(styleSlug, citySlug)
+                  if (editorialContent?.intro) {
+                    return (
+                      <div className="mt-6">
+                        {editorialContent.intro.paragraphs.map((paragraph, idx) => (
+                          <p key={idx} className="text-lg leading-relaxed text-neutral-400 mb-4 last:mb-0">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    )
+                  }
+                  return (
+                    <p className="mt-6 text-lg leading-relaxed text-neutral-400">
+                      {styleSeed.description}
+                    </p>
+                  )
+                } catch (error) {
+                  console.error('Error loading editorial content:', error)
+                  return (
+                    <p className="mt-6 text-lg leading-relaxed text-neutral-400">
+                      {styleSeed.description}
+                    </p>
+                  )
+                }
+              })()}
               <p className="mt-6 text-base text-neutral-500">
                 Showing <span className="font-medium text-white">{artists.length}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {city.name}.
               </p>
@@ -217,6 +289,26 @@ export default async function StylePage({
         </div>
       </div>
 
+      {/* Editorial Content - City Context, Expectations, Finding */}
+      {(() => {
+        const editorialContent = getStyleEditorialContent(styleSlug, citySlug)
+        if (!editorialContent) return null
+
+        return (
+          <div className="bg-[#0a0a0a] py-12 border-b border-neutral-800">
+            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+              <EditorialContent
+                sections={[
+                  editorialContent.cityContext,
+                  editorialContent.expectations,
+                  editorialContent.finding,
+                ]}
+              />
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Artist Grid */}
       <div className="bg-[#0a0a0a] py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -238,7 +330,7 @@ export default async function StylePage({
                 <p className="text-sm text-neutral-500">{artists.length} results</p>
               </div>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {artists.map((artist: any) => (
+                {artists.map((artist: SearchResult) => (
                   <ArtistCard key={artist.artist_id} artist={artist} />
                 ))}
               </div>

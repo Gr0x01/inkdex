@@ -143,5 +143,10 @@ export async function GET() {
   const isAnyHealthy = localHealth.status === 'healthy' || modalHealth.status === 'healthy';
   const statusCode = isAnyHealthy ? 200 : 503;
 
-  return NextResponse.json(response, { status: statusCode });
+  return NextResponse.json(response, {
+    status: statusCode,
+    headers: {
+      'Cache-Control': 'no-store'
+    }
+  });
 }

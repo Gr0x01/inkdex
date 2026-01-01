@@ -6,6 +6,8 @@ import { getCityArtists, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistPreviewCard from '@/components/home/ArtistPreviewCard'
+import { getCityEditorialContent } from '@/lib/content/editorial/cities'
+import EditorialContent from '@/components/editorial/EditorialContent'
 
 export async function generateStaticParams() {
   return CITIES.map((city) => ({
@@ -31,7 +33,12 @@ export async function generateMetadata({
   }
 
   const title = `Tattoo Artists in ${city.name}, ${state.code} | Inkdex`
-  const description = `Discover talented tattoo artists in ${city.name}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
+
+  // Use editorial content for meta description if available
+  const editorialContent = getCityEditorialContent(citySlug)
+  const description = editorialContent
+    ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
+    : `Discover talented tattoo artists in ${city.name}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
 
   return {
     title,
@@ -149,6 +156,30 @@ export default async function CityPage({
               in {city.name}
             </p>
           </div>
+
+          {/* Editorial Content */}
+          {(() => {
+            try {
+              const editorialContent = getCityEditorialContent(citySlug)
+              if (!editorialContent) return null
+
+              return (
+                <div className="mb-16 max-w-4xl">
+                  <EditorialContent
+                    sections={[
+                      editorialContent.hero,
+                      editorialContent.scene,
+                      editorialContent.community,
+                      editorialContent.styles,
+                    ]}
+                  />
+                </div>
+              )
+            } catch (error) {
+              console.error('Error loading editorial content:', error)
+              return null
+            }
+          })()}
 
           {/* Artists Grid */}
           {artists.length > 0 ? (

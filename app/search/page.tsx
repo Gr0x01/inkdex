@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import ArtistCard from '@/components/search/ArtistCard'
 import CityFilter from '@/components/search/CityFilter'
 import { createClient } from '@/lib/supabase/server'
-import { searchArtistsByEmbedding } from '@/lib/supabase/queries'
+import { searchArtistsWithCount } from '@/lib/supabase/queries'
 import { STATES } from '@/lib/constants/cities'
 import { getImageUrl } from '@/lib/utils/images'
 
@@ -111,22 +111,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
   const cityFilter = cities && cities.length > 0 ? cities[0] : null
 
-  // Count total matching artists (for pagination)
-  const { data: countData, error: countError } = await supabase
-    .rpc('count_matching_artists', {
-      query_embedding: `[${embedding.join(',')}]`,
-      match_threshold: 0.15,
-      city_filter: cityFilter,
-    })
-
-  if (countError) {
-    console.error('Error counting artists:', countError)
-  }
-
-  const totalCount = countData?.[0]?.count || 0
-
-  // Search artists (current page only)
-  const rawResults = await searchArtistsByEmbedding(embedding, {
+  // Search artists with count (single combined query)
+  const { artists: rawResults, totalCount } = await searchArtistsWithCount(embedding, {
     city: cityFilter,
     limit,
     offset,

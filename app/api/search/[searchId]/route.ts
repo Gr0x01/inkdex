@@ -183,21 +183,30 @@ export async function GET(
       .filter((artist): artist is NonNullable<typeof artist> => artist !== null)
 
     // Return results with metadata
-    return NextResponse.json({
-      artists,
-      total: artists.length, // Note: This is approximate, would need COUNT query for exact
-      page,
-      limit,
-      queryTime,
-      queryType: search.query_type,
-      queryText: search.query_text,
-      city: locationParam, // Return original filter parameter
-      // Instagram attribution (if applicable)
-      instagramUsername: search.instagram_username || undefined,
-      instagramPostUrl: search.instagram_post_id
-        ? `https://instagram.com/p/${search.instagram_post_id}`
-        : undefined,
-    })
+    return NextResponse.json(
+      {
+        artists,
+        total: artists.length, // Note: This is approximate, would need COUNT query for exact
+        page,
+        limit,
+        queryTime,
+        queryType: search.query_type,
+        queryText: search.query_text,
+        city: locationParam, // Return original filter parameter
+        // Instagram attribution (if applicable)
+        instagramUsername: search.instagram_username || undefined,
+        instagramPostUrl: search.instagram_post_id
+          ? `https://instagram.com/p/${search.instagram_post_id}`
+          : undefined,
+      },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'private, no-cache, must-revalidate',
+          'Vary': 'Cookie'
+        }
+      }
+    )
   } catch (error) {
     console.error('Search results API error:', error)
 
