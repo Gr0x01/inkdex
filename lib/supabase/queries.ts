@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
-import { unstable_cache } from 'next/cache'
 
 /**
  * Validation helpers
@@ -273,9 +272,10 @@ export async function getArtistsByCity(city: string) {
 
 /**
  * Get all style seeds (for SEO landing pages)
- * Cached for 24 hours - style seeds are static data
+ * Note: Not using unstable_cache() here because createClient() uses cookies()
+ * Page-level ISR (revalidate: 86400) handles caching instead
  */
-async function getStyleSeedsUncached() {
+export async function getStyleSeeds() {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -290,16 +290,6 @@ async function getStyleSeedsUncached() {
 
   return data
 }
-
-// Cached wrapper with 24-hour TTL
-export const getStyleSeeds = unstable_cache(
-  getStyleSeedsUncached,
-  ['style-seeds'],
-  {
-    revalidate: 86400, // 24 hours
-    tags: ['style-seeds']
-  }
-)
 
 /**
  * Get featured portfolio images for homepage teaser strip

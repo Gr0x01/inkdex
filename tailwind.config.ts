@@ -30,6 +30,7 @@ const config: Config = {
         accent: {
           DEFAULT: '#8B7355',  // Warm gray
           bright: '#A68968',   // Lighter warm gray
+          primary: '#8B7355',  // Alias for consistency
         },
 
         // Amber for featured/premium
@@ -44,6 +45,31 @@ const config: Config = {
           success: '#10b981',
           error: '#ef4444',
           warning: '#f59e0b',
+        },
+
+        // Semantic color tokens (match CSS variables)
+        bg: {
+          primary: '#F8F7F5',    // var(--bg-primary)
+          secondary: '#F0EFEC',  // var(--bg-secondary)
+          dark: '#1A1A1A',       // var(--bg-dark)
+        },
+
+        text: {
+          primary: '#1A1A1A',    // var(--text-primary)
+          secondary: '#4A4845',  // var(--text-secondary)
+          tertiary: '#8B8985',   // var(--text-tertiary)
+          inverse: '#F8F7F5',    // var(--text-inverse)
+        },
+
+        border: {
+          subtle: '#D8D6D2',     // var(--border-subtle)
+          medium: '#8B8985',     // var(--border-medium)
+          strong: '#1A1A1A',     // var(--border-strong)
+        },
+
+        surface: {
+          low: '#F0EFEC',        // Subtle surface elevation
+          high: '#F8F7F5',       // Higher surface elevation
         },
       },
 
