@@ -19,6 +19,10 @@ export default function FeaturedArtistsByState({
     return null
   }
 
+  // Get unique cities from featured artists
+  const cities = [...new Set(artists.map((a) => a.city))].sort()
+  const cityDisplay = cities.join(', ')
+
   // Compute state browse URL
   const stateUrl = `/${state.slug}`
 
@@ -31,9 +35,9 @@ export default function FeaturedArtistsByState({
           <p className="font-mono text-[10px] text-gray-500 tracking-[0.3em] uppercase mb-1">
             {state.code}
           </p>
-          {/* State Name */}
+          {/* City Name(s) */}
           <h2 className="font-heading text-[28px] md:text-[32px] text-ink leading-tight">
-            {state.name}
+            {cityDisplay}
           </h2>
         </div>
 

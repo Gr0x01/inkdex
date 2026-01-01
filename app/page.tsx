@@ -50,75 +50,75 @@ export default async function Home() {
 
       <main className="min-h-screen bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════
-          HERO SECTION - Dark Editorial with Video
+          HERO SECTION - Editorial Magazine Masthead
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Video Background Layer */}
+      <section className="relative overflow-hidden bg-ink">
+        {/* Subtle Video Background Layer */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
+          className="absolute inset-0 w-full h-full object-cover opacity-20"
           aria-hidden="true"
         >
           <source src="/videos/hero-tattoo.mp4" type="video/mp4" />
         </video>
 
-        {/* Dramatic Vignette - Pure Black Edges */}
+        {/* Refined Vignette */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `
-              radial-gradient(ellipse at center, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 0, 0, 0.95) 100%)
-            `
+            background: `radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 70%, rgba(26, 26, 26, 0.9) 100%)`
           }}
         />
 
         {/* Fine Grain Texture */}
-        <div className="absolute inset-0 grain-overlay pointer-events-none opacity-40" />
+        <div className="absolute inset-0 grain-overlay pointer-events-none opacity-30" />
 
         {/* Content Layer */}
-        <div className="container mx-auto px-4 relative z-20 py-32 md:py-40">
-          <div className="max-w-5xl mx-auto">
-            {/* Editorial Headline - Massive Scale */}
-            <div className="mb-12 md:mb-16 stagger-children">
+        <div className="container mx-auto px-4 relative z-20 pt-8 pb-12 md:pt-20 md:pb-24">
+          <div className="max-w-4xl mx-auto text-center">
+            {/* Editorial Headline - Refined Scale */}
+            <div className="mb-6 md:mb-10">
               <h1
-                className="font-display leading-[0.85] mb-6 md:mb-8 tracking-tight"
+                className="font-display leading-[0.95] mb-4 md:mb-5 tracking-tight text-balance"
                 style={{
-                  fontSize: 'clamp(3.5rem, 14vw, 9rem)',
+                  fontSize: 'clamp(2.5rem, 8vw, 5rem)',
                   color: '#FFFFFF',
-                  textShadow: '0 6px 30px rgba(0, 0, 0, 0.9), 0 3px 15px rgba(0, 0, 0, 0.95)'
+                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.7)'
                 }}
               >
-                FIND YOUR
+                INSTAGRAM HAS YOUR ARTIST.
                 <br />
-                ARTIST
+                <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                  WE HELP YOU FIND&nbsp;THEM.
+                </span>
               </h1>
 
-              {/* Subheading - Refined Serif */}
+              {/* Refined Subheading */}
               <p
-                className="font-body-medium text-xl md:text-3xl leading-relaxed max-w-3xl animate-fade-up"
+                className="font-body text-base md:text-lg leading-relaxed max-w-2xl mx-auto animate-fade-up"
                 style={{
-                  animationDelay: '200ms',
-                  color: 'rgba(255, 255, 255, 0.90)',
-                  textShadow: '0 2px 20px rgba(0, 0, 0, 0.9)'
+                  animationDelay: '100ms',
+                  color: 'rgba(255, 255, 255, 0.75)',
+                  textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
                 }}
               >
-                Upload an image or describe your style—we'll match you with artists whose work fits your aesthetic.
+                Upload a reference image or describe your vibe—we'll scan millions of tattoo posts to find artists whose portfolios match your style.
               </p>
             </div>
 
-            {/* Search Bar - Glass Morphism Card */}
-            <div className="animate-fade-up" style={{ animationDelay: '400ms' }}>
+            {/* Search Bar */}
+            <div className="animate-fade-up" style={{ animationDelay: '200ms' }}>
               <UnifiedSearchBar />
             </div>
           </div>
         </div>
 
-        {/* Bottom Fade to Black */}
+        {/* Bottom Fade Transition */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
           style={{
             background: 'linear-gradient(to bottom, transparent 0%, rgba(26, 26, 26, 1) 100%)'
           }}
@@ -126,15 +126,99 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
+          HOW IT WORKS - Explain the Instagram Search Flow
+          ═══════════════════════════════════════════════════════════════ */}
+      <section className="bg-ink relative py-12 md:py-24 overflow-hidden">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto">
+            {/* Section Title */}
+            <h2
+              className="font-display text-center mb-8 md:mb-16 tracking-tight"
+              style={{
+                fontSize: 'clamp(2rem, 6vw, 4rem)',
+                color: '#FFFFFF'
+              }}
+            >
+              HOW IT WORKS
+            </h2>
+
+            {/* 3-Step Flow */}
+            <div className="grid md:grid-cols-3 gap-6 md:gap-12">
+              {/* Step 1 */}
+              <div className="text-center">
+                <div
+                  className="font-display mb-4 opacity-40"
+                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
+                >
+                  01
+                </div>
+                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
+                  SEARCH YOUR VIBE
+                </h3>
+                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Upload a reference image, paste an Instagram post, or describe your style in plain English.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="text-center">
+                <div
+                  className="font-display mb-4 opacity-40"
+                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
+                >
+                  02
+                </div>
+                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
+                  DISCOVER ARTISTS
+                </h3>
+                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  We scan Instagram portfolios and show you artists whose work actually matches your aesthetic.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="text-center">
+                <div
+                  className="font-display mb-4 opacity-40"
+                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
+                >
+                  03
+                </div>
+                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
+                  CONNECT ON INSTAGRAM
+                </h3>
+                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                  Click through to their Instagram profile to see more work, read reviews, and book your session.
+                </p>
+              </div>
+            </div>
+
+            {/* Supporting Copy */}
+            <p
+              className="font-body text-center text-lg md:text-xl mt-8 md:mt-12 leading-relaxed max-w-3xl mx-auto"
+              style={{ color: 'rgba(255, 255, 255, 0.5)' }}
+            >
+              We don't host portfolios or bookings—we just make Instagram searchable. Think of us as Google Images, but built specifically for finding tattoo artists.
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Fade */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"
+        />
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
           FEATURED ARTISTS BY STATE - Editorial Horizontal Sections
           ═══════════════════════════════════════════════════════════════ */}
       <section
-        className="relative py-16 md:py-20 bg-paper"
+        className="relative py-8 md:py-16 bg-paper"
       >
         {/* Subtle Top Border */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
 
-        <div className="container mx-auto px-4 space-y-12 md:space-y-16">
+        <div className="container mx-auto px-4 space-y-8 md:space-y-12">
           {STATES.map((state) => (
             <FeaturedArtistsByState
               key={state.code}
@@ -151,7 +235,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════
           FOOTER CTA - Dramatic Editorial Statement
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-ink relative py-32 md:py-40 overflow-hidden">
+      <section className="bg-ink relative py-16 md:py-32 overflow-hidden">
         {/* Background Accent - Subtle Glow */}
         <div
           className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] pointer-events-none opacity-5"
@@ -164,35 +248,30 @@ export default async function Home() {
           <div className="max-w-4xl mx-auto text-center">
             {/* Massive Display Typography */}
             <h2
-              className="font-display leading-[0.9] mb-12"
+              className="font-display leading-[0.9] mb-4 md:mb-6"
               style={{
                 fontSize: 'clamp(2.5rem, 10vw, 7rem)',
                 color: '#FFFFFF'
               }}
             >
-              YOUR NEXT
+              STOP SCROLLING
               <br />
-              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>TATTOO AWAITS</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>HASHTAGS.</span>
             </h2>
 
             {/* Refined Body Text */}
-            <p className="font-body text-xl md:text-2xl mb-16 leading-relaxed px-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Join hundreds discovering their perfect artist through visual search
+            <p className="font-body text-base md:text-xl mb-6 md:mb-8 leading-relaxed px-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+              Search Instagram's tattoo artists the way you actually think—by vibe, by style, by the Pinterest board you've been building.
             </p>
 
             {/* Primary CTA */}
-            <a href="#search" className="btn btn-primary scale-hover text-base px-12 py-5">
+            <a
+              href="#search"
+              className="inline-block bg-white text-ink font-mono text-xs md:text-sm tracking-[0.15em] uppercase px-8 py-4 md:px-10 md:py-5 rounded-md hover:bg-gray-100 transition-all duration-300 whitespace-nowrap hover:scale-105"
+              style={{ fontWeight: 500 }}
+            >
               Start Your Search
             </a>
-          </div>
-        </div>
-
-        {/* Minimal Footer Info */}
-        <div className="mt-32 pt-12 border-t border-gray-900">
-          <div className="container mx-auto">
-            <p className="font-mono text-tiny text-center tracking-[0.25em] uppercase" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
-              Visual Search Platform
-            </p>
           </div>
         </div>
       </section>
