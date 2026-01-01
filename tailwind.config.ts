@@ -32,6 +32,13 @@ const config: Config = {
           bright: '#A68968',   // Lighter warm gray
         },
 
+        // Amber for featured/premium
+        featured: {
+          light: '#FFD54F',    // Light amber
+          DEFAULT: '#FFC107',  // Amber (between yellow and orange)
+          dark: '#FF8F00',     // Dark amber (for text/borders)
+        },
+
         // Status colors
         status: {
           success: '#10b981',

@@ -45,38 +45,52 @@ export default function ArtistInfoColumn({
 
   return (
     <div className="bg-paper relative">
-      {/* Subtle grain texture overlay - reduced on mobile */}
+      {/* Subtle grain texture overlay */}
       <div className="grain-overlay absolute inset-0 pointer-events-none opacity-20 sm:opacity-30" />
 
-      <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-5 sm:space-y-6">
-        {/* Profile Image - Editorial Style */}
+      {/* Compact Editorial Layout - Tight vertical spacing for no scrollbars */}
+      <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-2.5">
+
+        {/* Profile Image - Portrait 3:4, More Compact */}
         {artist.profile_image_url && (
-          <div className="relative">
-            <div className="relative w-32 h-32 sm:w-40 sm:h-40 mx-auto border-2 sm:border-4 border-ink overflow-hidden">
+          <div className="relative w-full max-w-[200px] mx-auto">
+            <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
               <Image
                 src={artist.profile_image_url}
                 alt={`${artist.name} profile`}
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 128px, 160px"
+                sizes="200px"
               />
             </div>
-            {/* Decorative corner accents - smaller on mobile */}
-            <div className="absolute -top-1 -left-1 sm:-top-2 sm:-left-2 w-4 h-4 sm:w-6 sm:h-6 border-t-2 border-l-2 border-warm-gray" />
-            <div className="absolute -bottom-1 -right-1 sm:-bottom-2 sm:-right-2 w-4 h-4 sm:w-6 sm:h-6 border-b-2 border-r-2 border-warm-gray" />
+
+            {/* Featured Badge - Hanging Tag */}
+            {isFeatured && (
+              <div className="absolute bottom-2 -right-1 z-10">
+                <div className="bg-featured px-2 py-[0.75rem] flex items-center justify-center">
+                  <span className="font-mono text-[9px] font-semibold text-ink uppercase tracking-wider leading-none">
+                    Featured
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Minimal corner accent - top right only */}
+            <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-warm-gray" />
           </div>
         )}
 
-        {/* Instagram Handle (Primary) */}
+        {/* Header: Handle + Badges + Name + Location - TIGHT SPACING */}
         {artist.instagram_handle && (
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2">
-              <h1 className="font-heading text-[1.75rem] sm:text-[2rem] lg:text-[2.25rem] font-[700] leading-[1.1] text-ink break-words">
+          <div className="space-y-0.5 text-center">
+            {/* Handle with inline badges */}
+            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+              <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink">
                 @{artist.instagram_handle}
               </h1>
               {isVerified && (
                 <svg
-                  className="w-5 h-5 sm:w-6 sm:h-6 text-warm-gray flex-shrink-0 mt-1"
+                  className="w-3.5 h-3.5 text-blue-600 flex-shrink-0"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                   aria-label="Verified artist"
@@ -90,97 +104,87 @@ export default function ArtistInfoColumn({
               )}
             </div>
 
-            {/* Artist Name (Secondary) */}
-            <p className="font-body text-[1rem] sm:text-[1.0625rem] text-gray-700 leading-relaxed mt-2">
+            {/* Artist Name - lighter weight, smaller */}
+            <p className="font-body text-sm font-light text-gray-900 leading-tight">
               {artist.name}
             </p>
 
-            {/* Location & Shop */}
-            <p className="font-body text-[0.8125rem] sm:text-[0.875rem] text-gray-500 leading-relaxed mt-1">
-              {artist.city}
-              {artist.state && `, ${artist.state}`}
+            {/* Location - very compact */}
+            <p className="font-mono text-[10px] font-light text-gray-500 leading-tight tracking-wide uppercase">
+              {artist.city}{artist.state && `, ${artist.state}`}
             </p>
+
+            {/* Shop name if present */}
             {artist.shop_name && (
-              <p className="font-body text-[0.8125rem] sm:text-[0.875rem] text-gray-500 leading-relaxed">
+              <p className="font-mono text-[9px] font-light text-gray-400 leading-tight">
                 {artist.shop_name}
               </p>
             )}
           </div>
         )}
 
-        {/* Stats Module - Editorial Card */}
-        <div className="border-2 border-ink bg-gray-100/50 p-3 sm:p-4">
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            {/* Follower Count */}
+        {/* Stats - Inline, No Box, Typographic Only */}
+        {(artist.follower_count || portfolioCount > 0) && (
+          <div className="flex items-center justify-center gap-2.5 text-[11px] pt-1">
             {artist.follower_count && artist.follower_count > 0 && (
-              <div className="text-center">
-                <div className="font-heading text-[1.75rem] sm:text-[2rem] font-[700] text-ink leading-none">
+              <div>
+                <span className="font-heading font-black text-ink">
                   {artist.follower_count >= 1000
                     ? `${(artist.follower_count / 1000).toFixed(1)}K`
                     : artist.follower_count.toLocaleString()}
-                </div>
-                <div className="font-mono text-[0.625rem] text-gray-500 tracking-[0.15em] uppercase mt-1">
-                  Followers
-                </div>
+                </span>
+                <span className="font-mono font-light text-gray-500 ml-1 text-[10px] uppercase tracking-wide">
+                  followers
+                </span>
               </div>
             )}
-
-            {/* Portfolio Count */}
+            {artist.follower_count && portfolioCount > 0 && (
+              <span className="text-gray-300 font-light">•</span>
+            )}
             {portfolioCount > 0 && (
-              <div className="text-center">
-                <div className="font-heading text-[1.75rem] sm:text-[2rem] font-[700] text-ink leading-none">
+              <div>
+                <span className="font-heading font-black text-ink">
                   {portfolioCount}
-                </div>
-                <div className="font-mono text-[0.625rem] text-gray-500 tracking-[0.15em] uppercase mt-1">
-                  Pieces
-                </div>
+                </span>
+                <span className="font-mono font-light text-gray-500 ml-1 text-[10px] uppercase tracking-wide">
+                  pieces
+                </span>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Featured badge */}
-        {isFeatured && (
-          <div className="flex justify-center">
-            <div className="inline-flex items-center px-3 py-1.5 bg-ink border-2 border-ink">
-              <span className="font-mono text-[0.625rem] font-bold text-paper uppercase tracking-[0.2em]">
-                Featured Artist
-              </span>
-            </div>
           </div>
         )}
 
-        {/* Bio */}
+        {/* Bio - Truncated at 3 lines, expandable */}
         {displayBio && (
-          <blockquote className="border-l-2 border-ink pl-4 py-1">
-            <p className="font-body text-[0.9375rem] sm:text-[1rem] leading-[1.7] text-ink italic font-[300]">
+          <div className="pt-1">
+            <p className="font-body text-xs font-light text-gray-700 leading-snug line-clamp-3 italic">
               &ldquo;{displayBio}&rdquo;
             </p>
-          </blockquote>
+          </div>
         )}
 
-        {/* CTAs */}
-        <div className="border-t-2 border-ink pt-5 space-y-2.5">
+        {/* CTAs - Compact */}
+        <div className="pt-2 space-y-1.5">
           {/* Primary CTA: Instagram */}
           {artist.instagram_url && (
             <a
               href={artist.instagram_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-3 px-5 bg-ink text-paper text-center font-mono text-[0.6875rem] font-[600] tracking-[0.15em] uppercase transition-all duration-medium hover:bg-gray-900 hover:shadow-lg hover:translate-y-[-2px] border-2 border-ink"
+              className="block w-full py-2 bg-ink text-paper text-center font-mono text-[10px] font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-gray-900 border-2 border-ink"
             >
-              View on Instagram →
+              Instagram →
             </a>
           )}
 
-          {/* Secondary CTAs */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+          {/* Secondary CTAs - Side by Side */}
+          <div className="grid grid-cols-2 gap-1.5">
             {artist.booking_url && (
               <a
                 href={artist.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block py-2 px-2 sm:px-3 bg-transparent text-ink text-center font-mono text-[0.625rem] font-[500] tracking-[0.1em] uppercase transition-all duration-medium hover:bg-gray-100 border border-gray-500 hover:border-ink"
+                className="block py-1.5 bg-transparent text-ink text-center font-mono text-[9px] font-medium tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Book
               </a>
@@ -190,7 +194,7 @@ export default function ArtistInfoColumn({
                 href={artist.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block py-2 px-2 sm:px-3 bg-transparent text-ink text-center font-mono text-[0.625rem] font-[500] tracking-[0.1em] uppercase transition-all duration-medium hover:bg-gray-100 border border-gray-500 hover:border-ink"
+                className="block py-1.5 bg-transparent text-ink text-center font-mono text-[9px] font-medium tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Website
               </a>
@@ -198,7 +202,7 @@ export default function ArtistInfoColumn({
           </div>
 
           {/* Tertiary CTA: Find Similar Artists */}
-          <div className="pt-3 border-t border-gray-300">
+          <div className="pt-2 border-t border-gray-200">
             <FindSimilarArtistsButton
               artistId={artist.id}
               artistName={artist.name}

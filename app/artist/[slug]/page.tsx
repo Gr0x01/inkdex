@@ -256,7 +256,7 @@ export default async function ArtistPage({
 
         <div className="flex flex-col lg:flex-row">
           {/* Left: Sticky Info Column (Desktop) / Top Section (Mobile) */}
-          <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-1.5rem)] lg:overflow-y-auto">
+          <aside className="w-full lg:w-[30%] xl:w-[35%] lg:sticky lg:top-6 lg:self-start">
             <ArtistInfoColumn
               artist={artist}
               portfolioImages={artist.portfolio_images || []}
