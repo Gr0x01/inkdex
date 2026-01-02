@@ -27,7 +27,7 @@ function CityLink({
       onClick={onClick}
     >
       <span className="font-semibold">{city.name}</span>
-      <span className="font-mono text-[10px] text-gray-400 ml-1.5 group-hover:text-gray-600 transition-colors">
+      <span className="font-mono text-xs font-medium text-gray-400 ml-1.5 group-hover:text-gray-600 transition-colors">
         {city.state}
       </span>
     </Link>
@@ -104,7 +104,7 @@ export default function Navbar() {
               </div>
 
               {/* Subtle tagline */}
-              <div className="hidden md:block font-mono text-[9px] font-light tracking-[0.2em] text-gray-500 uppercase mt-1 text-center">
+              <div className="hidden md:block font-mono text-xs font-light tracking-[0.2em] text-gray-500 uppercase mt-1 text-center">
                 Artist Discovery
               </div>
             </div>

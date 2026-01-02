@@ -228,7 +228,7 @@ export default function NavbarSearch() {
         {/* Instagram Badge (conditional) */}
         {detectedInstagramUrl && !imageFile && (
           <div className="flex-shrink-0 px-2 py-1 bg-gradient-to-r from-purple-500/85 to-pink-500/85 animate-[badge-slide-in_150ms_ease-out]">
-            <span className="text-[10px] md:text-xs font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+            <span className="text-xs font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
               {detectedInstagramUrl.type === 'post'
                 ? 'IG'
                 : `@${detectedInstagramUrl.id.length > 8 ? detectedInstagramUrl.id.slice(0, 8) + '...' : detectedInstagramUrl.id}`}
