@@ -170,7 +170,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {/* Back Link - Mobile Friendly */}
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 font-mono text-xs md:text-[10px] font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.1em] md:tracking-[0.15em]"
+              className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.15em]"
             >
               <svg
                 className="w-4 h-4 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
@@ -309,7 +309,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             )}
 
             {/* Results Count - Mobile Friendly */}
-            <div className="font-mono text-xs md:text-[10px] font-medium text-ink/70 uppercase tracking-[0.1em] md:tracking-[0.15em] whitespace-nowrap flex-shrink-0">
+            <div className="font-mono text-xs font-medium text-ink/70 uppercase tracking-[0.15em] whitespace-nowrap flex-shrink-0">
               {total} {total === 1 ? 'Artist' : 'Artists'}
             </div>
 

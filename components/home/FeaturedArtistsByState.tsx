@@ -32,7 +32,7 @@ export default function FeaturedArtistsByState({
       <div className="flex items-end justify-between gap-4">
         <div>
           {/* State Label */}
-          <p className="font-mono text-[10px] text-gray-500 tracking-[0.3em] uppercase mb-1">
+          <p className="font-mono text-xs font-medium text-gray-500 tracking-[0.3em] uppercase mb-1">
             {state.code}
           </p>
           {/* City Name(s) */}
@@ -44,7 +44,7 @@ export default function FeaturedArtistsByState({
         {/* View All Link */}
         <Link
           href={stateUrl}
-          className="font-mono text-[11px] text-gray-700 hover:text-ink transition-colors duration-300 uppercase tracking-[0.2em] group flex items-center gap-1.5 flex-shrink-0"
+          className="font-mono text-xs text-gray-700 hover:text-ink transition-colors duration-300 uppercase tracking-[0.2em] group flex items-center gap-1.5 flex-shrink-0"
         >
           <span>View All</span>
           <svg

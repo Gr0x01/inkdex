@@ -183,7 +183,7 @@ function ClaimErrorPage({
           </Link>
 
           {error === 'handle_mismatch' && (
-            <p className="font-mono text-[9px] text-gray-500 mt-2">
+            <p className="font-mono text-xs font-normal text-gray-500 mt-2">
               Make sure you're logged into the correct Instagram account
             </p>
           )}
