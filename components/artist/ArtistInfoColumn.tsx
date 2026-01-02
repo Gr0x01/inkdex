@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { isArtistFeatured } from '@/lib/utils/featured'
 import FindSimilarArtistsButton from './FindSimilarArtistsButton'
 import ClaimProfileButton from './ClaimProfileButton'
+import { ProBadge } from '@/components/badges/ProBadge'
 
 interface PortfolioImage {
   id: string
@@ -29,6 +30,7 @@ interface ArtistInfoColumnProps {
     profile_image_url: string | null
     follower_count: number | null
     verification_status: string
+    is_pro: boolean | null
   }
   portfolioImages?: PortfolioImage[]
 }
@@ -103,6 +105,7 @@ export default function ArtistInfoColumn({
                   />
                 </svg>
               )}
+              {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
             </div>
 
             {/* Artist Name - lighter weight, smaller */}

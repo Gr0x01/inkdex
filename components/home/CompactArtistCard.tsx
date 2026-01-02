@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
+import { ProBadge } from '@/components/badges/ProBadge'
 
 interface CompactArtistCardProps {
   artist: FeaturedArtist & { city: string; state: string }
@@ -59,6 +60,7 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
                 />
               </svg>
             )}
+            {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
           </div>
 
           {/* Shop Name */}

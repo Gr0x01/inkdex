@@ -6,7 +6,7 @@
  *
  * POST /api/dashboard/portfolio/import
  *
- * Request: { selectedImageIds: string[] } (max 20 for Free tier)
+ * Request: { selectedImageIds: string[] } (max 20 for Free tier, 100 for Pro tier)
  * Response: { success: true, imported: number }
  */
 
@@ -14,9 +14,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
+import { MAX_FREE_TIER_IMAGES, MAX_PRO_TIER_IMAGES } from '@/lib/constants/portfolio';
 
 const importSchema = z.object({
-  selectedImageIds: z.array(z.string()).min(1).max(20),
+  selectedImageIds: z.array(z.string()).min(1).max(MAX_PRO_TIER_IMAGES),
 });
 
 /**
@@ -118,10 +119,19 @@ export async function POST(request: NextRequest) {
 
     const { selectedImageIds } = validated.data;
 
-    // 3. Enforce 20-image limit for Free tier
-    if (!artist.is_pro && selectedImageIds.length > 20) {
+    // 3. Enforce tier-based limits
+    if (selectedImageIds.length > MAX_PRO_TIER_IMAGES) {
       return NextResponse.json(
-        { error: 'Free tier limited to 20 images. Upgrade to Pro for unlimited portfolio.' },
+        { error: `Maximum ${MAX_PRO_TIER_IMAGES} images allowed` },
+        { status: 400 }
+      );
+    }
+
+    if (!artist.is_pro && selectedImageIds.length > MAX_FREE_TIER_IMAGES) {
+      return NextResponse.json(
+        {
+          error: `Free tier limited to ${MAX_FREE_TIER_IMAGES} images. Upgrade to Pro for up to ${MAX_PRO_TIER_IMAGES}.`,
+        },
         { status: 403 }
       );
     }

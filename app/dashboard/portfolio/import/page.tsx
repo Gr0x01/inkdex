@@ -3,13 +3,14 @@
 /**
  * Portfolio Import Flow
  *
- * Auto-fetches Instagram images on mount, allows selection (max 20),
+ * Auto-fetches Instagram images on mount, allows selection (max 20 for Free, 100 for Pro),
  * and replaces existing portfolio atomically
  */
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { MAX_FREE_TIER_IMAGES, MAX_PRO_TIER_IMAGES } from '@/lib/constants/portfolio';
 
 interface FetchedImage {
   url: string;
@@ -28,6 +29,10 @@ type Step = 'fetching' | 'selecting' | 'importing' | 'error';
 
 export default function PortfolioImportPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isPro = searchParams.get('pro') === '1';
+  const limit = isPro ? MAX_PRO_TIER_IMAGES : MAX_FREE_TIER_IMAGES;
+
   const [step, setStep] = useState<Step>('fetching');
   const [images, setImages] = useState<FetchedImage[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -74,8 +79,8 @@ export default function PortfolioImportPage() {
       if (newSet.has(imageId)) {
         newSet.delete(imageId);
       } else {
-        // Enforce 20 image limit
-        if (newSet.size >= 20) {
+        // Enforce tier-based limit
+        if (newSet.size >= limit) {
           return prev; // Don't add if already at limit
         }
         newSet.add(imageId);
@@ -182,7 +187,8 @@ export default function PortfolioImportPage() {
         <div className="mb-12">
           <h1 className="mb-3 text-3xl font-bold">Import Portfolio from Instagram</h1>
           <p className="text-neutral-400">
-            Select up to 20 tattoo images from @{profileData?.username}
+            Select up to {limit} tattoo images from @{profileData?.username}
+            {isPro && <span className="ml-2 text-amber-400">(Pro)</span>}
           </p>
           {profileData && (
             <p className="mt-2 text-sm text-neutral-500">
@@ -195,10 +201,12 @@ export default function PortfolioImportPage() {
         {/* Selection count */}
         <div className="mb-6 flex items-center justify-between">
           <p className="text-sm text-neutral-400">
-            Selected: <span className="font-semibold text-white">{selectedIds.size}/20</span>
+            Selected: <span className="font-semibold text-white">{selectedIds.size}/{limit}</span>
           </p>
-          {selectedIds.size === 20 && (
-            <p className="text-sm text-amber-400">Max 20 images (Free tier limit)</p>
+          {selectedIds.size === limit && (
+            <p className="text-sm text-amber-400">
+              {isPro ? `Max ${limit} images (Pro tier limit)` : `Max ${limit} images (Free tier limit)`}
+            </p>
           )}
         </div>
 
@@ -225,7 +233,7 @@ export default function PortfolioImportPage() {
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
               {images.map((image) => {
                 const isSelected = selectedIds.has(image.instagram_post_id);
-                const isAtLimit = selectedIds.size >= 20 && !isSelected;
+                const isAtLimit = selectedIds.size >= limit && !isSelected;
 
                 return (
                   <button

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { ProBadge } from '@/components/badges/ProBadge'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -16,6 +17,15 @@ export default async function DashboardPage() {
     .eq('id', user.id)
     .single()
 
+  // Fetch artist data if user has claimed a profile
+  const { data: artist } = await supabase
+    .from('artists')
+    .select('id, instagram_handle, is_pro')
+    .eq('claimed_by_user_id', user.id)
+    .single()
+
+  const isPro = artist?.is_pro === true
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <div className="max-w-4xl mx-auto px-4 py-12">
@@ -28,7 +38,10 @@ export default async function DashboardPage() {
           </div>
 
           <div>
-            <label className="text-sm text-zinc-400">Account Type</label>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-zinc-400">Account Type</label>
+              {isPro && <ProBadge variant="inline" size="md" />}
+            </div>
             <p className="text-xl capitalize">{userData?.account_type || 'fan'}</p>
           </div>
 

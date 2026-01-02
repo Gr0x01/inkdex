@@ -373,6 +373,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
       shop_name,
       verification_status,
       follower_count,
+      is_pro,
       portfolio_images!inner (
         id,
         storage_thumb_640,
@@ -411,6 +412,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
       shop_name: row.shop_name,
       verification_status: row.verification_status,
       follower_count: row.follower_count,
+      is_pro: row.is_pro,
       portfolio_images: portfolioImages,
     }
   })
@@ -451,6 +453,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
       shop_name,
       verification_status,
       follower_count,
+      is_pro,
       portfolio_images!inner (
         id,
         storage_thumb_640,
@@ -486,6 +489,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
       shop_name: row.shop_name,
       verification_status: row.verification_status,
       follower_count: row.follower_count,
+      is_pro: row.is_pro,
       portfolio_images: portfolioImages,
     }
   }).filter((artist: any) => artist.portfolio_images.length >= 4)
