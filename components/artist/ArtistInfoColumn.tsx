@@ -156,14 +156,28 @@ export default function ArtistInfoColumn({
         <div className="pt-2 space-y-1.5">
           {/* Primary CTA: Instagram */}
           {artist.instagram_url && (
-            <a
-              href={artist.instagram_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full py-2 bg-ink text-paper text-center font-mono text-xs font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-gray-900 border-2 border-ink"
+            <div
+              className="group relative transition-all duration-200 overflow-hidden"
+              style={{
+                background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                padding: '2px'
+              }}
             >
-              Instagram →
-            </a>
+              <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                <a
+                  href={artist.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full py-2 text-paper text-center
+                           font-mono text-xs tracking-widest uppercase font-semibold
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                >
+                  <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                    Instagram →
+                  </span>
+                </a>
+              </div>
+            </div>
           )}
 
           {/* Secondary CTAs - Side by Side */}
