@@ -37,8 +37,7 @@ export default async function ProfilePage() {
       booking_url,
       pricing_info,
       availability_status,
-      is_pro,
-      slug
+      is_pro
     `
     )
     .eq('claimed_by_user_id', user.id)
@@ -87,7 +86,6 @@ export default async function ProfilePage() {
   return (
     <ProfileEditor
       artistId={artist.id}
-      artistSlug={artist.slug}
       initialData={{
         name: artist.name,
         city: artist.city,

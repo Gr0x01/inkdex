@@ -14,14 +14,14 @@
  * Design: Paper & Ink editorial aesthetic with grain textures
  */
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProBadge } from '@/components/badges/ProBadge';
 import Select from '@/components/ui/Select';
+import DashboardToolbar from './DashboardToolbar';
 
 interface ProfileEditorProps {
   artistId: string;
-  artistSlug: string;
   initialData: {
     name: string;
     city: string;
@@ -39,7 +39,6 @@ type AvailabilityStatus = 'available' | 'booking_soon' | 'waitlist' | null;
 
 export default function ProfileEditor({
   artistId,
-  artistSlug,
   initialData,
   isPro,
 }: ProfileEditorProps) {
@@ -69,6 +68,26 @@ export default function ProfileEditor({
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Scroll state for sticky toolbar
+  const [isScrolled, setIsScrolled] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Intersection Observer for scroll-based sticky toolbar
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsScrolled(!entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   // Track changes - generic function for type-safe handling
   function handleStringChange(setter: React.Dispatch<React.SetStateAction<string>>) {
@@ -181,48 +200,58 @@ export default function ProfileEditor({
     }
   };
 
-  const profileUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/artists/${artistSlug}`
-    : '';
-
   return (
-    <div className="min-h-screen bg-[var(--paper-white)] relative">
-      {/* Grain texture overlay */}
-      <div className="grain-overlay absolute inset-0 pointer-events-none" />
+    <div className="min-h-screen bg-paper">
+      {/* Subtle grain texture */}
+      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
 
-      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl relative">
-        {/* Header - Matches PortfolioManager pattern */}
-        <header className="mb-6 pb-4 border-b border-[var(--gray-300)]">
-          {/* Top row: Breadcrumb + Pro Badge */}
-          <div className="flex items-center justify-between mb-4">
-            <a
-              href="/dashboard"
-              className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-[var(--gray-700)] hover:text-[var(--ink-black)] transition-colors"
+      {/* Sticky Toolbar */}
+      <DashboardToolbar
+        handle={initialData.instagramHandle}
+        isPro={isPro}
+        isScrolled={isScrolled}
+      >
+        {hasUnsavedChanges && (
+          <>
+            <button
+              onClick={handleCancel}
+              disabled={isSaving}
+              className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-gray-600 hover:text-ink transition-colors"
             >
-              <span className="inline-block transition-transform group-hover:-translate-x-0.5">←</span>
-              <span>Dashboard</span>
-            </a>
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-3 py-1.5 bg-ink text-paper rounded font-mono text-[10px] uppercase tracking-wider hover:bg-gray-900 transition-colors"
+            >
+              {isSaving ? '...' : 'Save'}
+            </button>
+          </>
+        )}
+        {saveSuccess && (
+          <span className="font-mono text-[10px] text-emerald-600 uppercase tracking-wider">
+            Saved ✓
+          </span>
+        )}
+      </DashboardToolbar>
 
-            {isPro && <ProBadge variant="badge" size="sm" />}
+      <div className="mx-auto px-2 sm:px-6 pt-4 pb-8 max-w-7xl relative z-10">
+        {/* Sentinel for intersection observer - triggers sticky toolbar */}
+        <div ref={sentinelRef} className="absolute top-0 h-px w-full" />
+
+        {/* Status Messages */}
+        {saveError && (
+          <div className="mb-6 border-2 border-[var(--error)] bg-red-50 p-4 animate-fade-up">
+            <p className="font-body text-[var(--error)]">{saveError}</p>
           </div>
+        )}
 
-          {/* Bottom row: Title + Handle */}
-          <div className="flex items-end justify-between gap-6">
-            <div>
-              <h1 className="font-heading text-3xl mb-1.5">Edit Profile</h1>
-              <p className="font-mono text-xs uppercase tracking-wider text-[var(--gray-500)]">
-                @{initialData.instagramHandle}
-              </p>
-            </div>
-          </div>
-        </header>
-
-        {/* Two-Column Layout */}
+        {/* Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
-          {/* Form Column */}
+          {/* Left Column - Basic Information */}
           <div className="lg:col-span-7 space-y-6">
-
             {/* Basic Information Card */}
             <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
 
@@ -317,98 +346,8 @@ export default function ProfileEditor({
               </div>
             </section>
 
-            {/* Pro Features Card */}
-            {isPro && (
-              <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
-
-                <div className="flex items-center gap-3 mb-4">
-                  <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)]">
-                    Pro Features
-                  </h2>
-                  <ProBadge variant="badge" size="sm" />
-                </div>
-
-                <div className="space-y-4">
-                  {/* Pricing Info */}
-                  <div>
-                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
-                      Pricing Information
-                      <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={pricingInfo}
-                      onChange={(e) => handleStringChange(setPricingInfo)(e.target.value)}
-                      className="input"
-                      placeholder="e.g., $150/hr, $200 minimum"
-                      maxLength={100}
-                    />
-                  </div>
-
-                  {/* Availability Status */}
-                  <div>
-                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
-                      Availability Status
-                      <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
-                    </label>
-                    <Select
-                      value={availabilityStatus}
-                      onChange={(val) => handleAvailabilityChange(val as AvailabilityStatus)}
-                      placeholder="Not specified"
-                      options={[
-                        { value: '', label: 'Not specified' },
-                        { value: 'available', label: 'Available for bookings' },
-                        { value: 'booking_soon', label: 'Opening soon' },
-                        { value: 'waitlist', label: 'Waitlist only' },
-                      ]}
-                    />
-                  </div>
-                </div>
-              </section>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={handleSave}
-                disabled={isSaving || !hasUnsavedChanges}
-                className="btn btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
-              >
-                {isSaving ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Saving...
-                  </span>
-                ) : (
-                  'Save Changes'
-                )}
-              </button>
-              <button
-                onClick={handleCancel}
-                disabled={isSaving || !hasUnsavedChanges}
-                className="btn btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Discard
-              </button>
-            </div>
-
-            {/* Status Messages */}
-            {saveError && (
-              <div className="border-2 border-[var(--error)] bg-red-50 p-4 animate-fade-up">
-                <p className="font-body text-[var(--error)]">{saveError}</p>
-              </div>
-            )}
-            {saveSuccess && (
-              <div className="border-2 border-[var(--success)] bg-emerald-50 p-4 animate-fade-up">
-                <p className="font-body text-emerald-700">Profile updated successfully</p>
-              </div>
-            )}
-
             {/* Danger Zone */}
-            <section className="border-2 border-red-200 bg-red-50/50 p-5 lg:p-6 mt-8">
+            <section className="border-2 border-red-200 bg-red-50/50 p-5 lg:p-6 mt-4">
               <h3 className="font-heading text-lg text-[var(--error)] mb-2">
                 Danger Zone
               </h3>
@@ -424,128 +363,58 @@ export default function ProfileEditor({
             </section>
           </div>
 
-          {/* Preview Column */}
+          {/* Right Column - Pro Features & Tips */}
           <aside className="lg:col-span-5">
-            <div className="lg:sticky lg:top-6 space-y-4">
-              {/* Preview Card */}
-              <div className="border-2 border-[var(--ink-black)] bg-white">
+            <div className="lg:sticky lg:top-[96px] space-y-6">
+              {/* Pro Features Card */}
+              {isPro && (
+                <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
 
-                {/* Header */}
-                <div className="border-b border-[var(--gray-300)] px-5 py-3">
-                  <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--gray-500)]">
-                    Live Preview
-                  </p>
-                </div>
-
-                {/* Preview Content */}
-                <div className="p-5 space-y-4">
-                  {/* Name Preview */}
-                  <div>
-                    <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                      Display Name
-                    </p>
-                    <p className="font-heading text-2xl text-[var(--ink-black)]">
-                      {name || <span className="text-[var(--gray-400)] italic">Not set</span>}
-                    </p>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)]">
+                      Pro Features
+                    </h2>
+                    <ProBadge variant="badge" size="sm" />
                   </div>
 
-                  {/* Location Preview */}
-                  <div>
-                    <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                      Location
-                    </p>
-                    <p className="font-body text-lg text-[var(--ink-black)]">
-                      {city || <span className="text-[var(--gray-400)]">City</span>}
-                      {', '}
-                      {state || <span className="text-[var(--gray-400)]">ST</span>}
-                    </p>
+                  <div className="space-y-4">
+                    {/* Pricing Info */}
+                    <div>
+                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                        Pricing Information
+                        <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={pricingInfo}
+                        onChange={(e) => handleStringChange(setPricingInfo)(e.target.value)}
+                        className="input"
+                        placeholder="e.g., $150/hr, $200 minimum"
+                        maxLength={100}
+                      />
+                    </div>
+
+                    {/* Availability Status */}
+                    <div>
+                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                        Availability Status
+                        <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                      </label>
+                      <Select
+                        value={availabilityStatus}
+                        onChange={(val) => handleAvailabilityChange(val as AvailabilityStatus)}
+                        placeholder="Not specified"
+                        options={[
+                          { value: '', label: 'Not specified' },
+                          { value: 'available', label: 'Available for bookings' },
+                          { value: 'booking_soon', label: 'Opening soon' },
+                          { value: 'waitlist', label: 'Waitlist only' },
+                        ]}
+                      />
+                    </div>
                   </div>
-
-                  {/* Bio Preview */}
-                  {bioOverride && (
-                    <div>
-                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                        Bio
-                      </p>
-                      <p className="font-body text-base text-[var(--gray-700)] italic leading-relaxed whitespace-pre-wrap">
-                        &ldquo;{bioOverride.replace(/\n{3,}/g, '\n\n')}&rdquo;
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Booking Link Preview */}
-                  {bookingLink && (
-                    <div>
-                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                        Booking
-                      </p>
-                      <a
-                        href={bookingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-body text-base text-[var(--ink-black)] underline underline-offset-4 hover:no-underline break-all"
-                      >
-                        {bookingLink}
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Pro Fields Preview */}
-                  {isPro && pricingInfo && (
-                    <div>
-                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                        Pricing
-                      </p>
-                      <p className="font-body text-base text-[var(--ink-black)]">
-                        {pricingInfo}
-                      </p>
-                    </div>
-                  )}
-
-                  {isPro && availabilityStatus && (
-                    <div>
-                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                        Availability
-                      </p>
-                      <p className="font-body text-base text-[var(--ink-black)]">
-                        {availabilityStatus === 'available' && (
-                          <span className="inline-flex items-center gap-2">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
-                            Available for bookings
-                          </span>
-                        )}
-                        {availabilityStatus === 'booking_soon' && (
-                          <span className="inline-flex items-center gap-2">
-                            <span className="w-2 h-2 bg-amber-500 rounded-full" />
-                            Opening soon
-                          </span>
-                        )}
-                        {availabilityStatus === 'waitlist' && (
-                          <span className="inline-flex items-center gap-2">
-                            <span className="w-2 h-2 bg-[var(--gray-500)] rounded-full" />
-                            Waitlist only
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Profile URL Footer */}
-                <div className="border-t border-[var(--gray-300)] px-5 py-3">
-                  <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
-                    Public Profile URL
-                  </p>
-                  <a
-                    href={profileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-mono text-xs text-[var(--ink-black)] hover:underline break-all"
-                  >
-                    {profileUrl || 'URL will appear here'}
-                  </a>
-                </div>
-              </div>
+                </section>
+              )}
 
               {/* Helpful Tips */}
               <div className="bg-[var(--gray-100)] p-4 space-y-2">

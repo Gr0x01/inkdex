@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { useState } from 'react';
 import ProfileEditor from './ProfileEditor';
 
 /**
@@ -9,7 +8,6 @@ import ProfileEditor from './ProfileEditor';
  * Features:
  * - Basic fields: name, location, bio, booking link
  * - Pro-only fields: pricing info, availability status
- * - Live preview column
  * - Delete profile with multi-step confirmation
  */
 const meta = {
@@ -61,7 +59,6 @@ const filledInitialData = {
 export const FreeTier: Story = {
   args: {
     artistId: 'artist-123',
-    artistSlug: 'alex-rivera',
     isPro: false,
     initialData: baseInitialData,
   },
@@ -81,7 +78,6 @@ export const FreeTier: Story = {
 export const ProTier: Story = {
   args: {
     artistId: 'artist-456',
-    artistSlug: 'morgan-black',
     isPro: true,
     initialData: filledInitialData,
   },
@@ -101,7 +97,6 @@ export const ProTier: Story = {
 export const EmptyProfile: Story = {
   args: {
     artistId: 'artist-789',
-    artistSlug: 'new-artist',
     isPro: false,
     initialData: {
       name: '',
@@ -129,7 +124,6 @@ export const EmptyProfile: Story = {
 export const AvailableForBookings: Story = {
   args: {
     artistId: 'artist-avail',
-    artistSlug: 'available-artist',
     isPro: true,
     initialData: {
       ...filledInitialData,
@@ -151,7 +145,6 @@ export const AvailableForBookings: Story = {
 export const WaitlistOnly: Story = {
   args: {
     artistId: 'artist-wait',
-    artistSlug: 'waitlist-artist',
     isPro: true,
     initialData: {
       ...filledInitialData,
@@ -173,7 +166,6 @@ export const WaitlistOnly: Story = {
 export const OpeningSoon: Story = {
   args: {
     artistId: 'artist-soon',
-    artistSlug: 'opening-soon-artist',
     isPro: true,
     initialData: {
       ...filledInitialData,
@@ -195,7 +187,6 @@ export const OpeningSoon: Story = {
 export const LongBio: Story = {
   args: {
     artistId: 'artist-bio',
-    artistSlug: 'long-bio-artist',
     isPro: false,
     initialData: {
       ...baseInitialData,
@@ -218,7 +209,6 @@ export const LongBio: Story = {
 export const Mobile: Story = {
   args: {
     artistId: 'artist-mobile',
-    artistSlug: 'mobile-artist',
     isPro: true,
     initialData: filledInitialData,
   },
@@ -228,7 +218,7 @@ export const Mobile: Story = {
     },
     docs: {
       description: {
-        story: 'On mobile, form and preview stack vertically.',
+        story: 'Single-column layout on mobile devices.',
       },
     },
   },
@@ -240,7 +230,6 @@ export const Mobile: Story = {
 export const Tablet: Story = {
   args: {
     artistId: 'artist-tablet',
-    artistSlug: 'tablet-artist',
     isPro: true,
     initialData: filledInitialData,
   },
@@ -262,7 +251,6 @@ export const Tablet: Story = {
 export const Interactive: Story = {
   args: {
     artistId: 'artist-interactive',
-    artistSlug: 'interactive-artist',
     isPro: true,
     initialData: baseInitialData,
   },
@@ -275,7 +263,7 @@ export const Interactive: Story = {
     docs: {
       description: {
         story:
-          'Fully interactive form. Try editing fields to see the live preview update. Note: API calls are mocked in Storybook.',
+          'Fully interactive form. Note: API calls are mocked in Storybook.',
       },
     },
   },
