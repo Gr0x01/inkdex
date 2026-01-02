@@ -32,7 +32,7 @@ export function ProBadge({
   if (variant === 'icon-only') {
     return (
       <Crown
-        className={`${sizeMap[size]} text-amber-500 flex-shrink-0 ${className}`}
+        className={`${sizeMap[size]} text-purple-500 flex-shrink-0 ${className}`}
         aria-label="Pro artist"
       />
     )
@@ -41,12 +41,12 @@ export function ProBadge({
   // Badge variant - overlay on images/cards
   if (variant === 'badge') {
     return (
-      <div className={`px-2.5 py-1.5 bg-amber-500 rounded flex items-center gap-1.5 ${className}`}>
+      <div className={`px-2.5 py-1.5 bg-purple-500 rounded flex items-center gap-1.5 ${className}`}>
         <Crown
-          className={`${sizeMap[size]} text-black`}
+          className={`${sizeMap[size]} text-white`}
           aria-hidden="true"
         />
-        <span className="font-mono text-xs font-bold text-black uppercase tracking-wider leading-none">
+        <span className="font-mono text-xs font-bold text-white uppercase tracking-wider leading-none">
           Pro
         </span>
       </div>
@@ -55,12 +55,12 @@ export function ProBadge({
 
   // Inline variant - subtle background for headers/sections
   return (
-    <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-600 rounded-md ${className}`}>
+    <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500 rounded-md ${className}`}>
       <Crown
-        className={`${sizeMap[size]} text-amber-500`}
+        className={`${sizeMap[size]} text-purple-500`}
         aria-hidden="true"
       />
-      <span className="font-mono text-xs font-semibold text-amber-400 uppercase tracking-wider leading-none">
+      <span className="font-mono text-xs font-semibold text-purple-400 uppercase tracking-wider leading-none">
         Pro
       </span>
     </div>
