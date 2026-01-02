@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
-import Navbar from '@/components/layout/Navbar'
+import NavbarWithAuth from '@/components/layout/NavbarWithAuth'
 import Footer from '@/components/layout/Footer'
 import { SearchProvider } from '@/components/search/SearchProvider'
 import GlobalSearchModal from '@/components/search/GlobalSearchModal'
@@ -83,7 +83,7 @@ export default function RootLayout({
     >
       <body className="">
         <SearchProvider>
-          <Navbar />
+          <NavbarWithAuth />
           <GlobalSearchModal />
           {children}
           <Footer />

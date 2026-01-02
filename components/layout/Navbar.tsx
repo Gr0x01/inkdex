@@ -5,6 +5,18 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { CITIES, type City } from '@/lib/constants/cities'
 import { getStateSlug } from '@/lib/utils/city-helpers'
 import NavbarSearch from '@/components/layout/NavbarSearch'
+import { NavbarUserMenu, NavbarUserMenuMobile } from '@/components/layout/NavbarUserMenu'
+
+interface NavbarUser {
+  id: string
+  avatar_url: string | null
+  instagram_username: string | null
+}
+
+interface NavbarProps {
+  user?: NavbarUser | null
+  isPro?: boolean
+}
 
 /**
  * Shared city link component for consistency between desktop and mobile
@@ -37,9 +49,9 @@ function CityLink({
 /**
  * Global navigation header - Editorial Magazine Masthead
  * Design: "Inkdex v2.0" - Refined editorial aesthetic
- * Features: Magazine-style masthead + sophisticated dropdown + global search
+ * Features: Magazine-style masthead + sophisticated dropdown + global search + user menu
  */
-export default function Navbar() {
+export default function Navbar({ user = null, isPro = false }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownButtonRef = useRef<HTMLButtonElement>(null)
@@ -116,7 +128,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Navigation - Editorial Style */}
-          <nav className="hidden md:flex items-center gap-4 lg:gap-8 flex-shrink-0" aria-label="Main navigation">
+          <nav className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0" aria-label="Main navigation">
             {/* Browse Dropdown - Editorial */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -173,6 +185,9 @@ export default function Navbar() {
               <span className="relative z-10">Add Artist</span>
               <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-ink transform scale-x-0 group-hover:scale-x-100 transition-transform duration-medium origin-left" />
             </Link>
+
+            {/* User Menu / Login */}
+            <NavbarUserMenu user={user} isPro={isPro} />
           </nav>
 
           {/* Mobile Actions (Menu Toggle Only) */}
@@ -223,6 +238,11 @@ export default function Navbar() {
             <svg viewBox="0 0 100 100" fill="currentColor" className="text-ink">
               <path d="M0,0 L100,0 L100,100 Z" />
             </svg>
+          </div>
+
+          {/* User Menu - Mobile */}
+          <div className="relative z-10">
+            <NavbarUserMenuMobile user={user} isPro={isPro} onNavigate={closeMobileMenu} />
           </div>
 
           {/* Mobile Search Bar */}
