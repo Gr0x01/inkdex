@@ -211,6 +211,40 @@ export function checkPortfolioFetchRateLimit(identifier: string) {
 }
 
 /**
+ * Rate limit profile update requests
+ *
+ * Limits: 10 profile updates per hour per user
+ * Prevents spam and abuse of profile update endpoint
+ *
+ * @param identifier - User ID (authenticated users only)
+ * @returns Rate limit check result
+ */
+export function checkProfileUpdateRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `profile_update:${identifier}`,
+    10, // 10 updates
+    60 * 60 * 1000 // per hour
+  );
+}
+
+/**
+ * Rate limit profile delete requests
+ *
+ * Limits: 1 delete attempt per day per user
+ * Prevents accidental rapid deletion attempts
+ *
+ * @param identifier - User ID (authenticated users only)
+ * @returns Rate limit check result
+ */
+export function checkProfileDeleteRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `profile_delete:${identifier}`,
+    1, // 1 delete attempt
+    24 * 60 * 60 * 1000 // per day
+  );
+}
+
+/**
  * Get client IP from request headers
  *
  * Checks common headers set by proxies and CDNs (Vercel, Cloudflare, etc.)

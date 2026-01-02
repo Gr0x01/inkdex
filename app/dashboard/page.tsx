@@ -56,12 +56,20 @@ export default async function DashboardPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <a
-            href="/dashboard/portfolio"
-            className="inline-block px-6 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-colors font-semibold"
-          >
-            Manage Portfolio →
-          </a>
+          <div className="flex gap-4">
+            <a
+              href="/dashboard/portfolio"
+              className="inline-block px-6 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-colors font-semibold"
+            >
+              Manage Portfolio →
+            </a>
+            <a
+              href="/dashboard/profile"
+              className="inline-block px-6 py-3 bg-neutral-800 text-white rounded-lg hover:bg-neutral-700 transition-colors font-semibold"
+            >
+              Edit Profile →
+            </a>
+          </div>
 
           <form action="/api/auth/logout" method="POST">
             <button
@@ -74,7 +82,7 @@ export default async function DashboardPage() {
         </div>
 
         <p className="mt-4 text-sm text-zinc-500">
-          ✅ Phase 6 Portfolio Management Complete
+          ✅ Phase 7 Profile Editor Complete
         </p>
       </div>
     </div>
