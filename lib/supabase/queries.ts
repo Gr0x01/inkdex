@@ -23,7 +23,7 @@ function validateSlug(slug: string): void {
     slug.startsWith('-') ||
     slug.endsWith('-')
   ) {
-    throw new Error('Invalid slug: must be lowercase alphanumeric with hyphens only, max 50 characters, no leading/trailing hyphens')
+    throw new Error(`Invalid slug: "${slug}" - must be lowercase alphanumeric with hyphens only, max 50 characters, no leading/trailing hyphens`)
   }
 }
 

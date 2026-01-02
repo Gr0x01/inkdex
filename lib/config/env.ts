@@ -57,8 +57,27 @@ const envSchema = z.object({
  * Throws detailed error if validation fails
  */
 export const env = (() => {
+  // On the client, only NEXT_PUBLIC_* vars are available
+  // Use a more lenient parse that provides defaults for server-only vars
+  const isServer = typeof window === 'undefined'
+
   try {
-    return envSchema.parse(process.env)
+    if (isServer) {
+      // Server: validate all required vars
+      return envSchema.parse(process.env)
+    } else {
+      // Client: only validate NEXT_PUBLIC_* vars, make others optional
+      const clientSchema = z.object({
+        NEXT_PUBLIC_SUPABASE_URL: z.string().url('Invalid Supabase URL'),
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, 'Supabase anon key is required'),
+        NEXT_PUBLIC_INSTAGRAM_CLIENT_ID: z.string().optional(),
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+        NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
+        NEXT_PUBLIC_APP_URL: z.string().optional(),
+        NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+      })
+      return clientSchema.parse(process.env) as z.infer<typeof envSchema>
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       const missingVars = error.errors.map(err => `  - ${err.path.join('.')}: ${err.message}`)
