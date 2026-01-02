@@ -9,8 +9,6 @@ interface CompactArtistCardProps {
 }
 
 export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
-  const isVerified = artist.verification_status === 'verified'
-
   // Get hero image (highest engagement)
   const heroImage = artist.portfolio_images.reduce((prev, current) => {
     const prevLikes = prev.likes_count || 0
@@ -41,25 +39,11 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
 
         {/* Artist Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          {/* Artist Name with Verified Badge */}
+          {/* Artist Name with Pro Badge */}
           <div className="flex items-center gap-1.5 mb-0.5">
             <h3 className="font-heading text-sm font-semibold text-white truncate leading-tight">
               {artist.name}
             </h3>
-            {isVerified && (
-              <svg
-                className="w-3.5 h-3.5 text-white flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-                aria-label="Verified artist"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
             {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
           </div>
 

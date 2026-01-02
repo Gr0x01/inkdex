@@ -39,7 +39,6 @@ export default function ArtistInfoColumn({
   artist,
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
-  const isVerified = artist.verification_status === 'verified'
   const isFeatured = isArtistFeatured(artist.follower_count)
   const displayBio = artist.bio_override || artist.bio
 
@@ -86,25 +85,11 @@ export default function ArtistInfoColumn({
         {/* Header: Handle + Badges + Name + Location - TIGHT SPACING */}
         {artist.instagram_handle && (
           <div className="space-y-0.5 text-center">
-            {/* Handle with inline badges */}
+            {/* Handle with Pro badge */}
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
               <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink">
                 @{artist.instagram_handle}
               </h1>
-              {isVerified && (
-                <svg
-                  className="w-3.5 h-3.5 text-blue-600 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-label="Verified artist"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
               {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
             </div>
 

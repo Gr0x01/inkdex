@@ -1,5 +1,9 @@
 import type { StorybookConfig } from '@storybook/nextjs-vite';
-import path from 'path';
+import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const config: StorybookConfig = {
   stories: [
@@ -20,7 +24,7 @@ const config: StorybookConfig = {
       image: {
         loading: 'eager',
       },
-      nextConfigPath: path.resolve(__dirname, '../next.config.js'),
+      nextConfigPath: resolve(__dirname, '../next.config.js'),
     },
   },
 

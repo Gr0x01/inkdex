@@ -22,6 +22,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.fbcdn.net',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
     ],
   },
 }

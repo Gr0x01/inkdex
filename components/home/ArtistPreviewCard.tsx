@@ -9,7 +9,6 @@ interface ArtistPreviewCardProps {
 }
 
 export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
-  const isVerified = artist.verification_status === 'verified'
   const isFeatured = isArtistFeatured(artist.follower_count)
 
   // Get first 4 portfolio images
@@ -50,25 +49,9 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {/* Artist Name */}
-            <div className="flex items-center gap-1.5 mb-1">
-              <h3 className="font-heading text-sm font-bold text-white truncate">
-                {artist.name}
-              </h3>
-              {isVerified && (
-                <svg
-                  className="w-3.5 h-3.5 text-white flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-label="Verified artist"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </div>
+            <h3 className="font-heading text-sm font-bold text-white truncate mb-1">
+              {artist.name}
+            </h3>
 
             {/* Shop Name */}
             {artist.shop_name && (

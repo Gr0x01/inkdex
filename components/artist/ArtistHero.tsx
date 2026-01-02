@@ -27,7 +27,6 @@ interface ArtistHeroProps {
 }
 
 export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
-  const isVerified = artist.verification_status === 'verified'
   const displayBio = artist.bio_override || artist.bio
   const fullImageUrl = getArtistFeaturedImageUrl(
     featuredImage,
@@ -53,27 +52,11 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
         {/* Right: Artist Info */}
         <div className="flex flex-col justify-center px-6 md:px-12 lg:px-16 py-12 bg-bg-primary">
           <div className="max-w-xl mx-auto w-full space-y-6">
-            {/* Name & Verification */}
+            {/* Name */}
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="font-display text-h1 md:text-display font-[700] text-text-primary">
-                  {artist.name}
-                </h1>
-                {isVerified && (
-                  <svg
-                    className="w-8 h-8 text-ink flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                    aria-label="Verified artist"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-              </div>
+              <h1 className="font-display text-h1 md:text-display font-[700] text-text-primary mb-2">
+                {artist.name}
+              </h1>
 
               {/* Location */}
               <p className="font-body text-body text-text-secondary">

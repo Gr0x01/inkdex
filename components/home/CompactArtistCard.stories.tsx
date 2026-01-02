@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import CompactArtistCard from './CompactArtistCard';
 import type { FeaturedArtist } from '@/lib/mock/featured-data';
+import { getTestArtistSafe, TEST_USERS, FALLBACK_ARTIST } from '@/.storybook/test-data';
 
 const meta = {
   title: 'Components/Cards/CompactArtistCard',
@@ -20,166 +21,75 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Mock artist data
-const createMockArtist = (
-  overrides?: Partial<FeaturedArtist & { city: string; state: string }>
-): FeaturedArtist & { city: string; state: string } => ({
-  id: 'artist-1',
-  name: 'Alex Rivera',
-  slug: 'alex-rivera',
-  shop_name: 'Ink & Soul Studio',
-  verification_status: 'verified',
-  follower_count: 45000,
-  is_pro: false,
-  instagram_handle: 'alex_ink',
-  city: 'Los Angeles',
-  state: 'California',
-  portfolio_images: [
-    {
-      id: 'img-1',
-      url: 'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=400&h=600&fit=crop',
-      instagram_url: 'https://instagram.com/p/abc123',
-      likes_count: 1250,
-    },
-    {
-      id: 'img-2',
-      url: 'https://images.unsplash.com/photo-1598371839696-5c5bb00bdc28?w=400&h=600&fit=crop',
-      instagram_url: 'https://instagram.com/p/abc124',
-      likes_count: 890,
-    },
-    {
-      id: 'img-3',
-      url: 'https://images.unsplash.com/photo-1590246814883-57c511193177?w=400&h=600&fit=crop',
-      instagram_url: 'https://instagram.com/p/abc125',
-      likes_count: 2100,
-    },
+/**
+ * Free tier artist - uses real test seed data from Alex Rivera
+ * Loads actual portfolio images from Supabase storage
+ */
+export const FreeTierArtist: Story = {
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.FREE_TIER),
+    }),
   ],
-  ...overrides,
-});
-
-/**
- * Default artist card with verified badge and shop name
- * Free tier artist (no Pro badge)
- */
-export const Default: Story = {
-  args: {
-    artist: createMockArtist(),
-  },
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
 };
 
 /**
- * Pro artist with crown badge
+ * Pro tier artist - uses real test seed data from Morgan Black
+ * Shows Pro crown badge with real portfolio
  */
-export const ProArtist: Story = {
-  args: {
-    artist: createMockArtist({
-      name: 'Morgan Black',
-      slug: 'morgan-black',
-      shop_name: 'Black Rose Tattoo',
-      is_pro: true,
-      follower_count: 125000,
+export const ProTierArtist: Story = {
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),
     }),
-  },
+  ],
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
 };
 
 /**
- * Unverified artist (no verification badge)
+ * Unclaimed artist - uses real test seed data from Jamie Chen
+ * No verification badge shown
  */
-export const Unverified: Story = {
-  args: {
-    artist: createMockArtist({
-      name: 'Jamie Chen',
-      slug: 'jamie-chen',
-      verification_status: 'unclaimed',
-      follower_count: 8500,
+export const UnclaimedArtist: Story = {
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.UNCLAIMED),
     }),
-  },
+  ],
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
 };
 
 /**
- * Artist without shop name
+ * Fallback example - static mock data when Supabase unavailable
  */
-export const NoShopName: Story = {
+export const Fallback: Story = {
   args: {
-    artist: createMockArtist({
-      name: 'Taylor Swift',
-      slug: 'taylor-swift',
-      shop_name: null,
-    }),
+    artist: FALLBACK_ARTIST,
   },
 };
 
 /**
- * Featured artist (high follower count) with Pro badge
- */
-export const FeaturedProArtist: Story = {
-  args: {
-    artist: createMockArtist({
-      name: 'Sarah Martinez',
-      slug: 'sarah-martinez',
-      shop_name: 'Martinez Ink',
-      is_pro: true,
-      verification_status: 'verified',
-      follower_count: 250000,
-    }),
-  },
-};
-
-/**
- * Artist with single portfolio image
- */
-export const SingleImage: Story = {
-  args: {
-    artist: createMockArtist({
-      name: 'Chris Anderson',
-      slug: 'chris-anderson',
-      portfolio_images: [
-        {
-          id: 'img-1',
-          url: 'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=400&h=600&fit=crop',
-          instagram_url: 'https://instagram.com/p/abc123',
-          likes_count: 500,
-        },
-      ],
-    }),
-  },
-};
-
-/**
- * Display multiple cards in a horizontal scroll (simulating homepage carousel)
- * Shows mix of Free and Pro artists with different badges
+ * Horizontal scroll with mix of test users
+ * Shows Free, Pro, and Unclaimed artists side by side
  */
 export const HorizontalScroll: Story = {
-  render: () => (
+  loaders: [
+    async () => {
+      const [freeTier, proTier, unclaimed] = await Promise.all([
+        getTestArtistSafe(TEST_USERS.FREE_TIER),
+        getTestArtistSafe(TEST_USERS.PRO_TIER),
+        getTestArtistSafe(TEST_USERS.UNCLAIMED),
+      ]);
+      return { freeTier, proTier, unclaimed };
+    },
+  ],
+  render: (args, { loaded }) => (
     <div className="flex gap-4 p-4 overflow-x-auto max-w-4xl">
-      {/* Free artist - verified */}
-      <CompactArtistCard artist={createMockArtist()} />
-      {/* Pro artist - verified + crown */}
-      <CompactArtistCard
-        artist={createMockArtist({
-          name: 'Morgan Black',
-          slug: 'morgan-black',
-          is_pro: true,
-          shop_name: 'Black Rose Tattoo',
-        })}
-      />
-      {/* Unclaimed artist - no badges */}
-      <CompactArtistCard
-        artist={createMockArtist({
-          name: 'Jamie Chen',
-          slug: 'jamie-chen',
-          verification_status: 'unclaimed',
-        })}
-      />
-      {/* Pro artist without shop */}
-      <CompactArtistCard
-        artist={createMockArtist({
-          name: 'Sarah Martinez',
-          slug: 'sarah-martinez',
-          shop_name: null,
-          is_pro: true,
-        })}
-      />
+      <CompactArtistCard artist={loaded.freeTier} />
+      <CompactArtistCard artist={loaded.proTier} />
+      <CompactArtistCard artist={loaded.unclaimed} />
+      <CompactArtistCard artist={loaded.freeTier} />
     </div>
   ),
   parameters: {
@@ -188,77 +98,45 @@ export const HorizontalScroll: Story = {
 };
 
 /**
- * Mobile viewport (180px width cards)
+ * Mobile viewport with real test data
  */
 export const Mobile: Story = {
-  args: {
-    artist: createMockArtist(),
-  },
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.FREE_TIER),
+    }),
+  ],
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
   parameters: {
     viewport: { defaultViewport: 'mobile' },
   },
 };
 
 /**
- * Desktop viewport (220px width cards)
+ * Desktop viewport with Pro artist
  */
 export const Desktop: Story = {
-  args: {
-    artist: createMockArtist(),
-  },
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),
+    }),
+  ],
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
   parameters: {
     viewport: { defaultViewport: 'desktop' },
   },
 };
 
 /**
- * Badge comparison - Free vs Pro side by side
- * Shows the visual difference between free and pro tier artists
- */
-export const BadgeComparison: Story = {
-  render: () => (
-    <div className="space-y-6 p-6">
-      <div>
-        <h3 className="font-display text-xl mb-3 text-ink">Free Tier Artist</h3>
-        <p className="font-body text-sm text-gray-600 mb-3">
-          Shows verification badge only
-        </p>
-        <CompactArtistCard
-          artist={createMockArtist({
-            is_pro: false,
-          })}
-        />
-      </div>
-      <div>
-        <h3 className="font-display text-xl mb-3 text-ink">Pro Tier Artist</h3>
-        <p className="font-body text-sm text-gray-600 mb-3">
-          Shows verification badge + gold crown (ProBadge)
-        </p>
-        <CompactArtistCard
-          artist={createMockArtist({
-            name: 'Morgan Black',
-            slug: 'morgan-black',
-            shop_name: 'Black Rose Tattoo',
-            is_pro: true,
-          })}
-        />
-      </div>
-    </div>
-  ),
-  parameters: {
-    layout: 'centered',
-  },
-};
-
-/**
- * On dark background
+ * On dark background with Pro artist
  */
 export const OnDarkBackground: Story = {
-  args: {
-    artist: createMockArtist({
-      is_pro: true, // Show pro badge on dark background
+  loaders: [
+    async () => ({
+      artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),
     }),
-  },
+  ],
+  render: (args, { loaded }) => <CompactArtistCard artist={loaded.artist} />,
   parameters: {
     backgrounds: { default: 'ink' },
   },

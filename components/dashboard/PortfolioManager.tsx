@@ -1,13 +1,10 @@
 'use client';
 
 /**
- * Portfolio Manager Component
+ * Portfolio Manager Component - Dashboard Design
  *
- * Client component for managing portfolio images:
- * - Display grid with delete on hover
- * - Count indicator (16/20)
- * - Re-import button
- * - Upgrade prompt (Free tier at 20/20)
+ * Clean, functional workspace for portfolio management
+ * Utilitarian design with clear hierarchy and task focus
  */
 
 import { useState, useEffect } from 'react';
@@ -18,7 +15,7 @@ import { ProBadge } from '@/components/badges/ProBadge';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableImageCard from './SortableImageCard';
-import { Pin, Crown } from 'lucide-react';
+import { Pin, Crown, Upload, ArrowLeft, AlertCircle } from 'lucide-react';
 import { MAX_PINNED_IMAGES } from '@/lib/constants/portfolio';
 
 interface PortfolioImage {
@@ -81,7 +78,7 @@ export default function PortfolioManager({
   const unpinnedImages = visibleImages.filter((img) => !img.is_pinned);
 
   async function handleDelete(imageId: string) {
-    if (!confirm('Delete this image from your portfolio?')) {
+    if (!confirm('Remove this image from your portfolio?')) {
       return;
     }
 
@@ -100,10 +97,7 @@ export default function PortfolioManager({
         throw new Error(data.error || 'Failed to delete image');
       }
 
-      // Optimistic update: remove from state immediately
       setImages((prev) => prev.filter((img) => img.id !== imageId));
-
-      // Refresh server component to update count
       router.refresh();
     } catch (err: any) {
       console.error('[Portfolio] Delete failed:', err);
@@ -128,7 +122,6 @@ export default function PortfolioManager({
         return;
       }
 
-      // Find positions in pinned array
       const oldIndex = pinnedImages.findIndex((img) => img.id === active.id);
       const newIndex = pinnedImages.findIndex((img) => img.id === over.id);
 
@@ -137,39 +130,31 @@ export default function PortfolioManager({
         return;
       }
 
-      // Optimistically update UI
       const reorderedPinned = arrayMove(pinnedImages, oldIndex, newIndex);
-
-      // Update positions
       const updatedPinned = reorderedPinned.map((img, idx) => ({
         ...img,
         pinned_position: idx,
       }));
 
-      // Merge with unpinned images
       const updatedImages = [...updatedPinned, ...unpinnedImages, ...images.filter(img => img.hidden)];
       setImages(updatedImages);
     } catch (error) {
       console.error('[DnD] Drag end failed:', error);
       setError('Failed to reorder. Please try again.');
-      // Reset to last known good state
       setImages(initialImages);
     }
   }
 
   async function handleTogglePin(imageId: string) {
-    // Prevent duplicate requests
     if (pinningInProgress.has(imageId)) return;
 
     const image = images.find((img) => img.id === imageId);
     if (!image) return;
 
-    // Mark as in-progress
     setPinningInProgress((prev) => new Set(prev).add(imageId));
 
     try {
       if (image.is_pinned) {
-        // Unpinning - optimistic update
         const updatedImages = images.map((img) =>
           img.id === imageId
             ? { ...img, is_pinned: false, pinned_position: null }
@@ -177,7 +162,6 @@ export default function PortfolioManager({
         );
         setImages(updatedImages);
 
-        // Persist immediately
         const response = await fetch('/api/dashboard/portfolio/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -190,14 +174,12 @@ export default function PortfolioManager({
           throw new Error('Failed to unpin image');
         }
       } else {
-        // Pinning - check limit
         if (pinnedImages.length >= MAX_PINNED_IMAGES) {
           setError(`Maximum ${MAX_PINNED_IMAGES} images can be pinned`);
           setTimeout(() => setError(null), 3000);
           return;
         }
 
-        // Optimistic update
         const newPosition = pinnedImages.length;
         const updatedImages = images.map((img) =>
           img.id === imageId
@@ -206,7 +188,6 @@ export default function PortfolioManager({
         );
         setImages(updatedImages);
 
-        // Persist immediately
         const response = await fetch('/api/dashboard/portfolio/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -220,15 +201,12 @@ export default function PortfolioManager({
         }
       }
 
-      // Refresh to get server state
       router.refresh();
     } catch (err: any) {
       console.error('[Portfolio] Toggle pin failed:', err);
       setError(err.message || 'Failed to update pin status');
-      // Rollback optimistic update
       setImages(initialImages);
     } finally {
-      // Remove from in-progress set
       setPinningInProgress((prev) => {
         const next = new Set(prev);
         next.delete(imageId);
@@ -242,7 +220,6 @@ export default function PortfolioManager({
       setSaving(true);
       setError(null);
 
-      // Prepare updates for all pinned images
       const updates = pinnedImages.map((img) => ({
         imageId: img.id,
         is_pinned: img.is_pinned,
@@ -260,7 +237,6 @@ export default function PortfolioManager({
         throw new Error(data.error || 'Failed to save changes');
       }
 
-      // Exit reorder mode and refresh
       setReorderMode(false);
       router.refresh();
     } catch (err: any) {
@@ -272,156 +248,153 @@ export default function PortfolioManager({
   }
 
   function handleCancelReorder() {
-    // Reset to initial state
     setImages(initialImages);
     setReorderMode(false);
     setError(null);
   }
 
+  // Unused props kept for interface compatibility
+  void artistId;
+  void visibleCount;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        {/* Header */}
-        <div className="mb-12 flex items-start justify-between">
-          <div>
-            <div className="mb-3 flex items-center gap-3">
-              <h1 className="text-3xl font-bold">Portfolio Management</h1>
-              {isPro && <ProBadge variant="inline" size="md" />}
+    <div className="min-h-screen bg-paper">
+      {/* Subtle grain texture */}
+      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
+
+      <div className="container mx-auto px-6 py-8 max-w-7xl relative z-10">
+        {/* Compact Header */}
+        <header className="mb-8 pb-6 border-b border-gray-300">
+          <div className="flex items-center justify-between mb-4">
+            <a
+              href="/dashboard"
+              className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-gray-700 hover:text-ink transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
+              Dashboard
+            </a>
+
+            {isPro && <ProBadge variant="badge" size="sm" />}
+          </div>
+
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h1 className="font-heading text-3xl mb-1.5">Portfolio Management</h1>
+              <p className="font-mono text-xs uppercase tracking-wider text-gray-600">
+                @{artistHandle}
+              </p>
             </div>
-            <p className="text-neutral-400">@{artistHandle}</p>
-          </div>
-          <a
-            href="/dashboard"
-            className="rounded-lg border border-neutral-700 px-4 py-2 text-sm transition-colors hover:border-neutral-500"
-          >
-            Back to Dashboard
-          </a>
-        </div>
 
-        {/* Count indicator + Actions */}
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            {isPro ? (
-              <p className="text-lg">
-                <span className="font-semibold">{currentCount}</span>{' '}
-                <span className="text-neutral-400">images</span>
-              </p>
-            ) : (
-              <p className="text-lg">
-                <span className="font-semibold">{currentCount}/20</span>{' '}
-                <span className="text-neutral-400">images</span>
-              </p>
-            )}
-            {!isPro && isAtLimit && (
-              <span className="rounded-full bg-amber-500/10 px-3 py-1 text-sm text-amber-400">
-                At Free tier limit
-              </span>
-            )}
+            {/* Stats Card */}
+            <div className="bg-gray-50 rounded-lg border border-gray-300 px-5 py-3 min-w-[140px]">
+              <div className="font-display text-4xl leading-none text-ink mb-1">
+                {currentCount}
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-widest text-gray-500">
+                {isPro ? 'Images' : `of 20 images`}
+              </div>
+            </div>
           </div>
+        </header>
 
-          <div className="flex items-center gap-3">
-            {isPro && currentCount > 0 && !reorderMode && (
-              <button
-                onClick={() => setReorderMode(true)}
-                className="rounded-lg border border-amber-600 bg-amber-500/10 px-6 py-3 text-sm font-semibold text-amber-400 transition-colors hover:bg-amber-500/20"
-              >
-                <Pin className="mr-2 inline h-4 w-4" />
-                Reorder Portfolio
-              </button>
-            )}
-            {reorderMode && (
-              <>
-                <button
-                  onClick={handleCancelReorder}
-                  disabled={saving}
-                  className="rounded-lg border border-neutral-700 px-6 py-3 text-sm font-semibold text-neutral-400 transition-colors hover:border-neutral-500 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveReorder}
-                  disabled={saving}
-                  className="rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-amber-400 disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </>
-            )}
-            {!reorderMode && (isPro || currentCount < 20) && (
-              <button
-                onClick={handleReimport}
-                className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
-              >
-                Re-import from Instagram
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Error message */}
+        {/* Error Alert */}
         {error && (
-          <div className="mb-6 rounded-lg border border-red-900/20 bg-red-950/10 p-4">
-            <p className="text-sm text-red-400">{error}</p>
+          <div className="mb-6 flex items-start gap-3 border-l-4 border-error bg-error/5 p-4 rounded">
+            <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+            <p className="font-body text-sm text-error">{error}</p>
           </div>
         )}
 
-        {/* Upgrade CTA (Free tier at 20/20) */}
+        {/* Upgrade Banner - Free Tier at Limit */}
         {!isPro && isAtLimit && (
-          <div className="mb-8 rounded-lg border border-amber-900/20 bg-amber-950/10 p-6">
-            <h3 className="mb-2 text-lg font-semibold text-amber-400">
-              Upgrade to Pro for Unlimited Portfolio
-            </h3>
-            <p className="mb-4 text-sm text-neutral-300">
-              Free tier is limited to 20 images. Upgrade to Pro ($15/month) for unlimited
-              portfolio images, auto-sync, and pinning features.
+          <div className="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-400 p-6 text-center">
+            <Crown className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+            <h3 className="font-heading text-xl mb-2 text-ink">Portfolio Limit Reached</h3>
+            <p className="font-body text-sm text-gray-700 mb-4 max-w-md mx-auto">
+              You've hit the 20-image free tier limit. Upgrade to Pro for unlimited images and premium features.
             </p>
-            <button className="rounded-lg bg-amber-500 px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-amber-400">
-              Upgrade to Pro
+            <button className="btn btn-primary">
+              Upgrade to Pro — $15/month
             </button>
           </div>
         )}
 
-        {/* Pro Benefits Callout */}
-        {isPro && (
-          <div className="mb-6 rounded-lg border border-amber-600/20 bg-amber-500/5 p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" />
-              <h3 className="text-sm font-semibold text-amber-400">Pro Features Active</h3>
-            </div>
-            <ul className="space-y-1 text-sm text-neutral-300">
-              <li>✓ Unlimited portfolio images</li>
-              <li>✓ Pin your best work (up to {MAX_PINNED_IMAGES})</li>
-              <li>✓ Crown badge on profile</li>
-              <li>✓ Drag-drop portfolio reordering</li>
-            </ul>
-          </div>
-        )}
+        {/* Action Bar */}
+        <div className="mb-8 flex items-center justify-between gap-4 pb-6 border-b border-gray-200">
+          {/* Reorder Toggle */}
+          {isPro && currentCount > 0 && !reorderMode && (
+            <button
+              onClick={() => setReorderMode(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border-2 border-amber-500 rounded-lg font-mono text-[11px] uppercase tracking-wider text-amber-700 hover:bg-amber-50 transition-colors"
+            >
+              <Pin className="w-3.5 h-3.5" />
+              Reorder Portfolio
+            </button>
+          )}
 
-        {/* Portfolio grid */}
-        {visibleImages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center space-y-6 py-12">
-            <div className="text-center">
-              <p className="mb-2 text-lg text-neutral-300">No portfolio images yet</p>
-              <p className="text-sm text-neutral-500">
-                Import images from your Instagram to get started
-              </p>
+          {/* Reorder Actions */}
+          {reorderMode && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCancelReorder}
+                disabled={saving}
+                className="btn-ghost text-xs"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveReorder}
+                disabled={saving}
+                className="btn btn-primary text-xs"
+              >
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
+          )}
+
+          {/* Import Button */}
+          {!reorderMode && (isPro || currentCount < 20) && (
             <button
               onClick={handleReimport}
-              className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
+              className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-ink rounded-lg font-mono text-[11px] uppercase tracking-wider text-paper hover:bg-gray-900 transition-colors"
             >
-              Import from Instagram
+              <Upload className="w-3.5 h-3.5" />
+              Re-import from Instagram
             </button>
+          )}
+        </div>
+
+        {/* Empty State */}
+        {visibleImages.length === 0 ? (
+          <div className="py-20 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50/30">
+            <div className="max-w-sm mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <Upload className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="font-heading text-xl mb-2 text-ink">No Portfolio Images</h3>
+              <p className="font-body text-sm text-gray-600 mb-6">
+                Import images from Instagram to start building your portfolio.
+              </p>
+              <button onClick={handleReimport} className="btn btn-primary text-xs">
+                Import from Instagram
+              </button>
+            </div>
           </div>
         ) : (
           <>
-            {/* Pinned Images Section (Pro + Reorder Mode) */}
+            {/* Pinned Images Section */}
             {isPro && pinnedImages.length > 0 && (
-              <div className="mb-8">
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
-                  <Pin className="h-5 w-5" />
-                  Pinned Images ({pinnedImages.length}/{MAX_PINNED_IMAGES})
-                </h2>
+              <section className="mb-12">
+                <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200">
+                  <Pin className="w-4 h-4 text-amber-600" />
+                  <h2 className="font-heading text-lg">
+                    Pinned Images
+                  </h2>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                    {pinnedImages.length}/{MAX_PINNED_IMAGES}
+                  </span>
+                </div>
+
                 <DndContext
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
@@ -430,7 +403,7 @@ export default function PortfolioManager({
                     items={pinnedImages.map((img) => img.id)}
                     strategy={verticalListSortingStrategy}
                   >
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {pinnedImages.map((image) => (
                         <SortableImageCard
                           key={image.id}
@@ -445,18 +418,19 @@ export default function PortfolioManager({
                     </div>
                   </SortableContext>
                 </DndContext>
-              </div>
+              </section>
             )}
 
             {/* Unpinned Images Section */}
             {unpinnedImages.length > 0 && (
-              <>
+              <section>
                 {isPro && pinnedImages.length > 0 && (
-                  <h2 className="mb-4 text-lg font-semibold text-neutral-400">
-                    Other Images
-                  </h2>
+                  <div className="mb-5 pb-3 border-b border-gray-200">
+                    <h2 className="font-heading text-lg">All Images</h2>
+                  </div>
                 )}
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {unpinnedImages.map((image) => {
                     const isDeleting = deleting.has(image.id);
                     const isPinning = pinningInProgress.has(image.id);
@@ -466,11 +440,10 @@ export default function PortfolioManager({
                     return (
                       <div
                         key={image.id}
-                        className={`group relative aspect-square overflow-hidden rounded-lg bg-neutral-800 ${
-                          isDeleting ? 'opacity-50' : ''
+                        className={`group relative aspect-square overflow-hidden rounded-lg border-2 border-gray-200 hover:border-gray-400 transition-all bg-gray-50 ${
+                          isDeleting ? 'opacity-50' : 'hover:shadow-md'
                         }`}
                       >
-                        {/* Image */}
                         <Image
                           src={thumbnailUrl}
                           alt="Portfolio image"
@@ -479,73 +452,60 @@ export default function PortfolioManager({
                           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                         />
 
-                        {/* Pin Button (Pro + Reorder Mode) */}
+                        {/* Subtle hover overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Pin Button (Reorder Mode) */}
                         {reorderMode && canPin && !isDeleting && (
                           <button
                             onClick={() => handleTogglePin(image.id)}
                             disabled={isPinning}
-                            className="absolute left-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-amber-500 opacity-0 transition-opacity hover:bg-amber-400 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-ink opacity-0 transition-all hover:bg-amber-400 group-hover:opacity-100 shadow-md"
                             aria-label="Pin image"
                           >
                             {isPinning ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                             ) : (
-                              <Pin className="h-4 w-4 text-black" aria-hidden="true" />
+                              <Pin className="h-4 w-4" />
                             )}
                           </button>
                         )}
 
-                        {/* Delete button (hover) */}
+                        {/* Delete Button */}
                         {!reorderMode && !isDeleting && (
                           <button
                             onClick={() => handleDelete(image.id)}
-                            className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 opacity-0 transition-opacity hover:bg-red-500 group-hover:opacity-100"
+                            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-error text-white opacity-0 transition-all hover:bg-error/90 group-hover:opacity-100 shadow-md"
                             title="Delete image"
                           >
-                            <svg
-                              className="h-5 w-5 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         )}
 
-                        {/* Deleting spinner */}
+                        {/* Deleting Spinner */}
                         {isDeleting && (
                           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-neutral-700 border-t-white" />
+                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-white" />
                           </div>
                         )}
-
-                        {/* Import source indicator */}
-                        <div className="absolute bottom-2 left-2 rounded bg-black/60 px-2 py-1 text-xs text-neutral-300 opacity-0 transition-opacity group-hover:opacity-100">
-                          {image.import_source === 'oauth_onboarding' && 'Onboarding'}
-                          {image.import_source === 'manual_import' && 'Manual'}
-                          {image.import_source === 'scrape' && 'Scraped'}
-                          {image.import_source === 'oauth_sync' && 'Auto-sync'}
-                        </div>
                       </div>
                     );
                   })}
                 </div>
-              </>
+              </section>
             )}
           </>
         )}
 
-        {/* Footer help text */}
+        {/* Footer Help */}
         {visibleImages.length > 0 && (
-          <div className="mt-8 text-center text-sm text-neutral-500">
-            Hover over images to delete. Re-import to replace your entire portfolio.
-          </div>
+          <footer className="mt-12 pt-6 border-t border-gray-200 text-center">
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+              Hover to manage images • Re-import replaces entire portfolio
+            </p>
+          </footer>
         )}
       </div>
     </div>
