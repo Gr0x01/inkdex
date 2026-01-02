@@ -30,9 +30,12 @@ const envSchema = z.object({
   R2_ENDPOINT: z.string().url().optional(),
   R2_PUBLIC_URL: z.string().url().optional(),
 
-  // Instagram OAuth (Optional - for post-MVP)
+  // Instagram OAuth via Facebook (Phase 2)
+  // Note: These are Facebook App credentials, not Instagram directly
+  // Optional until Phase 2 OAuth flows are enabled
   INSTAGRAM_CLIENT_ID: z.string().optional(),
   INSTAGRAM_CLIENT_SECRET: z.string().optional(),
+  NEXT_PUBLIC_INSTAGRAM_CLIENT_ID: z.string().optional(),
 
   // App Configuration
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -59,3 +62,7 @@ export const env = (() => {
 
 // Type-safe env exports
 export type Env = z.infer<typeof envSchema>
+
+// Note: CLIENT_SECRET protection is handled by Next.js - server-only env vars
+// are automatically excluded from client bundle. Double-check with:
+// `npm run build` and verify INSTAGRAM_CLIENT_SECRET not in .next/static chunks

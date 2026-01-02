@@ -7,11 +7,20 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database.types'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Ensure service client is never used on client-side
+if (typeof window !== 'undefined') {
+  throw new Error('Service client cannot be used on client-side')
+}
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error('Missing Supabase environment variables')
+  console.error('[CRITICAL] Missing Supabase environment variables:', {
+    hasUrl: !!supabaseUrl,
+    hasServiceKey: !!supabaseServiceKey,
+  })
+  throw new Error('Server configuration error - contact support')
 }
 
 /**
@@ -19,7 +28,8 @@ if (!supabaseUrl || !supabaseServiceKey) {
  * This bypasses RLS policies - use only for trusted server-side operations
  */
 export function createServiceClient() {
-  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
+  // Type assertion safe here because we validated above
+  return createClient<Database>(supabaseUrl!, supabaseServiceKey!, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

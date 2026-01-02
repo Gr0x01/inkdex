@@ -61,8 +61,23 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      // Redirect to login page (will be created in post-MVP)
-      return NextResponse.redirect(new URL('/login', request.url))
+      // Redirect to homepage with login prompt
+      const loginUrl = new URL('/', request.url)
+      loginUrl.searchParams.set('login', 'true')
+      loginUrl.searchParams.set('redirect', pathname) // Return to original page after login
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Check if Instagram token needs refresh (non-blocking with deduplication)
+    const { needsTokenRefresh } = await import('@/lib/instagram/token-refresh')
+    const { refreshWithLock } = await import('@/lib/instagram/refresh-lock')
+
+    const needsRefresh = await needsTokenRefresh(user.id)
+    if (needsRefresh) {
+      // Refresh in background (don't block request) with deduplication
+      refreshWithLock(user.id).catch(err => {
+        console.error('[Middleware] Token refresh failed:', err)
+      })
     }
   }
 
