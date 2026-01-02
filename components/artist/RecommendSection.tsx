@@ -47,7 +47,7 @@ export function RecommendSection() {
         },
         body: JSON.stringify({
           instagram_handle: handle,
-          turnstile_token: turnstileToken,
+          ...(turnstileToken && { turnstile_token: turnstileToken }),
         }),
       });
 

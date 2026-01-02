@@ -69,7 +69,7 @@ export const TEST_USERS: Record<string, TestUser> = {
     instagram_id: 'test_pro_ig_id',
     account_type: 'artist_pro',
     artist: {
-      id: 'da482c81-5ea6-4451-acc4-c2da7c290366',
+      id: '2ed1bfaa-a0e9-4025-a1ba-797e0f0830fa',
       name: 'Morgan Black',
       instagram_handle: 'test_pro_artist',
       city: 'New York',

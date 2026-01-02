@@ -168,7 +168,7 @@ const TEST_USER_CONFIGS: TestUserConfig[] = [
     is_pro: true,
     is_featured: true,
     account_type: 'artist_pro',
-    imageCount: 20,
+    imageCount: 80,
     portfolioConfig: (index: number, total: number) => ({
       manually_added: true,
       import_source: 'oauth_onboarding',
