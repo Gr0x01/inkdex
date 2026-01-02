@@ -47,16 +47,34 @@ export default async function ProfilePage() {
 
   if (artistError || !artist) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
-        <div className="mx-auto max-w-7xl px-6 py-16">
-          <div className="flex flex-col items-center justify-center space-y-6">
-            <h1 className="text-2xl font-bold text-red-400">No Claimed Artist Found</h1>
-            <p className="text-neutral-400">
-              You need to claim an artist profile before editing your profile.
+      <div className="min-h-screen bg-[var(--paper-white)] relative">
+        {/* Grain texture overlay */}
+        <div className="grain-overlay absolute inset-0 pointer-events-none" />
+
+        <div className="relative max-w-2xl mx-auto px-6 py-16 lg:py-24">
+          <div className="text-center space-y-6">
+            {/* Section Label */}
+            <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--gray-500)]">
+              Profile Error
             </p>
+
+            {/* Error Title */}
+            <h1 className="font-display text-3xl sm:text-4xl text-[var(--error)]">
+              No Claimed Profile Found
+            </h1>
+
+            {/* Error Message */}
+            <p className="font-body text-lg text-[var(--gray-700)] max-w-md mx-auto">
+              You need to claim an artist profile before you can edit your profile settings.
+            </p>
+
+            {/* Decorative line */}
+            <div className="w-16 h-px bg-[var(--gray-300)] mx-auto" />
+
+            {/* Action Button */}
             <a
               href="/dashboard"
-              className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
+              className="btn btn-primary inline-block"
             >
               Back to Dashboard
             </a>

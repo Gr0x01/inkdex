@@ -26,6 +26,9 @@ type Story = StoryObj<typeof meta>;
  * Loads actual portfolio images from Supabase storage
  */
 export const FreeTierArtist: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.FREE_TIER),
@@ -39,6 +42,9 @@ export const FreeTierArtist: Story = {
  * Shows Pro crown badge with real portfolio
  */
 export const ProTierArtist: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),
@@ -52,6 +58,9 @@ export const ProTierArtist: Story = {
  * No verification badge shown
  */
 export const UnclaimedArtist: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.UNCLAIMED),
@@ -74,6 +83,9 @@ export const Fallback: Story = {
  * Shows Free, Pro, and Unclaimed artists side by side
  */
 export const HorizontalScroll: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => {
       const [freeTier, proTier, unclaimed] = await Promise.all([
@@ -101,6 +113,9 @@ export const HorizontalScroll: Story = {
  * Mobile viewport with real test data
  */
 export const Mobile: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.FREE_TIER),
@@ -116,6 +131,9 @@ export const Mobile: Story = {
  * Desktop viewport with Pro artist
  */
 export const Desktop: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),
@@ -131,6 +149,9 @@ export const Desktop: Story = {
  * On dark background with Pro artist
  */
 export const OnDarkBackground: Story = {
+  args: {
+    artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
+  },
   loaders: [
     async () => ({
       artist: await getTestArtistSafe(TEST_USERS.PRO_TIER),

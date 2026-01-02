@@ -176,6 +176,10 @@ export const NoInstagramHandle: Story = {
  * Grid of search results (simulating search results page)
  */
 export const SearchResultsGrid: Story = {
+  args: {
+    artist: createMockSearchResult(),
+    displayMode: 'search',
+  },
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 max-w-6xl">
       <ArtistCard

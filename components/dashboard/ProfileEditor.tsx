@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Profile Editor Component
+ * Profile Editor Component - Editorial Design
  *
  * Allows artists to edit their profile information with live preview
  * Features:
@@ -10,6 +10,8 @@
  * - Delete page functionality with multi-step confirmation
  * - Form validation and error handling
  * - Optimistic UI updates
+ *
+ * Design: Paper & Ink editorial aesthetic with grain textures
  */
 
 import { useState } from 'react';
@@ -67,16 +69,23 @@ export default function ProfileEditor({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // Track changes
-  const handleChange = (setter: (value: any) => void) => (value: any) => {
-    setter(value);
+  // Track changes - generic function for type-safe handling
+  function handleStringChange(setter: React.Dispatch<React.SetStateAction<string>>) {
+    return (value: string) => {
+      setter(value);
+      setHasUnsavedChanges(true);
+      setSaveSuccess(false);
+    };
+  }
+
+  function handleAvailabilityChange(value: AvailabilityStatus) {
+    setAvailabilityStatus(value);
     setHasUnsavedChanges(true);
     setSaveSuccess(false);
-  };
+  }
 
   // Handle save
   const handleSave = async () => {
-    // Prevent concurrent saves
     if (saveInProgress) return;
 
     setSaveInProgress(true);
@@ -106,25 +115,19 @@ export default function ProfileEditor({
 
       setSaveSuccess(true);
       setHasUnsavedChanges(false);
-
-      // Refresh the page data
       router.refresh();
-
-      // Clear success message after 3 seconds
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('[ProfileEditor] Save error:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
     } finally {
       setIsSaving(false);
-      // Debounce to prevent rapid clicking
       setTimeout(() => setSaveInProgress(false), 1000);
     }
   };
 
   // Handle cancel
   const handleCancel = () => {
-    // Reset all fields to initial values
     setName(initialData.name);
     setCity(initialData.city);
     setState(initialData.state);
@@ -137,19 +140,17 @@ export default function ProfileEditor({
     setSaveError(null);
   };
 
-  // Delete flow: Step 1 - Warning
+  // Delete flow handlers
   const handleDeleteClick = () => {
     setShowDeleteWarning(true);
     setDeleteError(null);
   };
 
-  // Delete flow: Step 2 - Confirm
   const handleDeleteProceed = () => {
     setShowDeleteWarning(false);
     setShowDeleteConfirm(true);
   };
 
-  // Delete flow: Step 3 - Execute
   const handleDeleteExecute = async () => {
     if (deleteConfirmText !== 'DELETE') {
       setDeleteError('Please type DELETE to confirm');
@@ -171,7 +172,6 @@ export default function ProfileEditor({
         throw new Error(data.error || 'Failed to delete profile');
       }
 
-      // Redirect to homepage after successful deletion
       window.location.href = '/';
     } catch (error) {
       console.error('[ProfileEditor] Delete error:', error);
@@ -180,310 +180,450 @@ export default function ProfileEditor({
     }
   };
 
-  const profileUrl = `${window.location.origin}/${state.toLowerCase()}/${city.toLowerCase()}/artists/${artistSlug}`;
+  const profileUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/artists/${artistSlug}`
+    : '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold">Edit Profile</h1>
-            <p className="mt-2 text-neutral-400">@{initialData.instagramHandle}</p>
+    <div className="min-h-screen bg-[var(--paper-white)] relative">
+      {/* Grain texture overlay */}
+      <div className="grain-overlay absolute inset-0 pointer-events-none" />
+
+      <div className="relative max-w-6xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
+        {/* Header - Matches PortfolioManager pattern */}
+        <header className="mb-8 pb-6 border-b border-[var(--gray-300)]">
+          {/* Top row: Breadcrumb + Pro Badge */}
+          <div className="flex items-center justify-between mb-4">
+            <a
+              href="/dashboard"
+              className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-[var(--gray-700)] hover:text-[var(--ink-black)] transition-colors"
+            >
+              <span className="inline-block transition-transform group-hover:-translate-x-0.5">←</span>
+              <span>Dashboard</span>
+            </a>
+
+            {isPro && <ProBadge variant="badge" size="sm" />}
           </div>
-          <a
-            href="/dashboard"
-            className="rounded-lg bg-neutral-800 px-4 py-2 text-sm transition-colors hover:bg-neutral-700"
-          >
-            ← Back to Dashboard
-          </a>
-        </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Form Column */}
-          <div className="space-y-6">
-            <div className="rounded-lg bg-neutral-900 p-6">
-              <h2 className="mb-4 text-xl font-semibold">Basic Information</h2>
-
-              {/* Name */}
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-neutral-400">
-                  Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => handleChange(setName)(e.target.value)}
-                  className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  placeholder="Your full name"
-                  required
-                />
-              </div>
-
-              {/* City */}
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-neutral-400">
-                  City <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={city}
-                  onChange={(e) => handleChange(setCity)(e.target.value)}
-                  className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  placeholder="Austin"
-                  required
-                />
-              </div>
-
-              {/* State */}
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-neutral-400">
-                  State <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={state}
-                  onChange={(e) => handleChange(setState)(e.target.value.toUpperCase())}
-                  className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  placeholder="TX"
-                  pattern="[A-Z]{2}"
-                  maxLength={2}
-                  required
-                />
-                <p className="mt-1 text-xs text-neutral-500">Two-letter state code (e.g., TX, CA, NY)</p>
-              </div>
-
-              {/* Bio Override */}
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-neutral-400">
-                  Custom Bio
-                  <span className="ml-2 text-xs text-neutral-500">(Optional)</span>
-                </label>
-                <textarea
-                  value={bioOverride}
-                  onChange={(e) => handleChange(setBioOverride)(e.target.value)}
-                  className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  rows={4}
-                  placeholder="Tell potential clients about your style and approach..."
-                  maxLength={500}
-                />
-                <p className="mt-1 text-xs text-neutral-500">{bioOverride.length}/500 characters</p>
-              </div>
-
-              {/* Booking Link */}
-              <div className="mb-4">
-                <label className="mb-2 block text-sm font-medium text-neutral-400">
-                  Booking Link
-                  <span className="ml-2 text-xs text-neutral-500">(Optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={bookingLink}
-                  onChange={(e) => handleChange(setBookingLink)(e.target.value)}
-                  className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  placeholder="https://..."
-                />
-                <p className="mt-1 text-xs text-neutral-500">
-                  Where clients can book appointments (website, Instagram DMs, email, etc.)
-                </p>
-              </div>
+          {/* Bottom row: Title + Handle */}
+          <div className="flex items-end justify-between gap-6">
+            <div>
+              <h1 className="font-heading text-3xl mb-1.5">Edit Profile</h1>
+              <p className="font-mono text-xs uppercase tracking-wider text-[var(--gray-500)]">
+                @{initialData.instagramHandle}
+              </p>
             </div>
+          </div>
+        </header>
 
-            {/* Pro-Only Fields */}
-            {isPro && (
-              <div className="rounded-lg bg-neutral-900 p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <h2 className="text-xl font-semibold">Pro Features</h2>
-                  <ProBadge variant="inline" size="sm" />
-                </div>
+        {/* Two-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
 
-                {/* Pricing Info */}
-                <div className="mb-4">
-                  <label className="mb-2 block text-sm font-medium text-neutral-400">
-                    Pricing Information
-                    <span className="ml-2 text-xs text-neutral-500">(Optional)</span>
+          {/* Form Column */}
+          <div className="lg:col-span-7 space-y-8">
+
+            {/* Basic Information Card */}
+            <section className="border-2 border-[var(--ink-black)] bg-white p-6 lg:p-8 relative">
+              {/* Corner accent */}
+              <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-[var(--warm-gray)]" />
+
+              <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)] mb-6">
+                Basic Information
+              </h2>
+
+              <div className="space-y-5">
+                {/* Name Field */}
+                <div>
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                    Name <span className="text-[var(--error)]">*</span>
                   </label>
                   <input
                     type="text"
-                    value={pricingInfo}
-                    onChange={(e) => handleChange(setPricingInfo)(e.target.value)}
-                    className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                    placeholder="e.g., $150/hr, $200 minimum"
-                    maxLength={100}
+                    value={name}
+                    onChange={(e) => handleStringChange(setName)(e.target.value)}
+                    className="input"
+                    placeholder="Your display name"
+                    required
                   />
                 </div>
 
-                {/* Availability Status */}
-                <div className="mb-4">
-                  <label className="mb-2 block text-sm font-medium text-neutral-400">
-                    Availability Status
-                    <span className="ml-2 text-xs text-neutral-500">(Optional)</span>
+                {/* City & State Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      City <span className="text-[var(--error)]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={city}
+                      onChange={(e) => handleStringChange(setCity)(e.target.value)}
+                      className="input"
+                      placeholder="Austin"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      State <span className="text-[var(--error)]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={state}
+                      onChange={(e) => handleStringChange(setState)(e.target.value.toUpperCase())}
+                      className="input font-mono uppercase"
+                      placeholder="TX"
+                      pattern="[A-Z]{2}"
+                      maxLength={2}
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Bio Field */}
+                <div>
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                    Custom Bio
+                    <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
                   </label>
-                  <select
-                    value={availabilityStatus || ''}
-                    onChange={(e) =>
-                      handleChange(setAvailabilityStatus)(
-                        e.target.value ? (e.target.value as AvailabilityStatus) : null
-                      )
-                    }
-                    className="w-full rounded-lg bg-neutral-800 px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  >
-                    <option value="">Not specified</option>
-                    <option value="available">Available for bookings</option>
-                    <option value="booking_soon">Opening soon</option>
-                    <option value="waitlist">Waitlist only</option>
-                  </select>
+                  <textarea
+                    value={bioOverride}
+                    onChange={(e) => handleStringChange(setBioOverride)(e.target.value)}
+                    className="input min-h-[120px] resize-y"
+                    rows={4}
+                    placeholder="Tell potential clients about your style, approach, and what makes your work unique..."
+                    maxLength={500}
+                  />
+                  <p className="mt-2 font-mono text-[10px] text-[var(--gray-500)] tracking-wide">
+                    {bioOverride.length}/500 characters
+                  </p>
+                </div>
+
+                {/* Booking Link Field */}
+                <div>
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                    Booking Link
+                    <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={bookingLink}
+                    onChange={(e) => handleStringChange(setBookingLink)(e.target.value)}
+                    className="input"
+                    placeholder="https://calendly.com/yourname"
+                  />
+                  <p className="mt-2 font-body text-sm text-[var(--gray-500)] italic">
+                    Where clients can book consultations or appointments
+                  </p>
                 </div>
               </div>
+            </section>
+
+            {/* Pro Features Card */}
+            {isPro && (
+              <section className="border-2 border-[var(--ink-black)] bg-white p-6 lg:p-8 relative">
+                {/* Gold accent for Pro */}
+                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-amber-500" />
+
+                <div className="flex items-center gap-3 mb-6">
+                  <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)]">
+                    Pro Features
+                  </h2>
+                  <ProBadge variant="badge" size="sm" />
+                </div>
+
+                <div className="space-y-5">
+                  {/* Pricing Info */}
+                  <div>
+                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      Pricing Information
+                      <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={pricingInfo}
+                      onChange={(e) => handleStringChange(setPricingInfo)(e.target.value)}
+                      className="input"
+                      placeholder="e.g., $150/hr, $200 minimum"
+                      maxLength={100}
+                    />
+                  </div>
+
+                  {/* Availability Status */}
+                  <div>
+                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      Availability Status
+                      <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                    </label>
+                    <select
+                      value={availabilityStatus || ''}
+                      onChange={(e) =>
+                        handleAvailabilityChange(
+                          e.target.value ? (e.target.value as AvailabilityStatus) : null
+                        )
+                      }
+                      className="input cursor-pointer"
+                    >
+                      <option value="">Not specified</option>
+                      <option value="available">Available for bookings</option>
+                      <option value="booking_soon">Opening soon</option>
+                      <option value="waitlist">Waitlist only</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
             )}
 
-            {/* Save/Cancel Buttons */}
-            <div className="flex gap-4">
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleSave}
                 disabled={isSaving || !hasUnsavedChanges}
-                className="flex-1 rounded-lg bg-white px-6 py-3 font-semibold text-black transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn btn-primary flex-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none"
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving...
+                  </span>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
               <button
                 onClick={handleCancel}
                 disabled={isSaving || !hasUnsavedChanges}
-                className="rounded-lg bg-neutral-800 px-6 py-3 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Cancel
+                Discard
               </button>
             </div>
 
             {/* Status Messages */}
             {saveError && (
-              <div className="rounded-lg bg-red-900/20 border border-red-500/50 p-4 text-red-400">
-                {saveError}
+              <div className="border-2 border-[var(--error)] bg-red-50 p-4 animate-fade-up">
+                <p className="font-body text-[var(--error)]">{saveError}</p>
               </div>
             )}
             {saveSuccess && (
-              <div className="rounded-lg bg-green-900/20 border border-green-500/50 p-4 text-green-400">
-                Profile updated successfully!
+              <div className="border-2 border-[var(--success)] bg-emerald-50 p-4 animate-fade-up">
+                <p className="font-body text-emerald-700">Profile updated successfully</p>
               </div>
             )}
 
-            {/* Delete Page Button */}
-            <div className="rounded-lg border border-red-500/30 bg-red-900/10 p-6">
-              <h3 className="mb-2 text-lg font-semibold text-red-400">Danger Zone</h3>
-              <p className="mb-4 text-sm text-neutral-400">
-                Permanently delete your artist profile. This action cannot be undone.
+            {/* Danger Zone */}
+            <section className="border-2 border-red-200 bg-red-50/50 p-6 lg:p-8 mt-12">
+              <h3 className="font-heading text-lg text-[var(--error)] mb-2">
+                Danger Zone
+              </h3>
+              <p className="font-body text-sm text-[var(--gray-700)] mb-4">
+                Permanently delete your artist profile. This action cannot be undone and will remove all your portfolio images and analytics data.
               </p>
               <button
                 onClick={handleDeleteClick}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                className="font-mono text-xs tracking-[0.1em] uppercase px-4 py-2 bg-[var(--error)] text-white hover:bg-red-700 transition-colors"
               >
                 Delete Profile
               </button>
-            </div>
+            </section>
           </div>
 
           {/* Preview Column */}
-          <div>
-            <div className="sticky top-8 rounded-lg bg-neutral-900 p-6">
-              <h2 className="mb-4 text-xl font-semibold">Preview</h2>
+          <aside className="lg:col-span-5">
+            <div className="lg:sticky lg:top-8 space-y-6">
+              {/* Preview Card */}
+              <div className="border-2 border-[var(--ink-black)] bg-white relative">
+                {/* Corner accent */}
+                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-[var(--warm-gray)]" />
 
-              <div className="space-y-4 text-sm">
-                <div>
-                  <p className="text-neutral-500">Name</p>
-                  <p className="text-lg font-semibold">{name || '(Not set)'}</p>
-                </div>
-
-                <div>
-                  <p className="text-neutral-500">Location</p>
-                  <p>
-                    {city || '(City)'}, {state || '(State)'}
+                {/* Header */}
+                <div className="border-b border-[var(--gray-300)] px-6 py-4">
+                  <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--gray-500)]">
+                    Live Preview
                   </p>
                 </div>
 
-                {bioOverride && (
+                {/* Preview Content */}
+                <div className="p-6 space-y-5">
+                  {/* Name Preview */}
                   <div>
-                    <p className="text-neutral-500">Bio</p>
-                    <p className="text-neutral-300 whitespace-pre-wrap">
-                      {bioOverride.replace(/\n{3,}/g, '\n\n')}
+                    <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                      Display Name
+                    </p>
+                    <p className="font-heading text-2xl text-[var(--ink-black)]">
+                      {name || <span className="text-[var(--gray-400)] italic">Not set</span>}
                     </p>
                   </div>
-                )}
 
-                {bookingLink && (
+                  {/* Location Preview */}
                   <div>
-                    <p className="text-neutral-500">Booking</p>
-                    <a
-                      href={bookingLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-400 hover:underline break-all"
-                    >
-                      {bookingLink}
-                    </a>
-                  </div>
-                )}
-
-                {isPro && pricingInfo && (
-                  <div>
-                    <p className="text-neutral-500">Pricing</p>
-                    <p className="text-neutral-300">{pricingInfo}</p>
-                  </div>
-                )}
-
-                {isPro && availabilityStatus && (
-                  <div>
-                    <p className="text-neutral-500">Availability</p>
-                    <p className="text-neutral-300">
-                      {availabilityStatus === 'available' && '✓ Available for bookings'}
-                      {availabilityStatus === 'booking_soon' && '🕐 Opening soon'}
-                      {availabilityStatus === 'waitlist' && '📝 Waitlist only'}
+                    <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                      Location
+                    </p>
+                    <p className="font-body text-lg text-[var(--ink-black)]">
+                      {city || <span className="text-[var(--gray-400)]">City</span>}
+                      {', '}
+                      {state || <span className="text-[var(--gray-400)]">ST</span>}
                     </p>
                   </div>
-                )}
 
-                <div className="pt-4 border-t border-neutral-800">
-                  <p className="text-neutral-500">Public Profile</p>
+                  {/* Bio Preview */}
+                  {bioOverride && (
+                    <div>
+                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                        Bio
+                      </p>
+                      <p className="font-body text-base text-[var(--gray-700)] italic leading-relaxed whitespace-pre-wrap">
+                        &ldquo;{bioOverride.replace(/\n{3,}/g, '\n\n')}&rdquo;
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Booking Link Preview */}
+                  {bookingLink && (
+                    <div>
+                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                        Booking
+                      </p>
+                      <a
+                        href={bookingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-body text-base text-[var(--ink-black)] underline underline-offset-4 hover:no-underline break-all"
+                      >
+                        {bookingLink}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Pro Fields Preview */}
+                  {isPro && pricingInfo && (
+                    <div>
+                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                        Pricing
+                      </p>
+                      <p className="font-body text-base text-[var(--ink-black)]">
+                        {pricingInfo}
+                      </p>
+                    </div>
+                  )}
+
+                  {isPro && availabilityStatus && (
+                    <div>
+                      <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
+                        Availability
+                      </p>
+                      <p className="font-body text-base text-[var(--ink-black)]">
+                        {availabilityStatus === 'available' && (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+                            Available for bookings
+                          </span>
+                        )}
+                        {availabilityStatus === 'booking_soon' && (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="w-2 h-2 bg-amber-500 rounded-full" />
+                            Opening soon
+                          </span>
+                        )}
+                        {availabilityStatus === 'waitlist' && (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="w-2 h-2 bg-[var(--gray-500)] rounded-full" />
+                            Waitlist only
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Profile URL Footer */}
+                <div className="border-t border-[var(--gray-300)] px-6 py-4">
+                  <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-2">
+                    Public Profile URL
+                  </p>
                   <a
                     href={profileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-400 hover:underline break-all"
+                    className="font-mono text-xs text-[var(--ink-black)] hover:underline break-all"
                   >
-                    {profileUrl}
+                    {profileUrl || 'URL will appear here'}
                   </a>
                 </div>
               </div>
+
+              {/* Helpful Tips */}
+              <div className="bg-[var(--gray-100)] p-5 space-y-3">
+                <p className="font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
+                  Tips
+                </p>
+                <ul className="font-body text-sm text-[var(--gray-700)] space-y-2 list-none">
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--warm-gray)] mt-0.5">•</span>
+                    <span>A compelling bio helps clients understand your style</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-[var(--warm-gray)] mt-0.5">•</span>
+                    <span>Adding a booking link increases consultation requests</span>
+                  </li>
+                  {!isPro && (
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-0.5">★</span>
+                      <span>Upgrade to Pro to display pricing and availability</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
       </div>
 
       {/* Delete Warning Modal */}
       {showDeleteWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-lg bg-neutral-900 p-6">
-            <h3 className="mb-4 text-2xl font-bold text-red-400">⚠️ Warning</h3>
-            <p className="mb-6 text-neutral-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink-black)]/80 p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-white border-2 border-[var(--ink-black)] p-8 animate-scale-in">
+            <h3 className="font-heading text-2xl text-[var(--error)] mb-4">
+              Warning
+            </h3>
+            <p className="font-body text-[var(--ink-black)] mb-4">
               Deleting your profile is <strong>permanent and cannot be undone</strong>. All of your:
             </p>
-            <ul className="mb-6 list-inside list-disc space-y-1 text-neutral-400">
-              <li>Portfolio images</li>
-              <li>Profile information</li>
-              <li>Analytics data</li>
-              <li>Subscription (if applicable)</li>
+            <ul className="font-body text-[var(--gray-700)] mb-6 space-y-1 ml-4">
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                Portfolio images
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                Profile information
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                Analytics data
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                Subscription (if applicable)
+              </li>
             </ul>
-            <p className="mb-6 text-neutral-300">will be permanently deleted.</p>
+            <p className="font-body text-[var(--ink-black)] mb-6">
+              will be permanently deleted.
+            </p>
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={handleDeleteProceed}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-700"
+                className="flex-1 font-mono text-xs tracking-[0.1em] uppercase px-4 py-3 bg-[var(--error)] text-white hover:bg-red-700 transition-colors"
               >
-                I Understand, Continue
+                I Understand
               </button>
               <button
                 onClick={() => setShowDeleteWarning(false)}
-                className="rounded-lg bg-neutral-800 px-4 py-2 transition-colors hover:bg-neutral-700"
+                className="btn btn-secondary"
               >
                 Cancel
               </button>
@@ -494,33 +634,35 @@ export default function ProfileEditor({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="w-full max-w-md rounded-lg bg-neutral-900 p-6">
-            <h3 className="mb-4 text-2xl font-bold text-red-400">Final Confirmation</h3>
-            <p className="mb-4 text-neutral-300">
-              Type <span className="font-mono font-bold text-white">DELETE</span> to confirm permanent deletion:
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink-black)]/80 p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-white border-2 border-[var(--ink-black)] p-8 animate-scale-in">
+            <h3 className="font-heading text-2xl text-[var(--error)] mb-4">
+              Final Confirmation
+            </h3>
+            <p className="font-body text-[var(--ink-black)] mb-4">
+              Type <span className="font-mono font-bold bg-[var(--gray-100)] px-2 py-0.5">DELETE</span> to confirm permanent deletion:
             </p>
 
             <input
               type="text"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="mb-4 w-full rounded-lg bg-neutral-800 px-4 py-2 font-mono text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+              className="w-full px-4 py-3 border-2 border-[var(--gray-300)] font-mono text-lg tracking-wider focus:outline-none focus:border-[var(--error)] mb-4"
               placeholder="Type DELETE"
               autoFocus
             />
 
             {deleteError && (
-              <div className="mb-4 rounded-lg bg-red-900/20 border border-red-500/50 p-3 text-sm text-red-400">
-                {deleteError}
+              <div className="border-2 border-[var(--error)] bg-red-50 p-3 mb-4">
+                <p className="font-body text-sm text-[var(--error)]">{deleteError}</p>
               </div>
             )}
 
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={handleDeleteExecute}
                 disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                className="flex-1 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 font-mono text-xs tracking-[0.1em] uppercase px-4 py-3 bg-[var(--error)] text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Forever'}
               </button>
@@ -531,7 +673,7 @@ export default function ProfileEditor({
                   setDeleteError(null);
                 }}
                 disabled={isDeleting}
-                className="rounded-lg bg-neutral-800 px-4 py-2 transition-colors hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn btn-secondary disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
