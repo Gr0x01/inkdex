@@ -139,7 +139,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           {/* Featured badge - Top-left */}
           {isFeatured && (
             <div className="absolute top-3 left-3 px-2.5 py-1.5 bg-accent/90 backdrop-blur-sm border border-accent-bright/30">
-              <span className="font-mono text-[10px] font-bold text-paper tracking-[0.15em] uppercase">
+              <span className="font-mono text-xs font-bold text-paper tracking-[0.15em] uppercase">
                 Featured
               </span>
             </div>
@@ -148,7 +148,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           {/* Image counter - Top-right */}
           {allImages.length > 1 && (
             <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-ink/80 backdrop-blur-sm">
-              <span className="font-mono text-[10px] font-medium text-paper tracking-[0.1em] uppercase">
+              <span className="font-mono text-xs font-medium text-paper tracking-[0.1em] uppercase">
                 {currentIndex + 1}/{allImages.length}
               </span>
             </div>
@@ -159,15 +159,15 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
       {/* BOTTOM: Artist Info - Editorial Typography */}
       <div className="p-3 sm:p-4 space-y-1">
         {instagramHandle && (
-          <h3 className="font-heading text-[15px] font-bold text-ink tracking-tight">
+          <h3 className="font-heading text-base font-bold text-ink tracking-tight">
             @{instagramHandle}
           </h3>
         )}
-        <p className="font-body text-[13px] text-gray-700 leading-relaxed">
+        <p className="font-body text-sm text-gray-700 leading-relaxed">
           {artist_name}
         </p>
         <div className="flex items-center justify-between">
-          <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
+          <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
             {city}
           </p>
           {/* Right metric - Match % (search) or Follower count (browse) */}
@@ -177,13 +177,13 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
-              <span className="font-mono text-[10px] text-ink font-medium">
+              <span className="font-mono text-xs font-semibold text-ink">
                 {matchPercentage}%
               </span>
 
               {/* Tooltip - appears after 2s hover */}
               {showTooltip && (
-                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-ink text-paper text-[11px] font-body whitespace-nowrap rounded-sm shadow-lg z-10 animate-fade-in">
+                <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-ink text-paper text-xs font-body whitespace-nowrap rounded-sm shadow-lg z-10 animate-fade-in">
                   <div className="text-center">
                     How closely this artist&apos;s work
                     <br />
@@ -196,7 +196,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             </div>
           ) : (
             follower_count !== null && follower_count > 0 && (
-              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
+              <span className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
                 {formatFollowerCount(follower_count)}
               </span>
             )
