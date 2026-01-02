@@ -101,6 +101,7 @@ body {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* Typography Defaults */
@@ -615,6 +616,17 @@ a:hover {
   100% {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes badge-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

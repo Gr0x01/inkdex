@@ -2,9 +2,9 @@
 
 import Link from 'next/link'
 import { useState, useMemo, useRef, useEffect } from 'react'
-import { useSearch } from '@/components/search/SearchProvider'
 import { CITIES, type City } from '@/lib/constants/cities'
 import { getStateSlug } from '@/lib/utils/city-helpers'
+import NavbarSearch from '@/components/layout/NavbarSearch'
 
 /**
  * Shared city link component for consistency between desktop and mobile
@@ -42,7 +42,6 @@ function CityLink({
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const { openSearch } = useSearch()
   const dropdownButtonRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
@@ -95,9 +94,9 @@ export default function Navbar() {
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20 md:h-24 relative">
+        <div className="flex items-center justify-between gap-3 md:gap-6 h-20 md:h-24 relative">
           {/* Logo - Editorial Magazine Masthead */}
-          <Link href="/" className="flex items-center gap-3 group relative z-10">
+          <Link href="/" className="flex items-center gap-3 group relative z-10 flex-shrink-0">
             <div className="relative">
               {/* Main logo */}
               <div className="font-display text-3xl md:text-4xl font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-medium">
@@ -111,40 +110,13 @@ export default function Navbar() {
             </div>
           </Link>
 
+          {/* Search Bar - Desktop Only */}
+          <div className="hidden md:block flex-1 max-w-2xl min-w-0">
+            <NavbarSearch />
+          </div>
+
           {/* Desktop Navigation - Editorial Style */}
-          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
-            <Link
-              href="/"
-              className="editorial-nav-link group relative"
-            >
-              <span className="relative z-10">Home</span>
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-ink transform scale-x-0 group-hover:scale-x-100 transition-transform duration-medium origin-left" />
-            </Link>
-
-            {/* Search Button - Editorial */}
-            <button
-              onClick={openSearch}
-              className="editorial-nav-link group flex items-center gap-2 relative"
-              aria-label="Search"
-            >
-              <svg
-                className="w-3 h-3 group-hover:scale-110 transition-transform duration-medium"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              <span className="relative z-10">Search</span>
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-ink transform scale-x-0 group-hover:scale-x-100 transition-transform duration-medium origin-left" />
-            </button>
-
+          <nav className="hidden md:flex items-center gap-4 lg:gap-8 flex-shrink-0" aria-label="Main navigation">
             {/* Browse Dropdown - Editorial */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -194,30 +166,8 @@ export default function Navbar() {
             </div>
           </nav>
 
-          {/* Mobile Actions (Search + Menu Toggle) */}
+          {/* Mobile Actions (Menu Toggle Only) */}
           <div className="md:hidden flex items-center gap-4">
-            {/* Mobile Search Button */}
-            <button
-              onClick={openSearch}
-              className="cursor-pointer p-2.5 hover:bg-gray-100 rounded-md transition-all duration-fast active:scale-95"
-              aria-label="Search"
-            >
-              <svg
-                className="w-5 h-5 text-ink"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </button>
-
             {/* Mobile Menu Toggle */}
             <button
               ref={mobileMenuButtonRef}
@@ -265,6 +215,13 @@ export default function Navbar() {
               <path d="M0,0 L100,0 L100,100 Z" />
             </svg>
           </div>
+
+          {/* Mobile Search Bar */}
+          <div className="relative z-10">
+            <NavbarSearch />
+          </div>
+
+          <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
 
           <Link
             href="/"
