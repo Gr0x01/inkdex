@@ -69,7 +69,7 @@ export default function ArtistInfoColumn({
             {isFeatured && (
               <div className="absolute bottom-2 -right-1 z-10">
                 <div className="bg-featured px-2 py-[0.75rem] flex items-center justify-center">
-                  <span className="font-mono text-[9px] font-semibold text-ink uppercase tracking-wider leading-none">
+                  <span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider leading-none">
                     Featured
                   </span>
                 </div>
@@ -111,13 +111,13 @@ export default function ArtistInfoColumn({
             </p>
 
             {/* Location - very compact */}
-            <p className="font-mono text-[10px] font-light text-gray-500 leading-tight tracking-wide uppercase">
+            <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
               {artist.city}{artist.state && `, ${artist.state}`}
             </p>
 
             {/* Shop name if present */}
             {artist.shop_name && (
-              <p className="font-mono text-[9px] font-light text-gray-400 leading-tight">
+              <p className="font-mono text-xs font-normal text-gray-400 leading-tight">
                 {artist.shop_name}
               </p>
             )}
@@ -126,7 +126,7 @@ export default function ArtistInfoColumn({
 
         {/* Stats - Inline, No Box, Typographic Only */}
         {(artist.follower_count || portfolioCount > 0) && (
-          <div className="flex items-center justify-center gap-2.5 text-[11px] pt-1">
+          <div className="flex items-center justify-center gap-2.5 text-xs pt-1">
             {artist.follower_count && artist.follower_count > 0 && (
               <div>
                 <span className="font-heading font-black text-ink">
@@ -134,7 +134,7 @@ export default function ArtistInfoColumn({
                     ? `${(artist.follower_count / 1000).toFixed(1)}K`
                     : artist.follower_count.toLocaleString()}
                 </span>
-                <span className="font-mono font-light text-gray-500 ml-1 text-[10px] uppercase tracking-wide">
+                <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
                   followers
                 </span>
               </div>
@@ -147,7 +147,7 @@ export default function ArtistInfoColumn({
                 <span className="font-heading font-black text-ink">
                   {portfolioCount}
                 </span>
-                <span className="font-mono font-light text-gray-500 ml-1 text-[10px] uppercase tracking-wide">
+                <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
                   pieces
                 </span>
               </div>
@@ -172,7 +172,7 @@ export default function ArtistInfoColumn({
               href={artist.instagram_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-2 bg-ink text-paper text-center font-mono text-[10px] font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-gray-900 border-2 border-ink"
+              className="block w-full py-2 bg-ink text-paper text-center font-mono text-xs font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-gray-900 border-2 border-ink"
             >
               Instagram →
             </a>
@@ -185,7 +185,7 @@ export default function ArtistInfoColumn({
                 href={artist.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block py-1.5 bg-transparent text-ink text-center font-mono text-[9px] font-medium tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                className="block py-1.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Book
               </a>
@@ -195,7 +195,7 @@ export default function ArtistInfoColumn({
                 href={artist.website_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block py-1.5 bg-transparent text-ink text-center font-mono text-[9px] font-medium tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                className="block py-1.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Website
               </a>
