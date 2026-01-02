@@ -27,8 +27,8 @@ type Story = StoryObj<typeof meta>;
 
 // Mock search result data
 const createMockSearchResult = (
-  overrides?: Partial<SearchResult & { is_pro?: boolean }>
-): SearchResult & { is_pro?: boolean } => ({
+  overrides?: Partial<SearchResult>
+): SearchResult => ({
   artist_id: 'artist-1',
   artist_name: 'Alex Rivera',
   artist_slug: 'alex-rivera',
@@ -38,6 +38,7 @@ const createMockSearchResult = (
   instagram_url: 'https://instagram.com/alex_ink',
   is_verified: true,
   is_pro: false,
+  is_featured: false,
   similarity: 0.28,
   matching_images: [
     {
@@ -104,7 +105,7 @@ export const LowMatch: Story = {
 };
 
 /**
- * Featured artist (50k+ followers) with featured badge
+ * Featured artist with featured badge
  */
 export const FeaturedArtist: Story = {
   args: {
@@ -114,6 +115,42 @@ export const FeaturedArtist: Story = {
       follower_count: 125000,
       city: 'Miami',
       similarity: 0.32,
+      is_featured: true,
+    }),
+    displayMode: 'search',
+  },
+};
+
+/**
+ * Pro artist with Pro badge
+ */
+export const ProArtist: Story = {
+  args: {
+    artist: createMockSearchResult({
+      artist_name: 'Morgan Black',
+      artist_slug: 'morgan-black',
+      follower_count: 85000,
+      city: 'New York',
+      similarity: 0.35,
+      is_pro: true,
+    }),
+    displayMode: 'search',
+  },
+};
+
+/**
+ * Pro artist takes precedence over Featured badge
+ */
+export const ProAndFeaturedArtist: Story = {
+  args: {
+    artist: createMockSearchResult({
+      artist_name: 'Elite Ink Master',
+      artist_slug: 'elite-ink-master',
+      follower_count: 200000,
+      city: 'Los Angeles',
+      similarity: 0.38,
+      is_pro: true,
+      is_featured: true,
     }),
     displayMode: 'search',
   },

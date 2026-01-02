@@ -117,7 +117,8 @@ export async function getTestSearchResult(handle: string): Promise<SearchResult 
       instagram_url,
       verification_status,
       follower_count,
-      is_pro
+      is_pro,
+      is_featured
     `)
     .eq('instagram_handle', handle)
     .single();
@@ -151,6 +152,7 @@ export async function getTestSearchResult(handle: string): Promise<SearchResult 
     instagram_url: artist.instagram_url || '',
     is_verified: artist.verification_status === 'verified' || artist.verification_status === 'claimed',
     is_pro: artist.is_pro || false,
+    is_featured: artist.is_featured || false,
     follower_count: artist.follower_count,
     similarity: 0.35,
     matching_images: matchingImages,

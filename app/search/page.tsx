@@ -129,7 +129,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     follower_count: result.follower_count || null,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
-    max_likes: result.max_likes || 0,  // For featured artist detection
+    is_pro: result.is_pro || false,
+    is_featured: result.is_featured || false,
+    max_likes: result.max_likes || 0,
     matching_images: (result.images || []).map((img: any) => ({
       url: getImageUrl(img.url),
       instagramUrl: img.instagramUrl,

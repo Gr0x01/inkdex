@@ -34,7 +34,9 @@ export interface SearchResult {
   follower_count: number | null
   instagram_url: string | null
   is_verified: boolean
-  max_likes?: number  // Maximum likes across all portfolio images (for featured badge)
+  is_pro: boolean        // Pro subscription status (for Pro badge)
+  is_featured: boolean   // Featured artist flag (for Featured badge)
+  max_likes?: number     // Maximum likes across all portfolio images
   matching_images?: MatchingImage[]
   similarity: number
 }

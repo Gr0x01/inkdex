@@ -56,15 +56,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No claimed artist found' }, { status: 404 });
     }
 
-    // 2. Validate pro status
-    if (!artist.is_pro) {
-      return NextResponse.json(
-        { error: 'Pinning and reordering is a Pro-only feature' },
-        { status: 403 }
-      );
-    }
-
-    // 3. Validate request body
+    // 2. Validate request body (pinning available to all users)
     const body = await request.json();
     const validated = reorderSchema.safeParse(body);
 
@@ -77,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const { updates } = validated.data;
 
-    // 4. Validate max pinned limit
+    // 3. Validate max pinned limit
     const pinnedCount = updates.filter((u) => u.is_pinned).length;
     if (pinnedCount > MAX_PINNED) {
       return NextResponse.json(
@@ -86,7 +78,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Validate all image IDs belong to this artist
+    // 4. Validate all image IDs belong to this artist
     const imageIds = updates.map((u) => u.imageId);
     const { data: existingImages, error: fetchError } = await supabase
       .from('portfolio_images')
@@ -111,7 +103,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Detect if we're unpinning and need to renumber
+    // 5. Detect if we're unpinning and need to renumber
     const unpinningImages = updates.filter((u) => !u.is_pinned);
     let additionalUpdates: typeof updates = [];
 
@@ -142,7 +134,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 7. Batch update all images (original updates + renumbered pinned images)
+    // 6. Batch update all images (original updates + renumbered pinned images)
     const allUpdates = [...updates, ...additionalUpdates];
     console.log(`[Reorder] Updating ${allUpdates.length} images for artist ${artist.id}`);
 

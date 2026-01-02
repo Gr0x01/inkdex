@@ -4,8 +4,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { SearchResult } from '@/types/search'
-import { FEATURED_FOLLOWER_THRESHOLD } from '@/lib/utils/featured'
 import { getImageUrl } from '@/lib/utils/images'
+import { ProBadge } from '@/components/badges/ProBadge'
+import { FeaturedBadge } from '@/components/badges/FeaturedBadge'
 
 /**
  * Format follower count for display
@@ -48,10 +49,9 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     matching_images,
     similarity,
     follower_count,
+    is_pro = false,
+    is_featured = false,
   } = artist
-
-  // Check if artist is featured (has 50k+ followers)
-  const isFeatured = follower_count !== null && follower_count !== undefined && follower_count >= FEATURED_FOLLOWER_THRESHOLD
 
   // All available images
   const allImages = (matching_images || []).filter(img => img.url && img.instagramUrl)
@@ -136,12 +136,17 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
           />
 
-          {/* Featured badge - Top-left */}
-          {isFeatured && (
-            <div className="absolute top-3 left-3 px-2.5 py-1.5 bg-accent/90 backdrop-blur-sm border border-accent-bright/30">
-              <span className="font-mono text-xs font-bold text-paper tracking-[0.15em] uppercase">
-                Featured
-              </span>
+          {/* Badge priority: Pro > Featured
+              Pro artists may also be featured, but Pro badge takes precedence in UI
+              Both badges boost search ranking independently (+0.05 Pro, +0.02 Featured) */}
+          {is_pro && (
+            <div className="absolute top-3 left-3">
+              <ProBadge variant="badge" size="sm" />
+            </div>
+          )}
+          {!is_pro && is_featured && (
+            <div className="absolute top-3 left-3">
+              <FeaturedBadge variant="badge" />
             </div>
           )}
 
@@ -159,9 +164,12 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
       {/* BOTTOM: Artist Info - Editorial Typography */}
       <div className="p-3 sm:p-4 space-y-1">
         {instagramHandle && (
-          <h3 className="font-heading text-base font-bold text-ink tracking-tight">
-            @{instagramHandle}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-heading text-base font-bold text-ink tracking-tight">
+              @{instagramHandle}
+            </h3>
+            {is_pro && <ProBadge variant="icon-only" size="sm" />}
+          </div>
         )}
         <p className="font-body text-sm text-gray-700 leading-relaxed">
           {artist_name}

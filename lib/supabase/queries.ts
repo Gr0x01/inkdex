@@ -124,6 +124,8 @@ export async function searchArtistsByEmbedding(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
+    is_pro: result.is_pro || false,
+    is_featured: result.is_featured || false,
     images: (result.matching_images || []).map((img: any) => ({
       url: img.thumbnail_url,  // Use thumbnail_url (actual image path), not image_url (Instagram post URL)
       instagramUrl: img.image_url,  // Instagram post URL for linking
@@ -199,6 +201,8 @@ export async function searchArtistsWithCount(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
+    is_pro: result.is_pro || false,
+    is_featured: result.is_featured || false,
     images: (result.matching_images || []).map((img: any) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
