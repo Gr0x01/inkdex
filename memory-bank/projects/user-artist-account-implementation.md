@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-02
 Maintainer: RB
-Status: Phase 7 Profile Editor Complete - Dashboard Profile Management + Multi-Step Delete Flow Ready
+Status: Phase 12 Search Ranking & Badges Complete - Pro/Featured boost in search + badge display
 ---
 
 # User & Artist Account Implementation Spec
@@ -542,7 +542,6 @@ Implement Row-Level Security policies:
 - Analytics tracking functions
 - Dashboard (Pro only)
 - Charts and metrics
-- Export (CSV)
 
 ### Phase 14: Admin Panel (Week 8)
 - Admin authentication
@@ -1213,5 +1212,61 @@ npx tsx scripts/seed/create-test-users.ts
 
 ---
 
-**Last Updated:** 2026-01-05
-**Status:** Phase 7 complete - Dashboard profile editor production-ready (all fields editable, multi-step delete, rate limiting, security hardening). All critical code review issues resolved. Ready for manual testing and deployment. Next: Phase 8 (Subscription payments) or Phase 9 (Auto-sync for Pro users)
+### Phase 12: Search Ranking & Badges ✅ (Jan 2, 2026)
+- **2 migrations applied:** search_artists_by_embedding and search_artists_with_count updated with boosts
+- **1 component created:** FeaturedBadge (3 variants: icon-only, badge, inline)
+- **7 files modified:** Search types, queries, API, ArtistCard, stories, test data
+- **Pro boost:** +0.05 similarity score (5-10% of typical 0.15-0.40 scores)
+- **Featured boost:** +0.02 similarity score (quality signal, smaller than Pro)
+- **Combined boost:** +0.07 when both flags are true
+- **Original similarity preserved:** Boost only affects ranking, not displayed percentage
+- **Badge priority:** Pro badge takes precedence over Featured in UI (both boost ranking)
+- **Code review:** All critical issues resolved (FeaturedArtist interface, nullish coalescing)
+
+**Implementation Overview:**
+- **SQL Functions:** Both `search_artists_by_embedding` and `search_artists_with_count` updated
+  - Returns new columns: `is_pro` (boolean), `is_featured` (boolean)
+  - Boost calculation: `best_similarity + (is_pro ? 0.05 : 0) + (is_featured ? 0.02 : 0)`
+  - ORDER BY boosted_score, but SELECT returns original similarity (transparency)
+- **Type updates:** `SearchResult` interface now includes `is_pro: boolean` and `is_featured: boolean`
+- **Data flow:** SQL → queries.ts → search API → ArtistCard component
+
+**Files Created:**
+- `components/badges/FeaturedBadge.tsx` - Star icon badge with 3 variants
+- `supabase/migrations/20260102_004_phase12_search_ranking_boost.sql` - SQL function updates
+
+**Files Modified:**
+- `types/search.ts` - Added is_pro, is_featured to SearchResult interface
+- `lib/supabase/queries.ts` - Pass through is_pro, is_featured with nullish coalescing
+- `app/search/page.tsx` - Map is_pro, is_featured to results
+- `components/search/ArtistCard.tsx` - Display ProBadge and FeaturedBadge with priority logic
+- `components/search/ArtistCard.stories.tsx` - Added ProArtist, FeaturedArtist, ProAndFeaturedArtist stories
+- `.storybook/test-data.ts` - Added is_featured to query and return
+- `lib/utils/artists.ts` - Added is_pro, is_featured to transformToSearchResult
+- `lib/mock/featured-data.ts` - Added is_featured to FeaturedArtist interface
+
+**Badge Display Logic:**
+- Pro artists may also be featured, but Pro badge takes precedence in UI
+- Both badges still contribute to search ranking boost independently
+
+**Test Users Updated:**
+- **Morgan Black (@test_pro_artist):** is_pro=true, is_featured=true (+0.07 boost)
+- **Alex Rivera (@test_free_artist):** is_pro=false, is_featured=true (+0.02 boost)
+- **Jamie Chen (@test_unclaimed_artist):** is_pro=false, is_featured=false (no boost)
+
+**Code Review Fixes:**
+1. ✅ **FeaturedArtist interface** - Added is_featured field
+2. ✅ **Nullish coalescing** - Changed `|| false` to `?? false` for proper null handling
+3. ✅ **Explicit defaults** - Added `= false` in ArtistCard destructuring
+4. ✅ **Badge priority comment** - Documented business logic in component
+
+**Testing Verified:**
+- ✅ Search function returns is_pro and is_featured correctly
+- ✅ Pro artist (Morgan Black) shows +0.07 boosted score
+- ✅ Featured-only artist (Alex Rivera) shows +0.02 boosted score
+- ✅ TypeScript compilation passes
+
+---
+
+**Last Updated:** 2026-01-02
+**Status:** Phase 12 complete - Search ranking boosts and badge display implemented. Pro artists get +0.05 boost, Featured artists get +0.02 boost. Badges display in search results with Pro taking priority over Featured. Next: Phase 13 (Analytics) or Phase 14 (Admin Panel)

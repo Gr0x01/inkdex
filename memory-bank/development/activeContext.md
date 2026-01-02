@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-05 (Phase 5: Onboarding Flow + Test Users Complete)
+Last-Updated: 2026-01-02 (Phase 12: Search Ranking & Badges Complete)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Artist Onboarding Complete ✅
+Status: Production Ready - 8 Cities Live + Search Ranking Boosts ✅
 ---
 
 # Active Context: Inkdex
@@ -904,5 +904,66 @@ node scripts/utilities/check-db.mjs
 
 ---
 
-**Last Updated:** January 5, 2026
-**Next Review:** After Phase 7 (Subscription integration & analytics dashboard)
+---
+
+## Phase 12: Search Ranking & Badges (COMPLETE ✅)
+
+**Status:** Production ready - Pro/Featured boosts applied to search results with badge display
+
+**Completed:** January 2, 2026
+
+### What Was Completed
+- ✅ **SQL function updates:** `search_artists_by_embedding` and `search_artists_with_count` now include ranking boosts
+- ✅ **Pro boost:** +0.05 similarity (5-10% of typical scores)
+- ✅ **Featured boost:** +0.02 similarity (quality signal)
+- ✅ **Combined boost:** +0.07 when both flags are true
+- ✅ **Original similarity preserved:** Boost affects ranking only, not displayed percentage
+- ✅ **New columns returned:** `is_pro` and `is_featured` from search functions
+- ✅ **FeaturedBadge component:** Star icon with 3 variants (icon-only, badge, inline)
+- ✅ **Badge display in ArtistCard:** Pro badge (crown) takes precedence over Featured (star)
+- ✅ **Type updates:** SearchResult interface includes is_pro, is_featured
+- ✅ **Nullish coalescing:** Proper null handling with `?? false` throughout
+
+### Files Created (2)
+- `components/badges/FeaturedBadge.tsx` - Star icon badge component
+- `supabase/migrations/20260102_004_phase12_search_ranking_boost.sql` - SQL function updates
+
+### Files Modified (8)
+- `types/search.ts` - Added is_pro, is_featured to SearchResult
+- `lib/supabase/queries.ts` - Pass through new fields with nullish coalescing
+- `app/search/page.tsx` - Map is_pro, is_featured to results
+- `components/search/ArtistCard.tsx` - Display ProBadge and FeaturedBadge
+- `components/search/ArtistCard.stories.tsx` - Added Pro/Featured stories
+- `.storybook/test-data.ts` - Added is_featured to query
+- `lib/utils/artists.ts` - Added is_pro, is_featured to transform
+- `lib/mock/featured-data.ts` - Added is_featured to interface
+
+### Test Users Updated
+- **Morgan Black (@test_pro_artist):** is_pro=true, is_featured=true (+0.07 boost)
+- **Alex Rivera (@test_free_artist):** is_pro=false, is_featured=true (+0.02 boost)
+- **Jamie Chen (@test_unclaimed_artist):** is_pro=false, is_featured=false (no boost)
+
+### Ranking Logic
+```sql
+-- Boost calculation (ORDER BY only, original similarity returned)
+best_similarity + CASE WHEN is_pro THEN 0.05 ELSE 0 END
+               + CASE WHEN is_featured THEN 0.02 ELSE 0 END
+```
+
+### Badge Priority
+- Pro badge (crown) takes precedence over Featured badge (star) in UI
+- Both flags independently contribute to search ranking boost
+- Artist can be: neither, Featured only, Pro only, or both
+
+### Code Review Fixes
+1. ✅ FeaturedArtist interface - Added is_featured field
+2. ✅ Nullish coalescing - Changed `|| false` to `?? false`
+3. ✅ Explicit defaults - Added `= false` in ArtistCard destructuring
+4. ✅ Badge priority comment - Documented business logic
+
+**Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 12 section)
+
+---
+
+**Last Updated:** January 2, 2026
+**Next Review:** After Phase 13 (Analytics) or Phase 14 (Admin Panel)

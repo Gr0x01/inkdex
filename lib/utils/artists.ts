@@ -41,8 +41,8 @@ export function transformToSearchResult(
     follower_count: artist.follower_count,
     instagram_url: buildInstagramUrl(artist.instagram_handle),
     is_verified: artist.verification_status === 'verified',
-    is_pro: artist.is_pro || false,
-    is_featured: artist.is_featured || false,
+    is_pro: artist.is_pro ?? false,
+    is_featured: artist.is_featured ?? false,
     matching_images: (artist.portfolio_images || []).map(img => ({
       url: img.url,
       instagramUrl: img.instagram_url || '',
