@@ -47,7 +47,7 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-3">
                   <div className="flex items-center gap-1.5">
-                    <p className="font-mono text-[10px] text-white uppercase tracking-wider truncate flex-1">
+                    <p className="font-mono text-xs font-medium text-white uppercase tracking-wider truncate flex-1">
                       {image.artist_name}
                     </p>
                     {image.verified && (

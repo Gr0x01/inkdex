@@ -35,11 +35,11 @@ export default function ClaimProfileButton({
       <button
         onClick={handleClaim}
         disabled={isLoading}
-        className="w-full py-2.5 bg-featured text-ink text-center font-mono text-[10px] font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-ink"
+        className="w-full py-2.5 bg-featured text-ink text-center font-mono text-xs font-semibold tracking-widest uppercase transition-all duration-200 hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-ink"
       >
         {isLoading ? 'Redirecting...' : 'Claim This Page →'}
       </button>
-      <p className="mt-2 text-center font-mono text-[9px] text-gray-500">
+      <p className="mt-2 text-center font-mono text-xs font-normal text-gray-500">
         Are you @{instagramHandle.replace('@', '')}?
       </p>
     </div>

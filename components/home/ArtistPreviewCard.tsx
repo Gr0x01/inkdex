@@ -72,7 +72,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
 
             {/* Shop Name */}
             {artist.shop_name && (
-              <p className="font-mono text-[10px] text-gray-400 truncate tracking-wider uppercase">
+              <p className="font-mono text-xs font-medium text-gray-400 truncate tracking-wider uppercase">
                 {artist.shop_name}
               </p>
             )}

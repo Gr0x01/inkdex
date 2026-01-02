@@ -108,10 +108,10 @@ export function RecommendSection() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Heading */}
       <div>
-        <h2 className="font-heading text-2xl md:text-3xl text-ink mb-2 leading-tight">
+        <h2 className="font-heading text-2xl md:text-3xl text-ink mb-1.5 leading-tight">
           Recommend an Artist
         </h2>
         <p className="font-body text-gray-600 text-base leading-relaxed">
@@ -120,7 +120,7 @@ export function RecommendSection() {
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      <form onSubmit={handleSubmit} className="space-y-3 pt-0.5">
         {/* Instagram Handle Input */}
         <div>
           <label htmlFor="instagram-handle" className="sr-only">
@@ -168,7 +168,7 @@ export function RecommendSection() {
           type="submit"
           disabled={isSubmitting || !handle.trim()}
           className="w-full py-3 px-5 bg-ink text-paper
-                   font-mono text-[10px] tracking-[0.15em] uppercase font-medium
+                   font-mono text-xs tracking-[0.15em] uppercase font-semibold
                    border-2 border-ink
                    hover:bg-paper hover:text-ink
                    disabled:opacity-50 disabled:cursor-not-allowed
@@ -220,7 +220,7 @@ export function RecommendSection() {
       </form>
 
       {/* Fine Print */}
-      <p className="text-sm text-gray-500 font-body leading-relaxed pt-1">
+      <p className="text-sm text-gray-500 font-body leading-relaxed pt-0.5">
         By submitting, you confirm this is a legitimate tattoo artist's Instagram account. We verify all submissions.
       </p>
     </div>

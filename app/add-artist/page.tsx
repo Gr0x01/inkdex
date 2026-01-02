@@ -44,11 +44,11 @@ export default function AddArtistPage() {
             {/* Two Column Grid - Compact App Style */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
               {/* Left Column: Self-Add (I'm an Artist) */}
-              <div className="border-2 border-ink/10 bg-paper p-6">
-                <div className="space-y-4">
+              <div className="border-2 border-ink/10 bg-paper p-4">
+                <div className="space-y-3">
                   {/* Heading */}
                   <div>
-                    <h2 className="font-heading text-2xl md:text-3xl text-ink mb-2 leading-tight">
+                    <h2 className="font-heading text-2xl md:text-3xl text-ink mb-1.5 leading-tight">
                       I'm a Tattoo Artist
                     </h2>
                     <p className="font-body text-gray-600 text-base leading-relaxed">
@@ -57,7 +57,8 @@ export default function AddArtistPage() {
                   </div>
 
                   {/* Benefits List - Compact */}
-                  <ul className="space-y-2.5 pt-1">
+                  <ul className="space-y-2 pt-0.5">
+                    {/* space-y-2 = 8px (0.5rem) */}
                     <li className="flex items-start gap-2.5">
                       <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
@@ -79,7 +80,7 @@ export default function AddArtistPage() {
                   </ul>
 
                   {/* OAuth Button - Compact */}
-                  <div className="pt-4">
+                  <div className="pt-3">
                     <div
                       className="group relative transition-all duration-200 overflow-hidden"
                       style={{
@@ -91,7 +92,7 @@ export default function AddArtistPage() {
                         <a
                           href="/api/add-artist/self-add"
                           className="block w-full py-3 px-5 text-white text-center
-                                   font-mono text-[10px] tracking-[0.15em] uppercase font-medium
+                                   font-mono text-xs tracking-[0.15em] uppercase font-semibold
                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                         >
                           <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
@@ -100,13 +101,13 @@ export default function AddArtistPage() {
                         </a>
                       </div>
                     </div>
-                    <p className="mt-2 text-sm text-gray-500 font-body text-center">
+                    <p className="mt-1.5 text-sm text-gray-500 font-body text-center">
                       We'll verify your account and create your profile
                     </p>
                   </div>
 
                   {/* Already Have Page Link */}
-                  <div className="pt-2 border-t border-ink/10">
+                  <div className="pt-2.5 border-t border-ink/10">
                     <p className="text-sm text-gray-600 font-body text-center leading-relaxed">
                       Already on Inkdex?{' '}
                       <Link
@@ -121,7 +122,7 @@ export default function AddArtistPage() {
               </div>
 
               {/* Right Column: Recommend Artist */}
-              <div className="border-2 border-ink/10 bg-paper p-6">
+              <div className="border-2 border-ink/10 bg-paper p-4">
                 <RecommendSection />
               </div>
             </div>

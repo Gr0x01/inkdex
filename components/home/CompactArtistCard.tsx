@@ -63,7 +63,7 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
 
           {/* Shop Name */}
           {artist.shop_name && (
-            <p className="font-mono text-[9px] text-gray-400 truncate tracking-wider uppercase">
+            <p className="font-mono text-xs font-medium text-gray-400 truncate tracking-wider uppercase">
               {artist.shop_name}
             </p>
           )}

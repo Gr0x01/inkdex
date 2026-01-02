@@ -346,7 +346,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {currentPage > 1 ? (
                   <Link
                     href={buildSearchUrl(currentPage - 1)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
                     aria-label="Go to previous page"
                   >
                     <svg
@@ -367,7 +367,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   </Link>
                 ) : (
                   <div
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-gray-400 border-2 border-gray-200 cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-gray-400 border-2 border-gray-200 cursor-not-allowed"
                     aria-disabled="true"
                   >
                     <svg
@@ -433,7 +433,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 {currentPage < totalPages ? (
                   <Link
                     href={buildSearchUrl(currentPage + 1)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
                     aria-label="Go to next page"
                   >
                     <span>Next</span>
@@ -454,7 +454,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   </Link>
                 ) : (
                   <div
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-[15px] text-gray-400 border-2 border-gray-200 cursor-not-allowed"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-gray-400 border-2 border-gray-200 cursor-not-allowed"
                     aria-disabled="true"
                   >
                     <span>Next</span>
