@@ -131,9 +131,9 @@ export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
         </div>
       </button>
 
-      {/* Dropdown menu */}
+      {/* Dropdown menu - Editorial Style */}
       <div
-        className={`absolute right-0 top-full mt-2 w-48 bg-paper border border-ink/10 rounded-lg shadow-lg overflow-hidden transition-all duration-200 ${
+        className={`absolute right-0 top-full mt-2 w-52 bg-paper border border-ink/10 rounded shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden transition-all duration-200 ease-out ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 -translate-y-2 pointer-events-none'
@@ -141,20 +141,20 @@ export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
         role="menu"
       >
         {/* User info header */}
-        <div className="px-4 py-3 border-b border-ink/10">
+        <div className="px-4 py-2">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm text-ink/60">
+            <span className="font-body text-sm text-ink/70 truncate" style={{ textTransform: 'none' }}>
               @{user.instagram_username || 'user'}
             </span>
-            {isPro && <ProBadge size="sm" variant="icon-only" />}
+            {isPro && <ProBadge size="sm" variant="icon-only" className="flex-shrink-0" />}
           </div>
         </div>
 
         {/* Menu items */}
-        <div className="py-1">
+        <div className="pb-2">
           <Link
             href="/dashboard"
-            className="block px-4 py-2 text-sm text-ink hover:bg-ink/5 transition-colors"
+            className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
             role="menuitem"
             onClick={() => setIsOpen(false)}
           >
@@ -162,17 +162,16 @@ export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
           </Link>
           <Link
             href="/dashboard/portfolio"
-            className="block px-4 py-2 text-sm text-ink hover:bg-ink/5 transition-colors"
+            className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
             role="menuitem"
             onClick={() => setIsOpen(false)}
           >
             Portfolio
           </Link>
-          <hr className="my-1 border-ink/10" />
           <form action="/api/auth/logout" method="POST" className="w-full">
             <button
               type="submit"
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full text-left px-4 py-2 font-body text-[15px] text-ink/50 hover:text-red-600 hover:bg-red-50/50 transition-colors duration-150"
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >

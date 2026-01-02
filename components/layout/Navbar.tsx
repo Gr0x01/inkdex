@@ -101,7 +101,7 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
   }
 
   return (
-    <header className="bg-paper border-b-2 border-ink/10 relative">
+    <header className="bg-paper border-b-2 border-ink/10 relative z-50">
       {/* Top decorative line */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 

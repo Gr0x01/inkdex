@@ -13,8 +13,8 @@ export default async function Home() {
   let featuredArtistsByState: Record<string, any[]> = {}
 
   try {
-    // Fetch 4 randomized featured artists per state (100k+ followers)
-    featuredArtistsByState = await getFeaturedArtistsByStates(4)
+    // Fetch 5 randomized featured artists per state (100k+ followers)
+    featuredArtistsByState = await getFeaturedArtistsByStates(5)
   } catch (error) {
     console.error('Failed to fetch featured artists:', error)
   }
