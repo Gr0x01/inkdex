@@ -203,6 +203,8 @@ export type Database = {
           shop_name: string | null
           slug: string
           state: string | null
+          sync_consecutive_failures: number | null
+          sync_disabled_reason: string | null
           updated_at: string | null
           verification_status: string | null
           verification_token: string | null
@@ -239,6 +241,8 @@ export type Database = {
           shop_name?: string | null
           slug: string
           state?: string | null
+          sync_consecutive_failures?: number | null
+          sync_disabled_reason?: string | null
           updated_at?: string | null
           verification_status?: string | null
           verification_token?: string | null
@@ -275,6 +279,8 @@ export type Database = {
           shop_name?: string | null
           slug?: string
           state?: string | null
+          sync_consecutive_failures?: number | null
+          sync_disabled_reason?: string | null
           updated_at?: string | null
           verification_status?: string | null
           verification_token?: string | null
@@ -452,6 +458,63 @@ export type Database = {
           },
         ]
       }
+      onboarding_sessions: {
+        Row: {
+          artist_id: string | null
+          booking_link: string | null
+          created_at: string | null
+          current_step: number | null
+          expires_at: string | null
+          fetched_images: Json | null
+          id: string
+          profile_data: Json | null
+          profile_updates: Json | null
+          selected_image_ids: string[] | null
+          user_id: string
+        }
+        Insert: {
+          artist_id?: string | null
+          booking_link?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          expires_at?: string | null
+          fetched_images?: Json | null
+          id?: string
+          profile_data?: Json | null
+          profile_updates?: Json | null
+          selected_image_ids?: string[] | null
+          user_id: string
+        }
+        Update: {
+          artist_id?: string | null
+          booking_link?: string | null
+          created_at?: string | null
+          current_step?: number | null
+          expires_at?: string | null
+          fetched_images?: Json | null
+          id?: string
+          profile_data?: Json | null
+          profile_updates?: Json | null
+          selected_image_ids?: string[] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_sessions_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolio_images: {
         Row: {
           artist_id: string
@@ -462,6 +525,7 @@ export type Database = {
           hidden: boolean | null
           id: string
           import_source: string | null
+          instagram_media_id: string | null
           instagram_post_id: string
           instagram_url: string
           is_pinned: boolean | null
@@ -485,6 +549,7 @@ export type Database = {
           hidden?: boolean | null
           id?: string
           import_source?: string | null
+          instagram_media_id?: string | null
           instagram_post_id: string
           instagram_url: string
           is_pinned?: boolean | null
@@ -508,6 +573,7 @@ export type Database = {
           hidden?: boolean | null
           id?: string
           import_source?: string | null
+          instagram_media_id?: string | null
           instagram_post_id?: string
           instagram_url?: string
           is_pinned?: boolean | null
@@ -837,7 +903,9 @@ export type Database = {
         Args: { p_artist_id: string }
         Returns: {
           created_at: string
+          hidden: boolean
           id: string
+          import_source: string
           instagram_post_id: string
           instagram_url: string
           is_pinned: boolean
@@ -845,6 +913,7 @@ export type Database = {
           pinned_position: number
           post_caption: string
           post_timestamp: string
+          storage_original_path: string
           storage_thumb_1280: string
           storage_thumb_320: string
           storage_thumb_640: string
@@ -895,13 +964,12 @@ export type Database = {
           artist_name: string
           artist_slug: string
           city: string
-          follower_count: number
           instagram_url: string
+          is_featured: boolean
+          is_pro: boolean
           is_verified: boolean
           matching_images: Json
-          max_likes: number
           profile_image_url: string
-          shop_name: string
           similarity: number
         }[]
       }
@@ -920,6 +988,8 @@ export type Database = {
           city: string
           follower_count: number
           instagram_url: string
+          is_featured: boolean
+          is_pro: boolean
           is_verified: boolean
           matching_images: Json
           max_likes: number

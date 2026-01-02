@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function CompletePage() {
+function CompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -98,5 +98,24 @@ export default function CompletePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function CompleteLoadingFallback() {
+  return (
+    <div className="max-w-2xl mx-auto text-center">
+      <div className="bg-paper-dark border border-gray-800 rounded-lg p-12">
+        <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-6" />
+        <p className="text-gray-400">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function CompletePage() {
+  return (
+    <Suspense fallback={<CompleteLoadingFallback />}>
+      <CompleteContent />
+    </Suspense>
   );
 }

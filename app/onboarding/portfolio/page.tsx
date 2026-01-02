@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-export default function PortfolioPage() {
+function PortfolioContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -168,5 +168,26 @@ export default function PortfolioPage() {
         {loading ? 'Saving...' : 'Continue →'}
       </button>
     </div>
+  );
+}
+
+function PortfolioLoadingFallback() {
+  return (
+    <div className="max-w-6xl mx-auto">
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PortfolioPage() {
+  return (
+    <Suspense fallback={<PortfolioLoadingFallback />}>
+      <PortfolioContent />
+    </Suspense>
   );
 }

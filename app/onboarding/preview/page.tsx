@@ -1,8 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function PreviewPage() {
+function PreviewContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -205,5 +205,26 @@ export default function PreviewPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PreviewLoadingFallback() {
+  return (
+    <div className="max-w-4xl mx-auto">
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={<PreviewLoadingFallback />}>
+      <PreviewContent />
+    </Suspense>
   );
 }

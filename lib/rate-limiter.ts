@@ -279,5 +279,22 @@ export function getClientIp(request: Request): string {
   return '127.0.0.1';
 }
 
+/**
+ * Rate limit manual sync requests (Pro feature)
+ *
+ * Limits: 1 manual sync per hour per user
+ * Prevents abuse of expensive Instagram + classification calls
+ *
+ * @param identifier - User ID (authenticated Pro users only)
+ * @returns Rate limit check result
+ */
+export function checkManualSyncRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `manual_sync:${identifier}`,
+    1, // 1 sync
+    60 * 60 * 1000 // per hour
+  );
+}
+
 // Export singleton for testing
 export const rateLimiter = globalRateLimiter;

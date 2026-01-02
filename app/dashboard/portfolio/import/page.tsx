@@ -7,7 +7,7 @@
  * and replaces existing portfolio atomically
  */
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { MAX_FREE_TIER_IMAGES, MAX_PRO_TIER_IMAGES } from '@/lib/constants/portfolio';
@@ -27,7 +27,7 @@ interface ProfileData {
 
 type Step = 'fetching' | 'selecting' | 'importing' | 'error';
 
-export default function PortfolioImportPage() {
+function PortfolioImportContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isPro = searchParams.get('pro') === '1';
@@ -303,5 +303,26 @@ export default function PortfolioImportPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ImportLoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="flex flex-col items-center justify-center space-y-6">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-700 border-t-white" />
+          <p className="text-lg text-neutral-400">Loading...</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PortfolioImportPage() {
+  return (
+    <Suspense fallback={<ImportLoadingFallback />}>
+      <PortfolioImportContent />
+    </Suspense>
   );
 }

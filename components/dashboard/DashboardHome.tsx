@@ -8,6 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import DashboardToolbar from './DashboardToolbar';
+import { SyncSettingsCard } from './SyncSettingsCard';
 
 interface DashboardHomeProps {
   handle: string;
@@ -149,6 +150,16 @@ export default function DashboardHome({
             </a>
           </div>
         </section>
+
+        {/* Instagram Sync Settings (Pro only) */}
+        {isPro && (
+          <section className="mb-8">
+            <h2 className="font-mono text-[11px] font-medium tracking-widest uppercase text-gray-700 mb-4">
+              Pro Features
+            </h2>
+            <SyncSettingsCard />
+          </section>
+        )}
 
       </div>
     </div>

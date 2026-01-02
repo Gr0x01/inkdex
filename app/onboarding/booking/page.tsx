@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function BookingPage() {
+function BookingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -82,5 +82,27 @@ export default function BookingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function BookingLoadingFallback() {
+  return (
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-paper-dark border border-gray-800 rounded-lg p-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-800 rounded w-1/3" />
+          <div className="h-4 bg-gray-800 rounded w-1/2" />
+          <div className="h-12 bg-gray-800 rounded mt-8" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={<BookingLoadingFallback />}>
+      <BookingContent />
+    </Suspense>
   );
 }
