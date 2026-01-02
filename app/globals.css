@@ -96,7 +96,7 @@ body {
   background: var(--paper-white);
   color: var(--ink-black);
   font-family: 'Crimson Pro', serif;
-  font-size: 1.0625rem; /* 17px */
+  font-size: 1rem; /* 16px - v2.1 (align with Tailwind config) */
   line-height: 1.8; /* Increased for editorial feel */
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
@@ -240,14 +240,12 @@ a:hover {
   }
 
   .text-small {
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-size: 0.875rem; /* 14px */
+    line-height: 1.6;
+    font-weight: 400; /* v2.1: increased from 300 for readability */
   }
 
-  .text-tiny {
-    font-size: 0.6875rem;
-    line-height: 1.4;
-  }
+  /* .text-tiny removed - deprecated in v2.1, use text-xs (12px) instead */
 
   /* Grain Texture Overlay (reduced opacity) */
   .grain-overlay::before {

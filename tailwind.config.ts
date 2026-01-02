@@ -81,15 +81,15 @@ const config: Config = {
         mono: ['var(--font-jetbrains-mono)', 'monospace'],
       },
 
-      // Font Sizes (with line heights)
+      // Font Sizes (with line heights) - v2.1 Readability Update
       fontSize: {
         display: ['3.5rem', { lineHeight: '0.95', fontWeight: '900' }],
         h1: ['2.5rem', { lineHeight: '1.1', fontWeight: '700' }],
         h2: ['1.75rem', { lineHeight: '1.2', fontWeight: '700' }],
         h3: ['1.25rem', { lineHeight: '1.3', fontWeight: '700' }],
-        body: ['0.9375rem', { lineHeight: '1.8', fontWeight: '300' }], // Increased line-height
-        small: ['0.8125rem', { lineHeight: '1.5', fontWeight: '300' }],
-        tiny: ['0.6875rem', { lineHeight: '1.4', fontWeight: '200', letterSpacing: '0.05em' }],
+        body: ['1rem', { lineHeight: '1.7', fontWeight: '400' }], // 16px @ 400 (WCAG AA compliant)
+        small: ['0.875rem', { lineHeight: '1.6', fontWeight: '400' }], // 14px @ 400 (WCAG AA compliant)
+        // 'tiny' removed - deprecated in favor of text-xs (12px)
       },
 
       // Spacing (8px grid)
