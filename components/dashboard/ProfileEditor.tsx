@@ -416,28 +416,6 @@ export default function ProfileEditor({
                 </section>
               )}
 
-              {/* Helpful Tips */}
-              <div className="bg-[var(--gray-100)] p-4 space-y-2">
-                <p className="font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
-                  Tips
-                </p>
-                <ul className="font-body text-sm text-[var(--gray-700)] space-y-2 list-none">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--warm-gray)] mt-0.5">•</span>
-                    <span>A compelling bio helps clients understand your style</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--warm-gray)] mt-0.5">•</span>
-                    <span>Adding a booking link increases consultation requests</span>
-                  </li>
-                  {!isPro && (
-                    <li className="flex items-start gap-2">
-                      <span className="text-amber-500 mt-0.5">★</span>
-                      <span>Upgrade to Pro to display pricing and availability</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
             </div>
           </aside>
         </div>
