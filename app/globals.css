@@ -404,7 +404,7 @@ a:hover {
     justify-content: center;
     gap: var(--space-sm);
     padding: var(--space-md) var(--space-xl);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6875rem;
     font-weight: 500;
