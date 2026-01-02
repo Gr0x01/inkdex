@@ -167,6 +167,8 @@ export default function LocationPicker({
             }}
             options={COUNTRY_OPTIONS}
             placeholder="Select country"
+            searchable
+            searchPlaceholder="Search countries..."
           />
         </div>
 
@@ -225,6 +227,8 @@ export default function LocationPicker({
                     onChange={(val) => setSelectedState(val)}
                     options={US_STATE_OPTIONS}
                     placeholder="Select state"
+                    searchable
+                    searchPlaceholder="Search states..."
                   />
                 </div>
               </div>
@@ -238,6 +242,8 @@ export default function LocationPicker({
                   onChange={(val) => setSelectedState(val)}
                   options={US_STATE_OPTIONS}
                   placeholder="Select state"
+                  searchable
+                  searchPlaceholder="Search states..."
                 />
                 <p className="mt-1 font-body text-sm text-[var(--gray-500)] italic">
                   You'll appear in searches for this entire state
@@ -381,6 +387,8 @@ export default function LocationPicker({
               }}
               options={COUNTRY_OPTIONS}
               placeholder="Select country"
+              searchable
+              searchPlaceholder="Search countries..."
             />
           </div>
 
@@ -407,6 +415,8 @@ export default function LocationPicker({
                   onChange={(val) => setNewRegion(val || '')}
                   options={US_STATE_OPTIONS}
                   placeholder="Select state"
+                  searchable
+                  searchPlaceholder="Search states..."
                 />
               ) : (
                 <input

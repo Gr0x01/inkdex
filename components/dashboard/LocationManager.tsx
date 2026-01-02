@@ -339,6 +339,8 @@ export default function LocationManager({
               }}
               options={COUNTRY_OPTIONS}
               placeholder="Select country"
+              searchable
+              searchPlaceholder="Search countries..."
             />
           </div>
 
@@ -398,6 +400,8 @@ export default function LocationManager({
                   onChange={(val) => setNewRegion(val || '')}
                   options={US_STATE_OPTIONS}
                   placeholder="Select state"
+                  searchable
+                  searchPlaceholder="Search states..."
                 />
               ) : (
                 <input
@@ -480,6 +484,8 @@ function FreeTierLocationEditor({
           }}
           options={COUNTRY_OPTIONS}
           placeholder="Select country"
+          searchable
+          searchPlaceholder="Search countries..."
         />
       </div>
 
@@ -535,6 +541,8 @@ function FreeTierLocationEditor({
                   onChange={(val) => setSelectedState(val)}
                   options={US_STATE_OPTIONS}
                   placeholder="Select state"
+                  searchable
+                  searchPlaceholder="Search states..."
                 />
               </div>
             </div>
@@ -548,6 +556,8 @@ function FreeTierLocationEditor({
                 onChange={(val) => setSelectedState(val)}
                 options={US_STATE_OPTIONS}
                 placeholder="Select state"
+                searchable
+                searchPlaceholder="Search states..."
               />
             </div>
           )}
