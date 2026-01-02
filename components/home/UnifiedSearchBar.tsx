@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import LoadingSearchCard from '@/components/search/LoadingSearchCard'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import styles from './ShimmerSearch.module.css'
 
@@ -25,7 +24,36 @@ export default function UnifiedSearchBar() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [particleBurst, setParticleBurst] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
+  const [messageIndex, setMessageIndex] = useState(0)
+
+  // Loading messages by search type
+  const loadingMessages = {
+    image: [
+      "Analyzing your image...",
+      "Comparing with our portfolio...",
+      "Finding your perfect match...",
+      "Almost there..."
+    ],
+    text: [
+      "Understanding your style...",
+      "Searching through portfolios...",
+      "Finding the best artists...",
+      "Curating your results..."
+    ],
+    instagram_post: [
+      "Fetching from Instagram...",
+      "Analyzing the post...",
+      "Finding similar artists...",
+      "Almost there..."
+    ],
+    instagram_profile: [
+      "Fetching portfolio from Instagram...",
+      "Analyzing recent posts...",
+      "Finding artists with similar style...",
+      "Almost there..."
+    ]
+  }
 
   // Cleanup blob URL on unmount
   useEffect(() => {
@@ -42,8 +70,32 @@ export default function UnifiedSearchBar() {
     setDetectedInstagramUrl(detected)
   }, [textQuery])
 
-  const handleImageSelect = (file: File, isDropped = false) => {
-    // Revoke previous blob URL if it exists
+  // Loading message rotation
+  useEffect(() => {
+    if (!isSubmitting) {
+      setMessageIndex(0)
+      return
+    }
+
+    const searchType = imageFile ? 'image' :
+      detectedInstagramUrl?.type === 'post' ? 'instagram_post' :
+      detectedInstagramUrl?.type === 'profile' ? 'instagram_profile' : 'text'
+
+    const messages = loadingMessages[searchType]
+    setLoadingMessage(messages[0])
+
+    const interval = setInterval(() => {
+      setMessageIndex((prev) => {
+        const next = (prev + 1) % messages.length
+        setLoadingMessage(messages[next])
+        return next
+      })
+    }, 2500)
+
+    return () => clearInterval(interval)
+  }, [isSubmitting, imageFile, detectedInstagramUrl])
+
+  const handleImageSelect = (file: File) => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
     }
@@ -52,12 +104,6 @@ export default function UnifiedSearchBar() {
     setImageFile(file)
     setImagePreview(preview)
     setError(null)
-
-    // Trigger particle burst if image was dropped
-    if (isDropped) {
-      setParticleBurst(true)
-      setTimeout(() => setParticleBurst(false), 800)
-    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +119,7 @@ export default function UnifiedSearchBar() {
 
     const file = e.dataTransfer.files?.[0]
     if (file && file.type.startsWith('image/')) {
-      handleImageSelect(file, true)
+      handleImageSelect(file)
     }
   }
 
@@ -101,7 +147,6 @@ export default function UnifiedSearchBar() {
     e.preventDefault()
     setError(null)
 
-    // Validate: at least one input method
     const hasImage = imageFile !== null
     const hasText = textQuery.trim().length >= 3
     const hasInstagramPost = detectedInstagramUrl?.type === 'post'
@@ -117,7 +162,6 @@ export default function UnifiedSearchBar() {
     try {
       let response: Response
 
-      // Priority: Image > Instagram Post > Instagram Profile > Text
       if (hasImage) {
         const formData = new FormData()
         formData.append('type', 'image')
@@ -130,9 +174,7 @@ export default function UnifiedSearchBar() {
       } else if (hasInstagramPost) {
         response = await fetch('/api/search', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'instagram_post',
             instagram_url: detectedInstagramUrl!.originalUrl,
@@ -141,9 +183,7 @@ export default function UnifiedSearchBar() {
       } else if (hasInstagramProfile) {
         response = await fetch('/api/search', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'instagram_profile',
             instagram_url: detectedInstagramUrl!.originalUrl,
@@ -152,9 +192,7 @@ export default function UnifiedSearchBar() {
       } else {
         response = await fetch('/api/search', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             type: 'text',
             text: textQuery.trim(),
@@ -169,7 +207,6 @@ export default function UnifiedSearchBar() {
 
       const data = await response.json()
 
-      // Cleanup blob URL before navigation
       if (imagePreview && imagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(imagePreview)
       }
@@ -192,165 +229,161 @@ export default function UnifiedSearchBar() {
   ) && !isSubmitting
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-0 sm:px-4" id="search">
-      <form onSubmit={handleSubmit}>
-        {!isSubmitting ? (
-          /* Normal Search Bar */
-          <div className="space-y-3 sm:space-y-0 px-4 sm:px-0">
-            {/* Input Container */}
-            <div
-              className={`
-                relative flex items-center gap-2 sm:gap-3
-                bg-white rounded-full shadow-2xl
-                transition-all duration-300
-                ${isDragging ? 'ring-4 ring-ink/50 scale-[1.01]' : ''}
-                ${error ? 'ring-2 ring-red-500/50' : ''}
-              `}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              {/* Particle burst effect when image is dropped */}
-              {particleBurst && <div className={`${styles.particleField} ${styles.particleBurst}`} />}
-              {/* Image Preview Thumbnail (if uploaded) */}
-              {imagePreview && (
-                <div className="flex-shrink-0 pl-2 sm:pl-3 py-2">
-                  <div className="relative group">
+    <div className="w-full max-w-3xl mx-auto px-4" id="search">
+      <form onSubmit={handleSubmit} className="relative">
+        {/* Loading Glow Effect */}
+        {isSubmitting && <div className={styles.loadingGlow} style={{ borderRadius: 0 }} />}
+
+        <div className="flex flex-col sm:flex-row items-stretch gap-0.5">
+          {/* Input Field Container */}
+          <div
+            className={`
+              flex-1 flex items-center gap-2 h-8 px-2 bg-white/95 border-2
+              transition-all duration-150
+              ${isSubmitting ? 'border-purple-500/50' : error ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
+              ${isSubmitting ? '' : 'focus-within:border-white/60'}
+            `}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+          >
+            {isSubmitting ? (
+              /* Loading State Content */
+              <div className="flex-1 flex items-center justify-center">
+                <p
+                  key={messageIndex}
+                  className="font-body text-base sm:text-lg text-gray-600 animate-fade-in"
+                >
+                  {loadingMessage}
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Left: Search Icon OR Image Thumbnail */}
+                {imagePreview ? (
+                  <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imagePreview}
-                      alt="Reference"
-                      className="h-12 w-12 rounded-full object-cover ring-2 ring-ink"
+                      alt="Upload preview"
+                      className="w-full h-full object-cover ring-1 ring-ink/20"
                     />
-                    {/* Note: Using img for blob URL preview */}
                     <button
                       type="button"
                       onClick={removeImage}
-                      className="absolute -top-1 -right-1 w-5 h-5 bg-black text-white rounded-full flex items-center justify-center hover:bg-red-500 transition-colors text-xs"
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-ink text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs leading-none"
                       aria-label="Remove image"
                     >
                       ×
                     </button>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <svg
+                    className="w-4 h-4 text-ink/40 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                )}
 
-              {/* Search Icon */}
-              <div className="flex-shrink-0 pl-3 sm:pl-6 text-gray-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+                {/* Center: Text Input */}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={textQuery}
+                  onChange={(e) => {
+                    setTextQuery(e.target.value)
+                    setError(null)
+                  }}
+                  placeholder="Paste an Instagram link, describe your style, or drop an image..."
+                  maxLength={200}
+                  className="flex-1 bg-transparent text-[20px] font-body text-ink placeholder:text-ink/40 outline-none focus:outline-none focus:ring-0 min-w-0"
+                />
 
-              {/* Input Field */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={textQuery}
-                onChange={(e) => {
-                  setTextQuery(e.target.value)
-                  setError(null)
-                }}
-                placeholder="Paste an Instagram link, describe your style, or upload an image..."
-                maxLength={200}
-                className="flex-1 py-2.5 sm:py-3 bg-transparent font-body text-sm sm:text-lg text-black placeholder:text-gray-400 focus:outline-none min-w-0"
-              />
+                {/* Instagram Badge (conditional) */}
+                {detectedInstagramUrl && !imageFile && (
+                  <div className="flex-shrink-0 px-2.5 py-1 bg-gradient-to-r from-purple-500/90 to-pink-500/90 animate-[badge-slide-in_150ms_ease-out]">
+                    <span className="text-xs sm:text-sm font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                      {detectedInstagramUrl.type === 'post'
+                        ? 'IG Post'
+                        : `@${detectedInstagramUrl.id.length > 10 ? detectedInstagramUrl.id.slice(0, 10) + '...' : detectedInstagramUrl.id}`}
+                    </span>
+                  </div>
+                )}
 
-              {/* Instagram URL Detected Badge */}
-              {detectedInstagramUrl && !imageFile && (
-                <div className="flex-shrink-0 px-2 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full">
-                  <span className="text-xs font-mono font-bold text-white uppercase tracking-wider whitespace-nowrap">
-                    {detectedInstagramUrl.type === 'post'
-                      ? 'IG Post'
-                      : `Similar to @${detectedInstagramUrl.id}`}
-                  </span>
-                </div>
-              )}
+                {/* Upload Button (inside input) */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-shrink-0 p-2 hover:bg-ink/5 transition-colors"
+                  aria-label="Upload reference image"
+                >
+                  <svg
+                    className="w-4 h-4 text-ink/40 hover:text-ink transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </button>
 
-              {/* Upload Button */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileInputChange}
-                className="hidden"
-                aria-label="Upload reference image"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-shrink-0 p-2 sm:p-3.5 text-gray-600 hover:text-black hover:bg-gray-100 rounded-full transition-all"
-                aria-label="Upload image"
-                title="Upload image"
-              >
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </button>
-
-              {/* Search Button - Desktop Only (inline) */}
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className={`
-                  hidden sm:flex
-                  flex-shrink-0 mr-2 px-8 py-3.5 rounded-full font-mono text-sm uppercase tracking-wider
-                  transition-all duration-200 min-w-[100px] items-center justify-center
-                  ${
-                    canSubmit
-                      ? 'bg-ink text-paper hover:opacity-90 hover:-translate-y-0.5 font-bold'
-                      : 'bg-ink/30 text-ink/50 cursor-not-allowed font-semibold border-2 border-ink/20'
-                  }
-                `}
-              >
-                Search
-              </button>
-            </div>
-
-            {/* Search Button - Mobile Only (full width below) */}
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className={`
-                sm:hidden w-full rounded-full font-mono text-sm uppercase tracking-wider
-                transition-all duration-300 flex items-center justify-center
-                ${
-                  canSubmit
-                    ? 'bg-paper text-ink hover:bg-white font-bold shadow-xl py-3 px-6 border-2 border-paper'
-                    : 'bg-transparent text-paper/60 cursor-not-allowed font-medium border-2 border-paper/20 py-2.5 px-6'
-                }
-              `}
-              style={{
-                marginTop: 'var(--space-md)',
-              }}
-            >
-              {canSubmit ? 'Search' : 'Enter Search Terms'}
-            </button>
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileInputChange}
+                  className="hidden"
+                  aria-label="Upload reference image"
+                />
+              </>
+            )}
           </div>
-        ) : (
-          /* Loading State - Replaces Search Bar */
-          <LoadingSearchCard
-            isVisible={isSubmitting}
-            searchType={
-              imageFile ? 'image' :
-              detectedInstagramUrl?.type === 'post' ? 'instagram_post' :
-              detectedInstagramUrl?.type === 'profile' ? 'instagram_profile' :
-              'text'
-            }
-          />
-        )}
+
+          {/* Search Button - Separate, next to input */}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className={`
+              h-8 px-2 border-2
+              font-mono text-sm sm:text-base font-bold uppercase tracking-widest
+              transition-all duration-150
+              ${
+                canSubmit
+                  ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-400 active:bg-orange-600'
+                  : 'bg-white/5 text-white/30 border-transparent cursor-not-allowed'
+              }
+            `}
+          >
+            Search
+          </button>
+        </div>
 
         {/* Error Message */}
         {error && !isSubmitting && (
           <div className="mt-3 text-center">
-            <p className="text-sm text-red-500 font-medium">{error}</p>
+            <p className="text-sm text-red-400 font-body">{error}</p>
           </div>
         )}
 
         {/* Drag Hint */}
         {isDragging && !isSubmitting && (
           <div className="mt-3 text-center">
-            <p className="text-sm text-ink font-medium animate-pulse">Drop your image here</p>
+            <p className="text-sm text-white/80 font-medium animate-pulse">Drop your image here</p>
           </div>
         )}
       </form>

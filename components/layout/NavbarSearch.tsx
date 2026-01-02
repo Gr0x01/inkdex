@@ -168,133 +168,138 @@ export default function NavbarSearch() {
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full">
-      <div
-        className={`
-          flex items-center gap-2 md:gap-3 h-10 md:h-11 px-2.5 md:px-4 bg-white/60 border
-          transition-all duration-150
-          ${error ? 'border-red-500/50' : 'border-gray-300/50'}
-          focus-within:border-ink focus-within:bg-white
-        `}
-      >
-        {/* Left: Search Icon OR Image Thumbnail */}
-        {imagePreview ? (
-          <div className="relative w-7 h-7 md:w-8 md:h-8 flex-shrink-0 group">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imagePreview}
-              alt="Upload preview"
-              className="w-full h-full object-cover ring-1 ring-ink/20"
-            />
-            {/* Note: Using img for blob URL preview */}
-            <button
-              type="button"
-              onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-ink text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none"
-              aria-label="Remove image"
-            >
-              ×
-            </button>
-          </div>
-        ) : (
-          <svg
-            className="hidden md:block w-5 h-5 text-gray-400 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={1.25}
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-        )}
-
-        {/* Center: Text Input */}
-        <input
-          type="text"
-          value={textQuery}
-          onChange={(e) => {
-            setTextQuery(e.target.value)
-            setError(null)
-          }}
-          placeholder="Search artists, styles, or paste Instagram link..."
-          maxLength={200}
-          className="flex-1 bg-transparent text-sm md:text-base font-body text-ink placeholder:text-gray-400/70 outline-none focus:outline-none focus:ring-0 min-w-0"
-        />
-
-        {/* Instagram Badge (conditional) */}
-        {detectedInstagramUrl && !imageFile && (
-          <div className="flex-shrink-0 px-2 py-1 bg-gradient-to-r from-purple-500/85 to-pink-500/85 animate-[badge-slide-in_150ms_ease-out]">
-            <span className="text-xs font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
-              {detectedInstagramUrl.type === 'post'
-                ? 'IG'
-                : `@${detectedInstagramUrl.id.length > 8 ? detectedInstagramUrl.id.slice(0, 8) + '...' : detectedInstagramUrl.id}`}
-            </span>
-          </div>
-        )}
-
-        {/* Right: Upload Button + Submit Arrow */}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 p-1 hover:bg-gray-100/40 transition-colors"
-          aria-label="Upload reference image"
+      <div className="flex items-stretch gap-0.5">
+        {/* Input Field Container */}
+        <div
+          className={`
+            flex-1 flex items-center gap-2 h-10 md:h-11 px-2 bg-white/80 border-2
+            transition-all duration-150
+            ${error ? 'border-red-500/60' : 'border-ink/20'}
+            focus-within:border-ink focus-within:bg-white
+          `}
         >
-          <svg
-            className="w-4 h-4 md:w-5 md:h-5 text-gray-400 hover:text-ink transition-colors"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            strokeWidth={1.25}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </button>
+          {/* Left: Search Icon OR Image Thumbnail */}
+          {imagePreview ? (
+            <div className="relative w-6 h-6 md:w-7 md:h-7 flex-shrink-0 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="Upload preview"
+                className="w-full h-full object-cover ring-1 ring-ink/20"
+              />
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-ink text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs leading-none"
+                aria-label="Remove image"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
+            <svg
+              className="w-4 h-4 md:w-5 md:h-5 text-ink/40 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          )}
 
+          {/* Center: Text Input */}
+          <input
+            type="text"
+            value={textQuery}
+            onChange={(e) => {
+              setTextQuery(e.target.value)
+              setError(null)
+            }}
+            placeholder="Search artists, styles, or paste Instagram link..."
+            maxLength={200}
+            className="flex-1 bg-transparent text-sm md:text-base font-body text-ink placeholder:text-ink/35 outline-none focus:outline-none focus:ring-0 min-w-0"
+          />
+
+          {/* Instagram Badge (conditional) */}
+          {detectedInstagramUrl && !imageFile && (
+            <div className="flex-shrink-0 px-2 py-0.5 bg-gradient-to-r from-purple-500/90 to-pink-500/90 animate-[badge-slide-in_150ms_ease-out]">
+              <span className="text-[10px] md:text-xs font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+                {detectedInstagramUrl.type === 'post'
+                  ? 'IG Post'
+                  : `@${detectedInstagramUrl.id.length > 8 ? detectedInstagramUrl.id.slice(0, 8) + '...' : detectedInstagramUrl.id}`}
+              </span>
+            </div>
+          )}
+
+          {/* Upload Button (inside input) */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-shrink-0 p-1.5 -mr-1 hover:bg-ink/5 transition-colors"
+            aria-label="Upload reference image"
+          >
+            <svg
+              className="w-4 h-4 md:w-5 md:h-5 text-ink/40 hover:text-ink transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileInputChange}
+            className="hidden"
+            aria-label="Upload reference image"
+          />
+        </div>
+
+        {/* Search Button - Separate, next to input */}
         <button
           type="submit"
           disabled={!canSubmit}
           className={`
-            flex-shrink-0 px-3 py-1.5 font-mono text-xs md:text-sm uppercase tracking-wider transition-all duration-150
+            flex-shrink-0 h-10 md:h-11 px-4 md:px-6 border-2
+            font-mono text-xs md:text-sm font-bold uppercase tracking-widest
+            transition-all duration-150
             ${
               canSubmit
-                ? 'text-ink hover:bg-gray-100/40'
-                : 'text-gray-400 cursor-not-allowed'
+                ? 'bg-ink text-paper border-ink hover:bg-ink/90 active:bg-ink/80'
+                : 'bg-ink/5 text-ink/25 border-transparent cursor-not-allowed'
             }
           `}
         >
           Search
         </button>
-
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileInputChange}
-          className="hidden"
-          aria-label="Upload reference image"
-        />
       </div>
 
       {/* Inline Loading Spinner (overlay) */}
       {isSubmitting && (
         <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-3.5 h-3.5 border border-gray-300/60 border-t-ink rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-ink/20 border-t-ink animate-spin" />
         </div>
       )}
 
       {/* Error Message */}
       {error && !isSubmitting && (
-        <div className="absolute top-full left-0 right-0 mt-1 px-2">
-          <p className="text-xs md:text-sm text-red-500/80 font-body">{error}</p>
+        <div className="absolute top-full left-0 right-0 mt-1.5 px-1">
+          <p className="text-xs md:text-sm text-red-600 font-body">{error}</p>
         </div>
       )}
     </form>

@@ -112,7 +112,7 @@
 .loadingGlow {
   position: absolute;
   inset: -8px;
-  border-radius: 9999px;
+  border-radius: 0;
   padding: 8px;
   background: conic-gradient(
     from var(--gradient-angle) at 50% 50%,

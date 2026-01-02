@@ -92,8 +92,9 @@ const config: Config = {
         // 'tiny' removed - deprecated in favor of text-xs (12px)
       },
 
-      // Spacing (8px grid)
+      // Spacing (8px grid, with 4px half-step)
       spacing: {
+        '0.5': '0.25rem', // 4px (half-step)
         '1': '0.5rem',   // 8px
         '2': '1rem',     // 16px
         '3': '1.5rem',   // 24px
