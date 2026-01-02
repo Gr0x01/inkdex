@@ -30,7 +30,6 @@ export function isDoNotTrack(): boolean {
   if (navigator.doNotTrack === '1') return true
 
   // Check Global Privacy Control (modern standard)
-  // @ts-ignore - GPC is not in standard Navigator type yet
   if (navigator.globalPrivacyControl === true) return true
 
   return false

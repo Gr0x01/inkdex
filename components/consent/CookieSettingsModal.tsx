@@ -20,6 +20,19 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { getConsent, acceptAll, rejectAll, saveConsent } from '@/lib/consent/consent-manager'
 
+/**
+ * Announce to screen readers (ARIA live region)
+ */
+function announceToScreenReader(message: string) {
+  const announcement = document.createElement('div')
+  announcement.setAttribute('role', 'status')
+  announcement.setAttribute('aria-live', 'polite')
+  announcement.className = 'sr-only'
+  announcement.textContent = message
+  document.body.appendChild(announcement)
+  setTimeout(() => announcement.remove(), 1000)
+}
+
 interface CookieSettingsModalProps {
   isOpen: boolean
   onClose: () => void
@@ -27,6 +40,7 @@ interface CookieSettingsModalProps {
 
 export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProps) {
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false)
+  const [consentTimestamp, setConsentTimestamp] = useState<number | null>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
   // Load current consent on mount and when modal opens
@@ -34,6 +48,7 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
     if (isOpen) {
       const consent = getConsent()
       setAnalyticsEnabled(consent?.analytics ?? false)
+      setConsentTimestamp(consent?.timestamp ?? null)
     }
   }, [isOpen])
 
@@ -61,18 +76,43 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
   // Handle accept all
   const handleAcceptAll = () => {
     acceptAll()
+    announceToScreenReader('Cookie preferences saved: All cookies accepted')
+
+    // Track consent decision with Vercel Analytics
+    if (typeof window !== 'undefined' && (window as any).va) {
+      ;(window as any).va('event', 'Consent Decision', { analytics_enabled: true })
+    }
+
     onClose()
   }
 
   // Handle reject all
   const handleRejectAll = () => {
     rejectAll()
+    announceToScreenReader('Cookie preferences saved: Only essential cookies accepted')
+
+    // Track consent decision with Vercel Analytics (privacy-safe, no GA cookies)
+    if (typeof window !== 'undefined' && (window as any).va) {
+      ;(window as any).va('event', 'Consent Decision', { analytics_enabled: false })
+    }
+
     onClose()
   }
 
   // Handle save custom preferences
   const handleSaveCustom = () => {
     saveConsent(analyticsEnabled)
+    announceToScreenReader(
+      analyticsEnabled
+        ? 'Cookie preferences saved: Analytics cookies enabled'
+        : 'Cookie preferences saved: Analytics cookies disabled'
+    )
+
+    // Track consent decision with Vercel Analytics
+    if (typeof window !== 'undefined' && (window as any).va) {
+      ;(window as any).va('event', 'Consent Decision', { analytics_enabled: analyticsEnabled })
+    }
+
     onClose()
   }
 
@@ -158,14 +198,19 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
           </div>
         </div>
 
-        {/* Privacy Policy Link */}
-        <div className="mb-6">
+        {/* Privacy Policy Link & Last Updated */}
+        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Link
             href="/legal/privacy"
             className="font-jetbrains-mono text-xs text-stone-400 underline transition-colors hover:text-accent"
           >
             Read our Privacy Policy →
           </Link>
+          {consentTimestamp && (
+            <p className="font-jetbrains-mono text-xs text-stone-500">
+              Last updated: {new Date(consentTimestamp).toLocaleDateString()}
+            </p>
+          )}
         </div>
 
         {/* Action Buttons */}

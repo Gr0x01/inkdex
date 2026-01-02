@@ -26,6 +26,19 @@ import Link from 'next/link'
 import { needsConsentBanner, acceptAll, rejectAll, CONSENT_CHANGE_EVENT } from '@/lib/consent/consent-manager'
 import { CookieSettingsModal } from './CookieSettingsModal'
 
+/**
+ * Announce to screen readers (ARIA live region)
+ */
+function announceToScreenReader(message: string) {
+  const announcement = document.createElement('div')
+  announcement.setAttribute('role', 'status')
+  announcement.setAttribute('aria-live', 'polite')
+  announcement.className = 'sr-only'
+  announcement.textContent = message
+  document.body.appendChild(announcement)
+  setTimeout(() => announcement.remove(), 1000)
+}
+
 export function CookieBanner() {
   const [showBanner, setShowBanner] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -51,12 +64,26 @@ export function CookieBanner() {
   // Handle accept all
   const handleAcceptAll = () => {
     acceptAll()
+    announceToScreenReader('Cookie preferences saved: All cookies accepted')
+
+    // Track consent decision with Vercel Analytics
+    if (typeof window !== 'undefined' && (window as any).va) {
+      ;(window as any).va('event', 'Consent Decision', { analytics_enabled: true })
+    }
+
     setShowBanner(false)
   }
 
   // Handle reject all
   const handleRejectAll = () => {
     rejectAll()
+    announceToScreenReader('Cookie preferences saved: Only essential cookies accepted')
+
+    // Track consent decision with Vercel Analytics (privacy-safe, no GA cookies)
+    if (typeof window !== 'undefined' && (window as any).va) {
+      ;(window as any).va('event', 'Consent Decision', { analytics_enabled: false })
+    }
+
     setShowBanner(false)
   }
 
