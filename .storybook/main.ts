@@ -16,7 +16,12 @@ const config: StorybookConfig = {
 
   framework: {
     name: '@storybook/nextjs-vite',
-    options: {},
+    options: {
+      image: {
+        loading: 'eager',
+      },
+      nextConfigPath: path.resolve(__dirname, '../next.config.js'),
+    },
   },
 
   typescript: {

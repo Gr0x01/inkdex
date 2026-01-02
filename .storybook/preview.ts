@@ -4,6 +4,13 @@ import { withAuth } from './decorators/with-auth';
 
 const preview: Preview = {
   parameters: {
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        pathname: '/',
+      },
+    },
+
     actions: {
       argTypesRegex: '^on[A-Z].*',
     },
