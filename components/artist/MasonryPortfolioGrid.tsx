@@ -33,7 +33,7 @@ export default function MasonryPortfolioGrid({
     <div className="w-full">
       {/* Masonry Grid using CSS columns */}
       <div
-        className="columns-1 sm:columns-2 gap-4 sm:gap-6 md:gap-8 space-y-4 sm:space-y-6 md:space-y-8"
+        className="columns-1 sm:columns-2 gap-2 space-y-2"
         style={{ columnFill: 'balance' }}
       >
         {images.map((image, index) => (
@@ -42,7 +42,7 @@ export default function MasonryPortfolioGrid({
             href={image.instagram_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block relative break-inside-avoid mb-3 sm:mb-4 lg:mb-6"
+            className="group block relative break-inside-avoid mb-2"
           >
             {/* Image Container */}
             <div className="relative overflow-hidden bg-gray-100 border border-gray-300 transition-all duration-medium group-hover:border-ink group-hover:shadow-lg">

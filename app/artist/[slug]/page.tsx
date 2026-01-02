@@ -264,7 +264,7 @@ export default async function ArtistPage({
           </aside>
 
           {/* Right: Scrolling Portfolio Grid */}
-          <div className="w-full lg:w-[70%] xl:w-[65%] p-5 sm:p-6 lg:pr-8 lg:pl-12 xl:pr-12 xl:pl-16">
+          <div className="w-full lg:w-[70%] xl:w-[65%] p-5 sm:p-6 lg:pl-6 lg:pr-8">
             <MasonryPortfolioGrid
               images={artist.portfolio_images || []}
               artistName={artist.name}

@@ -82,21 +82,21 @@ export default function ArtistInfoColumn({
           </div>
         )}
 
-        {/* Header: Handle + Badges + Name + Location - TIGHT SPACING */}
+        {/* Header: Name (overline) + Handle + Badges + Location - TIGHT SPACING */}
         {artist.instagram_handle && (
           <div className="space-y-0.5 text-center">
+            {/* Artist Name - overline above handle */}
+            <p className="font-body text-sm font-light text-gray-900 leading-tight">
+              {artist.name}
+            </p>
+
             {/* Handle with Pro badge */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+            <div className="flex items-center justify-center gap-1.5 flex-wrap !mt-0 mb-2">
               <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink">
                 @{artist.instagram_handle}
               </h1>
               {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
             </div>
-
-            {/* Artist Name - lighter weight, smaller */}
-            <p className="font-body text-sm font-light text-gray-900 leading-tight">
-              {artist.name}
-            </p>
 
             {/* Location - very compact */}
             <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
