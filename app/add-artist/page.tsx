@@ -42,13 +42,13 @@ export default function AddArtistPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto">
             {/* Two Column Grid - Compact App Style */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
               {/* Left Column: Self-Add (I'm an Artist) */}
-              <div className="border-2 border-ink/10 bg-paper p-4">
-                <div className="space-y-3">
+              <div className="border-2 border-ink/10 bg-paper p-2 md:p-4">
+                <div>
                   {/* Heading */}
                   <div>
-                    <h2 className="font-heading text-2xl md:text-3xl text-ink mb-1.5 leading-tight">
+                    <h2 className="font-heading text-2xl md:text-3xl text-ink mb-1 md:mb-1.5 leading-tight">
                       I'm a Tattoo Artist
                     </h2>
                     <p className="font-body text-gray-600 text-base leading-relaxed">
@@ -57,30 +57,29 @@ export default function AddArtistPage() {
                   </div>
 
                   {/* Benefits List - Compact */}
-                  <ul className="space-y-2 pt-0.5">
-                    {/* space-y-2 = 8px (0.5rem) */}
-                    <li className="flex items-start gap-2.5">
+                  <ul className="space-y-1 pt-0.5 mt-1 md:mt-2">
+                    <li className="flex items-start gap-2">
                       <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
-                        <strong className="text-ink">Visual search discovery</strong> — Clients find you by uploading reference images
+                        <strong className="text-ink">Visual search discovery</strong> — Clients find you by uploading reference&nbsp;images
                       </div>
                     </li>
-                    <li className="flex items-start gap-2.5">
+                    <li className="flex items-start gap-2">
                       <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
-                        <strong className="text-ink">Instagram integration</strong> — Curate your portfolio from your posts
+                        <strong className="text-ink">Instagram integration</strong> — Curate your portfolio from your&nbsp;posts
                       </div>
                     </li>
-                    <li className="flex items-start gap-2.5">
+                    <li className="flex items-start gap-2">
                       <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
-                        <strong className="text-ink">Free forever</strong> — Basic features are 100% free, upgrade for pro tools
+                        <strong className="text-ink">Free forever</strong> — Basic features are 100% free, upgrade for pro&nbsp;tools
                       </div>
                     </li>
                   </ul>
 
                   {/* OAuth Button - Compact */}
-                  <div className="pt-3">
+                  <div className="mt-2 md:mt-3">
                     <div
                       className="group relative transition-all duration-200 overflow-hidden"
                       style={{
@@ -101,13 +100,14 @@ export default function AddArtistPage() {
                         </a>
                       </div>
                     </div>
-                    <p className="mt-1.5 text-sm text-gray-500 font-body text-center">
-                      We'll verify your account and create your profile
+                    {/* Business Account Note */}
+                    <p className="mt-1 md:mt-2 text-xs text-gray-500 font-body leading-relaxed text-center">
+                      Requires Business or Creator account (free)
                     </p>
                   </div>
 
                   {/* Already Have Page Link */}
-                  <div className="pt-2.5 border-t border-ink/10">
+                  <div className="mt-2 md:mt-3 pt-2 md:pt-2.5 border-t border-ink/10">
                     <p className="text-sm text-gray-600 font-body text-center leading-relaxed">
                       Already on Inkdex?{' '}
                       <Link
@@ -122,7 +122,7 @@ export default function AddArtistPage() {
               </div>
 
               {/* Right Column: Recommend Artist */}
-              <div className="border-2 border-ink/10 bg-paper p-4">
+              <div className="border-2 border-ink/10 bg-paper p-2 md:p-4">
                 <RecommendSection />
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function AddArtistPage() {
                   AI Matching
                 </h3>
                 <p className="font-body text-base text-gray-600 leading-relaxed">
-                  Our CLIP-powered search finds artists whose portfolios match their style
+                  Our powered search finds artists whose portfolios match their style
                 </p>
               </div>
 
@@ -209,7 +209,7 @@ export default function AddArtistPage() {
                   How is this different from Instagram?
                 </h3>
                 <p className="font-body text-base text-gray-600 leading-relaxed">
-                  Inkdex makes you discoverable through visual search. Clients who don't know your name can find you by uploading reference images. It's like Google Images for finding tattoo artists.
+                  We're here to improve Instagram search. Searching hashtags and scrolling endlessly to find the right style is a pain. Inkdex lets clients upload reference images and instantly discover artists whose work matches—making Instagram discovery actually work.
                 </p>
               </div>
 
@@ -219,7 +219,7 @@ export default function AddArtistPage() {
                   Is it really free?
                 </h3>
                 <p className="font-body text-base text-gray-600 leading-relaxed">
-                  Yes! Basic features (profile, manual portfolio import, verified badge) are 100% free forever. Upgrade to Pro ($15/month) for auto-sync, unlimited portfolio, and analytics.
+                  Yes! Basic features (profile, manual portfolio import, verified badge) are 100% free. Upgrade to Pro for auto-sync, unlimited portfolio, and analytics.
                 </p>
               </div>
 
@@ -239,7 +239,7 @@ export default function AddArtistPage() {
                   Do I need a Business Instagram account?
                 </h3>
                 <p className="font-body text-base text-gray-600 leading-relaxed">
-                  No! Any Instagram account works for joining Inkdex. Business/Creator accounts unlock advanced features, but personal accounts are fully supported.
+                  Yes—Instagram deprecated API access for personal accounts, so a Business or Creator account is required to sync your portfolio. The good news? It's completely free and takes about 2 minutes to convert in your Instagram settings.
                 </p>
               </div>
             </div>
