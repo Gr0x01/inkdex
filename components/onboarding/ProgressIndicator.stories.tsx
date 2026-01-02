@@ -16,7 +16,7 @@ const meta = {
   component: ProgressIndicator,
   parameters: {
     layout: 'padded',
-    backgrounds: { default: 'ink' },
+    backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
   argTypes: {

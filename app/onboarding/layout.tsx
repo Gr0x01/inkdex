@@ -3,7 +3,7 @@
  *
  * Wraps all onboarding pages with:
  * - Progress indicator showing current step
- * - Dark editorial background
+ * - Paper-white editorial background with grain texture
  * - Centered content area
  */
 
@@ -32,9 +32,9 @@ export default function OnboardingLayout({
   const currentStep = getCurrentStep();
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {/* Grain overlay */}
-      <div className="fixed inset-0 bg-grain-overlay opacity-[0.015] pointer-events-none" />
+    <div className="min-h-screen bg-[var(--paper-white)] relative">
+      {/* Grain texture overlay */}
+      <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
       {/* Content */}
       <div className="relative">
@@ -42,7 +42,7 @@ export default function OnboardingLayout({
         <ProgressIndicator currentStep={currentStep} />
 
         {/* Page content */}
-        <main className="container mx-auto px-4 py-8 max-w-5xl">
+        <main className="container mx-auto px-4 py-8 max-w-4xl">
           {children}
         </main>
       </div>

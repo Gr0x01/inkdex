@@ -14,7 +14,7 @@ const meta = {
   component: BookingStep,
   parameters: {
     layout: 'padded',
-    backgrounds: { default: 'ink' },
+    backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
   args: {

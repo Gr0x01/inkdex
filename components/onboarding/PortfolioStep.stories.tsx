@@ -22,7 +22,7 @@ const meta = {
   component: PortfolioStep,
   parameters: {
     layout: 'padded',
-    backgrounds: { default: 'ink' },
+    backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
   args: {

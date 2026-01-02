@@ -17,6 +17,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProBadge } from '@/components/badges/ProBadge';
+import Select from '@/components/ui/Select';
 
 interface ProfileEditorProps {
   artistId: string;
@@ -189,9 +190,9 @@ export default function ProfileEditor({
       {/* Grain texture overlay */}
       <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
-      <div className="relative max-w-6xl mx-auto px-6 lg:px-8 py-8 lg:py-12">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-7xl relative">
         {/* Header - Matches PortfolioManager pattern */}
-        <header className="mb-8 pb-6 border-b border-[var(--gray-300)]">
+        <header className="mb-6 pb-4 border-b border-[var(--gray-300)]">
           {/* Top row: Breadcrumb + Pro Badge */}
           <div className="flex items-center justify-between mb-4">
             <a
@@ -217,21 +218,19 @@ export default function ProfileEditor({
         </header>
 
         {/* Two-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
           {/* Form Column */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-6">
 
             {/* Basic Information Card */}
-            <section className="border-2 border-[var(--ink-black)] bg-white p-6 lg:p-8 relative">
-              {/* Corner accent */}
-              <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-[var(--warm-gray)]" />
+            <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
 
-              <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)] mb-6">
+              <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)] mb-4">
                 Basic Information
               </h2>
 
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {/* Name Field */}
                 <div>
                   <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
@@ -320,18 +319,16 @@ export default function ProfileEditor({
 
             {/* Pro Features Card */}
             {isPro && (
-              <section className="border-2 border-[var(--ink-black)] bg-white p-6 lg:p-8 relative">
-                {/* Gold accent for Pro */}
-                <div className="absolute -top-1 -right-1 w-6 h-6 border-t-2 border-r-2 border-amber-500" />
+              <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
 
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)]">
                     Pro Features
                   </h2>
                   <ProBadge variant="badge" size="sm" />
                 </div>
 
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {/* Pricing Info */}
                   <div>
                     <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
@@ -354,20 +351,17 @@ export default function ProfileEditor({
                       Availability Status
                       <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
                     </label>
-                    <select
-                      value={availabilityStatus || ''}
-                      onChange={(e) =>
-                        handleAvailabilityChange(
-                          e.target.value ? (e.target.value as AvailabilityStatus) : null
-                        )
-                      }
-                      className="input cursor-pointer"
-                    >
-                      <option value="">Not specified</option>
-                      <option value="available">Available for bookings</option>
-                      <option value="booking_soon">Opening soon</option>
-                      <option value="waitlist">Waitlist only</option>
-                    </select>
+                    <Select
+                      value={availabilityStatus}
+                      onChange={(val) => handleAvailabilityChange(val as AvailabilityStatus)}
+                      placeholder="Not specified"
+                      options={[
+                        { value: '', label: 'Not specified' },
+                        { value: 'available', label: 'Available for bookings' },
+                        { value: 'booking_soon', label: 'Opening soon' },
+                        { value: 'waitlist', label: 'Waitlist only' },
+                      ]}
+                    />
                   </div>
                 </div>
               </section>
@@ -414,7 +408,7 @@ export default function ProfileEditor({
             )}
 
             {/* Danger Zone */}
-            <section className="border-2 border-red-200 bg-red-50/50 p-6 lg:p-8 mt-12">
+            <section className="border-2 border-red-200 bg-red-50/50 p-5 lg:p-6 mt-8">
               <h3 className="font-heading text-lg text-[var(--error)] mb-2">
                 Danger Zone
               </h3>
@@ -432,21 +426,19 @@ export default function ProfileEditor({
 
           {/* Preview Column */}
           <aside className="lg:col-span-5">
-            <div className="lg:sticky lg:top-8 space-y-6">
+            <div className="lg:sticky lg:top-6 space-y-4">
               {/* Preview Card */}
-              <div className="border-2 border-[var(--ink-black)] bg-white relative">
-                {/* Corner accent */}
-                <div className="absolute -top-1 -left-1 w-6 h-6 border-t-2 border-l-2 border-[var(--warm-gray)]" />
+              <div className="border-2 border-[var(--ink-black)] bg-white">
 
                 {/* Header */}
-                <div className="border-b border-[var(--gray-300)] px-6 py-4">
+                <div className="border-b border-[var(--gray-300)] px-5 py-3">
                   <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--gray-500)]">
                     Live Preview
                   </p>
                 </div>
 
                 {/* Preview Content */}
-                <div className="p-6 space-y-5">
+                <div className="p-5 space-y-4">
                   {/* Name Preview */}
                   <div>
                     <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
@@ -540,8 +532,8 @@ export default function ProfileEditor({
                 </div>
 
                 {/* Profile URL Footer */}
-                <div className="border-t border-[var(--gray-300)] px-6 py-4">
-                  <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-2">
+                <div className="border-t border-[var(--gray-300)] px-5 py-3">
+                  <p className="font-mono text-[10px] tracking-[0.15em] uppercase text-[var(--gray-500)] mb-1">
                     Public Profile URL
                   </p>
                   <a
@@ -556,7 +548,7 @@ export default function ProfileEditor({
               </div>
 
               {/* Helpful Tips */}
-              <div className="bg-[var(--gray-100)] p-5 space-y-3">
+              <div className="bg-[var(--gray-100)] p-4 space-y-2">
                 <p className="font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
                   Tips
                 </p>

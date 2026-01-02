@@ -14,7 +14,7 @@ const meta = {
   component: PreviewStep,
   parameters: {
     layout: 'padded',
-    backgrounds: { default: 'ink' },
+    backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
   args: {

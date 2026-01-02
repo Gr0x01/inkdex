@@ -3,6 +3,8 @@
  *
  * Displays current step in the 5-step onboarding flow
  * Steps: Fetch → Preview → Portfolio → Booking → Complete
+ *
+ * Design: Paper-white editorial with ink-black accents
  */
 
 interface ProgressIndicatorProps {
@@ -25,12 +27,12 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
         {STEPS.map((step) => (
           <div key={step.id} className="flex-1 text-center">
             <span
-              className={`text-sm font-body transition-colors ${
+              className={`font-mono text-[11px] tracking-[0.15em] uppercase transition-colors ${
                 step.id === currentStep
-                  ? 'text-ether font-medium'
+                  ? 'text-[var(--ink-black)] font-medium'
                   : step.id < currentStep
-                  ? 'text-gray-400'
-                  : 'text-gray-600'
+                    ? 'text-[var(--gray-500)]'
+                    : 'text-[var(--gray-400)]'
               }`}
             >
               {step.name}
@@ -42,11 +44,11 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
       {/* Progress bar */}
       <div className="relative flex items-center justify-between">
         {/* Background line */}
-        <div className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-gray-800" />
+        <div className="absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2 bg-[var(--gray-300)]" />
 
         {/* Progress fill */}
         <div
-          className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-ether transition-all duration-500"
+          className="absolute top-1/2 left-0 h-0.5 -translate-y-1/2 bg-[var(--ink-black)] transition-all duration-500"
           style={{
             width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`,
           }}
@@ -56,7 +58,6 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
         {STEPS.map((step) => {
           const isCompleted = step.id < currentStep;
           const isCurrent = step.id === currentStep;
-          const isPending = step.id > currentStep;
 
           return (
             <div
@@ -65,17 +66,24 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
             >
               {/* Dot */}
               <div
-                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 ${
+                className={`w-8 h-8 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
                   isCurrent
-                    ? 'bg-ether border-ether scale-110'
+                    ? 'bg-[var(--ink-black)] border-[var(--ink-black)] scale-110'
                     : isCompleted
-                    ? 'bg-ether border-ether'
-                    : 'bg-ink border-gray-800'
+                      ? 'bg-[var(--ink-black)] border-[var(--ink-black)]'
+                      : 'bg-[var(--paper-white)] border-[var(--gray-300)]'
                 }`}
               >
+                {/* Current step number */}
+                {isCurrent && (
+                  <span className="font-mono text-xs font-medium text-[var(--paper-white)]">
+                    {step.id}
+                  </span>
+                )}
+                {/* Completed checkmark */}
                 {isCompleted && (
                   <svg
-                    className="w-full h-full p-1.5 text-ink"
+                    className="w-4 h-4 text-[var(--paper-white)]"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -90,12 +98,12 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
 
               {/* Step label (mobile) */}
               <span
-                className={`md:hidden mt-2 text-xs font-body transition-colors ${
+                className={`md:hidden mt-2 font-mono text-[10px] tracking-[0.1em] uppercase transition-colors ${
                   isCurrent
-                    ? 'text-ether font-medium'
+                    ? 'text-[var(--ink-black)] font-medium'
                     : isCompleted
-                    ? 'text-gray-400'
-                    : 'text-gray-600'
+                      ? 'text-[var(--gray-500)]'
+                      : 'text-[var(--gray-400)]'
                 }`}
               >
                 {step.short}

@@ -478,10 +478,10 @@ a:hover {
   /* Inputs */
   .input {
     width: 100%;
-    padding: var(--space-md);
+    padding: var(--space-sm) var(--space-sm);
     background: var(--paper-white);
     border: 2px solid var(--border-subtle);
-    border-radius: var(--radius-md);
+    border-radius: 0;
     color: var(--text-primary);
     font-family: 'Crimson Pro', serif;
     font-size: 1.0625rem;
@@ -497,6 +497,21 @@ a:hover {
     outline: none;
     border-color: var(--ink-black);
     box-shadow: var(--shadow-sm);
+  }
+
+  /* Select elements - override browser defaults */
+  select.input {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234A4845' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 1.5rem;
+  }
+
+  select.input:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231A1A1A' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
   }
 
   /* Section Header */

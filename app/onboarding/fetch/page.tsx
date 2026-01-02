@@ -3,22 +3,22 @@
  *
  * Auto-fetches Instagram images on mount
  * Shows loading progress and auto-redirects on success
+ *
+ * Design: Paper-white editorial with ink-black accents
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 type LoadingState = 'connecting' | 'fetching' | 'classifying' | 'complete' | 'error';
 
 export default function OnboardingFetchPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loadingState, setLoadingState] = useState<LoadingState>('connecting');
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [sessionId, setSessionId] = useState<string | null>(null);
 
   // Auto-fetch Instagram images on mount
   useEffect(() => {
@@ -65,16 +65,15 @@ export default function OnboardingFetchPage() {
 
       // Step 4: Complete
       setLoadingState('complete');
-      setSessionId(data.sessionId);
 
       // Auto-redirect to preview step
       setTimeout(() => {
         router.push(`/onboarding/preview?session_id=${data.sessionId}`);
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Onboarding] Fetch failed:', err);
       setLoadingState('error');
-      setError(err.message || 'Something went wrong. Please try again.');
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
   };
 
@@ -92,7 +91,7 @@ export default function OnboardingFetchPage() {
       case 'classifying':
         return `Analyzing ${progress.total} images...`;
       case 'complete':
-        return `Found ${progress.total} images! Redirecting...`;
+        return `Found ${progress.total} images!`;
       case 'error':
         return 'Something went wrong';
       default:
@@ -102,13 +101,14 @@ export default function OnboardingFetchPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-paper-dark border border-gray-800 rounded-lg p-8 md:p-12">
+      <div className="border-2 border-[var(--ink-black)] bg-white p-8 md:p-12">
+
         {/* Heading */}
         <div className="text-center mb-8">
-          <h1 className="font-display text-3xl md:text-4xl text-white mb-4">
+          <h1 className="font-heading text-2xl md:text-3xl text-[var(--ink-black)] mb-3">
             {loadingState === 'error' ? 'Oops!' : 'Setting Up Your Profile'}
           </h1>
-          <p className="font-body text-gray-400 text-base md:text-lg">
+          <p className="font-body text-base md:text-lg text-[var(--gray-600)]">
             {loadingState === 'error'
               ? 'We encountered an issue fetching your Instagram images'
               : "We're grabbing your Instagram images to build your portfolio"}
@@ -120,24 +120,26 @@ export default function OnboardingFetchPage() {
           {loadingState !== 'error' ? (
             <>
               {/* Loading spinner */}
-              <div className="flex justify-center">
-                <div className="relative w-20 h-20">
-                  <div className="absolute inset-0 border-4 border-gray-800 rounded-full" />
-                  <div className="absolute inset-0 border-4 border-ether border-t-transparent rounded-full animate-spin" />
+              {loadingState !== 'complete' && (
+                <div className="flex justify-center">
+                  <div className="relative w-16 h-16">
+                    <div className="absolute inset-0 border-4 border-[var(--gray-200)] rounded-full" />
+                    <div className="absolute inset-0 border-4 border-[var(--ink-black)] border-t-transparent rounded-full animate-spin" />
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Status message */}
-              <p className="text-center font-body text-white text-lg">
+              <p className="text-center font-body text-lg text-[var(--ink-black)]">
                 {getLoadingMessage()}
               </p>
 
               {/* Progress indicator (for classification) */}
               {loadingState === 'classifying' && progress.total > 0 && (
                 <div className="max-w-md mx-auto">
-                  <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-2 bg-[var(--gray-200)] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-ether transition-all duration-300"
+                      className="h-full bg-[var(--ink-black)] transition-all duration-300"
                       style={{ width: '100%' }}
                     />
                   </div>
@@ -146,10 +148,10 @@ export default function OnboardingFetchPage() {
 
               {/* Success checkmark */}
               {loadingState === 'complete' && (
-                <div className="flex justify-center">
-                  <div className="w-16 h-16 bg-green-500/20 border-2 border-green-500 rounded-full flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-emerald-50 border-2 border-[var(--success)] rounded-full flex items-center justify-center">
                     <svg
-                      className="w-10 h-10 text-green-500"
+                      className="w-8 h-8 text-[var(--success)]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -162,6 +164,9 @@ export default function OnboardingFetchPage() {
                       />
                     </svg>
                   </div>
+                  <p className="font-mono text-xs tracking-wider uppercase text-[var(--gray-500)]">
+                    Redirecting...
+                  </p>
                 </div>
               )}
             </>
@@ -169,9 +174,9 @@ export default function OnboardingFetchPage() {
             <>
               {/* Error icon */}
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-red-500/20 border-2 border-red-500 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-red-50 border-2 border-[var(--error)] rounded-full flex items-center justify-center">
                   <svg
-                    className="w-10 h-10 text-red-500"
+                    className="w-8 h-8 text-[var(--error)]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -187,19 +192,15 @@ export default function OnboardingFetchPage() {
               </div>
 
               {/* Error message */}
-              <div className="p-4 bg-red-900/20 border border-red-800 rounded-lg">
-                <p className="text-red-400 text-sm font-body text-center">{error}</p>
+              <div className="p-4 bg-red-50 border-2 border-[var(--error)]">
+                <p className="text-[var(--error)] text-sm font-body text-center">{error}</p>
               </div>
 
               {/* Retry button */}
               <div className="flex justify-center">
                 <button
                   onClick={handleRetry}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600
-                           text-white font-body font-medium rounded-lg
-                           hover:from-purple-700 hover:to-pink-700
-                           transition-all duration-200 transform hover:scale-105
-                           focus:outline-none focus:ring-2 focus:ring-ether focus:ring-offset-2 focus:ring-offset-ink"
+                  className="btn btn-primary"
                 >
                   Try Again
                 </button>
@@ -210,7 +211,7 @@ export default function OnboardingFetchPage() {
 
         {/* Helper text */}
         {loadingState !== 'error' && loadingState !== 'complete' && (
-          <p className="text-center text-xs text-gray-600 font-body mt-8">
+          <p className="text-center font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mt-8">
             This usually takes 30-60 seconds
           </p>
         )}
