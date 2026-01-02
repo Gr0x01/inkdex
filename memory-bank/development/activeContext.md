@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-04 (Phase 4: Add-Artist Page Implementation)
+Last-Updated: 2026-01-05 (Phase 5: Onboarding Flow + Test Users Complete)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Phase 4 Add-Artist Complete ✅
+Status: Production Ready - 8 Cities Live + Artist Onboarding Complete ✅
 ---
 
 # Active Context: Inkdex
@@ -345,6 +345,114 @@ Status: Production Ready - 8 Cities Live + Phase 4 Add-Artist Complete ✅
 - ✅ Navigation links visible (desktop + mobile)
 
 **Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 4 section)
+
+---
+
+## Phase 5: Onboarding Flow + Test Users (COMPLETE ✅)
+
+**Status:** Production ready - full 5-step onboarding with dev testing infrastructure
+
+**Completed:** January 5, 2026
+
+### What Was Completed
+- ✅ **5-step onboarding flow:** Fetch → Preview → Portfolio → Booking → Launch
+- ✅ **Onboarding sessions table:** JSONB storage with 24-hour expiration
+- ✅ **Instagram image fetch:** Apify scraper + GPT-5-mini classification (batch 6 concurrent)
+- ✅ **Portfolio selection:** Pick up to 20 best images from fetched results
+- ✅ **Profile customization:** Name, city, state, bio, booking link
+- ✅ **Atomic finalization:** Transaction-wrapped artist update + image insert
+- ✅ **Test user infrastructure:** 3 seeded users (unclaimed, free, pro)
+- ✅ **Dev-only login:** Bypass OAuth for testing (/dev/login)
+- ✅ **Rate limiting:** 3 onboarding sessions per hour to prevent abuse
+- ✅ **Security hardening:** Session expiration checks, SQL injection prevention
+- ✅ **Integration:** Claim flow and self-add now redirect to onboarding/fetch
+
+### Test Users Created
+1. **Jamie Chen (@test_unclaimed_artist)** - Unclaimed profile in Austin
+   - Portfolio: 12 cloned images from real artists
+   - Use case: Test claim flow
+2. **Alex Rivera (@test_free_artist)** - Free tier in Los Angeles
+   - Portfolio: 18 cloned images
+   - Use case: Test free dashboard features
+3. **Morgan Black (@test_pro_artist)** - Pro tier in New York
+   - Portfolio: 20 cloned images + subscription
+   - Use case: Test pro features
+
+**Access:** Visit http://localhost:3000/dev/login in development (blocked in production)
+
+### Files Created (20 files)
+**Database (2 migrations):**
+- `supabase/migrations/20260105_001_onboarding_sessions.sql` - Onboarding state storage
+- `supabase/migrations/20260105_002_fix_verification_status_constraint.sql` - Allow 'claimed' status
+
+**API Routes (4 files):**
+- `app/api/onboarding/fetch-instagram/route.ts` - Fetch 50 images, classify in parallel
+- `app/api/onboarding/update-session/route.ts` - Update session for steps 2-4
+- `app/api/onboarding/finalize/route.ts` - Atomic transaction to complete onboarding
+- `app/api/dev/login/route.ts` - Dev-only auth bypass using service role
+
+**UI Pages (8 files):**
+- `app/onboarding/layout.tsx` - Progress indicator wrapper
+- `app/onboarding/fetch/page.tsx` - Auto-fetch Instagram images
+- `app/onboarding/preview/page.tsx` - Edit profile + live preview
+- `app/onboarding/portfolio/page.tsx` - Image selection (max 20)
+- `app/onboarding/booking/page.tsx` - Optional booking URL
+- `app/onboarding/complete/page.tsx` - Success + finalize API call
+- `app/dev/login/page.tsx` - Test user selection interface
+
+**Components (2 files):**
+- `components/onboarding/ProgressIndicator.tsx` - 5-step progress dots
+- `components/onboarding/ProfilePreview.tsx` - (Future: live preview card)
+
+**Utilities (3 files):**
+- `lib/onboarding/validation.ts` - Zod schemas for all steps
+- `lib/dev/test-users.ts` - Hardcoded test user constants
+- `scripts/seed/create-test-users.ts` - Idempotent seeding script (450 lines)
+
+### Files Modified (3 files)
+- `lib/supabase/middleware.ts` - Block /dev routes in production
+- `lib/rate-limiter.ts` - Added checkOnboardingRateLimit function
+- `app/claim/verify/page.tsx` - Redirect to onboarding/fetch after claim
+- `app/add-artist/verify/page.tsx` - Redirect to onboarding/fetch after self-add
+
+### Key Architecture
+- **Onboarding session persistence:** JSONB in database with 24h auto-expiration
+- **Instagram integration:** Apify scraper (existing utility) + GPT-5-mini batch classification
+- **Image cloning strategy:** Test users reuse existing storage paths and embeddings (no file duplication)
+- **Atomic finalization:** All updates wrapped in transaction (artist + portfolio_images + session cleanup)
+- **Rate limiting:** 3 sessions/hour/user to prevent API abuse
+- **Dev security:** NODE_ENV checks in components + middleware blocks /dev in production
+
+### Security Features
+1. **Session expiration:** All sessions expire after 24 hours
+2. **Rate limiting:** Prevents onboarding spam and API cost explosion
+3. **SQL injection prevention:** Fixed slug generation to use safe queries
+4. **Dev route protection:** Middleware returns 404 for /dev/* in production
+5. **Service role isolation:** Dev login uses service role client (admin privileges)
+
+### Critical Bugs Fixed During Implementation
+1. **Database constraint:** Added 'claimed' to verification_status CHECK constraint
+2. **Dev login client:** Changed from anon key to service role for admin operations
+3. **Missing rate limits:** Added to all 3 onboarding endpoints
+4. **Session expiration:** Added validation to prevent expired session usage
+5. **SQL injection risk:** Fixed slug generation with .or() instead of .like()
+
+### Testing Status
+- ✅ TypeScript compilation passing
+- ✅ Dev server running (all routes load)
+- ✅ Dev login page accessible at /dev/login
+- ✅ All onboarding pages render correctly
+- ✅ Middleware blocks /dev in production
+- ✅ Test users seeded successfully (3 artists with cloned portfolios)
+
+### Next Steps (Phase 6)
+- Dashboard implementation (analytics, portfolio management)
+- Subscription integration (Stripe checkout, tier management)
+- Profile editing (update bio, pricing, availability)
+- Portfolio management UI (pin, hide, reorder images)
+- Instagram auto-sync (periodic refresh of portfolio)
+
+**Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 5 section)
 
 ---
 

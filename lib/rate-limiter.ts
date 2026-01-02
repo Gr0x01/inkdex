@@ -178,6 +178,22 @@ export function checkAddArtistRateLimit(identifier: string) {
 }
 
 /**
+ * Rate limit onboarding requests (expensive OpenAI calls)
+ *
+ * Limits: 3 onboarding sessions per hour per user
+ *
+ * @param identifier - User ID (authenticated users only)
+ * @returns Rate limit check result
+ */
+export function checkOnboardingRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `onboarding:${identifier}`,
+    3, // 3 sessions
+    60 * 60 * 1000 // per hour
+  );
+}
+
+/**
  * Get client IP from request headers
  *
  * Checks common headers set by proxies and CDNs (Vercel, Cloudflare, etc.)

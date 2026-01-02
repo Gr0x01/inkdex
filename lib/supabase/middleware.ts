@@ -5,6 +5,14 @@ import { env } from '@/lib/config/env'
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
+  // Block /dev routes in production
+  if (
+    process.env.NODE_ENV === 'production' &&
+    pathname.startsWith('/dev')
+  ) {
+    return NextResponse.rewrite(new URL('/404', request.url))
+  }
+
   // Skip auth check for public routes to improve performance
   const publicPaths = [
     '/',

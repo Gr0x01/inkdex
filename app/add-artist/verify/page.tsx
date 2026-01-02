@@ -153,5 +153,5 @@ export default async function VerifyPage() {
   });
 
   // 6. Redirect to onboarding with artist_id
-  redirect(`/onboarding?artist_id=${newArtist.id}`);
+  redirect(`/onboarding/fetch?artist_id=${newArtist.id}&new=true`);
 }

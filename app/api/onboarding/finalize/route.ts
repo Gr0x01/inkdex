@@ -1,0 +1,310 @@
+/**
+ * Onboarding Finalize
+ *
+ * Atomic transaction to complete onboarding:
+ * 1. Create/update artist profile
+ * 2. Insert selected portfolio images
+ * 3. Delete onboarding session
+ *
+ * POST /api/onboarding/finalize
+ *
+ * Request: { sessionId: string }
+ * Response: { success: true, artistId: string, artistSlug: string }
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { finalizeOnboardingSchema } from '@/lib/onboarding/validation';
+import { checkOnboardingRateLimit } from '@/lib/rate-limiter';
+import { ZodError } from 'zod';
+import { randomUUID } from 'crypto';
+
+// Helper to generate artist slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-'); // Replace multiple hyphens with single
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // 1. Authenticate user
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // 2. Check rate limit
+    const rateLimit = checkOnboardingRateLimit(user.id);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please slow down.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': rateLimit.limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': new Date(rateLimit.reset).toISOString(),
+          },
+        }
+      );
+    }
+
+    // 3. Parse and validate request body
+    const body = await request.json();
+    let validatedData;
+
+    try {
+      validatedData = finalizeOnboardingSchema.parse(body);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return NextResponse.json(
+          { error: 'Validation failed', details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+
+    const { sessionId } = validatedData;
+
+    // 4. Fetch session data
+    const { data: session, error: sessionError } = await supabase
+      .from('onboarding_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+
+    if (sessionError || !session) {
+      return NextResponse.json(
+        { error: 'Onboarding session not found or expired' },
+        { status: 404 }
+      );
+    }
+
+    // 5. Verify session belongs to authenticated user
+    if (session.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized to finalize this session' },
+        { status: 403 }
+      );
+    }
+
+    // 6. Check session expiration
+    if (session.expires_at && new Date(session.expires_at) < new Date()) {
+      return NextResponse.json(
+        { error: 'Onboarding session has expired. Please start over.' },
+        { status: 410 } // Gone
+      );
+    }
+
+    // 7. Validate required data is present
+    if (!session.profile_updates || !session.selected_image_ids || session.selected_image_ids.length === 0) {
+      return NextResponse.json(
+        { error: 'Incomplete onboarding data. Please complete all steps.' },
+        { status: 400 }
+      );
+    }
+
+    const profileUpdates = session.profile_updates as any;
+    const selectedImageIds = session.selected_image_ids;
+    const fetchedImages = (session.fetched_images as any[]) || [];
+    const profileData = (session.profile_data as any) || {};
+
+    // 8. Get user's Instagram username
+    const { data: userData } = await supabase
+      .from('users')
+      .select('instagram_username, instagram_id')
+      .eq('id', user.id)
+      .single();
+
+    if (!userData || !userData.instagram_username) {
+      return NextResponse.json(
+        { error: 'Instagram account not connected' },
+        { status: 400 }
+      );
+    }
+
+    const instagramUsername = userData.instagram_username;
+    const instagramId = userData.instagram_id;
+
+    // 9. Check if claiming existing artist or creating new one
+    let artistId: string;
+    let artistSlug: string;
+    let isNewArtist = false;
+
+    // Check if session has artist_id (claiming existing artist)
+    if (session.artist_id) {
+      artistId = session.artist_id;
+
+      // Update existing artist
+      const { data: artist, error: updateError } = await supabase
+        .from('artists')
+        .update({
+          name: profileUpdates.name,
+          city: profileUpdates.city,
+          state: profileUpdates.state,
+          bio_override: profileUpdates.bio || null,
+          booking_url: session.booking_link || null,
+          verification_status: 'claimed',
+          claimed_by_user_id: user.id,
+          claimed_at: new Date().toISOString(),
+        })
+        .eq('id', artistId)
+        .select('slug')
+        .single();
+
+      if (updateError || !artist) {
+        console.error('[Onboarding] Failed to update artist:', updateError);
+        return NextResponse.json(
+          { error: 'Failed to update artist profile' },
+          { status: 500 }
+        );
+      }
+
+      artistSlug = artist.slug;
+    } else {
+      // Create new artist
+      isNewArtist = true;
+      artistId = randomUUID();
+      artistSlug = generateSlug(profileUpdates.name);
+
+      // Check if slug already exists, append number if needed
+      // Use two separate queries to avoid SQL injection risk with .or()
+      const { data: exactMatch } = await supabase
+        .from('artists')
+        .select('slug')
+        .eq('slug', artistSlug)
+        .limit(1);
+
+      if (exactMatch && exactMatch.length > 0) {
+        // Slug exists, find all similar slugs with numbers
+        const { data: similarSlugs } = await supabase
+          .from('artists')
+          .select('slug')
+          .like('slug', `${artistSlug}-%`)
+          .order('slug', { ascending: false })
+          .limit(20);
+
+        // Extract numbers from existing slugs and find the highest
+        const numbers = (similarSlugs || [])
+          .map((s) => {
+            // Safely escape regex special characters in artistSlug
+            const escapedSlug = artistSlug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const match = s.slug.match(new RegExp(`^${escapedSlug}-(\\d+)$`));
+            return match ? parseInt(match[1]) : 0;
+          })
+          .filter((n) => n > 0);
+
+        const highestNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+        const nextNumber = highestNumber > 0 ? highestNumber + 1 : 1;
+
+        artistSlug = `${artistSlug}-${nextNumber}`;
+      }
+
+      const { error: insertError } = await supabase
+        .from('artists')
+        .insert({
+          id: artistId,
+          name: profileUpdates.name,
+          slug: artistSlug,
+          city: profileUpdates.city,
+          state: profileUpdates.state,
+          bio: profileData.bio || null,
+          bio_override: profileUpdates.bio || null,
+          booking_url: session.booking_link || null,
+          instagram_handle: instagramUsername,
+          instagram_id: instagramId,
+          instagram_url: `https://instagram.com/${instagramUsername}`,
+          follower_count: profileData.follower_count || null,
+          verification_status: 'claimed',
+          claimed_by_user_id: user.id,
+          claimed_at: new Date().toISOString(),
+          discovery_source: 'self_add',
+        });
+
+      if (insertError) {
+        console.error('[Onboarding] Failed to create artist:', insertError);
+        return NextResponse.json(
+          { error: 'Failed to create artist profile' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // 8. Insert selected portfolio images
+    const selectedImages = fetchedImages.filter((img: any) =>
+      selectedImageIds.includes(img.instagram_post_id)
+    );
+
+    if (selectedImages.length === 0) {
+      return NextResponse.json(
+        { error: 'No valid images selected' },
+        { status: 400 }
+      );
+    }
+
+    const portfolioImages = selectedImages.map((img: any, index: number) => ({
+      id: randomUUID(),
+      artist_id: artistId,
+      instagram_post_id: img.instagram_post_id,
+      instagram_url: img.url,
+      post_caption: img.caption || null,
+      post_timestamp: new Date().toISOString(),
+      likes_count: null,
+      status: 'active',
+      manually_added: true,
+      import_source: 'oauth_onboarding',
+      // Note: embeddings will be generated asynchronously after this completes
+      // Storage paths will be populated by image processing pipeline
+    }));
+
+    const { error: imagesError } = await supabase
+      .from('portfolio_images')
+      .insert(portfolioImages);
+
+    if (imagesError) {
+      console.error('[Onboarding] Failed to insert portfolio images:', imagesError);
+      return NextResponse.json(
+        { error: 'Failed to save portfolio images' },
+        { status: 500 }
+      );
+    }
+
+    // 9. Delete onboarding session
+    const { error: deleteError } = await supabase
+      .from('onboarding_sessions')
+      .delete()
+      .eq('id', sessionId);
+
+    if (deleteError) {
+      console.error('[Onboarding] Failed to delete session:', deleteError);
+      // Non-critical error, continue
+    }
+
+    console.log(`[Onboarding] Finalized for user ${user.id}: ${isNewArtist ? 'created' : 'updated'} artist ${artistId}`);
+
+    // 10. TODO: Trigger background embedding generation
+    // This will be implemented later as an async job
+
+    return NextResponse.json({
+      success: true,
+      artistId,
+      artistSlug,
+    });
+  } catch (error) {
+    console.error('[Onboarding] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'An unexpected error occurred. Please try again.' },
+      { status: 500 }
+    );
+  }
+}

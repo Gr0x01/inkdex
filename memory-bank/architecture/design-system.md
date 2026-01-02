@@ -1,8 +1,8 @@
 # Inkdex - Design System Documentation
 
-**Version**: 2.0
-**Last Updated**: 2025-12-30
-**Design Philosophy**: Editorial Minimal × Tattoo Artist Discovery
+**Version**: 2.1
+**Last Updated**: 2026-01-05
+**Design Philosophy**: Editorial Minimal × Tattoo Artist Discovery (App-First, Not Magazine Spreads)
 
 ---
 
@@ -52,31 +52,134 @@ This isn't a tech platform—it's a paper editorial magazine for tattoo culture 
 - Character: Technical contrast, lightweight, uppercase
 - Example: "AUSTIN ARTISTS", "188 ARTISTS"
 
-### Typography Scale
+### Typography Scale **[UPDATED v2.1 - Readability First]**
 
 ```css
 Display:  clamp(3rem, 6vw, 6rem)    / line-height: 0.95  / weight: 900
 H1:       clamp(2rem, 4vw, 4rem)    / line-height: 1.1   / weight: 700
 H2:       clamp(1.5rem, 3vw, 2.5rem)/ line-height: 1.2   / weight: 700
 H3:       clamp(1.25rem, 2vw, 1.5rem)/ line-height: 1.3  / weight: 700
-Body:     17px (1.0625rem)          / line-height: 1.8   / weight: 300 [INCREASED]
-Small:    14px (0.875rem)           / line-height: 1.5   / weight: 300
-Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
+Body:     16px (1rem)               / line-height: 1.8   / weight: 400 [INCREASED for readability]
+Small:    14px (0.875rem)           / line-height: 1.6   / weight: 400 [INCREASED for readability]
+Label:    12px (0.75rem)            / line-height: 1.4   / weight: 500 [REPLACES "Tiny" - labels only]
 ```
+
+**CRITICAL READABILITY RULES:**
+- ❌ **NEVER use text smaller than 14px for body content** (illegible on most screens)
+- ❌ **NEVER use 11px, 10px, or 13px** - these custom sizes bypass design system
+- ✅ **Body text minimum: 14px** (Small) for secondary content
+- ✅ **Body text default: 16px** (Body) for primary content
+- ✅ **Labels only: 12px** (Label) - uppercase, 500 weight, tracking, non-body content
+
+**Font Weight Guidelines:**
+- Display/Headings: 700-900 (bold enough to work at any size)
+- Body/Small: **400** (Regular - readable, not too light)
+- Labels: **500** (Medium - compensates for small size + uppercase)
 
 ### CSS Utility Classes
 
 ```css
 .font-display        → Playfair Display 900
-.font-heading        → Libre Baskerville 700 [CHANGED]
-.font-body           → Crimson Pro 300, line-height: 1.8
-.font-body-medium    → Crimson Pro 400
-.font-mono           → JetBrains Mono 200, uppercase, 0.15em tracking
+.font-heading        → Libre Baskerville 700
+.font-body           → Crimson Pro 400, line-height: 1.8 [WEIGHT INCREASED]
+.font-body-light     → Crimson Pro 300 (large text only, use sparingly)
+.font-small          → Crimson Pro 400, 14px, line-height: 1.6
+.font-label          → JetBrains Mono 500, 12px, uppercase, 0.15em tracking
 
 .text-display        → Responsive hero text
 .text-h1, .text-h2, .text-h3
-.text-small, .text-tiny
+.text-body           → 16px body text (default)
+.text-small          → 14px secondary content
+.text-label          → 12px labels/metadata (uppercase, tracking)
 ```
+
+**Deprecated Classes (DO NOT USE):**
+```css
+.text-tiny           → REMOVED (11px too small)
+.font-body (300)     → Use .font-body (400) or .font-body-light sparingly
+.font-mono (200)     → Use .font-label (500) instead
+```
+
+---
+
+## 👁️ READABILITY GUIDELINES
+
+### The Problem
+
+**"Half the website is hard as fuck to read"** - User feedback, Jan 5, 2026
+
+**Root Causes:**
+1. Custom font sizes (10px, 11px, 13px) bypassing design system
+2. Font weight 300 (Light) too thin for small text
+3. "Tiny" (11px) used for body content instead of labels
+4. Inconsistent application of 17px body text
+
+### Readability-First Principles
+
+**1. Minimum Readable Sizes**
+```
+✅ Body content:    16px minimum (14px for secondary)
+✅ Labels/metadata: 12px (uppercase, 500 weight, tracking)
+❌ NEVER:           10px, 11px, 13px
+```
+
+**2. Font Weight = Size Compensation**
+```
+Large text (24px+):  300-400 weight acceptable
+Body text (16px):    400 weight minimum
+Small text (14px):   400 weight minimum
+Labels (12px):       500 weight required (compensates for size)
+```
+
+**3. Context Matters**
+```
+✅ Artist name:      16px, weight 400-700 (primary content)
+✅ City/location:    14px, weight 400 (secondary content)
+✅ Metadata labels:  12px, weight 500, UPPERCASE (tertiary)
+❌ Artist bio:       NOT 13px - use 16px or 14px
+❌ Match %:          NOT 10px - use 12px label style
+```
+
+### Common Violations to Fix
+
+**ArtistCard (components/search/ArtistCard.tsx):**
+```tsx
+// ❌ CURRENT (illegible)
+<h3 className="font-heading text-[15px]">@username</h3>      // 15px custom size
+<p className="font-body text-[13px]">Artist Name</p>         // 13px body content
+<p className="font-mono text-[10px]">AUSTIN</p>              // 10px label
+
+// ✅ FIXED (readable)
+<h3 className="font-heading text-base">@username</h3>        // 16px standard
+<p className="font-small text-sm">Artist Name</p>            // 14px secondary
+<p className="font-label text-label uppercase">AUSTIN</p>    // 12px label, weight 500
+```
+
+**Homepage Body Text:**
+```tsx
+// ❌ CURRENT (too light)
+<p className="font-body text-base">                          // 17px, weight 300
+
+// ✅ FIXED (readable)
+<p className="font-body text-base">                          // 16px, weight 400
+```
+
+### Testing Readability
+
+**Desktop (1440px):**
+- View at 100% zoom (no browser zoom)
+- Body text should be comfortable to read from 24" away
+- Labels should be legible but clearly secondary
+
+**Mobile (375px):**
+- Critical: small screens need LARGER text, not smaller
+- Never reduce below 14px on mobile
+- Increase touch targets (labels near tappable areas)
+
+**Accessibility:**
+- WCAG AA: Minimum 16px for body text
+- WCAG AAA: Minimum 18px for body text (aim for this)
+- High contrast ratio (ink on paper = 16:1, exceeds AAA)
 
 ---
 
@@ -144,11 +247,151 @@ Tiny:     11px (0.6875rem)          / line-height: 1.4   / weight: 200
 --space-5xl: 128px (8rem)
 ```
 
-**Recommended Usage**:
-- Component padding: `xl` (32px)
-- Section padding: `3xl` - `4xl` (64px - 96px)
-- Element gaps: `lg` (24px)
-- Tight spacing: `sm` (8px)
+**Recommended Usage** (Density-First Philosophy):
+- Section spacing: `2xl` (48px) - Between major sections
+- Component padding: `md` (16px) - Card/component internal padding
+- Grid gaps: `md` (16px) desktop, `sm-md` (8-12px) mobile
+- Element spacing: `sm-md` (8-12px) - Between related elements
+- Tight grouping: `xs-sm` (4-8px) - Tightly coupled elements
+- Hero sections: `3xl-4xl` (64-96px) - Only for dramatic hero areas
+
+**CRITICAL PRINCIPLE**: We are an app with editorial style, not a magazine spread. Prioritize information density - show 8-12 artist cards per viewport, not 3-4. Use refined typography and proper line-height for breathing room, not excessive margins.
+
+---
+
+## 📊 INFORMATION DENSITY VS EDITORIAL SPACING
+
+### The Core Tension
+
+**We are NOT a magazine spread. We are an app with editorial design style.**
+
+Magazine spreads can afford 2-3 large images per page because they're curated, finite experiences. We have hundreds of artists and thousands of images to showcase. Users expect to scan, compare, and discover—not read a leisurely article.
+
+### Design Philosophy
+
+**Editorial STYLE:**
+- ✅ Refined typography (Libre Baskerville, Crimson Pro)
+- ✅ Minimal color palette (paper white, ink black)
+- ✅ Sophisticated visual effects (dotted texture, torn edges)
+- ✅ Proper line-height and font weights
+
+**Editorial SPACING:**
+- ❌ Magazine-style section breaks (64-96px between sections)
+- ❌ Luxurious component padding (32px+ inside cards)
+- ❌ Excessive white space "for breathing room"
+- ❌ Only 3-4 cards visible per viewport
+
+### Information Density Guidelines
+
+**Artist Cards:**
+- **Target:** 8-12 cards per desktop viewport, 4-6 on mobile
+- **Card padding:** 16px (not 24-32px)
+- **Grid gaps:** 16px desktop, 12px mobile (not 24-32px)
+- **Image aspect ratio:** Keep tight (4:5 or 1:1, not 3:4 or full-bleed)
+
+**Browse Pages:**
+- **Above fold:** Show at least 6 artists immediately (no "scroll to see any results")
+- **Section spacing:** 48px between major sections (not 64-96px)
+- **Filter bars:** Compact, persistent (not giant dropdowns with 32px padding)
+
+**Search Results:**
+- **Results density:** 20 artists per page with 3-4 images each
+- **Pagination:** Compact controls at bottom
+- **Metadata:** Tight grouping (city, style, Instagram handle in one line)
+
+**Profile Pages:**
+- **Portfolio grid:** 3-4 columns desktop, 2 columns mobile (tight 12-16px gaps)
+- **Bio section:** Compact, scannable (not essay-length with huge margins)
+- **Related artists:** Show 6+ immediately (not "click to see 3 more")
+
+### Where We CAN Be Spacious
+
+**Hero Sections Only:**
+- Homepage hero (96px vertical padding)
+- Search landing page (64px+ for drama)
+- Major CTAs (48-64px section padding)
+
+**Typography Breathing:**
+- Use line-height (1.8 for body) instead of margin-bottom
+- Letter-spacing for labels (0.15em) instead of padding
+- Proper font sizes (17px body) instead of huge whitespace
+
+### Where We MUST Be Dense
+
+**Content Grids:**
+- Artist cards, portfolio images, search results
+- Browse pages, style pages, city pages
+- Related content sections
+
+**Navigation:**
+- Compact header (not 80px tall)
+- Tight filter controls
+- Inline metadata (not stacked with 16px gaps)
+
+### Anti-Patterns to Avoid
+
+❌ **"Magazine Spread" Syndrome:**
+```html
+<!-- BAD: Only 3 cards visible, 96px section padding -->
+<section class="py-24">
+  <div class="grid grid-cols-3 gap-8">
+    <Card /> <Card /> <Card />
+  </div>
+</section>
+```
+
+✅ **"Dense Editorial" Approach:**
+```html
+<!-- GOOD: 8-12 cards visible, 48px section padding -->
+<section class="py-12">
+  <div class="grid grid-cols-4 gap-4">
+    <Card /> <Card /> <Card /> <Card />
+    <Card /> <Card /> <Card /> <Card />
+    <Card /> <Card /> <Card /> <Card />
+  </div>
+</section>
+```
+
+❌ **"Luxurious Card Padding":**
+```html
+<!-- BAD: 32px padding eats viewport space -->
+<div class="card p-8">
+  <img />
+  <h3 class="mt-6">Artist Name</h3>
+</div>
+```
+
+✅ **"Functional Card Padding":**
+```html
+<!-- GOOD: 16px padding, tight grouping -->
+<div class="card p-4">
+  <img />
+  <h3 class="mt-3">Artist Name</h3>
+</div>
+```
+
+### Mobile Density is Critical
+
+**Desktop can afford slight luxury. Mobile MUST be dense.**
+
+- Mobile grid: 2 columns (not 1)
+- Mobile gaps: 12px (not 16-24px)
+- Mobile section padding: 32px (not 48-64px)
+- Mobile card padding: 12px (not 16-24px)
+
+Users on mobile are scrolling fast, comparing options. Show them MORE, not LESS.
+
+### Measurement Targets
+
+**Desktop Viewport (1440px × 900px):**
+- Artist cards visible: 12+ (3-4 rows of 3-4 columns)
+- Scroll depth to 20 cards: <2 full scrolls
+- Above-fold content: Hero + 6-8 cards
+
+**Mobile Viewport (375px × 667px):**
+- Artist cards visible: 4-6 (2-3 rows of 2 columns)
+- Scroll depth to 20 cards: <4 full scrolls
+- Above-fold content: Search bar + 4 cards
 
 ---
 
@@ -515,6 +758,28 @@ xl: 1280px  /* Wide desktop */
 ---
 
 ## 🔄 VERSION HISTORY
+
+**v2.1** (2026-01-05) - **"Density + Readability Update"**
+- **Information Density:**
+  - Added "Information Density vs Editorial Spacing" section
+  - Revised spacing philosophy: app-first, not magazine spreads
+  - Reduced recommended spacing:
+    - Section padding: 48px (down from 64-96px)
+    - Component padding: 16px (down from 32px)
+    - Grid gaps: 16px desktop, 12px mobile (down from 24-32px)
+  - Target density: 8-12 artist cards per desktop viewport (up from 3-4)
+  - Mobile density prioritized: 2-column grids, tighter spacing
+  - Clear anti-patterns documented with examples
+  - Measurement targets added for desktop and mobile viewports
+
+- **Typography Readability:**
+  - Body text: 16px @ 400 weight (down from 17px @ 300 weight)
+  - Small text: 14px @ 400 weight (up from 300 weight)
+  - Removed "Tiny" (11px) - replaced with "Label" (12px @ 500 weight, uppercase)
+  - Added "Readability Guidelines" section with user feedback
+  - CRITICAL RULE: Never use text smaller than 14px for body content
+  - Deprecated custom sizes (10px, 11px, 13px)
+  - Font weight guidelines: 400+ for readable text, 500 for labels
 
 **v2.0** (2025-12-30) - **"Inkdex" Redesign**
 - Near-white (#F8F7F5) / near-black (#1A1A1A) color system

@@ -107,7 +107,7 @@ export default async function ClaimVerifyPage({ searchParams }: PageProps) {
     )
 
     // Redirect to onboarding
-    redirect(`/onboarding?artist_id=${artist_id}&claimed=true`)
+    redirect(`/onboarding/fetch?artist_id=${artist_id}&claimed=true`)
 
   } catch (error) {
     console.error('[Claim] Unexpected error:', error)

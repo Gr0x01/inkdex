@@ -9,6 +9,8 @@
  * - Progressive Turnstile captcha (after 3rd submission)
  * - Rate limiting (5 submissions/hour)
  * - Real-time validation
+ *
+ * Design: App-First with Editorial Typography
  */
 
 import { useState, useRef } from 'react';
@@ -63,7 +65,7 @@ export function RecommendSection() {
               {data.message}{' '}
               <a
                 href={data.artistUrl}
-                className="text-ether underline hover:text-ether-light transition-colors"
+                className="text-ink underline hover:text-gray-700 transition-colors underline-offset-2"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -106,26 +108,26 @@ export function RecommendSection() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Heading */}
       <div>
-        <h2 className="font-display text-2xl md:text-3xl text-white mb-3">
+        <h2 className="font-heading text-2xl md:text-3xl text-ink mb-2 leading-tight">
           Recommend an Artist
         </h2>
-        <p className="font-body text-gray-400 text-sm md:text-base">
-          Know a talented tattoo artist who should be on Inkdex? Submit their Instagram handle and we'll add them to our platform.
+        <p className="font-body text-gray-600 text-base leading-relaxed">
+          Know a talented artist? Submit their Instagram and we'll add them to the platform.
         </p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         {/* Instagram Handle Input */}
         <div>
           <label htmlFor="instagram-handle" className="sr-only">
             Instagram Handle
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-sm">
               @
             </span>
             <input
@@ -136,24 +138,24 @@ export function RecommendSection() {
               onChange={(e) => setHandle(e.target.value)}
               placeholder="username"
               disabled={isSubmitting}
-              className="w-full pl-9 pr-4 py-3 bg-paper-dark border border-gray-800 rounded-lg
-                       text-white font-mono text-sm md:text-base
-                       placeholder:text-gray-600
-                       focus:border-ether focus:ring-1 focus:ring-ether focus:outline-none
+              className="w-full pl-8 pr-4 py-2.5 bg-paper border-2 border-ink/20
+                       text-ink font-mono text-sm
+                       placeholder:text-gray-400 placeholder:font-body placeholder:not-italic
+                       focus:border-ink focus:outline-none
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors"
               autoComplete="off"
               spellCheck="false"
             />
           </div>
-          <p className="mt-2 text-xs text-gray-500 font-body">
-            Enter the Instagram username (without the @)
+          <p className="mt-1.5 text-sm text-gray-500 font-body">
+            Enter the Instagram username (without @)
           </p>
         </div>
 
         {/* Turnstile Captcha */}
         {showCaptcha && (
-          <div className="py-4">
+          <div className="py-3">
             <TurnstileWidget
               onVerify={handleTurnstileVerify}
               onError={handleTurnstileError}
@@ -165,17 +167,18 @@ export function RecommendSection() {
         <button
           type="submit"
           disabled={isSubmitting || !handle.trim()}
-          className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600
-                   text-white font-body font-medium rounded-lg
-                   hover:from-purple-700 hover:to-pink-700
+          className="w-full py-3 px-5 bg-ink text-paper
+                   font-mono text-[10px] tracking-[0.15em] uppercase font-medium
+                   border-2 border-ink
+                   hover:bg-paper hover:text-ink
                    disabled:opacity-50 disabled:cursor-not-allowed
-                   transition-all duration-200 transform hover:scale-[1.02]
-                   focus:outline-none focus:ring-2 focus:ring-ether focus:ring-offset-2 focus:ring-offset-ink"
+                   transition-all duration-200
+                   focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
               <svg
-                className="animate-spin h-4 w-4 text-white"
+                className="animate-spin h-3.5 w-3.5"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -203,22 +206,22 @@ export function RecommendSection() {
 
         {/* Error Message */}
         {error && (
-          <div className="p-4 bg-red-900/20 border border-red-800 rounded-lg">
-            <p className="text-red-400 text-sm font-body">{error}</p>
+          <div className="p-3 border-l-2 border-red-600 bg-red-50">
+            <p className="text-red-800 text-sm font-body leading-relaxed">{error}</p>
           </div>
         )}
 
         {/* Success Message */}
         {success && (
-          <div className="p-4 bg-green-900/20 border border-green-800 rounded-lg">
-            <p className="text-green-400 text-sm font-body">{success}</p>
+          <div className="p-3 border-l-2 border-green-600 bg-green-50">
+            <p className="text-green-800 text-sm font-body leading-relaxed">{success}</p>
           </div>
         )}
       </form>
 
       {/* Fine Print */}
-      <p className="text-xs text-gray-600 font-body leading-relaxed">
-        By submitting, you confirm that this is a legitimate tattoo artist's Instagram account. We verify all submissions before adding them to our platform.
+      <p className="text-sm text-gray-500 font-body leading-relaxed pt-1">
+        By submitting, you confirm this is a legitimate tattoo artist's Instagram account. We verify all submissions.
       </p>
     </div>
   );
