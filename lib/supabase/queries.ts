@@ -52,6 +52,15 @@ function validateFloat(num: number, fieldName: string, min: number, max: number)
 }
 
 /**
+ * Escape special characters in LIKE/ILIKE patterns to prevent pattern injection
+ * @param str - User-provided string to escape
+ * @returns Escaped string safe for use in LIKE/ILIKE queries
+ */
+function escapeLikePattern(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&')
+}
+
+/**
  * Search artists by CLIP embedding vector
  * @param embedding - 768-dimension CLIP vector
  * @param options - Search options (threshold, limit, city filter, offset)
@@ -252,7 +261,9 @@ export async function getArtistBySlug(slug: string) {
 }
 
 /**
- * Get artists by city
+ * Get artists by city (supports multi-location artists)
+ * @param city - City name to search for
+ * @returns Artists who work in this city (primary or secondary location)
  */
 export async function getArtistsByCity(city: string) {
   // Validate city
@@ -260,18 +271,33 @@ export async function getArtistsByCity(city: string) {
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('artists')
-    .select('*')
-    .eq('city', city)
-    .order('name')
+  // Query artists who have this city in their locations
+  // Note: artist_locations table may not exist in types yet - cast to any
+  // Use escaped pattern to prevent ILIKE injection
+  const { data, error } = await (supabase as any)
+    .from('artist_locations')
+    .select(`
+      artist_id,
+      artists!inner (*)
+    `)
+    .ilike('city', escapeLikePattern(city))
 
   if (error) {
     console.error('Error fetching artists by city:', error)
     return []
   }
 
-  return data
+  // Extract unique artists from results
+  const artistsMap = new Map()
+  data.forEach((row: any) => {
+    if (row.artists && !artistsMap.has(row.artist_id)) {
+      artistsMap.set(row.artist_id, row.artists)
+    }
+  })
+
+  return Array.from(artistsMap.values()).sort((a: any, b: any) =>
+    (a.name || '').localeCompare(b.name || '')
+  )
 }
 
 /**
@@ -349,6 +375,7 @@ export async function getFeaturedImages(limit: number = 30) {
 
 /**
  * Get featured artists (50k+ followers) with portfolios for homepage grid
+ * Supports multi-location artists via artist_locations table
  * @param city - City to filter by
  * @param limit - Number of artists to fetch (default 12)
  * @returns Artists with 50k+ followers and at least 4 portfolio images
@@ -366,6 +393,20 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
   // Use service client to bypass RLS for public featured artists data
   const { createServiceClient } = await import('@/lib/supabase/service')
   const supabase = createServiceClient()
+
+  // First get artist IDs that work in this city
+  // Note: artist_locations table may not exist in types yet - cast to any
+  // Use escaped pattern to prevent ILIKE injection
+  const { data: locationData } = await (supabase as any)
+    .from('artist_locations')
+    .select('artist_id')
+    .ilike('city', escapeLikePattern(city))
+
+  const artistIds = locationData?.map((loc: any) => loc.artist_id) || []
+
+  if (artistIds.length === 0) {
+    return []
+  }
 
   // Get featured artists (50k+ followers) with their portfolio images
   const { data, error } = await supabase
@@ -385,7 +426,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
         likes_count
       )
     `)
-    .eq('city', city)
+    .in('id', artistIds)
     .gte('follower_count', 50000)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
@@ -612,6 +653,7 @@ export async function getStateWithCities(state: string) {
 
 /**
  * Get artists in a city with portfolio images
+ * Supports multi-location artists via artist_locations table
  * @param state - State code (e.g., 'TX', 'CA')
  * @param city - City name (e.g., 'Austin', 'Los Angeles')
  * @param limit - Number of artists to return (default 50)
@@ -630,6 +672,21 @@ export async function getCityArtists(
   validateInteger(offset, 'offset', 0, 10000)
 
   const supabase = await createClient()
+
+  // First get artist IDs that work in this city/state
+  // Note: artist_locations table may not exist in types yet - cast to any
+  // Use escaped pattern to prevent ILIKE injection
+  const { data: locationData } = await (supabase as any)
+    .from('artist_locations')
+    .select('artist_id')
+    .ilike('city', escapeLikePattern(city))
+    .eq('region', state)
+
+  const artistIds = locationData?.map((loc: any) => loc.artist_id) || []
+
+  if (artistIds.length === 0) {
+    return { artists: [], total: 0 }
+  }
 
   const { data, error, count } = await supabase
     .from('artists')
@@ -652,8 +709,7 @@ export async function getCityArtists(
     `,
       { count: 'exact' }
     )
-    .eq('state', state)
-    .eq('city', city)
+    .in('id', artistIds)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
     .order('verification_status', { ascending: false })

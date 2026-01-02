@@ -3,6 +3,7 @@
  *
  * Updates artist profile information for claimed artists
  * Validates pro status before allowing pro-only field updates
+ * Supports multi-location for Pro artists
  * Requires authentication
  */
 
@@ -11,11 +12,25 @@ import { createClient } from '@/lib/supabase/server';
 import { checkProfileUpdateRateLimit } from '@/lib/rate-limiter';
 import { z } from 'zod';
 
+// Location schema for international support
+const locationSchema = z.object({
+  id: z.string().optional(), // Optional for new locations
+  city: z.string().max(100).nullable(),
+  region: z.string().max(100).nullable(),
+  countryCode: z.string().length(2).default('US'),
+  locationType: z.enum(['city', 'region', 'country']),
+  isPrimary: z.boolean(),
+  displayOrder: z.number().optional(),
+});
+
 const updateProfileSchema = z.object({
   artistId: z.string().uuid(),
   name: z.string().trim().min(1, 'Name is required').max(100),
-  city: z.string().trim().min(1, 'City is required').max(100),
-  state: z.string().trim().length(2, 'State must be 2 characters').regex(/^[A-Z]{2}$/, 'State must be uppercase'),
+  // Legacy fields kept for backward compatibility but now populated from primary location
+  city: z.string().trim().max(100).optional(),
+  state: z.string().trim().max(100).optional(),
+  // New locations array
+  locations: z.array(locationSchema).min(1, 'At least one location is required').max(20),
   bioOverride: z.string().trim().max(500).nullable(),
   bookingLink: z.string().url('Invalid URL').nullable(),
   pricingInfo: z.string().trim().max(100).nullable(),
@@ -61,8 +76,7 @@ export async function POST(request: NextRequest) {
     const {
       artistId,
       name,
-      city,
-      state,
+      locations,
       bioOverride,
       bookingLink,
       pricingInfo,
@@ -84,11 +98,44 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - not your profile' }, { status: 403 });
     }
 
-    // 4. Build update object (conditionally include pro fields)
-    const updateData: any = {
+    // 5. Validate location count based on tier
+    const maxLocations = artist.is_pro ? 20 : 1;
+    if (locations.length > maxLocations) {
+      return NextResponse.json(
+        { error: `Free tier limited to ${maxLocations} location. Upgrade to Pro for multiple locations.` },
+        { status: 400 }
+      );
+    }
+
+    // 6. Validate and normalize primary location
+    // Ensure exactly one primary location exists
+    const primaryCount = locations.filter(loc => loc.isPrimary).length;
+    if (primaryCount === 0 && locations.length > 0) {
+      // Auto-set first location as primary if none specified
+      locations[0].isPrimary = true;
+    } else if (primaryCount > 1) {
+      return NextResponse.json(
+        { error: 'Only one location can be marked as primary' },
+        { status: 400 }
+      );
+    }
+
+    // 7. Get primary location for backward-compatible city/state columns
+    const primaryLocation = locations.find(loc => loc.isPrimary);
+    if (!primaryLocation) {
+      return NextResponse.json(
+        { error: 'At least one location is required' },
+        { status: 400 }
+      );
+    }
+    const artistCity = primaryLocation.city || '';
+    const artistState = primaryLocation.region || '';
+
+    // 7. Build update object (conditionally include pro fields)
+    const updateData: Record<string, unknown> = {
       name,
-      city,
-      state,
+      city: artistCity,
+      state: artistState,
       bio_override: bioOverride || null,
       booking_url: bookingLink || null,
       updated_at: new Date().toISOString(),
@@ -100,7 +147,7 @@ export async function POST(request: NextRequest) {
       updateData.availability_status = availabilityStatus;
     }
 
-    // 5. Update artist record
+    // 8. Update artist record
     const { error: updateError } = await supabase
       .from('artists')
       .update(updateData)
@@ -109,6 +156,27 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('[ProfileUpdate] Database error:', updateError);
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
+    }
+
+    // 9. Update locations atomically using RPC function
+    // This prevents race conditions by doing delete+insert in a single transaction
+    const locationInserts = locations.map((loc, index) => ({
+      city: loc.city || null,
+      region: loc.region || null,
+      country_code: loc.countryCode || 'US',
+      location_type: loc.locationType,
+      is_primary: loc.isPrimary || index === 0,
+      display_order: loc.displayOrder ?? index,
+    }));
+
+    const { error: locationsError } = await supabase.rpc('update_artist_locations', {
+      p_artist_id: artistId,
+      p_locations: locationInserts,
+    });
+
+    if (locationsError) {
+      console.error('[ProfileUpdate] Failed to update locations:', locationsError);
+      return NextResponse.json({ error: 'Failed to save locations' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });

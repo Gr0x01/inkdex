@@ -6,6 +6,46 @@
  */
 
 import { z } from 'zod';
+import { isValidCountryCode } from '@/lib/constants/countries';
+
+/**
+ * Sanitize city/region input - only allow safe characters
+ */
+function sanitizeLocationString(str: string): string {
+  // Allow letters (including accented), spaces, hyphens, apostrophes, periods, commas
+  return str.replace(/[^a-zA-ZÀ-ÿ\s\-'.,]/g, '').trim();
+}
+
+/**
+ * Location Schema (international support)
+ */
+export const locationSchema = z.object({
+  city: z.string().max(100).transform(val => val ? sanitizeLocationString(val) : null).nullable(),
+  region: z.string().max(100).transform(val => val ? sanitizeLocationString(val) : null).nullable(),
+  countryCode: z.string().length(2, 'Country code must be 2 characters').default('US')
+    .refine(isValidCountryCode, { message: 'Invalid country code' }),
+  locationType: z.enum(['city', 'region', 'country']),
+  isPrimary: z.boolean(),
+}).refine(
+  (data) => {
+    // City type requires city field
+    if (data.locationType === 'city' && !data.city) {
+      return false;
+    }
+    // Region type requires region field
+    if (data.locationType === 'region' && !data.region) {
+      return false;
+    }
+    // International locations require city
+    if (data.countryCode !== 'US' && data.locationType === 'city' && !data.city) {
+      return false;
+    }
+    return true;
+  },
+  { message: 'Invalid location: required fields missing for location type' }
+);
+
+export type LocationData = z.infer<typeof locationSchema>;
 
 /**
  * Step 2: Profile Preview Data
@@ -16,15 +56,30 @@ export const profileDataSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name cannot exceed 100 characters')
     .trim(),
-  city: z.string().min(1, 'City is required').trim(),
-  state: z.string().min(1, 'State is required').trim(),
+  // New locations array format
+  locations: z
+    .array(locationSchema)
+    .min(1, 'At least one location is required')
+    .max(20, 'Maximum 20 locations allowed')
+    .optional(),
+  // Legacy city/state fields for backward compatibility
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
   bio: z
     .string()
     .max(500, 'Bio cannot exceed 500 characters')
     .trim()
     .optional()
     .or(z.literal('')),
-});
+}).refine(
+  (data) => {
+    // Either locations array OR city/state must be provided
+    const hasLocations = data.locations && data.locations.length > 0;
+    const hasLegacy = data.city && data.city.length > 0;
+    return hasLocations || hasLegacy;
+  },
+  { message: 'At least one location is required' }
+);
 
 export type ProfileData = z.infer<typeof profileDataSchema>;
 

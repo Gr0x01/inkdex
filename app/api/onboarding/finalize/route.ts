@@ -119,6 +119,14 @@ export async function POST(request: NextRequest) {
     const fetchedImages = (session.fetched_images as any[]) || [];
     const profileData = (session.profile_data as any) || {};
 
+    // Extract locations (new format) or fallback to legacy city/state
+    const locations = profileUpdates.locations || [];
+    const primaryLocation = locations.length > 0 ? locations[0] : null;
+
+    // For backward compatibility, get city/state from primary location or legacy fields
+    const artistCity = primaryLocation?.city || profileUpdates.city || '';
+    const artistState = primaryLocation?.region || profileUpdates.state || '';
+
     // 8. Get user's Instagram username
     const { data: userData } = await supabase
       .from('users')
@@ -150,8 +158,8 @@ export async function POST(request: NextRequest) {
         .from('artists')
         .update({
           name: profileUpdates.name,
-          city: profileUpdates.city,
-          state: profileUpdates.state,
+          city: artistCity,
+          state: artistState,
           bio_override: profileUpdates.bio || null,
           booking_url: session.booking_link || null,
           verification_status: 'claimed',
@@ -216,8 +224,8 @@ export async function POST(request: NextRequest) {
           id: artistId,
           name: profileUpdates.name,
           slug: artistSlug,
-          city: profileUpdates.city,
-          state: profileUpdates.state,
+          city: artistCity,
+          state: artistState,
           bio: profileData.bio || null,
           bio_override: profileUpdates.bio || null,
           booking_url: session.booking_link || null,
@@ -237,6 +245,38 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to create artist profile' },
           { status: 500 }
         );
+      }
+    }
+
+    // 9. Insert locations to artist_locations table
+    if (locations.length > 0) {
+      // First, delete any existing locations for this artist (for claimed artists)
+      if (session.artist_id) {
+        await supabase
+          .from('artist_locations')
+          .delete()
+          .eq('artist_id', artistId);
+      }
+
+      // Insert new locations
+      const locationInserts = locations.map((loc: any, index: number) => ({
+        artist_id: artistId,
+        city: loc.city || null,
+        region: loc.region || null,
+        country_code: loc.countryCode || 'US',
+        location_type: loc.locationType || 'city',
+        is_primary: loc.isPrimary || index === 0,
+        display_order: index,
+      }));
+
+      const { error: locationsError } = await supabase
+        .from('artist_locations')
+        .insert(locationInserts);
+
+      if (locationsError) {
+        console.error('[Onboarding] Failed to insert locations:', locationsError);
+        // Non-critical error - artist was created, locations can be added later
+        // Continue with the rest of onboarding
       }
     }
 

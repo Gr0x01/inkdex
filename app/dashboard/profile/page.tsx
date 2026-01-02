@@ -44,6 +44,27 @@ export default async function ProfilePage() {
     .eq('verification_status', 'claimed')
     .single();
 
+  // 3. Get artist locations
+  let locations: any[] = [];
+  if (artist) {
+    const { data: locationData } = await supabase
+      .from('artist_locations')
+      .select('id, city, region, country_code, location_type, is_primary, display_order')
+      .eq('artist_id', artist.id)
+      .order('is_primary', { ascending: false })
+      .order('display_order', { ascending: true });
+
+    locations = (locationData || []).map((loc) => ({
+      id: loc.id,
+      city: loc.city,
+      region: loc.region,
+      countryCode: loc.country_code,
+      locationType: loc.location_type,
+      isPrimary: loc.is_primary,
+      displayOrder: loc.display_order,
+    }));
+  }
+
   if (artistError || !artist) {
     return (
       <div className="min-h-screen bg-[var(--paper-white)] relative">
@@ -95,6 +116,7 @@ export default async function ProfilePage() {
         bookingLink: artist.booking_url || '',
         pricingInfo: artist.pricing_info || '',
         availabilityStatus: artist.availability_status || null,
+        locations: locations,
       }}
       isPro={artist.is_pro}
     />

@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { ProBadge } from '@/components/badges/ProBadge';
 import Select from '@/components/ui/Select';
 import DashboardToolbar from './DashboardToolbar';
+import LocationManager, { Location } from './LocationManager';
 
 interface ProfileEditorProps {
   artistId: string;
@@ -31,6 +32,7 @@ interface ProfileEditorProps {
     bookingLink: string;
     pricingInfo: string;
     availabilityStatus: string | null;
+    locations: Location[];
   };
   isPro: boolean;
 }
@@ -46,14 +48,17 @@ export default function ProfileEditor({
 
   // Form state
   const [name, setName] = useState(initialData.name);
-  const [city, setCity] = useState(initialData.city);
-  const [state, setState] = useState(initialData.state);
+  const [locations, setLocations] = useState<Location[]>(initialData.locations);
   const [bioOverride, setBioOverride] = useState(initialData.bioOverride);
   const [bookingLink, setBookingLink] = useState(initialData.bookingLink);
   const [pricingInfo, setPricingInfo] = useState(initialData.pricingInfo);
   const [availabilityStatus, setAvailabilityStatus] = useState<AvailabilityStatus>(
     (initialData.availabilityStatus as AvailabilityStatus) || null
   );
+
+  // Location save state (separate from main form)
+  const [locationSaving, setLocationSaving] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -113,14 +118,20 @@ export default function ProfileEditor({
     setSaveError(null);
 
     try {
+      // Extract primary location for backward compatibility
+      const primaryLocation = locations.find((l) => l.isPrimary) || locations[0];
+      const city = primaryLocation?.city || '';
+      const state = primaryLocation?.region || '';
+
       const response = await fetch('/api/dashboard/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           artistId,
           name: name.trim(),
-          city: city.trim(),
-          state: state.trim(),
+          city: city,
+          state: state,
+          locations: locations,
           bioOverride: bioOverride.trim() || null,
           bookingLink: bookingLink.trim() || null,
           pricingInfo: isPro ? pricingInfo.trim() || null : null,
@@ -149,8 +160,7 @@ export default function ProfileEditor({
   // Handle cancel
   const handleCancel = () => {
     setName(initialData.name);
-    setCity(initialData.city);
-    setState(initialData.state);
+    setLocations(initialData.locations);
     setBioOverride(initialData.bioOverride);
     setBookingLink(initialData.bookingLink);
     setPricingInfo(initialData.pricingInfo);
@@ -158,6 +168,49 @@ export default function ProfileEditor({
     setHasUnsavedChanges(false);
     setSaveSuccess(false);
     setSaveError(null);
+  };
+
+  // Handle location save (separate from main form)
+  const handleLocationSave = async (newLocations: Location[]) => {
+    setLocationSaving(true);
+    setLocationError(null);
+
+    try {
+      // Extract primary location for backward compatibility
+      const primaryLocation = newLocations.find((l) => l.isPrimary) || newLocations[0];
+      const city = primaryLocation?.city || '';
+      const state = primaryLocation?.region || '';
+
+      const response = await fetch('/api/dashboard/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId,
+          // Only send location-related fields
+          city: city,
+          state: state,
+          locations: newLocations,
+          // Preserve other fields
+          name: name.trim(),
+          bioOverride: bioOverride.trim() || null,
+          bookingLink: bookingLink.trim() || null,
+          pricingInfo: isPro ? pricingInfo.trim() || null : null,
+          availabilityStatus: isPro ? availabilityStatus : null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update locations');
+      }
+
+      setLocations(newLocations);
+      router.refresh();
+    } catch (error) {
+      setLocationError(error instanceof Error ? error.message : 'Failed to save locations');
+    } finally {
+      setLocationSaving(false);
+    }
   };
 
   // Delete flow handlers
@@ -275,37 +328,15 @@ export default function ProfileEditor({
                   />
                 </div>
 
-                {/* City & State Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
-                      City <span className="text-[var(--error)]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => handleStringChange(setCity)(e.target.value)}
-                      className="input"
-                      placeholder="Austin"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
-                      State <span className="text-[var(--error)]">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={state}
-                      onChange={(e) => handleStringChange(setState)(e.target.value.toUpperCase())}
-                      className="input font-mono uppercase"
-                      placeholder="TX"
-                      pattern="[A-Z]{2}"
-                      maxLength={2}
-                      required
-                    />
-                  </div>
-                </div>
+                {/* Location Manager */}
+                <LocationManager
+                  artistId={artistId}
+                  isPro={isPro}
+                  locations={locations}
+                  onSave={handleLocationSave}
+                  isSaving={locationSaving}
+                  error={locationError || undefined}
+                />
 
                 {/* Bio Field */}
                 <div>

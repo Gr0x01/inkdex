@@ -1,6 +1,41 @@
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import LocationPicker, { Location } from '@/components/onboarding/LocationPicker';
+import { getCountryName } from '@/lib/constants/countries';
+import { getStateName } from '@/lib/constants/states';
+
+// Helper to format location for preview display
+function formatLocationPreview(loc: Location): string {
+  const parts: string[] = [];
+
+  if (loc.city) {
+    parts.push(loc.city);
+  }
+
+  if (loc.region) {
+    // For US, show state code; for international, show region name
+    if (loc.countryCode === 'US') {
+      parts.push(loc.region);
+    } else {
+      parts.push(loc.region);
+    }
+  }
+
+  // Only show country for non-US locations
+  if (loc.countryCode !== 'US') {
+    const countryName = getCountryName(loc.countryCode);
+    parts.push(countryName || loc.countryCode);
+  }
+
+  // If it's a state-only US location
+  if (loc.locationType === 'region' && loc.countryCode === 'US' && loc.region) {
+    const stateName = getStateName(loc.region);
+    return stateName ? `${stateName} (statewide)` : `${loc.region} (statewide)`;
+  }
+
+  return parts.join(', ') || 'Location not set';
+}
 
 function PreviewContent() {
   const router = useRouter();
@@ -8,12 +43,12 @@ function PreviewContent() {
   const sessionId = searchParams.get('session_id');
 
   const [name, setName] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
+  const [locations, setLocations] = useState<Location[]>([]);
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
+  const [locationError, setLocationError] = useState('');
 
   useEffect(() => {
     const fetchSessionData = async () => {
@@ -63,9 +98,21 @@ function PreviewContent() {
         const updates = session.profile_updates || {};
 
         setName(updates.name || profileData.username || '');
-        setCity(updates.city || '');
-        setState(updates.state || '');
         setBio(updates.bio || profileData.bio || '');
+
+        // Pre-populate locations if available
+        if (updates.locations && Array.isArray(updates.locations)) {
+          setLocations(updates.locations);
+        } else if (updates.city && updates.state) {
+          // Legacy format: convert city/state to location
+          setLocations([{
+            city: updates.city,
+            region: updates.state,
+            countryCode: 'US',
+            locationType: 'city',
+            isPrimary: true,
+          }]);
+        }
 
         setInitialLoading(false);
       } catch (err: any) {
@@ -79,20 +126,57 @@ function PreviewContent() {
   }, [sessionId, router]);
 
   const handleContinue = async () => {
-    if (!name.trim() || !city.trim() || !state.trim()) {
-      setError('Name, city, and state are required');
+    // Validate name
+    if (!name.trim()) {
+      setError('Name is required');
       return;
     }
 
+    // Validate location
+    if (locations.length === 0) {
+      setLocationError('Please add at least one location');
+      return;
+    }
+
+    // Validate location has required fields
+    const primaryLocation = locations[0];
+    if (primaryLocation.locationType === 'city' && !primaryLocation.city) {
+      setLocationError('City is required');
+      return;
+    }
+    if (primaryLocation.locationType === 'region' && !primaryLocation.region) {
+      setLocationError('State is required');
+      return;
+    }
+    if (primaryLocation.countryCode !== 'US' && !primaryLocation.city) {
+      setLocationError('City is required for international locations');
+      return;
+    }
+
+    setError('');
+    setLocationError('');
     setLoading(true);
+
     try {
+      // Extract primary location for backward compatibility
+      const city = primaryLocation.city || '';
+      const state = primaryLocation.region || '';
+
       const res = await fetch('/api/onboarding/update-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
           step: 'preview',
-          data: { name, city, state, bio },
+          data: {
+            name,
+            bio,
+            // New format
+            locations,
+            // Legacy format for backward compatibility
+            city,
+            state,
+          },
         }),
       });
 
@@ -148,27 +232,12 @@ function PreviewContent() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">City *</label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-4 py-2 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
-                placeholder="Los Angeles"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">State *</label>
-              <input
-                type="text"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className="w-full px-4 py-2 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
-                placeholder="California"
-              />
-            </div>
+            <LocationPicker
+              isPro={false}
+              locations={locations}
+              onChange={setLocations}
+              error={locationError}
+            />
 
             <div>
               <label className="block text-sm text-gray-400 mb-2">Bio (optional)</label>
@@ -199,7 +268,11 @@ function PreviewContent() {
           <h2 className="text-xl font-display text-white mb-4">Preview</h2>
           <div className="text-white">
             <h3 className="text-2xl font-display mb-2">{name || 'Your Name'}</h3>
-            <p className="text-gray-400 mb-4">{city && state ? `${city}, ${state}` : 'City, State'}</p>
+            <p className="text-gray-400 mb-4">
+              {locations.length > 0
+                ? formatLocationPreview(locations[0])
+                : 'City, State'}
+            </p>
             <p className="text-gray-300">{bio || 'Your bio will appear here...'}</p>
           </div>
         </div>

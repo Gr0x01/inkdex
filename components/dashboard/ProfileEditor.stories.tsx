@@ -29,6 +29,49 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// Mock location data
+const mockLocations = [
+  {
+    id: 'loc-1',
+    city: 'Los Angeles',
+    region: 'CA',
+    countryCode: 'US',
+    locationType: 'city' as const,
+    isPrimary: true,
+    displayOrder: 0,
+  },
+];
+
+const proMockLocations = [
+  {
+    id: 'loc-1',
+    city: 'New York',
+    region: 'NY',
+    countryCode: 'US',
+    locationType: 'city' as const,
+    isPrimary: true,
+    displayOrder: 0,
+  },
+  {
+    id: 'loc-2',
+    city: 'Los Angeles',
+    region: 'CA',
+    countryCode: 'US',
+    locationType: 'city' as const,
+    isPrimary: false,
+    displayOrder: 1,
+  },
+  {
+    id: 'loc-3',
+    city: 'London',
+    region: 'England',
+    countryCode: 'GB',
+    locationType: 'city' as const,
+    isPrimary: false,
+    displayOrder: 2,
+  },
+];
+
 // Mock initial data for stories
 const baseInitialData = {
   name: 'Alex Rivera',
@@ -39,6 +82,7 @@ const baseInitialData = {
   bookingLink: '',
   pricingInfo: '',
   availabilityStatus: null,
+  locations: mockLocations,
 };
 
 const filledInitialData = {
@@ -51,6 +95,7 @@ const filledInitialData = {
   bookingLink: 'https://calendly.com/morganblackink',
   pricingInfo: '$200/hr, $150 minimum',
   availabilityStatus: 'available',
+  locations: proMockLocations,
 };
 
 /**
@@ -107,6 +152,7 @@ export const EmptyProfile: Story = {
       bookingLink: '',
       pricingInfo: '',
       availabilityStatus: null,
+      locations: [],
     },
   },
   parameters: {
