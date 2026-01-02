@@ -124,6 +124,12 @@ Status: Production Ready - 8 Cities + Analytics Integrated ✅
   - Post-MVP: Auto-deploy on merge to main, run type-check + lint
 - **Containerization**: Not needed (Vercel handles deployment)
   - Modal.com handles Python GPU containers for embeddings
+- **Component Development**: Storybook 10.1.11
+  - Why: Isolated component testing, mock auth states, viewport testing
+  - Framework: @storybook/nextjs-vite (supports Next.js 16 + React 19)
+  - Addons: essentials, a11y, docs, interactions
+  - Dev Server: http://localhost:6006
+  - Integration: Complete with Tailwind CSS + editorial fonts
 
 ### Specialized Tools
 - **Image Processing**: Sharp (Node.js)
@@ -350,8 +356,13 @@ POST /api/claim-profile (POST-MVP)
   "@types/react": "^18.x",                    // React types
   "eslint": "^8.x",                           // Linting
   "eslint-config-next": "^14.x",              // Next.js ESLint config
+  "eslint-plugin-storybook": "^0.x",          // Storybook linting rules
   "prettier": "^3.x",                         // Code formatting
-  "prettier-plugin-tailwindcss": "^0.5.x"     // Tailwind class sorting
+  "prettier-plugin-tailwindcss": "^0.5.x",    // Tailwind class sorting
+  "storybook": "^10.1.11",                    // Component development
+  "@storybook/nextjs-vite": "^10.1.11",       // Next.js 16 integration
+  "@chromatic-com/storybook": "^3.x",         // Chromatic addon
+  "@storybook/addon-a11y": "^10.1.11"         // Accessibility testing
 }
 ```
 
@@ -547,5 +558,5 @@ Scripts (Node.js + Python)
 
 ---
 
-**Last Review:** 2026-01-03 (Vercel Analytics integrated)
-**Next Review:** After Phase 4 (Artist portfolio curation & profile customization)
+**Last Review:** 2026-01-05 (Storybook setup complete)
+**Next Review:** After Phase 7 (Subscription integration & analytics dashboard)

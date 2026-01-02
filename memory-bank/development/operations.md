@@ -203,6 +203,10 @@ npm run lint:fix            # ESLint (auto-fix issues)
 npm run format              # Prettier (format code)
 npm run type-check          # TypeScript type checking
 
+# Component development
+npm run storybook           # Storybook dev server (http://localhost:6006)
+npm run build-storybook     # Build static Storybook for deployment
+
 # Analysis
 npm run analyze             # Bundle size analysis (webpack-bundle-analyzer)
 npm run lighthouse          # Lighthouse performance audit (install globally first)
@@ -537,6 +541,27 @@ vercel env pull             # Pull environment variables
 ---
 
 ## Development Best Practices
+
+### Component Development Workflow
+
+**Storybook vs /dev/login:**
+- **Storybook**: Component isolation, visual design, props exploration, responsive testing, auth state variations (mocked)
+  - Use for: UI development, design system work, component documentation
+  - Mock auth states: 5 variations (logged out, fan, unclaimed, free, pro)
+  - Viewport testing: Mobile (375px), tablet (768px), desktop (1280px), wide (1920px)
+  - Accessibility: Built-in a11y addon for WCAG compliance
+- **/dev/login**: Integration testing with real database, full page flows, API endpoints
+  - Use for: Full feature testing, database integration, OAuth flows
+  - Test users: 3 seeded users (Jamie Chen unclaimed, Alex Rivera free, Morgan Black pro)
+
+**Storybook Development Pattern:**
+1. Build component in Storybook with mock data
+2. Test all states (loading, error, empty, populated)
+3. Verify responsive behavior across viewports
+4. Test auth variations using `parameters: { authState: 'PRO_ARTIST' }`
+5. Move to /dev/login for integration testing
+6. Debug visual issues back in Storybook
+7. Debug data/API issues in /dev/login
 
 ### Parallelization & Batching
 **ALWAYS parallelize and batch operations by default. Serial execution is ONLY for initial testing (1-2 items to verify correctness), then immediately switch to parallel/batch for production runs.**

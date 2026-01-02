@@ -456,6 +456,100 @@ Status: Production Ready - 8 Cities Live + Artist Onboarding Complete ✅
 
 ---
 
+## Storybook Setup ✅ (Jan 5, 2026 - COMPLETE)
+
+**Status:** Production-ready component development infrastructure
+
+**Completed:** January 5, 2026
+
+### What Was Completed
+- ✅ **Storybook 10.1.11 installed:** Auto-detected nextjs-vite framework (supports Next.js 16 + React 19)
+- ✅ **Core configuration:** main.ts, preview.ts, preview-head.html with Tailwind + editorial fonts
+- ✅ **Mock authentication system:** 5 auth states (logged out, fan, unclaimed, free, pro)
+- ✅ **Global decorator:** withAuth injects auth state into all stories
+- ✅ **2 initial story files:** ProBadge (5 stories) + Pagination (5 stories) = 10 total stories
+- ✅ **Viewport testing:** 4 presets (mobile 375px, tablet 768px, desktop 1280px, wide 1920px)
+- ✅ **Background themes:** Paper, Ink, Gray variants matching design system
+- ✅ **ESLint integration:** Selective ignores (config files only), allows linting of story files
+- ✅ **Code review:** All critical issues fixed (HTML tag, error handling, type safety)
+
+### Files Created (9 total)
+**Configuration (4):**
+- `.storybook/main.ts` - Core config with TypeScript checking
+- `.storybook/preview.ts` - Global decorators, viewports, backgrounds
+- `.storybook/preview-head.html` - Editorial font loading (Playfair, Libre Baskerville, Crimson Pro, JetBrains Mono)
+- `.storybook/decorators/with-auth.tsx` - Global auth decorator with validation
+
+**Mock System (2):**
+- `.storybook/mocks/auth-provider.tsx` - Mock auth context with error handling
+- `.storybook/mocks/auth-fixtures.ts` - 5 auth states mapped to TEST_USERS
+
+**Stories (2):**
+- `components/badges/ProBadge.stories.tsx` - 5 stories (IconOnly, Badge, Inline, AllSizes, OnDarkBackground)
+- `components/pagination/Pagination.stories.tsx` - 5 stories (FirstPage, MiddlePage, LastPage, FewPages, ManyPages)
+
+**Modified (1):**
+- `eslint.config.mjs` - Added selective Storybook ignores
+
+### Key Architecture
+- **Mock auth states:** Reuse TEST_USERS constants (no duplicate data)
+  - LOGGED_OUT: null user
+  - FAN: Generic logged-in user
+  - UNCLAIMED_ARTIST: Jamie Chen (@test_unclaimed_artist)
+  - FREE_ARTIST: Alex Rivera (@test_free_artist)
+  - PRO_ARTIST: Morgan Black (@test_pro_artist)
+- **Type safety:** `satisfies Meta<typeof Component>` pattern throughout
+- **Error handling:** Try-catch in MockAuthProvider, validation in withAuth
+- **Security:** Mock tokens clearly marked as fake (STORYBOOK_MOCK_TOKEN_NOT_VALID)
+- **Linting:** Story files actively linted, only config files ignored
+
+### Design Integration
+- **Tailwind CSS:** Imported via `app/globals.css` in preview.ts
+- **Editorial fonts:** Google Fonts loaded in preview-head.html
+- **CSS variables:** Font families defined (`--font-playfair`, `--font-libre-baskerville`, etc.)
+- **Backgrounds:** 4 color options matching design system (paper, ink, gray-light, gray-dark)
+
+### Development Workflow
+**Storybook Use Cases:**
+- Component isolation and visual development
+- Props exploration with interactive controls
+- Responsive testing across 4 viewport sizes
+- Auth state variations (5 different user types)
+- Design system documentation
+- Accessibility testing (a11y addon enabled)
+
+**vs /dev/login:**
+- Storybook: Mocked auth, isolated components, fast iteration
+- /dev/login: Real database, full integration, OAuth flows
+
+### Code Review Fixes
+1. ✅ **Critical HTML tag error** - Changed `<parameter>` to `<link>` in preview-head.html
+2. ✅ **Missing error handling** - Added try-catch to MockAuthProvider with user-friendly error UI
+3. ✅ **Type safety** - Added authState validation in withAuth decorator
+4. ✅ **Mock tokens** - Changed to obviously fake values with comments
+5. ✅ **ESLint selective ignores** - Only ignore config files, allow linting of stories
+
+### Testing Status
+- ✅ Storybook runs at http://localhost:6006
+- ✅ All 10 stories render correctly
+- ✅ Tailwind styles applied
+- ✅ Editorial fonts loaded
+- ✅ Viewport switching works
+- ✅ Background themes work
+- ✅ TypeScript compilation passes
+- ✅ ESLint passes (story files linted)
+
+### Next Steps
+- Create stories for CompactArtistCard (test responsive + ProBadge)
+- Create stories for ClaimProfileButton (test auth-dependent rendering)
+- Create stories for PortfolioManager (test complex state + drag-drop)
+- Add interaction tests with @storybook/addon-interactions
+- Consider adding accessibility-focused stories
+
+**Reference:** Plan file at `/Users/rb/.claude/plans/calm-singing-dawn.md`
+
+---
+
 ## Adding New Cities
 
 ### Overview
@@ -810,5 +904,5 @@ node scripts/utilities/check-db.mjs
 
 ---
 
-**Last Updated:** January 2, 2026
-**Next Review:** After Phase 2 OAuth and Stripe integration
+**Last Updated:** January 5, 2026
+**Next Review:** After Phase 7 (Subscription integration & analytics dashboard)

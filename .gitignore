@@ -86,3 +86,6 @@ pre-upgrade-versions.txt
 
 # Scripts - utilities and debug helpers
 scripts/utilities/
+
+*storybook.log
+storybook-static
