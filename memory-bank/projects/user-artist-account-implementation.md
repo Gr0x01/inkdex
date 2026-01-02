@@ -734,7 +734,46 @@ Show Stripe Checkout → On webhook: Set is_pro/auto_sync_enabled, auto-pin all 
 - `app/claim/verify/page.tsx` - Server-side verification
 - `app/onboarding/page.tsx` - Basic welcome page
 
+### Phase 4: Add Artist Page ✅ (Jan 4, 2026)
+- **1 migration applied:** artist_recommendations table with audit trail
+- **6 files created:** Main page, 2 API routes, verify page, classifier, supporting components
+- **2 files modified:** Sitemap, Navbar (desktop + mobile nav links)
+- **Two-path design:** Self-add (OAuth) + Recommend (public submission)
+- **Classifier gate:** Bio keywords OR image classification (GPT-5-mini, 3/6 tattoo images required)
+- **Rate limiting:** 5 submissions/hour/IP with in-memory limiter
+- **Progressive captcha:** Cloudflare Turnstile after 2nd submission
+- **Duplicate detection:** Checks existing artists via get_artist_by_handle RPC
+- **Auto-scraping:** Creates scraping_jobs record for approved artists
+- **Audit logging:** All submissions logged in artist_recommendations table
+
+**Key Implementation Details:**
+- **Self-add flow:** OAuth → Verify page → Classifier → Create artist → Onboarding
+- **Recommend flow:** Handle input → Captcha (if needed) → Classifier → Create artist → Queue scraping
+- **Classifier:** Two-stage (bio keywords first, then image classification as fallback)
+- **Security:** Input validation, rate limiting, Turnstile integration, audit trail
+- **Navigation:** "Join as Artist" link in desktop nav + mobile menu
+
+**Files Created:**
+- `app/add-artist/page.tsx` - Main landing page with two sections
+- `app/add-artist/verify/page.tsx` - Self-add OAuth verification + classifier
+- `app/api/add-artist/recommend/route.ts` - Public recommendation API
+- `app/api/add-artist/self-add/route.ts` - OAuth redirect endpoint
+- `lib/instagram/classifier.ts` - Two-stage tattoo artist classifier
+- `lib/instagram/profile-fetcher.ts` - Apify profile scraper
+- `components/artist/RecommendSection.tsx` - Recommendation form component
+- `components/artist/TurnstileWidget.tsx` - Cloudflare Turnstile widget
+
+**Files Modified:**
+- `app/sitemap.ts` - Added /add-artist route
+- `components/layout/Navbar.tsx` - Added "Join as Artist" link (desktop + mobile)
+- `lib/rate-limiter.ts` - Added checkAddArtistRateLimit function
+
+**Database:**
+- `supabase/migrations/20260104_001_add_artist_recommendations.sql` - Audit table
+
+**Build Test:** TypeScript + production build passing (1,622 static pages)
+
 ---
 
-**Last Updated:** 2026-01-03
-**Status:** Phase 3 complete - Claim flow production-ready. Next: Phase 4 (Add-Artist Page) and Phase 5 (Onboarding/Portfolio Import)
+**Last Updated:** 2026-01-04
+**Status:** Phase 4 complete - Add-Artist page production-ready. Next: Phase 5 (Onboarding/Portfolio Import)

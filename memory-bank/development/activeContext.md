@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-03 (Phase 3: Claim Flow Implementation)
+Last-Updated: 2026-01-04 (Phase 4: Add-Artist Page Implementation)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Phase 3 Claim Flow Complete ✅
+Status: Production Ready - 8 Cities Live + Phase 4 Add-Artist Complete ✅
 ---
 
 # Active Context: Inkdex
@@ -40,6 +40,7 @@ Status: Production Ready - 8 Cities Live + Phase 3 Claim Flow Complete ✅
 - ✅ Remote GPU access (https://clip.inkdex.io works while traveling)
 - ✅ Smart unified input (auto-detects Instagram URLs, images, and text)
 - ✅ Incremental pipeline (process while scraping continues)
+- ✅ **Vercel Analytics (Jan 3, 2026):** Page views & Web Vitals tracking integrated in root layout
 
 ---
 
@@ -280,6 +281,70 @@ Status: Production Ready - 8 Cities Live + Phase 3 Claim Flow Complete ✅
 - Artist settings page
 
 **Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 3 section)
+
+---
+
+## Phase 4: Add-Artist Page (COMPLETE ✅)
+
+**Status:** Production ready - artists can self-add OR fans can recommend artists
+
+**Completed:** January 4, 2026
+
+### What Was Completed
+- ✅ **Two-path design:** Self-add via OAuth + public recommendations
+- ✅ **Classifier gate:** Bio keywords OR image classification (GPT-5-mini)
+- ✅ **Rate limiting:** 5 submissions/hour/IP with in-memory limiter
+- ✅ **Progressive captcha:** Cloudflare Turnstile after 2nd submission
+- ✅ **Duplicate detection:** Checks existing artists via RPC
+- ✅ **Auto-scraping:** Creates scraping_jobs for approved artists
+- ✅ **Audit logging:** All submissions logged in artist_recommendations table
+- ✅ **Navigation:** "Join as Artist" link in desktop + mobile nav
+- ✅ **Security:** Input validation, SQL injection prevention, type-safe operations
+
+### Key Flows
+
+**Self-Add (OAuth):**
+1. Click "Connect with Instagram" on /add-artist → /api/add-artist/self-add
+2. Instagram OAuth → /add-artist/verify
+3. Classifier checks bio keywords OR 3+ tattoo images (GPT-5-mini)
+4. If passed: Create artist record → Redirect to /onboarding
+5. If failed: Show error with classifier details
+
+**Recommend (Public):**
+1. Submit Instagram handle via form on /add-artist
+2. Rate limit check (5/hour/IP) + progressive captcha (after 2nd)
+3. Duplicate check via get_artist_by_handle RPC
+4. Classifier gate (bio keywords → image classification fallback)
+5. If passed: Create artist + queue scraping job
+6. Log to artist_recommendations audit table
+
+### Files & Changes
+**Created (8 files):**
+- `app/add-artist/page.tsx` - Landing page
+- `app/add-artist/verify/page.tsx` - Self-add verification
+- `app/api/add-artist/recommend/route.ts` - Recommendation API
+- `app/api/add-artist/self-add/route.ts` - OAuth redirect
+- `lib/instagram/classifier.ts` - Two-stage classifier
+- `lib/instagram/profile-fetcher.ts` - Apify scraper
+- `components/artist/RecommendSection.tsx` - Form component
+- `components/artist/TurnstileWidget.tsx` - Captcha widget
+
+**Modified (3 files):**
+- `app/sitemap.ts` - Added /add-artist route
+- `components/layout/Navbar.tsx` - Navigation links
+- `lib/rate-limiter.ts` - Rate limit function
+
+**Database:**
+- Migration applied: `20260104_001_add_artist_recommendations.sql`
+- New table: `artist_recommendations` (audit log)
+
+### Testing Results
+- ✅ TypeScript check passing
+- ✅ Production build: 1,622 static pages
+- ✅ Routes working (/add-artist, /add-artist/verify, API routes)
+- ✅ Navigation links visible (desktop + mobile)
+
+**Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 4 section)
 
 ---
 

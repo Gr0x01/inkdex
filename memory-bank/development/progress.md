@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 8 Cities + Phase 3 Claim Flow Complete
+Status: Production Ready - 8 Cities + Analytics + Phase 3 Claim Flow Complete
 ---
 
 # Progress Log: Inkdex
@@ -27,6 +27,7 @@ Status: Production Ready - 8 Cities + Phase 3 Claim Flow Complete
 - Security hardening complete (A rating)
 - Hybrid CLIP system (local GPU + Modal fallback)
 - Incremental pipeline (process while scraping)
+- **Vercel Analytics:** Page views & Web Vitals tracking (Jan 3)
 
 **Instagram Link Support (ALL 4 PHASES COMPLETE):**
 - Phase 1 ✅ Instagram Post Search (Dec 31)
@@ -37,6 +38,14 @@ Status: Production Ready - 8 Cities + Phase 3 Claim Flow Complete
 ---
 
 ## Recent Milestones
+
+### Vercel Analytics Integration ✅ (Jan 3, 2026)
+- **Package installed:** `@vercel/analytics` added to production dependencies
+- **Integration:** `<Analytics />` component added to root layout (`app/layout.tsx`)
+- **Tracking:** Page views and Web Vitals automatically collected on Vercel deployments
+- **Configuration:** Zero-config setup (auto-enabled on production)
+- **Build status:** Production build passes (1,622 static pages)
+- **Documentation:** Updated techStack.md with monitoring details
 
 ### Phase 3: Claim Flow Implementation ✅ (Jan 3, 2026)
 - **Production-ready claim system:** Artists can claim profiles via Instagram OAuth verification
@@ -262,5 +271,5 @@ Detailed implementation history for Phases 0-4 has been moved to:
 
 ---
 
-**Last Updated:** January 2, 2026
-**Next Review:** After Phase 2 OAuth and Stripe integration
+**Last Updated:** January 3, 2026 (Analytics integrated)
+**Next Review:** After Phase 4 OAuth and Stripe integration

@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2025-12-31
+Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Phase 1-4 Complete ✅ (1,257 images with embeddings, production-ready)
+Status: Production Ready - 8 Cities + Analytics Integrated ✅
 ---
 
 # Technology Stack: Inkdex
@@ -311,7 +311,10 @@ POST /api/claim-profile (POST-MVP)
 - Monitoring: Log query times, alert if >1s
 
 **Monitoring & Observability:**
-- MVP: Vercel Analytics (page views, Web Vitals)
+- ✅ **Vercel Analytics** (Installed Jan 3, 2026)
+  - Page views and Web Vitals tracking
+  - Integrated in root layout (`app/layout.tsx`)
+  - No configuration required (auto-enabled on Vercel deployments)
 - Post-MVP:
   - Sentry (error tracking)
   - Custom metrics: Search latency, embedding generation time
@@ -325,6 +328,7 @@ POST /api/claim-profile (POST-MVP)
 ```json
 {
   "@supabase/ssr": "^0.x",                    // ✅ Supabase client for Next.js App Router
+  "@vercel/analytics": "^1.x",                // ✅ Vercel Analytics for page views & Web Vitals
   "sharp": "^0.33.x",                         // Image processing - Phase 2
   "openai": "^4.x",                           // CLIP embeddings (or alternative) - Phase 2
   "zod": "^3.x",                              // ✅ Schema validation (env vars)
@@ -543,5 +547,5 @@ Scripts (Node.js + Python)
 
 ---
 
-**Last Review:** 2025-12-31 (Modal warmup architecture added)
-**Next Review:** After Phase 7 (Style landing pages & SEO optimization complete)
+**Last Review:** 2026-01-03 (Vercel Analytics integrated)
+**Next Review:** After Phase 4 (Artist portfolio curation & profile customization)
