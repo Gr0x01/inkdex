@@ -14,13 +14,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { getPortfolioImageUrl } from '@/lib/utils/images';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableImageCard from './SortableImageCard';
 import DashboardToolbar from './DashboardToolbar';
-import { Pin, Crown, Upload, AlertCircle } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { Crown, CloudDownload, AlertCircle } from 'lucide-react';
 import { MAX_PINNED_IMAGES } from '@/lib/constants/portfolio';
 
 interface PortfolioImage {
@@ -57,10 +56,9 @@ export default function PortfolioManager({
   const [images, setImages] = useState(initialImages);
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
-  const [reorderMode, setReorderMode] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [pinningInProgress, setPinningInProgress] = useState<Set<string>>(new Set());
   const [isScrolled, setIsScrolled] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Ref for the sentinel element that triggers sticky mode
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -82,17 +80,6 @@ export default function PortfolioManager({
     return () => observer.disconnect();
   }, []);
 
-  // Cleanup reorder mode on unmount to prevent state leak
-  useEffect(() => {
-    return () => {
-      if (reorderMode) {
-        setReorderMode(false);
-        setImages(initialImages);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reorderMode]);
-
   // Filter visible images only (hidden images not shown in Free tier)
   const visibleImages = images.filter((img) => !img.hidden);
   const currentCount = visibleImages.length;
@@ -103,10 +90,15 @@ export default function PortfolioManager({
     .sort((a, b) => (a.pinned_position || 0) - (b.pinned_position || 0));
   const unpinnedImages = visibleImages.filter((img) => !img.is_pinned);
 
-  async function handleDelete(imageId: string) {
-    if (!confirm('Remove this image from your portfolio?')) {
-      return;
-    }
+  function handleDeleteRequest(imageId: string) {
+    setDeleteConfirm(imageId);
+  }
+
+  async function handleDeleteConfirm() {
+    const imageId = deleteConfirm;
+    if (!imageId) return;
+
+    setDeleteConfirm(null);
 
     try {
       setDeleting((prev) => new Set(prev).add(imageId));
@@ -125,9 +117,10 @@ export default function PortfolioManager({
 
       setImages((prev) => prev.filter((img) => img.id !== imageId));
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Portfolio] Delete failed:', err);
-      setError(err.message || 'Failed to delete image');
+      const message = err instanceof Error ? err.message : 'Failed to delete image';
+      setError(message);
       setDeleting((prev) => {
         const newSet = new Set(prev);
         newSet.delete(imageId);
@@ -241,44 +234,6 @@ export default function PortfolioManager({
     }
   }
 
-  async function handleSaveReorder() {
-    try {
-      setSaving(true);
-      setError(null);
-
-      const updates = pinnedImages.map((img) => ({
-        imageId: img.id,
-        is_pinned: img.is_pinned,
-        pinned_position: img.pinned_position,
-      }));
-
-      const response = await fetch('/api/dashboard/portfolio/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save changes');
-      }
-
-      setReorderMode(false);
-      router.refresh();
-    } catch (err: any) {
-      console.error('[Portfolio] Save reorder failed:', err);
-      setError(err.message || 'Failed to save changes');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleCancelReorder() {
-    setImages(initialImages);
-    setReorderMode(false);
-    setError(null);
-  }
-
   // Unused props kept for interface compatibility
   void artistId;
   void visibleCount;
@@ -299,44 +254,15 @@ export default function PortfolioManager({
           {currentCount} {isPro ? 'images' : '/ 20'}
         </span>
 
-        {reorderMode ? (
-          <>
-            <button
-              onClick={handleCancelReorder}
-              disabled={saving}
-              className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-gray-600 hover:text-ink transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveReorder}
-              disabled={saving}
-              className="px-3 py-1.5 bg-ink text-paper rounded font-mono text-[10px] uppercase tracking-wider hover:bg-gray-900 transition-colors"
-            >
-              {saving ? '...' : 'Save'}
-            </button>
-          </>
-        ) : (
-          <>
-            {isPro && currentCount > 0 && (
-              <button
-                onClick={() => setReorderMode(true)}
-                className="p-2 border border-amber-400 rounded text-amber-600 hover:bg-amber-50 transition-colors"
-                title="Reorder Portfolio"
-              >
-                <Pin className="w-3.5 h-3.5" />
-              </button>
-            )}
-            {(isPro || currentCount < 20) && (
-              <button
-                onClick={handleReimport}
-                className="p-2 bg-ink text-paper rounded hover:bg-gray-900 transition-colors"
-                title="Re-import from Instagram"
-              >
-                <Upload className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </>
+        {/* Import Button (always visible if not at limit) */}
+        {(isPro || currentCount < 20) && (
+          <button
+            onClick={handleReimport}
+            className="group p-2 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 rounded hover:from-yellow-400 hover:via-pink-400 hover:to-purple-500 transition-all"
+            title="Re-import from Instagram"
+          >
+            <CloudDownload className="w-3.5 h-3.5 text-white" />
+          </button>
         )}
       </DashboardToolbar>
 
@@ -371,7 +297,7 @@ export default function PortfolioManager({
           <div className="py-20 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50/30">
             <div className="max-w-sm mx-auto">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-                <Upload className="w-8 h-8 text-gray-400" />
+                <CloudDownload className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="font-heading text-xl mb-2 text-ink">No Portfolio Images</h3>
               <p className="font-body text-sm text-gray-600 mb-6">
@@ -384,11 +310,10 @@ export default function PortfolioManager({
           </div>
         ) : (
           <>
-            {/* Pinned Images Section */}
-            {isPro && pinnedImages.length > 0 && (
+            {/* Pinned Images Section - visible for all users */}
+            {pinnedImages.length > 0 && (
               <section className="mb-12">
                 <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200">
-                  <Pin className="w-4 h-4 text-amber-600" />
                   <h2 className="font-heading text-lg">
                     Pinned Images
                   </h2>
@@ -397,104 +322,73 @@ export default function PortfolioManager({
                   </span>
                 </div>
 
-                <DndContext
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={pinnedImages.map((img) => img.id)}
-                    strategy={verticalListSortingStrategy}
+                {/* Pro users can drag to reorder, free users just see pinned images */}
+                {isPro ? (
+                  <DndContext
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
                   >
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {pinnedImages.map((image) => (
-                        <SortableImageCard
-                          key={image.id}
-                          image={image}
-                          reorderMode={reorderMode}
-                          onDelete={handleDelete}
-                          onUnpin={handleTogglePin}
-                          deleting={deleting.has(image.id)}
-                          pinning={pinningInProgress.has(image.id)}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
+                    <SortableContext
+                      items={pinnedImages.map((img) => img.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {pinnedImages.map((image) => (
+                          <SortableImageCard
+                            key={image.id}
+                            image={image}
+                            isPro={isPro}
+                            canPin={false}
+                            onDelete={handleDeleteRequest}
+                            onTogglePin={handleTogglePin}
+                            deleting={deleting.has(image.id)}
+                            pinning={pinningInProgress.has(image.id)}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {pinnedImages.map((image) => (
+                      <SortableImageCard
+                        key={image.id}
+                        image={image}
+                        isPro={isPro}
+                        canPin={false}
+                        onDelete={handleDeleteRequest}
+                        onTogglePin={handleTogglePin}
+                        deleting={deleting.has(image.id)}
+                        pinning={pinningInProgress.has(image.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 
             {/* Unpinned Images Section */}
             {unpinnedImages.length > 0 && (
               <section>
-                {isPro && pinnedImages.length > 0 && (
+                {pinnedImages.length > 0 && (
                   <div className="mb-5 pb-3 border-b border-gray-200">
                     <h2 className="font-heading text-lg">All Images</h2>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                  {unpinnedImages.map((image) => {
-                    const isDeleting = deleting.has(image.id);
-                    const isPinning = pinningInProgress.has(image.id);
-                    const thumbnailUrl = getPortfolioImageUrl(image);
-                    const canPin = isPro && pinnedImages.length < MAX_PINNED_IMAGES;
-
-                    return (
-                      <div
-                        key={image.id}
-                        className={`group relative aspect-square overflow-hidden border border-gray-200 hover:border-gray-400 transition-all bg-gray-50 ${
-                          isDeleting ? 'opacity-50' : 'hover:shadow-md'
-                        }`}
-                      >
-                        <Image
-                          src={thumbnailUrl}
-                          alt="Portfolio image"
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        />
-
-                        {/* Subtle hover overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                        {/* Pin Button (Reorder Mode) */}
-                        {reorderMode && canPin && !isDeleting && (
-                          <button
-                            onClick={() => handleTogglePin(image.id)}
-                            disabled={isPinning}
-                            className="absolute left-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-ink opacity-0 transition-all hover:bg-amber-400 group-hover:opacity-100 shadow-md"
-                            aria-label="Pin image"
-                          >
-                            {isPinning ? (
-                              <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
-                            ) : (
-                              <Pin className="h-4 w-4" />
-                            )}
-                          </button>
-                        )}
-
-                        {/* Delete Button */}
-                        {!reorderMode && !isDeleting && (
-                          <button
-                            onClick={() => handleDelete(image.id)}
-                            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-error text-white opacity-0 transition-all hover:bg-error/90 group-hover:opacity-100 shadow-md"
-                            title="Delete image"
-                          >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        )}
-
-                        {/* Deleting Spinner */}
-                        {isDeleting && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-white" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  {unpinnedImages.map((image) => (
+                    <SortableImageCard
+                      key={image.id}
+                      image={image}
+                      isPro={isPro}
+                      canPin={pinnedImages.length < MAX_PINNED_IMAGES}
+                      onDelete={handleDeleteRequest}
+                      onTogglePin={handleTogglePin}
+                      deleting={deleting.has(image.id)}
+                      pinning={pinningInProgress.has(image.id)}
+                    />
+                  ))}
                 </div>
               </section>
             )}
@@ -510,6 +404,18 @@ export default function PortfolioManager({
           </footer>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm !== null}
+        title="Remove Image"
+        message="This image will be permanently removed from your portfolio. This action cannot be undone."
+        confirmLabel="Delete"
+        cancelLabel="Keep"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }
