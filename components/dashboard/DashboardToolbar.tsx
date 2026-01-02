@@ -24,6 +24,8 @@ interface DashboardToolbarProps {
   isScrolled: boolean;
   /** Right-side action buttons */
   children?: React.ReactNode;
+  /** Hide back button (for main dashboard page) */
+  hideBack?: boolean;
 }
 
 export default function DashboardToolbar({
@@ -31,6 +33,7 @@ export default function DashboardToolbar({
   isPro,
   isScrolled,
   children,
+  hideBack = false,
 }: DashboardToolbarProps) {
   return (
     <div
@@ -44,14 +47,18 @@ export default function DashboardToolbar({
         <div className="flex items-center justify-between gap-2 sm:gap-4 py-2.5 sm:py-3">
           {/* Left: Back + Handle + Pro Badge */}
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <Link
-              href="/dashboard"
-              className="group inline-flex items-center gap-1 sm:gap-1.5 font-mono text-[10px] uppercase tracking-wider text-gray-600 hover:text-ink transition-colors shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 sm:w-3 sm:h-3 transition-transform group-hover:-translate-x-0.5" />
-              <span className="hidden sm:inline">Back</span>
-            </Link>
-            <div className="h-4 w-px bg-gray-300 shrink-0" />
+            {!hideBack && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="group inline-flex items-center gap-1 sm:gap-1.5 font-mono text-[10px] uppercase tracking-wider text-gray-600 hover:text-ink transition-colors shrink-0"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 sm:w-3 sm:h-3 transition-transform group-hover:-translate-x-0.5" />
+                  <span className="hidden sm:inline">Back</span>
+                </Link>
+                <div className="h-4 w-px bg-gray-300 shrink-0" />
+              </>
+            )}
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
               <span className="font-heading text-sm sm:text-base truncate">@{handle}</span>
               {isPro && <ProBadge variant="icon-only" size="sm" />}
