@@ -407,20 +407,30 @@ Implement Row-Level Security policies:
 
 ---
 
-## Outstanding Security Issues
+## Security Issues (Resolved ✅)
 
-### Critical: OAuth Token Encryption (Phase 2)
+### ✅ RESOLVED: OAuth Token Encryption (Phase 2)
 
 **Problem:** Instagram OAuth tokens stored as plaintext in database. If compromised, attackers gain Instagram account access.
 
 **Impact:** Post as user, access private data, revoke access
 
-**Solution Options:**
-1. Supabase Vault (recommended)
-2. Application-layer encryption
-3. External secrets manager (AWS, HashiCorp)
+**Solution Implemented:** Supabase Vault (Option 1 - recommended)
 
-**Must Fix Before:** Phase 2 starts storing real tokens
+**What Was Done (Jan 2, 2026):**
+1. ✅ **Migration 1:** Added `instagram_token_vault_id` column to users table
+2. ✅ **Migration 2:** Removed plaintext columns (`instagram_access_token`, `instagram_refresh_token`, `instagram_token_expires_at`)
+3. ✅ **Created Vault utilities:** `lib/supabase/vault.ts` with encrypted CRUD operations
+4. ✅ **Updated OAuth callback:** All tokens stored via Vault only
+5. ✅ **Regenerated types:** Plaintext columns removed from TypeScript types
+
+**Security Features:**
+- Authenticated encryption via Supabase Vault
+- Decryption key managed separately by Supabase
+- RPC-based access through `SECURITY DEFINER` functions
+- No plaintext token storage possible (columns removed from schema)
+
+**Status:** Fully resolved - all OAuth tokens now encrypted at rest
 
 ---
 
@@ -679,5 +689,52 @@ Show Stripe Checkout → On webhook: Set is_pro/auto_sync_enabled, auto-pin all 
 
 ---
 
-**Last Updated:** 2026-01-02
-**Status:** Phase 2 complete - OAuth infrastructure ready for Phase 3 (Claim Flow) and Phase 4 (Add-Artist Page)
+## Phase Completion Status
+
+### Phase 1: Database Foundation ✅ (Jan 2, 2026)
+- **3 migrations applied:** Schema, security functions, critical fixes
+- **4 tables added:** artist_subscriptions, promo_codes, artist_analytics, instagram_sync_log
+- **3 tables updated:** users, artists, portfolio_images
+- **15+ RLS policies:** User data protection, subscription access control
+- **8 helper functions:** Analytics tracking, portfolio display, account management
+- **Security:** Timing attack prevention, race condition protection, batch optimization
+
+### Phase 2: Instagram OAuth Infrastructure ✅ (Jan 2, 2026)
+- **Supabase Vault integration:** Encrypted token storage (no plaintext)
+- **OAuth endpoints:** Initiation (/api/auth/instagram), callback (/auth/callback), logout
+- **Token management:** Auto-refresh at 7 days remaining, deduplication locks
+- **Session system:** Middleware integration with token refresh
+- **Security:** CSRF protection, redirect_uri validation, no plaintext tokens
+- **Testing:** End-to-end OAuth flow tested and working
+
+### Phase 3: Claim Flow ✅ (Jan 3, 2026)
+- **6 files created:** 2 migrations, claim button, claim verification, onboarding, deletion utility
+- **1 file modified:** Artist sidebar with claim button
+- **Atomic transaction:** claim_artist_profile() RPC prevents race conditions
+- **Handle-based matching:** Instagram @username verification (all 1,501 artists have handles)
+- **Audit trail:** claim_attempts table logs all attempts with outcome tracking
+- **Hard deletion:** Scraped portfolio removed from database + Supabase Storage
+- **Error handling:** Handle mismatch, already claimed, missing data scenarios
+- **Security:** Input validation (regex), SQL injection prevention, transaction wrapping
+- **Code review:** All 5 critical security issues resolved
+- **Build test:** TypeScript + production build passing (1,614 static pages)
+
+**Key Implementation Details:**
+- `claim_artist_profile()` SECURITY DEFINER function with transaction wrapping
+- Race condition protection via UPDATE WHERE verification_status='unclaimed'
+- Instagram handle format validation: `^[a-z0-9._]{1,30}$`
+- Non-blocking storage cleanup (errors logged but don't block claim)
+- Comprehensive error codes: handle_mismatch, already_claimed, artist_not_found, etc.
+
+**Files:**
+- `supabase/migrations/20260103_002_phase3_claim_flow.sql` - Handle-based matching
+- `supabase/migrations/20260103_003_claim_transaction.sql` - Atomic RPC + audit trail
+- `components/artist/ClaimProfileButton.tsx` - Client component
+- `lib/artist/claim.ts` - Hard deletion utility
+- `app/claim/verify/page.tsx` - Server-side verification
+- `app/onboarding/page.tsx` - Basic welcome page
+
+---
+
+**Last Updated:** 2026-01-03
+**Status:** Phase 3 complete - Claim flow production-ready. Next: Phase 4 (Add-Artist Page) and Phase 5 (Onboarding/Portfolio Import)

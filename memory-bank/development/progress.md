@@ -1,19 +1,19 @@
 ---
-Last-Updated: 2026-01-02
+Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 8 Cities + Phase 1 Account Foundation Complete
+Status: Production Ready - 8 Cities + Phase 3 Claim Flow Complete
 ---
 
 # Progress Log: Inkdex
 
-## Current Status (Jan 2, 2026)
+## Current Status (Jan 3, 2026)
 
 **Platform State:**
 - **8 Cities:** Austin TX, Atlanta GA, Los Angeles CA, New York NY, Chicago IL, Portland OR, Seattle WA, Miami FL (all complete ✅)
-- **1,501 Total Artists:** Database ready for user accounts and subscriptions
+- **1,501 Total Artists:** Ready for claiming via Instagram OAuth
 - **9,803 Portfolio Images:** 100% with embeddings ✅ (all searchable, cleaned Jan 1)
 - **Vector Index:** IVFFlat (lists=105, optimized for 9,803 images)
-- **Account System:** Phase 1 database foundation complete (4 new tables, RLS policies, analytics)
+- **Account System:** Phase 1-3 complete (OAuth, claim flow, audit trail)
 
 **Ready for Production:**
 - Multi-modal search (image + text + Instagram post/profile links)
@@ -37,6 +37,21 @@ Status: Production Ready - 8 Cities + Phase 1 Account Foundation Complete
 ---
 
 ## Recent Milestones
+
+### Phase 3: Claim Flow Implementation ✅ (Jan 3, 2026)
+- **Production-ready claim system:** Artists can claim profiles via Instagram OAuth verification
+- **6 new files created:** Migrations, components, claim verification, onboarding pages
+- **1 file modified:** Artist sidebar with "Claim This Page" button
+- **Atomic transaction:** `claim_artist_profile()` RPC prevents race conditions
+- **Handle-based matching:** Instagram @username verification (case-insensitive, all 1,501 artists have handles)
+- **Audit trail:** `claim_attempts` table logs all attempts (success/failure/error)
+- **Hard delete:** Scraped portfolio images removed from database + Supabase Storage
+- **Security hardening:** Input validation (regex), SQL injection prevention, transaction wrapping
+- **Error handling:** Handle mismatch, already claimed, missing data scenarios with clear error pages
+- **Code review:** All 5 critical security issues fixed (race conditions, transactions, validation)
+- **Build test:** TypeScript + production build PASS (1,614 static pages)
+- **Key discovery:** No artists have instagram_id (populated during claim for future use)
+- **Next steps:** Phase 4 - Portfolio upload from Instagram, curation UI, profile customization
 
 ### Phase 1: User & Artist Account Database ✅ (Jan 2, 2026)
 - **Database foundation complete:** 3 production migrations applied

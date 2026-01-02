@@ -661,10 +661,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
-          instagram_access_token: string | null
           instagram_id: string | null
-          instagram_refresh_token: string | null
-          instagram_token_expires_at: string | null
           instagram_token_vault_id: string | null
           instagram_username: string | null
           updated_at: string | null
@@ -675,10 +672,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
-          instagram_access_token?: string | null
           instagram_id?: string | null
-          instagram_refresh_token?: string | null
-          instagram_token_expires_at?: string | null
           instagram_token_vault_id?: string | null
           instagram_username?: string | null
           updated_at?: string | null
@@ -689,10 +683,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
-          instagram_access_token?: string | null
           instagram_id?: string | null
-          instagram_refresh_token?: string | null
-          instagram_token_expires_at?: string | null
           instagram_token_vault_id?: string | null
           instagram_username?: string | null
           updated_at?: string | null

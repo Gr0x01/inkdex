@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-03 (Phase 2: Instagram OAuth Infrastructure)
+Last-Updated: 2026-01-03 (Phase 3: Claim Flow Implementation)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Phase 2 OAuth Infrastructure Complete ✅
+Status: Production Ready - 8 Cities Live + Phase 3 Claim Flow Complete ✅
 ---
 
 # Active Context: Inkdex
@@ -120,23 +120,28 @@ Status: Production Ready - 8 Cities Live + Phase 2 OAuth Infrastructure Complete
 - ✅ **Security:** CSRF protection, encrypted storage, no plaintext tokens
 - ✅ **Facebook App configured:** Instagram Graph API permissions added
 
-### Critical Security Fix
+### Critical Security Fix ✅ COMPLETE
 - **Migrated from plaintext to encrypted token storage:**
   - Phase 1 stored `instagram_access_token` in plaintext (security risk ⚠️)
   - Phase 2 uses Supabase Vault with authenticated encryption
   - Decryption key managed separately by Supabase
-  - Old plaintext columns deprecated (will be removed in future migration)
+  - **Plaintext columns removed (Jan 2, 2026):**
+    - Dropped `instagram_access_token`, `instagram_refresh_token`, `instagram_token_expires_at`
+    - Migration: `20260103_002_remove_plaintext_tokens.sql`
+    - TypeScript types regenerated
+    - **Result:** No plaintext token storage possible (columns removed from schema)
 
-### Files Created (9)
+### Files Created (10)
 1. `supabase/migrations/20260103_001_vault_token_storage.sql` - Vault migration with Vault RPC functions
-2. `lib/supabase/vault.ts` - Token encryption utilities (store, retrieve, delete, check)
-3. `app/api/auth/instagram/route.ts` - OAuth initiation endpoint (CSRF token generation)
-4. `app/auth/callback/route.ts` - OAuth callback handler (token exchange, user creation, session)
-5. `lib/instagram/token-refresh.ts` - Token refresh utilities (auto-refresh at 7 days)
-6. `lib/instagram/refresh-lock.ts` - Token refresh deduplication (in-memory Map)
-7. `app/dashboard/page.tsx` - Basic dashboard page (user info, logout button)
-8. `app/login/page.tsx` - Login page (Instagram connect button)
-9. `app/api/auth/logout/route.ts` - Logout endpoint (Vault cleanup + Supabase signout)
+2. `supabase/migrations/20260103_002_remove_plaintext_tokens.sql` - Remove deprecated plaintext columns
+3. `lib/supabase/vault.ts` - Token encryption utilities (store, retrieve, delete, check)
+4. `app/api/auth/instagram/route.ts` - OAuth initiation endpoint (CSRF token generation)
+5. `app/auth/callback/route.ts` - OAuth callback handler (token exchange, user creation, session)
+6. `lib/instagram/token-refresh.ts` - Token refresh utilities (auto-refresh at 7 days)
+7. `lib/instagram/refresh-lock.ts` - Token refresh deduplication (in-memory Map)
+8. `app/dashboard/page.tsx` - Basic dashboard page (user info, logout button)
+9. `app/login/page.tsx` - Login page (Instagram connect button)
+10. `app/api/auth/logout/route.ts` - Logout endpoint (Vault cleanup + Supabase signout)
 
 ### Files Modified (4)
 1. `lib/supabase/middleware.ts` - Added token refresh check
@@ -194,6 +199,87 @@ Status: Production Ready - 8 Cities Live + Phase 2 OAuth Infrastructure Complete
 - Portfolio curation UI
 
 **Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 2 section)
+
+---
+
+## Phase 3: Claim Flow Implementation (COMPLETE ✅)
+
+**Status:** Production ready - artists can claim profiles via Instagram OAuth verification
+
+**Completed:** January 3, 2026
+
+### What Was Completed
+- ✅ **"Claim This Page" button:** Appears on all unclaimed artist profiles
+- ✅ **Atomic claim transaction:** Race condition protection with SECURITY DEFINER RPC
+- ✅ **Handle-based matching:** Instagram @username verification (case-insensitive)
+- ✅ **Audit trail:** `claim_attempts` table tracks all claim attempts (success/failure)
+- ✅ **Portfolio deletion:** Hard delete scraped images (database + Supabase Storage)
+- ✅ **Basic onboarding:** Welcome page after successful claim
+- ✅ **Security hardening:** Input validation, SQL injection prevention, transaction wrapping
+- ✅ **Error handling:** Handle mismatch, already claimed, missing data scenarios
+- ✅ **Code review:** All 5 critical security issues fixed
+
+### Files Created (6)
+1. `supabase/migrations/20260103_002_phase3_claim_flow.sql` - Initial handle-based matching
+2. `supabase/migrations/20260103_003_claim_transaction.sql` - Atomic RPC + audit trail
+3. `components/artist/ClaimProfileButton.tsx` - Claim button component
+4. `lib/artist/claim.ts` - Image deletion utility
+5. `app/claim/verify/page.tsx` - Claim verification page
+6. `app/onboarding/page.tsx` - Basic onboarding welcome page
+
+### Files Modified (1)
+1. `components/artist/ArtistInfoColumn.tsx` - Added claim button below "Find Similar Artists"
+
+### Key Architecture
+- **Instagram handle matching:** `LOWER(instagram_handle) = LOWER(REPLACE(@username, '@', ''))`
+- **Atomic RPC function:** `claim_artist_profile()` wraps update + deletion in transaction
+- **Race condition protection:** UPDATE WHERE verification_status='unclaimed' + ROW_COUNT check
+- **Non-blocking storage cleanup:** Async deletion after atomic claim succeeds
+- **Audit logging:** All claim attempts logged (success/failure/error)
+
+### Database Changes
+**New Table (1):**
+- `claim_attempts` - Audit log (artist_id, user_id, handles, outcome, IP, user_agent, timestamp)
+
+**New Functions (1):**
+- `claim_artist_profile()` - Atomic claim with transaction wrapping, input validation, audit logging
+
+**Updated Functions (1):**
+- `can_claim_artist()` - Added p_instagram_handle parameter with regex validation
+
+### Security Features
+1. **Transaction wrapping:** Entire claim process atomic (all-or-nothing)
+2. **Input validation:** Regex check for Instagram handle format `^[a-z0-9._]{1,30}$`
+3. **Race condition protection:** UPDATE checks verification_status in WHERE clause
+4. **Audit trail:** All attempts logged for fraud detection and dispute resolution
+5. **Storage cleanup:** Non-blocking (errors logged but don't block claim)
+
+### Critical Discovery
+- **Database analysis:** ALL 1,501 artists have `instagram_handle`, NONE have `instagram_id`
+- **Impact:** Claim flow designed around handle matching instead of ID matching
+- **Future-proofing:** RPC populates `instagram_id` from OAuth for future use
+
+### Testing Scenarios
+**Happy Path:**
+1. Visit unclaimed artist profile → Click "Claim This Page"
+2. Redirect to Instagram OAuth → Approve permissions
+3. Callback creates session → Redirect to /claim/verify
+4. Username matches → Atomic claim succeeds
+5. Scraped images deleted → Redirect to /onboarding
+
+**Error Scenarios:**
+- ❌ Handle mismatch: Logged in as @user_a, trying to claim @user_b
+- ❌ Already claimed: Profile's verification_status='claimed'
+- ❌ OAuth denial: User cancels Instagram login
+- ❌ Missing data: instagram_username not in users table
+
+### Next Steps (Phase 4)
+- Portfolio upload from Instagram after claim
+- Portfolio curation UI (pin, hide, reorder)
+- Profile customization (bio override, booking URL, pricing)
+- Artist settings page
+
+**Reference:** `/memory-bank/projects/user-artist-account-implementation.md` (Phase 3 section)
 
 ---
 
