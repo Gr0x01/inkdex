@@ -170,7 +170,7 @@ export default function NavbarSearch() {
     <form onSubmit={handleSubmit} className="relative w-full">
       <div
         className={`
-          flex items-center gap-2 h-10 px-2 bg-white/60 border
+          flex items-center gap-2 md:gap-3 h-10 md:h-11 px-2.5 md:px-4 bg-white/60 border
           transition-all duration-150
           ${error ? 'border-red-500/50' : 'border-gray-300/50'}
           focus-within:border-ink focus-within:bg-white
@@ -178,7 +178,7 @@ export default function NavbarSearch() {
       >
         {/* Left: Search Icon OR Image Thumbnail */}
         {imagePreview ? (
-          <div className="relative w-6 h-6 flex-shrink-0 group">
+          <div className="relative w-7 h-7 md:w-8 md:h-8 flex-shrink-0 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imagePreview}
@@ -189,7 +189,7 @@ export default function NavbarSearch() {
             <button
               type="button"
               onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-ink text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-[10px] leading-none"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-ink text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-sm leading-none"
               aria-label="Remove image"
             >
               ×
@@ -197,7 +197,7 @@ export default function NavbarSearch() {
           </div>
         ) : (
           <svg
-            className="w-3.5 h-3.5 text-gray-400 flex-shrink-0"
+            className="hidden md:block w-5 h-5 text-gray-400 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -222,13 +222,13 @@ export default function NavbarSearch() {
           }}
           placeholder="Search artists, styles, or paste Instagram link..."
           maxLength={200}
-          className="flex-1 bg-transparent text-xs font-body text-ink placeholder:text-gray-400/70 outline-none focus:outline-none focus:ring-0 min-w-0"
+          className="flex-1 bg-transparent text-sm md:text-base font-body text-ink placeholder:text-gray-400/70 outline-none focus:outline-none focus:ring-0 min-w-0"
         />
 
         {/* Instagram Badge (conditional) */}
         {detectedInstagramUrl && !imageFile && (
-          <div className="flex-shrink-0 px-1.5 py-[3px] bg-gradient-to-r from-purple-500/85 to-pink-500/85 animate-[badge-slide-in_150ms_ease-out]">
-            <span className="text-[8px] font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
+          <div className="flex-shrink-0 px-2 py-1 bg-gradient-to-r from-purple-500/85 to-pink-500/85 animate-[badge-slide-in_150ms_ease-out]">
+            <span className="text-[10px] md:text-xs font-mono font-semibold text-white uppercase tracking-wider whitespace-nowrap">
               {detectedInstagramUrl.type === 'post'
                 ? 'IG'
                 : `@${detectedInstagramUrl.id.length > 8 ? detectedInstagramUrl.id.slice(0, 8) + '...' : detectedInstagramUrl.id}`}
@@ -240,11 +240,11 @@ export default function NavbarSearch() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex-shrink-0 p-0.5 hover:bg-gray-100/40 transition-colors"
+          className="flex-shrink-0 p-1 hover:bg-gray-100/40 transition-colors"
           aria-label="Upload reference image"
         >
           <svg
-            className="w-3.5 h-3.5 text-gray-400 hover:text-ink transition-colors"
+            className="w-4 h-4 md:w-5 md:h-5 text-gray-400 hover:text-ink transition-colors"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -262,7 +262,7 @@ export default function NavbarSearch() {
           type="submit"
           disabled={!canSubmit}
           className={`
-            flex-shrink-0 px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition-all duration-150
+            flex-shrink-0 px-3 py-1.5 font-mono text-xs md:text-sm uppercase tracking-wider transition-all duration-150
             ${
               canSubmit
                 ? 'text-ink hover:bg-gray-100/40'
@@ -294,7 +294,7 @@ export default function NavbarSearch() {
       {/* Error Message */}
       {error && !isSubmitting && (
         <div className="absolute top-full left-0 right-0 mt-1 px-2">
-          <p className="text-[11px] text-red-500/80 font-body">{error}</p>
+          <p className="text-xs md:text-sm text-red-500/80 font-body">{error}</p>
         </div>
       )}
     </form>

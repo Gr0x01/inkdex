@@ -89,7 +89,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="bg-paper-white border-b-2 border-ink/10 relative">
+    <header className="bg-paper border-b-2 border-ink/10 relative">
       {/* Top decorative line */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 
@@ -172,13 +172,13 @@ export default function Navbar() {
             <button
               ref={mobileMenuButtonRef}
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="cursor-pointer p-2.5 hover:bg-gray-100 rounded-md transition-all duration-fast active:scale-95"
+              className="cursor-pointer p-1 transition-all duration-fast active:scale-95"
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-navigation"
             >
               <svg
-                className="w-6 h-6 text-ink"
+                className="w-5 h-5 text-ink"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -208,7 +208,7 @@ export default function Navbar() {
         aria-label="Mobile navigation"
         aria-hidden={!isMobileMenuOpen}
       >
-        <div className="py-6 px-4 space-y-6 bg-paper-white relative">
+        <div className="py-2 px-4 space-y-3 bg-paper relative">
           {/* Decorative corner element */}
           <div className="absolute top-0 right-0 w-20 h-20 opacity-5" aria-hidden="true">
             <svg viewBox="0 0 100 100" fill="currentColor" className="text-ink">
@@ -221,25 +221,13 @@ export default function Navbar() {
             <NavbarSearch />
           </div>
 
-          <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
-
-          <Link
-            href="/"
-            className="block editorial-mobile-link"
-            onClick={closeMobileMenu}
-          >
-            Home
-          </Link>
-
-          <div className="h-[1px] bg-gradient-to-r from-ink/20 via-ink/10 to-transparent" aria-hidden="true" />
-
           {/* Browse Cities Header */}
           <div className="editorial-mobile-link font-bold text-gray-900 cursor-default">
             Browse Cities
           </div>
 
           {/* Flat Alphabetical City List */}
-          <div className="space-y-2 pl-3">
+          <div className="space-y-1 pl-3">
             {sortedCities.map((city) => (
               <CityLink
                 key={city.slug}
