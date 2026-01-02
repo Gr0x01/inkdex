@@ -37,6 +37,13 @@ const envSchema = z.object({
   INSTAGRAM_CLIENT_SECRET: z.string().optional(),
   NEXT_PUBLIC_INSTAGRAM_CLIENT_ID: z.string().optional(),
 
+  // Apify (Optional - for Instagram profile scraping in Phase 4)
+  APIFY_API_TOKEN: z.string().startsWith('apify_api_').optional(),
+
+  // Cloudflare Turnstile (Optional - for bot protection in Phase 4)
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().startsWith('0x').optional(),
+  TURNSTILE_SECRET_KEY: z.string().startsWith('0x').optional(),
+
   // Google Analytics (Optional - for Phase 8)
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().regex(/^G-[A-Z0-9]+$/, 'Invalid GA4 Measurement ID (format: G-XXXXXXXXXX)').optional(),
 

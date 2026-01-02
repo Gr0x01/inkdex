@@ -89,7 +89,11 @@ export async function fetchInstagramProfileImages(
   // Check for Apify API token
   const apifyToken = process.env.APIFY_API_TOKEN;
   if (!apifyToken) {
-    throw new Error('APIFY_API_TOKEN environment variable is required');
+    console.error('[Apify] APIFY_API_TOKEN is not configured');
+    throw new InstagramError(
+      'Profile scraping service temporarily unavailable. Please try again later.',
+      'FETCH_FAILED'
+    );
   }
 
   try {

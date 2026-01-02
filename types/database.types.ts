@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -71,6 +51,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "artist_analytics_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_recommendations: {
+        Row: {
+          artist_id: string | null
+          bio: string | null
+          classifier_result: Json | null
+          created_at: string
+          follower_count: number | null
+          id: string
+          instagram_handle: string
+          instagram_id: string | null
+          status: string
+          submitter_ip: string | null
+          updated_at: string
+        }
+        Insert: {
+          artist_id?: string | null
+          bio?: string | null
+          classifier_result?: Json | null
+          created_at?: string
+          follower_count?: number | null
+          id?: string
+          instagram_handle: string
+          instagram_id?: string | null
+          status?: string
+          submitter_ip?: string | null
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string | null
+          bio?: string | null
+          classifier_result?: Json | null
+          created_at?: string
+          follower_count?: number | null
+          id?: string
+          instagram_handle?: string
+          instagram_id?: string | null
+          status?: string
+          submitter_ip?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_recommendations_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
             referencedRelation: "artists"
@@ -280,6 +310,57 @@ export type Database = {
           old_slug?: string
         }
         Relationships: []
+      }
+      claim_attempts: {
+        Row: {
+          artist_handle: string
+          artist_id: string
+          created_at: string | null
+          id: string
+          instagram_handle_attempted: string
+          ip_address: unknown
+          outcome: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          artist_handle: string
+          artist_id: string
+          created_at?: string | null
+          id?: string
+          instagram_handle_attempted: string
+          ip_address?: unknown
+          outcome: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          artist_handle?: string
+          artist_id?: string
+          created_at?: string | null
+          id?: string
+          instagram_handle_attempted?: string
+          ip_address?: unknown
+          outcome?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_attempts_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discovery_queries: {
         Row: {
@@ -696,8 +777,21 @@ export type Database = {
     }
     Functions: {
       can_claim_artist: {
-        Args: { p_artist_id: string; p_instagram_id: string }
+        Args: {
+          p_artist_id: string
+          p_instagram_handle?: string
+          p_instagram_id?: string
+        }
         Returns: boolean
+      }
+      claim_artist_profile: {
+        Args: {
+          p_artist_id: string
+          p_instagram_handle: string
+          p_instagram_id?: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       count_matching_artists: {
         Args: {
@@ -726,6 +820,17 @@ export type Database = {
           profile_image_url: string
           shop_name: string
           similarity: number
+        }[]
+      }
+      get_artist_by_handle: {
+        Args: { p_instagram_handle: string }
+        Returns: {
+          claimed_by_user_id: string
+          id: string
+          instagram_handle: string
+          name: string
+          slug: string
+          verification_status: string
         }[]
       }
       get_artist_portfolio: {
@@ -980,11 +1085,7 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
 } as const
-

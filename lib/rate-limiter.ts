@@ -1,8 +1,13 @@
 /**
  * Simple in-memory rate limiter
  *
- * For production, consider upgrading to Redis-based rate limiting (e.g., @upstash/ratelimit)
- * to handle distributed systems and persist limits across server restarts.
+ * PRODUCTION WARNING: This in-memory limiter is NOT suitable for:
+ * - Multi-instance deployments (load balancing)
+ * - High traffic (>1000 unique IPs/hour)
+ * - Persistent rate limits across deployments
+ *
+ * Migrate to @upstash/ratelimit for production:
+ * https://upstash.com/docs/oss/sdks/ts/ratelimit/overview
  */
 
 interface RateLimitEntry {
@@ -13,6 +18,7 @@ interface RateLimitEntry {
 class RateLimiter {
   private storage = new Map<string, RateLimitEntry>();
   private cleanupInterval: NodeJS.Timeout | null = null;
+  private readonly MAX_ENTRIES = 10000; // Prevent memory exhaustion
 
   constructor() {
     // Clean up expired entries every 5 minutes
@@ -39,6 +45,12 @@ class RateLimiter {
     remaining: number;
     reset: number;
   } {
+    // Emergency cleanup if map grows too large
+    if (this.storage.size > this.MAX_ENTRIES) {
+      console.warn(`[RateLimiter] Emergency cleanup triggered (size: ${this.storage.size})`);
+      this.cleanup();
+    }
+
     const now = Date.now();
     const entry = this.storage.get(key);
 
@@ -145,6 +157,22 @@ export function checkGeneralSearchRateLimit(identifier: string) {
   return globalRateLimiter.check(
     `general_search:${identifier}`,
     100, // 100 requests
+    60 * 60 * 1000 // per hour
+  );
+}
+
+/**
+ * Rate limit add artist requests (recommend + self-add)
+ *
+ * Limits: 5 submissions per hour per IP
+ *
+ * @param identifier - Unique identifier (IP address)
+ * @returns Rate limit check result
+ */
+export function checkAddArtistRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `add_artist:${identifier}`,
+    5, // 5 submissions
     60 * 60 * 1000 // per hour
   );
 }

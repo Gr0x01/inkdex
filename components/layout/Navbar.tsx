@@ -164,6 +164,15 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+
+            {/* Join as Artist Link */}
+            <Link
+              href="/add-artist"
+              className="editorial-nav-link relative group"
+            >
+              <span className="relative z-10">Join as Artist</span>
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-ink transform scale-x-0 group-hover:scale-x-100 transition-transform duration-medium origin-left" />
+            </Link>
           </nav>
 
           {/* Mobile Actions (Menu Toggle Only) */}
@@ -221,8 +230,17 @@ export default function Navbar() {
             <NavbarSearch />
           </div>
 
+          {/* Join as Artist Link - Mobile */}
+          <Link
+            href="/add-artist"
+            className="editorial-mobile-link font-bold text-ink hover:text-gray-700 transition-colors border-b border-gray-200 pb-2"
+            onClick={closeMobileMenu}
+          >
+            Join as Artist →
+          </Link>
+
           {/* Browse Cities Header */}
-          <div className="editorial-mobile-link font-bold text-gray-900 cursor-default">
+          <div className="editorial-mobile-link font-bold text-gray-900 cursor-default pt-2">
             Browse Cities
           </div>
 
