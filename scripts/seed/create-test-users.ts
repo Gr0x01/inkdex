@@ -1,10 +1,20 @@
 /**
  * Test User Seeding Script
  *
- * Creates 3 test users with cloned portfolio images:
+ * Creates 3 test users with realistic portfolio variations:
  * 1. Unclaimed Artist (Jamie Chen) - Austin, TX - 12 images
+ *    - Default config (manual_import)
+ *    - Use for: Claim flow testing
+ *
  * 2. Free Tier Artist (Alex Rivera) - Los Angeles, CA - 18 images
+ *    - 14 oauth_onboarding, 2 manual_import, 2 hidden scrape
+ *    - 16 visible, 2 hidden (test hidden image management)
+ *    - At 18/20 limit (test upgrade prompts)
+ *    - Use for: Free tier dashboard, portfolio management, limits
+ *
  * 3. Pro Tier Artist (Morgan Black) - New York, NY - 20 images
+ *    - All oauth_onboarding (clean slate)
+ *    - Use for: Pro features when implemented (Phase 7+)
  *
  * Usage:
  *   npx tsx scripts/seed/create-test-users.ts
@@ -14,7 +24,12 @@
  * - Clones portfolio images from real artists (reuses storage paths)
  * - Creates Supabase Auth users for Free and Pro tiers
  * - Creates subscription for Pro tier
- * - Marks all test data with import_source = 'test_seed'
+ * - Configurable Phase 6 fields (is_pinned, hidden, auto_synced, import_source)
+ * - Realistic portfolio states for comprehensive testing
+ *
+ * To re-seed with updated configs:
+ *   DELETE FROM artists WHERE instagram_handle LIKE 'test_%';
+ *   Then run this script again.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -38,6 +53,19 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   },
 });
 
+/**
+ * Portfolio image configuration for test data
+ * Allows customizing Phase 6 fields per image
+ */
+interface PortfolioImageConfig {
+  is_pinned?: boolean;
+  pinned_position?: number | null;
+  hidden?: boolean;
+  auto_synced?: boolean;
+  manually_added?: boolean;
+  import_source?: 'scrape' | 'oauth_onboarding' | 'oauth_sync' | 'manual_import';
+}
+
 interface TestUserConfig {
   name: string;
   instagram_handle: string;
@@ -55,6 +83,7 @@ interface TestUserConfig {
   is_featured: boolean;
   account_type: 'fan' | 'artist_free' | 'artist_pro';
   imageCount: number;
+  portfolioConfig?: (index: number, total: number) => PortfolioImageConfig;
 }
 
 const TEST_USER_CONFIGS: TestUserConfig[] = [
@@ -92,6 +121,36 @@ const TEST_USER_CONFIGS: TestUserConfig[] = [
     is_featured: false,
     account_type: 'artist_free',
     imageCount: 18,
+    portfolioConfig: (index: number, total: number) => {
+      if (index < 14) {
+        // Images 1-14: Onboarding imports (visible)
+        return {
+          manually_added: true,
+          import_source: 'oauth_onboarding',
+          is_pinned: false,
+          hidden: false,
+          auto_synced: false,
+        };
+      } else if (index < 16) {
+        // Images 15-16: Manual imports (visible)
+        return {
+          manually_added: true,
+          import_source: 'manual_import',
+          is_pinned: false,
+          hidden: false,
+          auto_synced: false,
+        };
+      } else {
+        // Images 17-18: Hidden scraped remnants
+        return {
+          manually_added: false,
+          import_source: 'scrape',
+          is_pinned: false,
+          hidden: true,
+          auto_synced: false,
+        };
+      }
+    },
   },
   {
     name: 'Morgan Black',
@@ -110,6 +169,14 @@ const TEST_USER_CONFIGS: TestUserConfig[] = [
     is_featured: true,
     account_type: 'artist_pro',
     imageCount: 20,
+    portfolioConfig: (index: number, total: number) => ({
+      manually_added: true,
+      import_source: 'oauth_onboarding',
+      is_pinned: false,
+      pinned_position: null,
+      hidden: false,
+      auto_synced: false,
+    }),
   },
 ];
 
@@ -174,11 +241,13 @@ async function findSourceArtist(city: string, minImages: number) {
 async function createAuthUser(email: string, instagram_username: string, instagram_id: string) {
   // Check if auth user already exists
   const { data: existingUsers } = await supabase.auth.admin.listUsers();
-  const existingUser = existingUsers?.users.find((u) => u.email === email);
 
-  if (existingUser) {
-    console.log(`   ℹ️  Auth user already exists (${existingUser.id}), reusing...`);
-    return existingUser;
+  if (existingUsers && Array.isArray(existingUsers.users)) {
+    const existingUser = existingUsers.users.find((u: any) => u.email === email);
+    if (existingUser) {
+      console.log(`   ℹ️  Auth user already exists (${existingUser.id}), reusing...`);
+      return existingUser;
+    }
   }
 
   // Create new auth user
@@ -271,12 +340,13 @@ async function createUserRecord(authUserId: string, accountType: string, instagr
 }
 
 /**
- * Clone portfolio images from source artist
+ * Clone portfolio images from source artist with optional Phase 6 field configuration
  */
 async function clonePortfolioImages(
   targetArtistId: string,
   sourceArtistId: string,
-  count: number
+  count: number,
+  configFn?: (index: number, total: number) => PortfolioImageConfig
 ) {
   // Fetch source images
   const { data: sourceImages, error: fetchError } = await supabase
@@ -294,23 +364,31 @@ async function clonePortfolioImages(
   console.log(`   📸 Cloning ${sourceImages.length} images from source artist...`);
 
   // Clone images with new IDs but same storage paths and embeddings
-  const clonedImages = sourceImages.map((img) => ({
-    id: randomUUID(),
-    artist_id: targetArtistId,
-    instagram_post_id: `test_${img.instagram_post_id}`,
-    instagram_url: img.instagram_url,
-    storage_original_path: img.storage_original_path,
-    storage_thumb_320: img.storage_thumb_320,
-    storage_thumb_640: img.storage_thumb_640,
-    storage_thumb_1280: img.storage_thumb_1280,
-    embedding: img.embedding, // Reuse existing embedding
-    post_caption: img.post_caption,
-    post_timestamp: img.post_timestamp,
-    likes_count: img.likes_count,
-    manually_added: true,
-    import_source: 'manual_import', // Mark as test data
-    status: 'active',
-  }));
+  const clonedImages = sourceImages.map((img, index) => {
+    const config = configFn ? configFn(index, count) : {};
+
+    return {
+      id: randomUUID(),
+      artist_id: targetArtistId,
+      instagram_post_id: `test_${img.instagram_post_id}`,
+      instagram_url: img.instagram_url,
+      storage_original_path: img.storage_original_path,
+      storage_thumb_320: img.storage_thumb_320,
+      storage_thumb_640: img.storage_thumb_640,
+      storage_thumb_1280: img.storage_thumb_1280,
+      embedding: img.embedding, // Reuse existing embedding
+      post_caption: img.post_caption,
+      post_timestamp: img.post_timestamp,
+      likes_count: img.likes_count,
+      manually_added: config.manually_added ?? true,
+      import_source: config.import_source ?? 'manual_import',
+      is_pinned: config.is_pinned ?? false,
+      pinned_position: config.pinned_position ?? null,
+      hidden: config.hidden ?? false,
+      auto_synced: config.auto_synced ?? false,
+      status: 'active',
+    };
+  });
 
   const { error: insertError } = await supabase
     .from('portfolio_images')
@@ -404,8 +482,8 @@ async function seedTestUsers() {
       console.log('   🎨 Creating artist profile...');
       const artist = await createArtist(config, authUser?.id);
 
-      // Step 4: Clone portfolio images
-      const clonedCount = await clonePortfolioImages(artist.id, sourceArtistId, config.imageCount);
+      // Step 4: Clone portfolio images with Phase 6 field configuration
+      const clonedCount = await clonePortfolioImages(artist.id, sourceArtistId, config.imageCount, config.portfolioConfig);
 
       // Step 5: Create subscription (Pro tier only)
       if (config.is_pro && authUser) {
@@ -445,7 +523,18 @@ async function seedTestUsers() {
     }
     console.log(`   Instagram:       @${config.instagram_handle}`);
     console.log(`   City:            ${config.city}, ${config.state}`);
-    console.log(`   Portfolio:       ${clonedCount} images (cloned)`);
+
+    // Show portfolio breakdown for Alex Rivera (Free tier with variations)
+    if (config.instagram_handle === 'test_free_artist') {
+      console.log(`   Portfolio:       ${clonedCount} images (16 visible, 2 hidden)`);
+      console.log(`   ├─ Onboarding:   14 images (oauth_onboarding)`);
+      console.log(`   ├─ Manual:       2 images (manual_import)`);
+      console.log(`   └─ Hidden:       2 images (scrape)`);
+      console.log(`   Limit:           ${clonedCount}/20 (${20 - clonedCount} slots available)`);
+    } else {
+      console.log(`   Portfolio:       ${clonedCount} images (cloned)`);
+    }
+
     console.log(`   Profile URL:     http://localhost:3000/${config.stateSlug}/${config.citySlug}/artists/${artist.slug}`);
     if (config.is_pro) {
       console.log(`   Subscription:    Pro ($15/mo)`);

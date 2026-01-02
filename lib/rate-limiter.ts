@@ -194,6 +194,23 @@ export function checkOnboardingRateLimit(identifier: string) {
 }
 
 /**
+ * Rate limit portfolio fetch requests (expensive Instagram + OpenAI calls)
+ *
+ * Limits: 5 portfolio fetches per hour per user
+ * Separate from onboarding to allow independent tuning
+ *
+ * @param identifier - User ID (authenticated users only)
+ * @returns Rate limit check result
+ */
+export function checkPortfolioFetchRateLimit(identifier: string) {
+  return globalRateLimiter.check(
+    `portfolio_fetch:${identifier}`,
+    5, // 5 fetches (more lenient than onboarding)
+    60 * 60 * 1000 // per hour
+  );
+}
+
+/**
  * Get client IP from request headers
  *
  * Checks common headers set by proxies and CDNs (Vercel, Cloudflare, etc.)

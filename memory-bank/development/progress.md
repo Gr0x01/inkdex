@@ -1,12 +1,12 @@
 ---
 Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Phase 5 Onboarding Flow - COMPLETE ✅ (All Critical Fixes Applied)
+Status: Phase 6 Portfolio Management - COMPLETE ✅ (Security Hardened)
 ---
 
 # Progress Log: Inkdex
 
-## Current Status (Jan 3, 2026)
+## Current Status (Jan 5, 2026)
 
 **Platform State:**
 - **8 Cities:** Austin TX, Atlanta GA, Los Angeles CA, New York NY, Chicago IL, Portland OR, Seattle WA, Miami FL (all complete ✅)
@@ -101,12 +101,83 @@ Status: Phase 5 Onboarding Flow - COMPLETE ✅ (All Critical Fixes Applied)
 - ✅ All routes accessible: /dev/login, /onboarding/*, API endpoints
 - ✅ Test users verified in database with cloned portfolios
 
-**Next Steps (Phase 6):**
-- Dashboard implementation (analytics, portfolio management)
-- Subscription integration (Stripe checkout, webhooks)
-- Profile editing UI (bio, pricing, availability)
-- Portfolio management (pin, hide, reorder)
+---
+
+### Phase 6: Portfolio Management (Free Tier) ✅ (Jan 5, 2026 - COMPLETE)
+**Status:** 100% Complete - All features implemented, 7 critical security issues fixed, production-ready
+
+**Implementation Complete:**
+- ✅ **Portfolio grid UI:** 2-4 column responsive layout with hover delete buttons
+- ✅ **Import flow:** Auto-fetch → Classify (GPT-5-mini) → Select (max 20) → Replace workflow
+- ✅ **Delete workflow:** Individual image deletion with optimistic UI and confirmation
+- ✅ **Free tier limits:** 20-image limit enforced in UI and API with upgrade prompts
+- ✅ **Empty state:** Prominent import CTA when portfolio is empty
+- ✅ **Test data:** Alex Rivera portfolio with realistic variations (16 visible, 2 hidden)
+
+**API Endpoints (3 new routes):**
+1. `/api/dashboard/portfolio/fetch-instagram` - Fetches 50 Instagram images, classifies with GPT-5-mini
+2. `/api/dashboard/portfolio/import` - Atomic DELETE + INSERT transaction with rollback
+3. `/api/dashboard/portfolio/delete` - Single image deletion with ownership verification
+
+**UI Components:**
+- `/app/dashboard/portfolio/page.tsx` - Server component with auth + data fetching
+- `/app/dashboard/portfolio/import/page.tsx` - Client component for import flow
+- `/components/dashboard/PortfolioManager.tsx` - Portfolio grid with delete/import UI
+
+**Security Fixes (7 Critical Issues Resolved):**
+1. ✅ **SQL Injection** - Delete route split into two safe queries (no `!inner` join)
+2. ✅ **Race Condition** - Storage paths fetched BEFORE mutations, with backup for rollback
+3. ✅ **Path Traversal** - Path validation in cleanup (only `original/`, `thumbs/*/`)
+4. ✅ **Transaction Rollback** - Import backs up old images, restores on INSERT failure
+5. ✅ **URL Validation** - Instagram URLs validated (HTTPS + Instagram domains only)
+6. ✅ **Fail-Fast Classification** - `Promise.allSettled` instead of `Promise.all`
+7. ✅ **API Key Check** - OpenAI key verified BEFORE expensive Instagram fetch
+
+**Additional Security Enhancements:**
+- ✅ Portfolio-specific rate limiter (5/hour, separate from onboarding)
+- ✅ 30-second timeout on OpenAI classification calls
+- ✅ Consistent error messages (no information disclosure)
+- ✅ Async storage cleanup (non-blocking, validated paths)
+
+**Database Updates:**
+- ✅ Updated `get_artist_portfolio()` RPC to include `hidden`, `import_source`, `storage_original_path`
+- ✅ Test users seeded with Phase 6 fields (14 onboarding + 2 manual + 2 hidden)
+
+**Files Created (7 total):**
+- **API routes:** 3 (fetch-instagram, import, delete)
+- **UI components:** 3 (portfolio page, import page, PortfolioManager)
+- **Migrations:** 1 (RPC function update)
+
+**Files Modified (4):**
+- `/scripts/seed/create-test-users.ts` - Portfolio config with realistic test data
+- `/app/dashboard/page.tsx` - "Manage Portfolio →" navigation link
+- `/lib/rate-limiter.ts` - Added `checkPortfolioFetchRateLimit()`
+- `/memory-bank/development/testing-guide.md` - Comprehensive Phase 6 testing section (8 test cases)
+
+**Technical Details:**
+- **Atomic operations:** Backup + rollback on failure (no data loss)
+- **Path validation:** Whitelist approach (`original/`, `thumbs/320/`, `thumbs/640/`, `thumbs/1280/`)
+- **URL validation:** Instagram domains only (www.instagram.com, cdninstagram.com)
+- **Resilient classification:** Individual failures don't abort entire batch
+- **Rate limiting:** 5 portfolio fetches/hour (more lenient than 3 onboarding/hour)
+
+**Test Coverage:**
+- ✅ Alex Rivera test user: 18 images (16 visible, 2 hidden) with 3 import sources
+- ✅ 8 test cases documented (view, delete, import, limits, errors, empty state)
+- ✅ Database verification queries provided
+- ✅ Complete testing checklist (UI, API, database, error handling)
+
+**Build & Tests:**
+- ✅ TypeScript compilation: PASS (no errors)
+- ✅ All security fixes verified and tested
+- ✅ Migration applied to Supabase
+
+**Next Steps (Phase 7):**
+- Pro tier features (unlimited portfolio, pinning, drag-drop reorder)
 - Instagram auto-sync (periodic portfolio refresh)
+- Analytics dashboard (profile views, search appearances)
+- Subscription integration (Stripe checkout, webhooks)
+- Profile editing UI (bio, pricing, availability, booking links)
 
 ---
 

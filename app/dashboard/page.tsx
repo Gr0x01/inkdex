@@ -42,17 +42,26 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <form action="/api/auth/logout" method="POST" className="mt-8">
-          <button
-            type="submit"
-            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        <div className="mt-8 space-y-4">
+          <a
+            href="/dashboard/portfolio"
+            className="inline-block px-6 py-3 bg-white text-black rounded-lg hover:bg-neutral-200 transition-colors font-semibold"
           >
-            Logout
-          </button>
-        </form>
+            Manage Portfolio →
+          </a>
+
+          <form action="/api/auth/logout" method="POST">
+            <button
+              type="submit"
+              className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </form>
+        </div>
 
         <p className="mt-4 text-sm text-zinc-500">
-          🚧 More features coming in Phase 3 (Onboarding & Claim Flow)
+          ✅ Phase 6 Portfolio Management Complete
         </p>
       </div>
     </div>

@@ -1,12 +1,12 @@
 ---
 Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Phase 5 Testing Infrastructure Complete
+Status: Phase 6 Portfolio Management Testing Complete
 ---
 
 # Development Testing Guide
 
-Complete guide to testing artist onboarding and account features using dev-only tools and seeded test users.
+Complete guide to testing artist onboarding, account features, and portfolio management using dev-only tools and seeded test users.
 
 ---
 
@@ -77,23 +77,34 @@ Dev Login: Select "Unclaimed Artist (Jamie Chen)"
 - Artist ID: `9ee81644-6619-438e-a83f-928accb8c317`
 - Location: Los Angeles, CA
 - Instagram: @test_free_artist
-- Portfolio: 18 cloned images
+- Portfolio: 18 cloned images (16 visible, 2 hidden)
 - Status: `verification_status='claimed'`
 - Tier: Free (no subscription)
 
+**Portfolio Composition (Phase 6):**
+- 14 images: `import_source='oauth_onboarding'` (visible, from onboarding flow)
+- 2 images: `import_source='manual_import'` (visible, manually added)
+- 2 images: `import_source='scrape'`, `hidden=true` (hidden, scraped remnants)
+- **Total visible:** 16/20 (4 slots available for Free tier)
+
 **Test Scenarios:**
 - Artist dashboard access
-- Portfolio management (view, reorder)
+- Portfolio management (view, delete, import)
+- Delete visible images (test optimistic UI)
+- Re-import from Instagram (replace workflow)
+- Add more images (test 20-image limit)
 - Profile editing (bio, pricing, availability)
 - Analytics viewing (profile views, clicks)
 - Booking link management
-- Free tier limitations
+- Free tier limitations and upgrade prompts
 
 **Access:**
 ```
 Profile URL: /california/los-angeles/artists/alex-rivera
 Dev Login: Select "Free Tier Artist (Alex Rivera)"
 Email: test-free@inkdex.dev
+Dashboard: http://localhost:3000/dashboard
+Portfolio: http://localhost:3000/dashboard/portfolio
 ```
 
 ---
@@ -1019,6 +1030,383 @@ WHERE user_id IN (SELECT id FROM users WHERE email LIKE 'test-%');
 -- Delete test artists (cascades to images)
 DELETE FROM artists WHERE instagram_handle LIKE 'test_%';
 ```
+
+---
+
+## Phase 6: Portfolio Management Testing
+
+### Overview
+Phase 6 implements Free tier portfolio management with manual Instagram import, deletion, and 20-image limit enforcement. Test with Alex Rivera (@test_free_artist) who has a realistic portfolio setup.
+
+---
+
+### Test User: Alex Rivera
+**Initial State:**
+- 18 total images (16 visible, 2 hidden)
+- 14 onboarding imports + 2 manual imports + 2 hidden scraped
+- 16/20 visible (4 slots available)
+- Free tier (no Pro subscription)
+
+**Access:**
+```bash
+# Login as Alex Rivera
+http://localhost:3000/dev/login
+# Select "Free Tier Artist (Alex Rivera)"
+
+# Portfolio page
+http://localhost:3000/dashboard/portfolio
+```
+
+---
+
+### Test Case 1: View Portfolio
+**Steps:**
+1. Login as Alex Rivera
+2. Navigate to Dashboard
+3. Click "Manage Portfolio →" button
+4. Verify portfolio grid displays
+
+**Expected Results:**
+- Shows 16 visible images in grid (2-4 columns responsive)
+- Count indicator shows "16/20 images"
+- "Re-import from Instagram" button visible (not at limit)
+- No upgrade prompt (not at 20/20)
+- Hover shows delete button on each image
+- Hover shows import source label (Onboarding, Manual, Scraped)
+
+**Database Verification:**
+```sql
+-- Check visible images
+SELECT COUNT(*) as visible_count
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+  AND hidden = false;
+-- Expected: 16
+
+-- Check portfolio breakdown
+SELECT
+  import_source,
+  hidden,
+  COUNT(*) as count
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+GROUP BY import_source, hidden
+ORDER BY import_source, hidden;
+-- Expected:
+-- oauth_onboarding | false | 14
+-- manual_import    | false | 2
+-- scrape           | true  | 2
+```
+
+---
+
+### Test Case 2: Delete Single Image
+**Steps:**
+1. View portfolio
+2. Hover over an image
+3. Click red delete button (trash icon)
+4. Confirm deletion dialog
+5. Observe optimistic UI update
+
+**Expected Results:**
+- Image immediately removed from grid (optimistic)
+- Count updates to "15/20 images"
+- No error message
+- Page doesn't reload (client-side update)
+- "Re-import" button still visible
+
+**Database Verification:**
+```sql
+-- Check count after deletion
+SELECT COUNT(*) as visible_count
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+  AND hidden = false;
+-- Expected: 15
+
+-- Check storage cleanup (async, may take a few seconds)
+-- Storage files should be deleted from Supabase Storage
+```
+
+**Error Scenarios:**
+- Cancel deletion dialog → Image stays in grid
+- Network failure → Error message shown, image not deleted
+
+---
+
+### Test Case 3: Delete Multiple Images (Reach Low Count)
+**Steps:**
+1. Delete 10 more images (total 11 deleted)
+2. Verify count updates
+
+**Expected Results:**
+- Count shows "5/20 images"
+- Grid displays 5 remaining images
+- "Re-import" button prominent
+- No upgrade prompt (still under 20)
+
+---
+
+### Test Case 4: Re-import from Instagram
+**Steps:**
+1. Click "Re-import from Instagram" button
+2. Wait for fetch + classification (loading spinner)
+3. View classified images grid
+4. Select 15 images (checkbox UI)
+5. Click "Import 15 Images" button
+
+**Expected Results:**
+- Redirected to `/dashboard/portfolio/import`
+- Loading message: "Fetching Instagram images..."
+- Classified images displayed with checkboxes
+- Selection count: "Selected: 15/20"
+- Cannot select more than 20 (checkbox disabled)
+- "Import" button triggers replace workflow
+- Redirects back to `/dashboard/portfolio` after success
+- Old portfolio deleted, new 15 images inserted
+
+**Database Verification:**
+```sql
+-- Check complete replacement
+SELECT
+  COUNT(*) as total,
+  COUNT(*) FILTER (WHERE import_source = 'manual_import') as manual,
+  COUNT(*) FILTER (WHERE import_source = 'oauth_onboarding') as onboarding
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317';
+-- Expected: total=15, manual=15, onboarding=0 (replaced)
+
+-- Verify all new images have manual_import source
+SELECT DISTINCT import_source, manually_added
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317';
+-- Expected: manual_import | true
+```
+
+**Error Scenarios:**
+- No Instagram connection → Error + reconnect prompt
+- Classification returns 0 tattoos → "No tattoo images found"
+- Rate limit hit → "Too many requests, wait X minutes"
+
+---
+
+### Test Case 5: Reach 20/20 Limit
+**Steps:**
+1. Import 20 images from Instagram
+2. Verify limit behavior
+
+**Expected Results:**
+- Count shows "20/20 images"
+- "At Free tier limit" badge visible
+- "Re-import" button HIDDEN (at limit)
+- Upgrade CTA displayed:
+  - Header: "Upgrade to Pro for Unlimited Portfolio"
+  - Description: Free tier limited to 20 images
+  - Button: "Upgrade to Pro" ($15/month)
+- Delete still works (hover delete button)
+
+**Database Verification:**
+```sql
+-- Verify 20 images
+SELECT COUNT(*) as count
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+  AND hidden = false;
+-- Expected: 20
+
+-- Verify Free tier check
+SELECT is_pro FROM artists
+WHERE id = '9ee81644-6619-438e-a83f-928accb8c317';
+-- Expected: false
+```
+
+---
+
+### Test Case 6: Try to Import >20 Images (API Limit Enforcement)
+**Steps:**
+1. At 20/20 limit, manually call import API with 21 images
+
+**cURL Test:**
+```bash
+# Get auth token from browser (Application > Cookies > sb-access-token)
+curl -X POST http://localhost:3000/api/dashboard/portfolio/import \
+  -H "Content-Type: application/json" \
+  -H "Cookie: sb-access-token=YOUR_TOKEN" \
+  -d '{"selectedImageIds": ["id1", "id2", ..., "id21"]}'
+```
+
+**Expected Results:**
+- HTTP 403 Forbidden
+- Error: "Free tier limited to 20 images. Upgrade to Pro for unlimited portfolio."
+- Database unchanged (no new images)
+
+---
+
+### Test Case 7: Empty Portfolio State
+**Steps:**
+1. Delete all 20 images
+2. Verify empty state
+
+**Expected Results:**
+- Count shows "0/20 images"
+- Empty state message:
+  - "No portfolio images yet"
+  - "Import images from your Instagram to get started"
+- Prominent "Import from Instagram" button
+- No upgrade prompt (not at limit)
+
+---
+
+### Test Case 8: Import Flow Error Recovery
+**Steps:**
+1. Start import flow
+2. Trigger errors:
+   - Network failure during fetch
+   - Classification API error
+   - Import API failure
+
+**Expected Results:**
+- Fetch error → Error page with "Retry" button
+- Classification error → Individual images marked as not classified
+- Import error → Returns to selection page with error message
+- Can retry without losing state
+
+---
+
+### Phase 6 Testing Checklist
+
+#### UI Components
+- [ ] Portfolio grid displays 2-4 columns (responsive)
+- [ ] Count indicator shows "X/20 images" accurately
+- [ ] Delete button appears on hover
+- [ ] Delete confirmation dialog works
+- [ ] Optimistic UI updates immediately
+- [ ] Import source labels show on hover
+- [ ] "Re-import" button visibility (shown when <20, hidden at 20)
+- [ ] Upgrade CTA displays at 20/20 (Free tier only)
+- [ ] Empty state displays when no images
+
+#### API Endpoints
+- [ ] POST /api/dashboard/portfolio/fetch-instagram
+  - [ ] Fetches 50 Instagram images
+  - [ ] Classifies with GPT-5-mini (batch of 6)
+  - [ ] Rate limit enforced (3/hour)
+  - [ ] Returns classified images
+- [ ] POST /api/dashboard/portfolio/import
+  - [ ] Validates request (Zod schema)
+  - [ ] Enforces 20-image limit (Free tier)
+  - [ ] Atomic DELETE + INSERT transaction
+  - [ ] Sets Phase 6 fields correctly
+  - [ ] Async storage cleanup
+- [ ] POST /api/dashboard/portfolio/delete
+  - [ ] Validates imageId (UUID)
+  - [ ] Verifies ownership (artist check)
+  - [ ] Deletes from database
+  - [ ] Async storage cleanup
+
+#### Database State
+- [ ] Phase 6 fields populated correctly
+  - [ ] `manually_added` = true for imports
+  - [ ] `import_source` = 'manual_import'
+  - [ ] `is_pinned` = false
+  - [ ] `hidden` = false
+  - [ ] `auto_synced` = false
+- [ ] Atomic transactions work (no partial states)
+- [ ] Storage cleanup removes old files
+
+#### Error Handling
+- [ ] No Instagram connection → Error + reconnect
+- [ ] No claimed artist → Error message
+- [ ] Rate limit hit → 429 error + wait message
+- [ ] >20 images (Free tier) → 403 error
+- [ ] Network failures → Retry capability
+- [ ] Invalid image ID → 404 error
+- [ ] Ownership check fails → 403 error
+
+#### Navigation
+- [ ] Dashboard → Portfolio link works
+- [ ] Portfolio → Import flow works
+- [ ] Import → Portfolio redirect works
+- [ ] Back buttons work correctly
+
+#### Free Tier Limits
+- [ ] 20-image limit enforced in UI
+- [ ] 20-image limit enforced in API
+- [ ] Upgrade CTA shown at 20/20
+- [ ] No pinning features (Pro only)
+- [ ] No auto-sync features (Pro only)
+
+---
+
+### Database Verification Queries
+
+**Portfolio Overview:**
+```sql
+SELECT
+  a.name,
+  a.instagram_handle,
+  a.is_pro,
+  COUNT(pi.id) FILTER (WHERE pi.hidden = false) as visible,
+  COUNT(pi.id) FILTER (WHERE pi.hidden = true) as hidden,
+  COUNT(pi.id) as total
+FROM artists a
+LEFT JOIN portfolio_images pi ON a.id = pi.artist_id
+WHERE a.instagram_handle = 'test_free_artist'
+GROUP BY a.name, a.instagram_handle, a.is_pro;
+```
+
+**Import Source Breakdown:**
+```sql
+SELECT
+  import_source,
+  COUNT(*) as count,
+  COUNT(*) FILTER (WHERE hidden = false) as visible,
+  COUNT(*) FILTER (WHERE hidden = true) as hidden
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+GROUP BY import_source;
+```
+
+**Phase 6 Field Audit:**
+```sql
+SELECT
+  import_source,
+  manually_added,
+  is_pinned,
+  hidden,
+  auto_synced,
+  COUNT(*) as count
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+GROUP BY import_source, manually_added, is_pinned, hidden, auto_synced;
+```
+
+**Storage Path Verification:**
+```sql
+-- Check images with no storage paths (need fetch/upload)
+SELECT id, instagram_url
+FROM portfolio_images
+WHERE artist_id = '9ee81644-6619-438e-a83f-928accb8c317'
+  AND storage_original_path IS NULL;
+-- Expected: Some images after manual import (need processing)
+```
+
+---
+
+### Reset Alex Rivera Portfolio
+
+If you need to reset Alex Rivera's portfolio to initial Phase 6 state:
+
+```bash
+# Re-run seed script (deletes and recreates)
+npx tsx scripts/seed/create-test-users.ts
+```
+
+This will restore:
+- 14 onboarding imports (visible)
+- 2 manual imports (visible)
+- 2 hidden scraped images
+- Total: 18 images (16 visible, 2 hidden)
 
 ---
 
