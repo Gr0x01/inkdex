@@ -33,7 +33,7 @@ export default function MasonryPortfolioGrid({
     <div className="w-full">
       {/* Masonry Grid using CSS columns */}
       <div
-        className="columns-1 sm:columns-2 gap-3 sm:gap-4 lg:gap-6 space-y-3 sm:space-y-4 lg:space-y-6"
+        className="columns-1 sm:columns-2 gap-4 sm:gap-6 md:gap-8 space-y-4 sm:space-y-6 md:space-y-8"
         style={{ columnFill: 'balance' }}
       >
         {images.map((image, index) => (
