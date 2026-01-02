@@ -37,6 +37,9 @@ const envSchema = z.object({
   INSTAGRAM_CLIENT_SECRET: z.string().optional(),
   NEXT_PUBLIC_INSTAGRAM_CLIENT_ID: z.string().optional(),
 
+  // Google Analytics (Optional - for Phase 8)
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().regex(/^G-[A-Z0-9]+$/, 'Invalid GA4 Measurement ID (format: G-XXXXXXXXXX)').optional(),
+
   // App Configuration
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),

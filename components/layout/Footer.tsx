@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 import { CITIES } from '@/lib/constants/cities'
 import { getStateSlug } from '@/lib/utils/city-helpers'
+import { CookieSettingsLink } from '@/components/consent/CookieSettingsLink'
 
 export default function Footer() {
   // Memoize sorted cities - only compute once
@@ -49,24 +50,46 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* About */}
+          {/* Company */}
           <div>
             <h4 className="font-jetbrains-mono text-sm font-medium uppercase tracking-wider text-stone-400">
-              About
+              Company
             </h4>
             <ul className="mt-4 space-y-3">
               <li>
                 <Link
-                  href="/"
+                  href="/about"
                   className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
                 >
-                  How It Works
+                  About
                 </Link>
               </li>
               <li>
-                <span className="font-jetbrains-mono text-sm text-stone-500">
-                  For Artists (Coming Soon)
-                </span>
+                <Link
+                  href="/contact"
+                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                >
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/terms"
+                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                >
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/legal/privacy"
+                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                >
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <CookieSettingsLink />
               </li>
             </ul>
           </div>
@@ -74,10 +97,34 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 border-t border-stone-800 pt-8">
-          <p className="font-jetbrains-mono text-center text-xs text-stone-500">
-            © {new Date().getFullYear()} Inkdex. Visual search
-            platform for finding tattoo artists.
-          </p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 font-jetbrains-mono text-xs text-stone-500">
+              <Link
+                href="/legal/terms"
+                className="transition-colors hover:text-accent"
+              >
+                Terms
+              </Link>
+              <span>·</span>
+              <Link
+                href="/legal/privacy"
+                className="transition-colors hover:text-accent"
+              >
+                Privacy
+              </Link>
+              <span>·</span>
+              <Link
+                href="/contact"
+                className="transition-colors hover:text-accent"
+              >
+                Contact
+              </Link>
+            </div>
+            <p className="font-jetbrains-mono text-center text-xs text-stone-500">
+              © {new Date().getFullYear()} Inkdex. Visual search platform for
+              finding tattoo artists.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
