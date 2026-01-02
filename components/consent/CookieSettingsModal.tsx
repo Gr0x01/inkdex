@@ -129,68 +129,72 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-2xl rounded-lg border border-stone-700 bg-stone-900 p-6 shadow-2xl animate-scale-in"
+        className="relative w-full max-w-2xl border-2 border-stone-700 bg-black p-8 shadow-xl animate-scale-in"
       >
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-8 border-b border-stone-800 pb-6">
           <h2
             id="cookie-settings-title"
-            className="font-libre-baskerville text-2xl font-bold text-white"
+            className="font-libre-baskerville text-2xl font-bold text-white tracking-tight"
           >
             Cookie Preferences
           </h2>
           <p
             id="cookie-settings-description"
-            className="mt-2 font-crimson-pro text-sm text-stone-400"
+            className="mt-3 font-crimson-pro text-base text-stone-400 leading-relaxed"
           >
             We use cookies to enhance your experience. Choose which cookies you'd like to accept.
           </p>
         </div>
 
         {/* Cookie Categories */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-3 mb-8">
           {/* Essential Cookies (Always On) */}
-          <div className="rounded-lg border border-stone-800 bg-black/20 p-4">
-            <div className="flex items-center justify-between">
+          <div className="border border-stone-800 bg-stone-950/50 p-5">
+            <div className="flex items-start justify-between gap-6">
               <div className="flex-1">
-                <h4 className="font-jetbrains-mono text-sm font-medium text-stone-300">
+                <h4 className="font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-white mb-2">
                   Essential Cookies
                 </h4>
-                <p className="mt-1 font-crimson-pro text-xs text-stone-500">
+                <p className="font-crimson-pro text-sm text-stone-400 leading-relaxed">
                   Required for the website to function. Cannot be disabled.
                 </p>
               </div>
-              <div className="relative ml-4 flex h-6 w-11 items-center rounded-full bg-accent">
-                <span className="absolute left-1 h-4 w-4 rounded-full bg-white translate-x-5" />
+              {/* Geometric Toggle - Always On */}
+              <div className="flex shrink-0 items-center justify-end h-7 w-14 border-2 border-accent bg-accent/20 p-0.5">
+                <div className="h-5 w-5 bg-accent" />
                 <span className="sr-only">Always enabled</span>
               </div>
             </div>
           </div>
 
           {/* Analytics Cookies (Toggle) */}
-          <div className="rounded-lg border border-stone-800 bg-black/20 p-4">
-            <div className="flex items-center justify-between">
+          <div className="border border-stone-800 bg-stone-950/50 p-5">
+            <div className="flex items-start justify-between gap-6">
               <div className="flex-1">
-                <h4 className="font-jetbrains-mono text-sm font-medium text-stone-300">
+                <h4 className="font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-white mb-2">
                   Analytics Cookies
                 </h4>
-                <p className="mt-1 font-crimson-pro text-xs text-stone-500">
+                <p className="font-crimson-pro text-sm text-stone-400 leading-relaxed">
                   Help us understand how you use our site with Google Analytics (anonymized).
                 </p>
               </div>
+              {/* Geometric Toggle - Interactive */}
               <button
                 type="button"
                 role="switch"
                 aria-checked={analyticsEnabled}
                 aria-label="Toggle analytics cookies"
                 onClick={() => setAnalyticsEnabled(!analyticsEnabled)}
-                className={`relative ml-4 h-6 w-11 rounded-full transition-colors ${
-                  analyticsEnabled ? 'bg-accent' : 'bg-stone-700'
+                className={`flex shrink-0 items-center h-7 w-14 border-2 p-0.5 transition-all duration-300 ${
+                  analyticsEnabled
+                    ? 'justify-end border-accent bg-accent/20'
+                    : 'justify-start border-stone-700 bg-stone-900'
                 }`}
               >
-                <span
-                  className={`absolute top-1 left-1 h-4 w-4 rounded-full bg-white transition-transform ${
-                    analyticsEnabled ? 'translate-x-5' : 'translate-x-0'
+                <div
+                  className={`h-5 w-5 transition-colors duration-300 ${
+                    analyticsEnabled ? 'bg-accent' : 'bg-stone-400'
                   }`}
                 />
               </button>
@@ -199,16 +203,16 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
         </div>
 
         {/* Privacy Policy Link & Last Updated */}
-        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-stone-800 pt-6">
           <Link
             href="/legal/privacy"
-            className="font-jetbrains-mono text-xs text-stone-400 underline transition-colors hover:text-accent"
+            className="font-jetbrains-mono text-xs uppercase tracking-wider text-stone-500 transition-colors hover:text-accent"
           >
-            Read our Privacy Policy →
+            Privacy Policy →
           </Link>
           {consentTimestamp && (
-            <p className="font-jetbrains-mono text-xs text-stone-500">
-              Last updated: {new Date(consentTimestamp).toLocaleDateString()}
+            <p className="font-jetbrains-mono text-xs uppercase tracking-wider text-stone-600">
+              Updated {new Date(consentTimestamp).toLocaleDateString()}
             </p>
           )}
         </div>
@@ -218,21 +222,21 @@ export function CookieSettingsModal({ isOpen, onClose }: CookieSettingsModalProp
           <button
             type="button"
             onClick={handleRejectAll}
-            className="flex-1 rounded-md border border-stone-700 bg-transparent px-4 py-2.5 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-stone-300 transition-colors hover:bg-stone-800"
+            className="flex-1 border border-stone-700 bg-transparent px-5 py-3 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-stone-300 transition-all hover:border-stone-500 hover:bg-stone-900"
           >
             Reject All
           </button>
           <button
             type="button"
             onClick={handleSaveCustom}
-            className="flex-1 rounded-md border border-stone-700 bg-transparent px-4 py-2.5 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-stone-300 transition-colors hover:bg-stone-800"
+            className="flex-1 border border-stone-700 bg-transparent px-5 py-3 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-stone-300 transition-all hover:border-stone-500 hover:bg-stone-900"
           >
             Save Custom
           </button>
           <button
             type="button"
             onClick={handleAcceptAll}
-            className="flex-1 rounded-md bg-accent px-4 py-2.5 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-black transition-opacity hover:opacity-90"
+            className="flex-1 border border-accent bg-accent px-5 py-3 font-jetbrains-mono text-xs font-medium uppercase tracking-wider text-black transition-all hover:bg-accent/90"
           >
             Accept All
           </button>
