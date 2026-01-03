@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
-import DashboardToolbar from '@/components/dashboard/DashboardToolbar'
 import MetricsCards from './MetricsCards'
 import ViewsChart from './ViewsChart'
 import TopImagesGrid from './TopImagesGrid'
@@ -42,12 +41,7 @@ export default function AnalyticsDashboard({
   }, [artistId, timeRange])
 
   return (
-    <div className="min-h-screen bg-paper">
-      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
-
-      <DashboardToolbar handle={artistName} isPro={true} isScrolled={false} />
-
-      <div className="container mx-auto px-4 sm:px-6 pt-4 pb-8 max-w-6xl relative z-10">
+    <div className="max-w-6xl">{/* Content wrapper */}
         {/* Header */}
         <header className="mb-6">
           <h1 className="font-heading text-3xl mb-2">Analytics</h1>
@@ -107,7 +101,6 @@ export default function AnalyticsDashboard({
             </p>
           </div>
         )}
-      </div>
     </div>
   )
 }

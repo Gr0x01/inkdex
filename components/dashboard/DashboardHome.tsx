@@ -1,13 +1,10 @@
 'use client';
 
 /**
- * Dashboard Home - Client wrapper for main dashboard page
- * Handles scroll state for sticky toolbar
+ * Dashboard Home - Overview content for main dashboard page
  */
 
-import { useState, useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
-import DashboardToolbar from './DashboardToolbar';
 import { SyncSettingsCard } from './SyncSettingsCard';
 
 interface DashboardHomeProps {
@@ -27,46 +24,10 @@ export default function DashboardHome({
   accountType,
   memberSince,
 }: DashboardHomeProps) {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsScrolled(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
-
   const firstName = name?.split(' ')[0];
 
   return (
-    <div className="min-h-screen bg-paper">
-      {/* Grain texture overlay */}
-      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
-
-      {/* Sticky Toolbar */}
-      <DashboardToolbar handle={handle} isPro={isPro} isScrolled={isScrolled} hideBack>
-        <form action="/api/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-red-600 transition-colors"
-          >
-            Sign Out
-          </button>
-        </form>
-      </DashboardToolbar>
-
-      <div className="container mx-auto px-4 sm:px-6 pt-4 pb-8 max-w-4xl relative z-10">
-        {/* Sentinel for intersection observer */}
-        <div ref={sentinelRef} className="absolute top-0 h-px w-full" />
+    <div className="max-w-4xl">{/* Content wrapper */}
 
         {/* Welcome Header */}
         <header className="mb-8 pt-2">
@@ -177,8 +138,6 @@ export default function DashboardHome({
             <SyncSettingsCard />
           </section>
         )}
-
-      </div>
     </div>
   );
 }

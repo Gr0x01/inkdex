@@ -12,12 +12,11 @@
  * - Smooth transitions between expanded/condensed states
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import SortableImageCard from './SortableImageCard';
-import DashboardToolbar from './DashboardToolbar';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Crown, CloudDownload, AlertCircle } from 'lucide-react';
 import { MAX_PINNED_IMAGES } from '@/lib/constants/portfolio';
@@ -57,28 +56,7 @@ export default function PortfolioManager({
   const [deleting, setDeleting] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [pinningInProgress, setPinningInProgress] = useState<Set<string>>(new Set());
-  const [isScrolled, setIsScrolled] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-
-  // Ref for the sentinel element that triggers sticky mode
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer for scroll-based sticky toolbar
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        // When sentinel leaves viewport (scrolled past), enable condensed mode
-        setIsScrolled(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
 
   // Filter visible images only (hidden images not shown in Free tier)
   const visibleImages = images.filter((img) => !img.hidden);
@@ -239,36 +217,7 @@ export default function PortfolioManager({
   void visibleCount;
 
   return (
-    <div className="min-h-screen bg-paper">
-      {/* Subtle grain texture */}
-      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
-
-      {/* Sticky Toolbar */}
-      <DashboardToolbar
-        handle={artistHandle}
-        isPro={isPro}
-        isScrolled={isScrolled}
-      >
-        {/* Image Counter - hidden on mobile */}
-        <span className="hidden sm:inline font-mono text-xs text-gray-500">
-          {currentCount} {isPro ? 'images' : '/ 20'}
-        </span>
-
-        {/* Import Button (always visible if not at limit) */}
-        {(isPro || currentCount < 20) && (
-          <button
-            onClick={handleReimport}
-            className="group p-2 bg-gradient-to-tr from-yellow-500 via-pink-500 to-purple-600 rounded hover:from-yellow-400 hover:via-pink-400 hover:to-purple-500 transition-all"
-            title="Re-import from Instagram"
-          >
-            <CloudDownload className="w-3.5 h-3.5 text-white" />
-          </button>
-        )}
-      </DashboardToolbar>
-
-      <div className="container mx-auto px-2 sm:px-6 pt-4 pb-8 max-w-7xl relative z-10">
-        {/* Sentinel for intersection observer - triggers sticky toolbar */}
-        <div ref={sentinelRef} className="absolute top-0 h-px w-full" />
+    <div className="max-w-7xl">{/* Content wrapper */}
 
         {/* Error Alert */}
         {error && (
@@ -403,7 +352,6 @@ export default function PortfolioManager({
             </p>
           </footer>
         )}
-      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

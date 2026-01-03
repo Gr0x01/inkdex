@@ -14,11 +14,10 @@
  * Design: Paper & Ink editorial aesthetic with grain textures
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ProBadge } from '@/components/badges/ProBadge';
 import Select from '@/components/ui/Select';
-import DashboardToolbar from './DashboardToolbar';
 import LocationManager, { Location } from './LocationManager';
 
 interface ProfileEditorProps {
@@ -73,26 +72,6 @@ export default function ProfileEditor({
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Scroll state for sticky toolbar
-  const [isScrolled, setIsScrolled] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Intersection Observer for scroll-based sticky toolbar
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsScrolled(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: '-1px 0px 0px 0px' }
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
 
   // Track changes - generic function for type-safe handling
   function handleStringChange(setter: React.Dispatch<React.SetStateAction<string>>) {
@@ -254,44 +233,7 @@ export default function ProfileEditor({
   };
 
   return (
-    <div className="min-h-screen bg-paper">
-      {/* Subtle grain texture */}
-      <div className="grain-overlay fixed inset-0 pointer-events-none opacity-10" />
-
-      {/* Sticky Toolbar */}
-      <DashboardToolbar
-        handle={initialData.instagramHandle}
-        isPro={isPro}
-        isScrolled={isScrolled}
-      >
-        {hasUnsavedChanges && (
-          <>
-            <button
-              onClick={handleCancel}
-              disabled={isSaving}
-              className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-gray-600 hover:text-ink transition-colors"
-            >
-              Discard
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="px-3 py-1.5 bg-ink text-paper rounded font-mono text-[10px] uppercase tracking-wider hover:bg-gray-900 transition-colors"
-            >
-              {isSaving ? '...' : 'Save'}
-            </button>
-          </>
-        )}
-        {saveSuccess && (
-          <span className="font-mono text-[10px] text-emerald-600 uppercase tracking-wider">
-            Saved ✓
-          </span>
-        )}
-      </DashboardToolbar>
-
-      <div className="mx-auto px-2 sm:px-6 pt-4 pb-8 max-w-7xl relative z-10">
-        {/* Sentinel for intersection observer - triggers sticky toolbar */}
-        <div ref={sentinelRef} className="absolute top-0 h-px w-full" />
+    <div className="max-w-7xl">{/* Content wrapper */}
 
         {/* Status Messages */}
         {saveError && (
@@ -450,7 +392,6 @@ export default function ProfileEditor({
             </div>
           </aside>
         </div>
-      </div>
 
       {/* Delete Warning Modal */}
       {showDeleteWarning && (
