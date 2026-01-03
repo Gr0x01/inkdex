@@ -13,9 +13,9 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, MapPin, Globe } from 'lucide-react';
 import Select from '@/components/ui/Select';
+import CitySelect from '@/components/ui/CitySelect';
 import { US_STATE_OPTIONS } from '@/lib/constants/states';
 import { COUNTRY_OPTIONS, getCountryName } from '@/lib/constants/countries';
-import { CITIES } from '@/lib/constants/cities';
 
 export interface Location {
   city: string | null;
@@ -34,13 +34,6 @@ interface LocationPickerProps {
 
 const MAX_FREE_LOCATIONS = 1;
 const MAX_PRO_LOCATIONS = 20;
-
-// Get city options from existing CITIES constant (for autocomplete suggestions)
-const CITY_SUGGESTIONS = CITIES.map((c) => ({
-  value: c.name,
-  label: `${c.name}, ${c.state}`,
-  state: c.state,
-}));
 
 export default function LocationPicker({
   isPro,
@@ -182,7 +175,7 @@ export default function LocationPicker({
                   name="locationType"
                   checked={locationType === 'city'}
                   onChange={() => setLocationType('city')}
-                  className="w-4 h-4 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
+                  className="w-3.5 h-3.5 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
                 />
                 <span className="font-body text-[var(--text-primary)]">Specific city</span>
               </label>
@@ -192,7 +185,7 @@ export default function LocationPicker({
                   name="locationType"
                   checked={locationType === 'region'}
                   onChange={() => setLocationType('region')}
-                  className="w-4 h-4 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
+                  className="w-3.5 h-3.5 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
                 />
                 <span className="font-body text-[var(--text-primary)]">State-wide</span>
               </label>
@@ -204,19 +197,13 @@ export default function LocationPicker({
                   <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
                     City
                   </label>
-                  <input
-                    type="text"
+                  <CitySelect
                     value={cityInput}
-                    onChange={(e) => setCityInput(e.target.value)}
-                    className="input"
-                    placeholder="Austin"
-                    list="city-suggestions"
+                    onChange={setCityInput}
+                    onStateAutoFill={(state) => setSelectedState(state)}
+                    countryCode="US"
+                    placeholder="Select city"
                   />
-                  <datalist id="city-suggestions">
-                    {CITY_SUGGESTIONS.map((c) => (
-                      <option key={c.value} value={c.value} />
-                    ))}
-                  </datalist>
                 </div>
                 <div>
                   <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">

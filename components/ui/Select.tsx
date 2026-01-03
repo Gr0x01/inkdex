@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 interface SelectOption {
   value: string;
@@ -144,7 +144,7 @@ export default function Select({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-[var(--gray-500)] transition-transform duration-200 ${
+          className={`w-3 h-3 text-[var(--gray-500)] transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -156,20 +156,17 @@ export default function Select({
           {/* Search Input */}
           {searchable && (
             <div className="p-2 border-b border-[var(--gray-200)]">
-              <div className="relative">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--gray-400)]" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setHighlightedIndex(0);
-                  }}
-                  placeholder={searchPlaceholder}
-                  className="w-full pl-8 pr-3 py-2 font-body text-sm border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)]"
-                />
-              </div>
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setHighlightedIndex(0);
+                }}
+                placeholder={searchPlaceholder}
+                className="w-full pl-3 pr-3 py-2 font-body text-sm border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)]"
+              />
             </div>
           )}
 

@@ -12,9 +12,9 @@
 import { useState, useEffect } from 'react';
 import { Plus, X, MapPin, Globe, Crown, Edit2, Check } from 'lucide-react';
 import Select from '@/components/ui/Select';
+import CitySelect from '@/components/ui/CitySelect';
 import { US_STATE_OPTIONS, getStateName } from '@/lib/constants/states';
 import { COUNTRY_OPTIONS, getCountryName } from '@/lib/constants/countries';
-import { CITIES } from '@/lib/constants/cities';
 import { ProBadge } from '@/components/badges/ProBadge';
 
 export interface Location {
@@ -38,13 +38,6 @@ interface LocationManagerProps {
 
 const MAX_FREE_LOCATIONS = 1;
 const MAX_PRO_LOCATIONS = 20;
-
-// Get city options from existing CITIES constant
-const CITY_SUGGESTIONS = CITIES.map((c) => ({
-  value: c.name,
-  label: `${c.name}, ${c.state}`,
-  state: c.state,
-}));
 
 export default function LocationManager({
   artistId,
@@ -350,7 +343,7 @@ export default function LocationManager({
                   type="radio"
                   checked={newLocationType === 'city'}
                   onChange={() => setNewLocationType('city')}
-                  className="w-4 h-4"
+                  className="w-3.5 h-3.5"
                 />
                 <span className="font-body text-sm">Specific city</span>
               </label>
@@ -359,7 +352,7 @@ export default function LocationManager({
                   type="radio"
                   checked={newLocationType === 'region'}
                   onChange={() => setNewLocationType('region')}
-                  className="w-4 h-4"
+                  className="w-3.5 h-3.5"
                 />
                 <span className="font-body text-sm">State-wide</span>
               </label>
@@ -372,21 +365,13 @@ export default function LocationManager({
                 <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
                   City
                 </label>
-                <input
-                  type="text"
+                <CitySelect
                   value={newCity}
-                  onChange={(e) => setNewCity(e.target.value)}
-                  className="input"
-                  placeholder="Enter city"
-                  list="city-suggestions-manager"
+                  onChange={setNewCity}
+                  onStateAutoFill={(state) => setNewRegion(state)}
+                  countryCode={newCountry}
+                  placeholder="Select city"
                 />
-                {newCountry === 'US' && (
-                  <datalist id="city-suggestions-manager">
-                    {CITY_SUGGESTIONS.map((c) => (
-                      <option key={c.value} value={c.value} />
-                    ))}
-                  </datalist>
-                )}
               </div>
             )}
             <div className={newCountry !== 'US' || newLocationType === 'city' ? '' : 'col-span-2'}>
@@ -496,7 +481,7 @@ function FreeTierLocationEditor({
                 type="radio"
                 checked={locationType === 'city'}
                 onChange={() => setLocationType('city')}
-                className="w-4 h-4"
+                className="w-3.5 h-3.5"
               />
               <span className="font-body text-sm">Specific city</span>
             </label>
@@ -505,7 +490,7 @@ function FreeTierLocationEditor({
                 type="radio"
                 checked={locationType === 'region'}
                 onChange={() => setLocationType('region')}
-                className="w-4 h-4"
+                className="w-3.5 h-3.5"
               />
               <span className="font-body text-sm">State-wide</span>
             </label>
@@ -517,19 +502,13 @@ function FreeTierLocationEditor({
                 <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
                   City
                 </label>
-                <input
-                  type="text"
+                <CitySelect
                   value={cityInput}
-                  onChange={(e) => setCityInput(e.target.value)}
-                  className="input"
-                  placeholder="Austin"
-                  list="city-suggestions-editor"
+                  onChange={setCityInput}
+                  onStateAutoFill={(state) => setSelectedState(state)}
+                  countryCode="US"
+                  placeholder="Select city"
                 />
-                <datalist id="city-suggestions-editor">
-                  {CITY_SUGGESTIONS.map((c) => (
-                    <option key={c.value} value={c.value} />
-                  ))}
-                </datalist>
               </div>
               <div>
                 <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">

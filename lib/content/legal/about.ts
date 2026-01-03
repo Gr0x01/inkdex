@@ -45,5 +45,11 @@ export const aboutContent: LegalContent = {
         'Questions, feedback, or partnership inquiries? Reach us at support@inkdex.io. We typically respond within 24-48 hours.',
       ],
     },
+    {
+      heading: 'Data Sources',
+      paragraphs: [
+        'City and location data provided by SimpleMaps (https://simplemaps.com/data/us-cities). SimpleMaps offers comprehensive, accurate geographic databases used by developers worldwide.',
+      ],
+    },
   ],
 }
