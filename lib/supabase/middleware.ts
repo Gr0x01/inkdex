@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { env } from '@/lib/config/env'
+import { isAdminEmail } from '@/lib/admin/whitelist'
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
@@ -13,22 +14,27 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.rewrite(new URL('/404', request.url))
   }
 
-  // Skip auth check for public routes to improve performance
-  const publicPaths = [
-    '/',
+  // Skip auth check entirely for static assets and health checks
+  const skipAuthPaths = [
     '/api/health',
     '/_next',
     '/favicon.ico',
   ]
 
-  // Allow public access to city and artist pages (they're SEO pages)
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path)) ||
-    pathname.match(/^\/(austin|los-angeles)/) ||  // City pages
-    pathname.startsWith('/artist/')  // Artist profile pages
-
-  if (isPublicPath) {
+  if (skipAuthPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next()
   }
+
+  // Public paths that don't require auth but still need Supabase session handling
+  const publicPaths = [
+    '/',
+    '/admin/login', // Admin login page is public
+  ]
+
+  // Allow public access to city and artist pages (they're SEO pages)
+  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/')) ||
+    pathname.match(/^\/(austin|los-angeles|new-york|chicago|portland|seattle|miami|atlanta)/) ||
+    pathname.startsWith('/artist/')
 
   let supabaseResponse = NextResponse.next({
     request,
@@ -47,8 +53,15 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
+          // Determine if this is an admin route for stricter CSRF protection
+          const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/api/admin')
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              // CSRF protection: Strict for admin auth cookies only (prevents OAuth issues)
+              // Regular routes use Lax to allow Instagram OAuth redirects
+              sameSite: (isAdminRoute && name.includes('auth')) ? 'strict' : (options?.sameSite ?? 'lax'),
+            })
           )
         },
       },
@@ -58,6 +71,30 @@ export async function updateSession(request: NextRequest) {
   // IMPORTANT: Avoid writing any logic between createServerClient and
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
+
+  // Admin routes (require authentication + admin email whitelist)
+  // Exclude /admin/login which is public
+  const isAdminPath = pathname.startsWith('/admin') && pathname !== '/admin/login'
+
+  if (isAdminPath) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      // Redirect to admin login
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+
+    // Check if user is an admin
+    if (!isAdminEmail(user.email)) {
+      // Not authorized - redirect to home
+      console.warn(`[Middleware] Unauthorized admin access attempt: ${user.email}`)
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+
+    return supabaseResponse
+  }
 
   // Protected routes (require authentication)
   const protectedPaths = ['/dashboard', '/profile', '/saved']
