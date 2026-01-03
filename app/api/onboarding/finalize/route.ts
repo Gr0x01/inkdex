@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 7. Validate required data is present
-    if (!session.profile_updates || !session.selected_image_ids || session.selected_image_ids.length === 0) {
+    if (!session.profile_updates) {
       return NextResponse.json(
         { error: 'Incomplete onboarding data. Please complete all steps.' },
         { status: 400 }
@@ -116,7 +116,6 @@ export async function POST(request: NextRequest) {
     }
 
     const profileUpdates = session.profile_updates as any;
-    const selectedImageIds = session.selected_image_ids;
     const fetchedImages = (session.fetched_images as any[]) || [];
     const profileData = (session.profile_data as any) || {};
 
@@ -281,19 +280,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. Insert selected portfolio images
-    const selectedImages = fetchedImages.filter((img: any) =>
-      selectedImageIds.includes(img.instagram_post_id)
+    // 8. Insert ALL classified portfolio images (auto-import)
+    const classifiedImages = fetchedImages.filter((img: any) =>
+      img.classified === true
     );
 
-    if (selectedImages.length === 0) {
-      return NextResponse.json(
-        { error: 'No valid images selected' },
-        { status: 400 }
-      );
+    // Don't fail if no images - create artist anyway
+    if (classifiedImages.length === 0) {
+      console.log('[Onboarding] No classified images found, creating artist without portfolio');
     }
 
-    const portfolioImages = selectedImages.map((img: any, index: number) => ({
+    const portfolioImages = classifiedImages.map((img: any, index: number) => ({
       id: randomUUID(),
       artist_id: artistId,
       instagram_post_id: img.instagram_post_id,
@@ -302,22 +299,22 @@ export async function POST(request: NextRequest) {
       post_timestamp: new Date().toISOString(),
       likes_count: null,
       status: 'active',
-      manually_added: true,
+      manually_added: false, // Auto-imported, not manually selected
       import_source: 'oauth_onboarding',
       // Note: embeddings will be generated asynchronously after this completes
       // Storage paths will be populated by image processing pipeline
     }));
 
-    const { error: imagesError } = await supabase
-      .from('portfolio_images')
-      .insert(portfolioImages);
+    // Only insert if we have images
+    if (portfolioImages.length > 0) {
+      const { error: imagesError } = await supabase
+        .from('portfolio_images')
+        .insert(portfolioImages);
 
-    if (imagesError) {
-      console.error('[Onboarding] Failed to insert portfolio images:', imagesError);
-      return NextResponse.json(
-        { error: 'Failed to save portfolio images' },
-        { status: 500 }
-      );
+      if (imagesError) {
+        console.error('[Onboarding] Failed to insert portfolio images:', imagesError);
+        // Don't fail - artist still created
+      }
     }
 
     // 9. Delete onboarding session
@@ -366,6 +363,8 @@ export async function POST(request: NextRequest) {
       success: true,
       artistId,
       artistSlug,
+      fetchStatus: session.fetch_status || 'pending',
+      imagesImported: portfolioImages.length,
     });
   } catch (error) {
     console.error('[Onboarding] Unexpected error:', error);

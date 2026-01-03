@@ -2,14 +2,13 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { ProgressIndicator } from './ProgressIndicator';
 
 /**
- * The ProgressIndicator shows the user's current step in the 5-step onboarding flow.
+ * The ProgressIndicator shows the user's current step in the streamlined 2-step onboarding flow.
  *
  * Steps:
- * 1. Fetch - Pull Instagram images
- * 2. Preview - Edit profile details
- * 3. Portfolio - Select portfolio images
- * 4. Booking - Add booking link
- * 5. Complete - Launch profile
+ * 1. Profile Info - Enter name, locations, bio, and booking link (Instagram fetch runs in background)
+ * 2. Launch - Finalize profile and redirect to dashboard
+ *
+ * Design: Smaller 16px dots (down from 32px) for a more minimal appearance.
  */
 const meta = {
   title: 'Onboarding/ProgressIndicator',
@@ -21,8 +20,8 @@ const meta = {
   tags: ['autodocs'],
   argTypes: {
     currentStep: {
-      control: { type: 'range', min: 1, max: 5, step: 1 },
-      description: 'Current step in the onboarding flow (1-5)',
+      control: { type: 'range', min: 1, max: 2, step: 1 },
+      description: 'Current step in the onboarding flow (1-2)',
     },
   },
 } satisfies Meta<typeof ProgressIndicator>;
@@ -31,80 +30,32 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * Step 1: Fetch Instagram images
+ * Step 1: Profile Info
  */
-export const Step1Fetch: Story = {
+export const Step1ProfileInfo: Story = {
   args: {
     currentStep: 1,
   },
   parameters: {
     docs: {
       description: {
-        story: 'First step - fetching Instagram images. No steps are completed yet.',
+        story: 'First step - entering profile information (name, locations, bio, booking link). Instagram fetch runs in the background. No steps are completed yet.',
       },
     },
   },
 };
 
 /**
- * Step 2: Preview profile
+ * Step 2: Launch
  */
-export const Step2Preview: Story = {
+export const Step2Launch: Story = {
   args: {
     currentStep: 2,
   },
   parameters: {
     docs: {
       description: {
-        story: 'Second step - editing profile details. Fetch step is completed.',
-      },
-    },
-  },
-};
-
-/**
- * Step 3: Portfolio selection
- */
-export const Step3Portfolio: Story = {
-  args: {
-    currentStep: 3,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Third step - selecting portfolio images. Fetch and Preview are completed.',
-      },
-    },
-  },
-};
-
-/**
- * Step 4: Booking link
- */
-export const Step4Booking: Story = {
-  args: {
-    currentStep: 4,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Fourth step - adding booking link. Three steps completed.',
-      },
-    },
-  },
-};
-
-/**
- * Step 5: Complete (Launch)
- */
-export const Step5Complete: Story = {
-  args: {
-    currentStep: 5,
-  },
-  parameters: {
-    docs: {
-      description: {
-        story: 'Final step - profile is being launched. All previous steps completed.',
+        story: 'Final step - finalizing profile and redirecting to dashboard. Profile Info step is completed (shown with checkmark).',
       },
     },
   },
@@ -131,15 +82,15 @@ export const Interactive: Story = {
  */
 export const Mobile: Story = {
   args: {
-    currentStep: 3,
+    currentStep: 2,
   },
   parameters: {
     viewport: {
-      defaultViewport: 'mobile',
+      defaultViewport: 'mobile1',
     },
     docs: {
       description: {
-        story: 'On mobile, step labels appear below the dots instead of above.',
+        story: 'On mobile, step labels appear below the dots instead of above. Smaller font size (8px) for compact display.',
       },
     },
   },

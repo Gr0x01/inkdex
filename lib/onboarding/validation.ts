@@ -113,14 +113,57 @@ export const bookingLinkSchema = z.object({
 export type BookingLink = z.infer<typeof bookingLinkSchema>;
 
 /**
- * Update Session Request (used across steps 2-4)
+ * Step 1 (NEW): Info Step - Combined profile data + booking link
+ */
+export const infoStepSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name cannot exceed 100 characters')
+    .trim(),
+  locations: z
+    .array(locationSchema)
+    .min(1, 'At least one location is required')
+    .max(20, 'Maximum 20 locations allowed')
+    .optional(),
+  city: z.string().trim().optional(),
+  state: z.string().trim().optional(),
+  bio: z
+    .string()
+    .max(500, 'Bio cannot exceed 500 characters')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+  bookingLink: z
+    .string()
+    .url('Must be a valid URL')
+    .refine(
+      (url) => !url || /^https?:\/\/.+/.test(url),
+      'URL must start with http:// or https://'
+    )
+    .optional()
+    .or(z.literal('')),
+}).refine(
+  (data) => {
+    // Either locations array OR city/state must be provided
+    const hasLocations = data.locations && data.locations.length > 0;
+    const hasLegacy = data.city && data.city.length > 0;
+    return hasLocations || hasLegacy;
+  },
+  { message: 'At least one location is required' }
+);
+
+export type InfoStepData = z.infer<typeof infoStepSchema>;
+
+/**
+ * Update Session Request (supports both new and legacy steps)
  */
 export const updateSessionSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID'),
-  step: z.enum(['preview', 'portfolio', 'booking'], {
+  step: z.enum(['info', 'preview', 'portfolio', 'booking'], {
     errorMap: () => ({ message: 'Invalid onboarding step' }),
   }),
-  data: z.union([profileDataSchema, portfolioSelectionSchema, bookingLinkSchema]),
+  data: z.union([infoStepSchema, profileDataSchema, portfolioSelectionSchema, bookingLinkSchema]),
 });
 
 export type UpdateSessionRequest = z.infer<typeof updateSessionSchema>;

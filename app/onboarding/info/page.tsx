@@ -2,42 +2,8 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import LocationPicker, { Location } from '@/components/onboarding/LocationPicker';
-import { getCountryName } from '@/lib/constants/countries';
-import { getStateName } from '@/lib/constants/states';
 
-// Helper to format location for preview display
-function formatLocationPreview(loc: Location): string {
-  const parts: string[] = [];
-
-  if (loc.city) {
-    parts.push(loc.city);
-  }
-
-  if (loc.region) {
-    // For US, show state code; for international, show region name
-    if (loc.countryCode === 'US') {
-      parts.push(loc.region);
-    } else {
-      parts.push(loc.region);
-    }
-  }
-
-  // Only show country for non-US locations
-  if (loc.countryCode !== 'US') {
-    const countryName = getCountryName(loc.countryCode);
-    parts.push(countryName || loc.countryCode);
-  }
-
-  // If it's a state-only US location
-  if (loc.locationType === 'region' && loc.countryCode === 'US' && loc.region) {
-    const stateName = getStateName(loc.region);
-    return stateName ? `${stateName} (statewide)` : `${loc.region} (statewide)`;
-  }
-
-  return parts.join(', ') || 'Location not set';
-}
-
-function PreviewContent() {
+function InfoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -45,11 +11,13 @@ function PreviewContent() {
   const [name, setName] = useState('');
   const [locations, setLocations] = useState<Location[]>([]);
   const [bio, setBio] = useState('');
+  const [bookingLink, setBookingLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [locationError, setLocationError] = useState('');
 
+  // Load existing session data
   useEffect(() => {
     const fetchSessionData = async () => {
       if (!sessionId) {
@@ -74,7 +42,7 @@ function PreviewContent() {
         // Fetch session data
         const { data: session, error: sessionError } = await supabase
           .from('onboarding_sessions')
-          .select('profile_data, profile_updates, user_id, current_step')
+          .select('profile_data, profile_updates, user_id, current_step, booking_link')
           .eq('id', sessionId)
           .single();
 
@@ -99,6 +67,7 @@ function PreviewContent() {
 
         setName(updates.name || profileData.username || '');
         setBio(updates.bio || profileData.bio || '');
+        setBookingLink(session.booking_link || '');
 
         // Pre-populate locations if available
         if (updates.locations && Array.isArray(updates.locations)) {
@@ -116,7 +85,7 @@ function PreviewContent() {
 
         setInitialLoading(false);
       } catch (err: any) {
-        console.error('[Preview] Error fetching session:', err);
+        console.error('[Info] Error fetching session:', err);
         setError('Failed to load session. Please try again.');
         setInitialLoading(false);
       }
@@ -124,6 +93,32 @@ function PreviewContent() {
 
     fetchSessionData();
   }, [sessionId, router]);
+
+  // Start background Instagram fetch on mount
+  useEffect(() => {
+    const startBackgroundFetch = async () => {
+      if (!sessionId) return;
+
+      try {
+        await fetch('/api/onboarding/start-fetch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        });
+        console.log('[Info] Background fetch started');
+        // Don't wait for response - it runs in background
+      } catch (err) {
+        console.error('[Info] Background fetch failed to start:', err);
+        // Non-critical - user can still complete onboarding
+      }
+    };
+
+    startBackgroundFetch();
+  }, [sessionId]);
+
+  const isValidUrl = (url: string) => {
+    return !url || /^https?:\/\/.+/.test(url);
+  };
 
   const handleContinue = async () => {
     // Validate name
@@ -153,35 +148,34 @@ function PreviewContent() {
       return;
     }
 
+    // Validate booking link if provided
+    if (bookingLink && !isValidUrl(bookingLink)) {
+      setError('Please enter a valid URL (starting with http:// or https://)');
+      return;
+    }
+
     setError('');
     setLocationError('');
     setLoading(true);
 
     try {
-      // Extract primary location for backward compatibility
-      const city = primaryLocation.city || '';
-      const state = primaryLocation.region || '';
-
       const res = await fetch('/api/onboarding/update-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sessionId,
-          step: 'preview',
+          step: 'info',
           data: {
             name,
             bio,
-            // New format
             locations,
-            // Legacy format for backward compatibility
-            city,
-            state,
+            bookingLink,
           },
         }),
       });
 
       if (!res.ok) throw new Error('Failed to save');
-      router.push(`/onboarding/portfolio?session_id=${sessionId}`);
+      router.push(`/onboarding/complete?session_id=${sessionId}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -190,7 +184,7 @@ function PreviewContent() {
 
   if (initialLoading) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -203,7 +197,7 @@ function PreviewContent() {
 
   if (error && !name) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="bg-red-900/20 border border-red-800 rounded-lg p-6 text-center">
           <p className="text-red-400 mb-4">{error}</p>
           <p className="text-gray-500 text-sm">Redirecting...</p>
@@ -213,77 +207,79 @@ function PreviewContent() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <h1 className="font-display text-3xl text-white mb-8">Preview Your Profile</h1>
+    <div className="max-w-2xl mx-auto">
+      <div className="bg-paper-dark border border-gray-800 rounded-lg p-8">
+        <h1 className="font-display text-3xl text-white mb-4">Create Your Profile</h1>
+        <p className="text-gray-400 mb-8">Tell us about yourself</p>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-paper-dark border border-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-display text-white mb-4">Edit Details</h2>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Name *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-2 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
-                placeholder="Your name"
-              />
-            </div>
-
-            <LocationPicker
-              isPro={false}
-              locations={locations}
-              onChange={setLocations}
-              error={locationError}
+        <div className="space-y-6">
+          {/* Name */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Name *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
+              placeholder="Your name"
             />
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-2">Bio (optional)</label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={4}
-                maxLength={500}
-                className="w-full px-4 py-2 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none resize-none"
-                placeholder="Tell people about your style..."
-              />
-              <p className="text-xs text-gray-600 mt-1">{bio.length}/500</p>
-            </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+          {/* Locations */}
+          <LocationPicker
+            isPro={false}
+            locations={locations}
+            onChange={setLocations}
+            error={locationError}
+          />
+
+          {/* Bio */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Bio (optional)</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={4}
+              maxLength={500}
+              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none resize-none"
+              placeholder="Tell people about your style..."
+            />
+            <p className="text-xs text-gray-600 mt-1">{bio.length}/500</p>
+          </div>
+
+          {/* Booking Link */}
+          <div>
+            <label className="block text-sm text-gray-400 mb-2">Booking Link (optional)</label>
+            <input
+              type="url"
+              value={bookingLink}
+              onChange={(e) => setBookingLink(e.target.value)}
+              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
+              placeholder="https://instagram.com/yourhandle"
+            />
+            <p className="text-xs text-gray-600 mt-2">
+              Instagram DM link, website, Calendly, or any booking method
+            </p>
+          </div>
+
+          {error && <p className="text-red-400 text-sm">{error}</p>}
 
           <button
             onClick={handleContinue}
             disabled={loading}
-            className="w-full mt-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition"
+            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition"
           >
             {loading ? 'Saving...' : 'Continue →'}
           </button>
-        </div>
-
-        <div className="bg-paper-dark border border-gray-800 rounded-lg p-6">
-          <h2 className="text-xl font-display text-white mb-4">Preview</h2>
-          <div className="text-white">
-            <h3 className="text-2xl font-display mb-2">{name || 'Your Name'}</h3>
-            <p className="text-gray-400 mb-4">
-              {locations.length > 0
-                ? formatLocationPreview(locations[0])
-                : 'City, State'}
-            </p>
-            <p className="text-gray-300">{bio || 'Your bio will appear here...'}</p>
-          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function PreviewLoadingFallback() {
+function InfoLoadingFallback() {
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -294,10 +290,10 @@ function PreviewLoadingFallback() {
   );
 }
 
-export default function PreviewPage() {
+export default function InfoPage() {
   return (
-    <Suspense fallback={<PreviewLoadingFallback />}>
-      <PreviewContent />
+    <Suspense fallback={<InfoLoadingFallback />}>
+      <InfoContent />
     </Suspense>
   );
 }

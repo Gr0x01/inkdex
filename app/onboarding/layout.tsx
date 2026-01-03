@@ -21,11 +21,16 @@ export default function OnboardingLayout({
 
   // Determine current step from pathname
   const getCurrentStep = () => {
+    // New 2-step flow
+    if (pathname.includes('/info')) return 1;
+    if (pathname.includes('/complete')) return 2;
+
+    // Old 5-step flow (backward compatibility)
     if (pathname.includes('/fetch')) return 1;
-    if (pathname.includes('/preview')) return 2;
-    if (pathname.includes('/portfolio')) return 3;
-    if (pathname.includes('/booking')) return 4;
-    if (pathname.includes('/complete')) return 5;
+    if (pathname.includes('/preview')) return 1;
+    if (pathname.includes('/portfolio')) return 2;
+    if (pathname.includes('/booking')) return 2;
+
     return 1;
   };
 

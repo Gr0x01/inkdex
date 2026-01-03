@@ -9,7 +9,6 @@ function CompleteContent() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [artistSlug, setArtistSlug] = useState('');
 
   useEffect(() => {
     finalizeOnboarding();
@@ -26,8 +25,8 @@ function CompleteContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to finalize');
 
-      setArtistSlug(data.artistSlug);
-      setLoading(false);
+      // Redirect to dashboard immediately (streamlined flow)
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -82,20 +81,8 @@ function CompleteContent() {
           Your profile is now visible to thousands of people looking for tattoo artists
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={() => router.push(`/artist/${artistSlug}`)}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 transition"
-          >
-            View Profile
-          </button>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 border border-gray-700 text-gray-300 font-medium rounded-lg hover:border-gray-600 transition"
-          >
-            Go to Dashboard
-          </button>
-        </div>
+        {/* Auto-redirecting to dashboard - this UI should not be shown */}
+        <p className="text-gray-500 text-sm">Redirecting to dashboard...</p>
       </div>
     </div>
   );

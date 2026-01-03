@@ -1,13 +1,13 @@
 /**
  * Onboarding Session Update
  *
- * Updates onboarding session data for steps 2-4
+ * Updates onboarding session data during onboarding
  *
  * POST /api/onboarding/update-session
  *
  * Request: {
  *   sessionId: string,
- *   step: 'preview' | 'portfolio' | 'booking',
+ *   step: 'info' | 'preview' | 'portfolio' | 'booking',  // 'info' is new, others for backward compat
  *   data: ProfileData | PortfolioSelection | BookingLink
  * }
  * Response: { success: true }
@@ -100,6 +100,26 @@ export async function POST(request: NextRequest) {
     let newStep: number = session.current_step;
 
     switch (step) {
+      case 'info':
+        // NEW: Step 1 - Combined profile info + booking (streamlined flow)
+        {
+          const infoData = data as any; // Union type - safe to cast
+          updateData = {
+            profile_updates: {
+              name: infoData.name,
+              bio: infoData.bio,
+              locations: infoData.locations,
+              // Legacy format for backward compatibility
+              city: infoData.locations?.[0]?.city || infoData.city || '',
+              state: infoData.locations?.[0]?.region || infoData.state || '',
+            },
+            booking_link: infoData.bookingLink || null,
+            current_step: 1,
+          };
+          newStep = 1;
+        }
+        break;
+
       case 'preview':
         // Step 2: Profile data
         updateData = {
@@ -110,34 +130,40 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'portfolio':
-        // Step 3: Portfolio selection
-        if ('selectedImageIds' in data) {
-          updateData = {
-            selected_image_ids: data.selectedImageIds,
-            current_step: 3,
-          };
-          newStep = 3;
-        } else {
-          return NextResponse.json(
-            { error: 'Invalid portfolio data' },
-            { status: 400 }
-          );
+        // Step 3: Portfolio selection (legacy)
+        {
+          const portfolioData = data as any;
+          if ('selectedImageIds' in portfolioData) {
+            updateData = {
+              selected_image_ids: portfolioData.selectedImageIds,
+              current_step: 3,
+            };
+            newStep = 3;
+          } else {
+            return NextResponse.json(
+              { error: 'Invalid portfolio data' },
+              { status: 400 }
+            );
+          }
         }
         break;
 
       case 'booking':
-        // Step 4: Booking link
-        if ('bookingLink' in data) {
-          updateData = {
-            booking_link: data.bookingLink || null,
-            current_step: 4,
-          };
-          newStep = 4;
-        } else {
-          return NextResponse.json(
-            { error: 'Invalid booking data' },
-            { status: 400 }
-          );
+        // Step 4: Booking link (legacy)
+        {
+          const bookingData = data as any;
+          if ('bookingLink' in bookingData) {
+            updateData = {
+              booking_link: bookingData.bookingLink || null,
+              current_step: 4,
+            };
+            newStep = 4;
+          } else {
+            return NextResponse.json(
+              { error: 'Invalid booking data' },
+              { status: 400 }
+            );
+          }
         }
         break;
 
