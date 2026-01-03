@@ -119,6 +119,8 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
 - Keep diffs surgical—strip logs, commented code, and unused exports
 - Update docs as part of the definition of done; long narratives move to `archive/`
 - Document significant subagent feedback in commit messages or memory bank when relevant
+- **SQL migrations**: Always run `npm run db:push` (lints with sqlfluff first) instead of raw `npx supabase db push`
+- **SQL naming**: Follow CTE column prefixes (`ri_`, `aa_`, `fa_`, `ba_`) - see `operations.md` for details
 
 ### Performance Guidelines
 - Follow established performance patterns

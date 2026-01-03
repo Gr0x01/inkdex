@@ -1,0 +1,30 @@
+[sqlfluff]
+dialect = postgres
+templater = raw
+max_line_length = 120
+
+# Exclude rules that conflict with our style or are too noisy
+# L003: Indentation not multiple of 4 (we use 2)
+# L016: Line too long (handled by max_line_length)
+# L031: Avoid aliases in from clause (we use them extensively)
+# L034: Select wildcards then simple targets (conflicts with our style)
+exclude_rules = L003,L016,L031,L034,AM04,RF04
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 2
+indented_joins = True
+indented_ctes = True
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+capitalisation_policy = lower
+
+# Ignore generated/legacy files if needed
+[sqlfluff:templater:raw]
+# No templating variables

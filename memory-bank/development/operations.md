@@ -322,7 +322,9 @@ npm run mine:status
 # Supabase local development
 npx supabase init           # Initialize Supabase project
 npx supabase start          # Start local Supabase instance
-npx supabase db push        # Push migrations to database
+npm run db:push             # Lint SQL + push migrations (PREFERRED)
+npm run db:lint             # Lint migrations only (sqlfluff)
+npx supabase db push        # Push migrations without linting (use db:push instead)
 npx supabase db reset       # Reset local database
 npx supabase db diff        # Generate migration from schema changes
 
@@ -332,6 +334,47 @@ npx supabase gen types typescript --local > types/database.ts
 # Production
 npx supabase link           # Link to production project
 npx supabase db push --remote  # Push migrations to production
+```
+
+### SQL Naming Conventions (Prevent Ambiguous Column Errors)
+
+**CRITICAL**: PL/pgSQL functions have THREE namespaces that can conflict:
+1. Return table column names (e.g., `artist_id`, `city`)
+2. CTE column names (e.g., `artist_id` in `ranked_images`)
+3. Local variables (e.g., `avg_embedding`)
+
+**Naming Rules:**
+- **CTE columns**: MUST be prefixed with CTE abbreviation
+  - `ri_` for `ranked_images` (e.g., `ri_artist_id`)
+  - `aa_` for `aggregated_artists` (e.g., `aa_artist_id`)
+  - `fa_` for `filtered_artists` (e.g., `fa_city`)
+  - `ba_` for `boosted_artists` (e.g., `ba_artist_id`)
+  - `ae_` for `artist_embeddings` (e.g., `ae_avg_embedding`)
+- **Local variables**: MUST be descriptive or prefixed with `v_` or context
+  - Good: `source_avg_embedding`, `v_total_count`
+  - Bad: `avg_embedding` (conflicts with CTE column)
+- **Always use explicit table aliases** in JOINs and WHERE clauses
+  - Good: `WHERE pi.artist_id = fa.id`
+  - Bad: `WHERE artist_id = id`
+
+**Example (CORRECT):**
+```sql
+WITH ranked_images AS (
+  SELECT
+    pi.artist_id as ri_artist_id,  -- Prefixed with ri_
+    1 - (pi.embedding <=> query_embedding) as ri_similarity
+  FROM portfolio_images pi
+),
+aggregated_artists AS (
+  SELECT
+    ri.ri_artist_id as aa_artist_id,  -- Prefixed with aa_
+    MAX(ri.ri_similarity) as aa_best_similarity
+  FROM ranked_images ri
+  GROUP BY ri.ri_artist_id
+)
+SELECT fa.id, aa.aa_best_similarity
+FROM aggregated_artists aa
+INNER JOIN filtered_artists fa ON fa.id = aa.aa_artist_id;
 ```
 
 ### Quality Checks

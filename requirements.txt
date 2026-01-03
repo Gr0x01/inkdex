@@ -6,3 +6,6 @@ requests>=2.31
 psycopg2-binary>=2.9
 python-dotenv>=1.0
 openai>=1.0.0
+
+# SQL linting for migrations
+sqlfluff>=3.0
