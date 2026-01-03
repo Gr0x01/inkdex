@@ -128,7 +128,7 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
           </div>
 
           {/* Desktop Navigation - Editorial Style */}
-          <nav className="hidden md:flex items-center gap-4 lg:gap-6 flex-shrink-0" aria-label="Main navigation">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 flex-shrink-0" aria-label="Main navigation">
             {/* Browse Dropdown - Editorial */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -191,7 +191,7 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
           </nav>
 
           {/* Mobile Actions (Menu Toggle Only) */}
-          <div className="md:hidden flex items-center gap-4">
+          <div className="lg:hidden flex items-center gap-4">
             {/* Mobile Menu Toggle */}
             <button
               ref={mobileMenuButtonRef}
@@ -226,54 +226,49 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
       {/* Mobile Menu - Editorial */}
       <nav
         id="mobile-navigation"
-        className={`md:hidden overflow-hidden transition-all duration-medium border-t-2 border-ink/10 ${
+        className={`lg:hidden overflow-hidden transition-all duration-medium border-t-2 border-ink/10 ${
           isMobileMenuOpen ? 'max-h-screen' : 'max-h-0'
         }`}
         aria-label="Mobile navigation"
         aria-hidden={!isMobileMenuOpen}
       >
-        <div className="py-2 px-4 space-y-3 bg-paper relative">
-          {/* Decorative corner element */}
-          <div className="absolute top-0 right-0 w-20 h-20 opacity-5" aria-hidden="true">
-            <svg viewBox="0 0 100 100" fill="currentColor" className="text-ink">
-              <path d="M0,0 L100,0 L100,100 Z" />
-            </svg>
-          </div>
-
-          {/* User Menu - Mobile */}
-          <div className="relative z-10">
-            <NavbarUserMenuMobile user={user} isPro={isPro} onNavigate={closeMobileMenu} />
-          </div>
-
-          {/* Mobile Search Bar */}
-          <div className="relative z-10">
+        <div className="py-3 px-4 bg-paper relative">
+          {/* Mobile Search Bar - Only show on mobile, hidden at md+ where navbar search appears */}
+          <div className="relative z-10 md:hidden mb-2">
             <NavbarSearch />
           </div>
 
-          {/* Add Artist Link - Mobile */}
-          <Link
-            href="/add-artist"
-            className="editorial-mobile-link font-bold text-ink hover:text-gray-700 transition-colors border-b border-gray-200 pb-2"
-            onClick={closeMobileMenu}
-          >
-            Add Artist →
-          </Link>
-
-          {/* Browse Cities Header */}
-          <div className="editorial-mobile-link font-bold text-gray-900 cursor-default pt-2">
-            Browse Cities
+          {/* Browse Cities Section */}
+          <div className="relative z-10">
+            <div className="editorial-mobile-link font-bold text-gray-900 cursor-default">
+              Browse Cities
+            </div>
+            <div className="pl-2">
+              {sortedCities.map((city) => (
+                <CityLink
+                  key={city.slug}
+                  city={city}
+                  className="block editorial-mobile-link text-gray-600 hover:text-ink transition-colors text-sm"
+                  onClick={closeMobileMenu}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Flat Alphabetical City List */}
-          <div className="space-y-1 pl-3">
-            {sortedCities.map((city) => (
-              <CityLink
-                key={city.slug}
-                city={city}
-                className="block editorial-mobile-link text-gray-600 hover:text-ink transition-colors"
-                onClick={closeMobileMenu}
-              />
-            ))}
+          {/* Add Artist Link */}
+          <div className="relative z-10 mb-4">
+            <Link
+              href="/add-artist"
+              className="editorial-mobile-link font-bold text-ink hover:text-gray-700 transition-colors block"
+              onClick={closeMobileMenu}
+            >
+              Add Artist →
+            </Link>
+          </div>
+
+          {/* User Menu - At Bottom */}
+          <div className="relative z-10 pt-3 border-t border-gray-200">
+            <NavbarUserMenuMobile user={user} isPro={isPro} onNavigate={closeMobileMenu} />
           </div>
         </div>
       </nav>

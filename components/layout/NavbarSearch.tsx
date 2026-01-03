@@ -275,7 +275,7 @@ export default function NavbarSearch() {
           type="submit"
           disabled={!canSubmit}
           className={`
-            flex-shrink-0 h-10 md:h-11 px-4 md:px-6 border-2
+            flex-shrink-0 h-10 md:h-11 px-2 md:px-3 border-2
             font-mono text-xs md:text-sm font-bold uppercase tracking-widest
             transition-all duration-150
             ${

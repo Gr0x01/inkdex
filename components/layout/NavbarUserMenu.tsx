@@ -203,9 +203,9 @@ export function NavbarUserMenuMobile({ user, isPro = false, onNavigate }: Navbar
 
   // Logged in state
   return (
-    <div className="border-b border-gray-200 pb-3 mb-2">
+    <div>
       {/* User info */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex items-center gap-3 mb-2">
         {isValidAvatarUrl(user.avatar_url) ? (
           <Image
             src={user.avatar_url}
@@ -230,7 +230,7 @@ export function NavbarUserMenuMobile({ user, isPro = false, onNavigate }: Navbar
       </div>
 
       {/* Mobile menu links */}
-      <div className="space-y-1 pl-1">
+      <div className="pl-1">
         <Link
           href="/dashboard"
           className="block editorial-mobile-link text-ink hover:text-gray-700 transition-colors"
