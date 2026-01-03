@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getCityArtists, getStyleSeeds } from '@/lib/supabase/queries'
+import { getCityArtists, getStyleSeeds, getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistCard from '@/components/search/ArtistCard'
@@ -12,10 +12,41 @@ import EditorialContent from '@/components/editorial/EditorialContent'
 import Pagination from '@/components/pagination/Pagination'
 
 export async function generateStaticParams() {
-  return CITIES.map((city) => ({
-    state: STATES.find((s) => s.code === city.state)?.slug || '',
-    city: city.slug,
-  }))
+  // Fetch all cities with 3+ artists from database
+  const allCities = await getAllCitiesWithMinArtists(3)
+
+  if (!allCities || allCities.length === 0) {
+    console.error('Failed to fetch cities for static generation, falling back to featured cities')
+    // Fallback to featured cities if database query fails
+    return CITIES.map((city) => ({
+      state: STATES.find((s) => s.code === city.state)?.slug || '',
+      city: city.slug,
+    }))
+  }
+
+  // Transform database results to params
+  const dynamicCities = allCities
+    .map((cityData: any) => {
+      const state = STATES.find((s) => s.code === cityData.region)
+      if (!state) return null
+
+      return {
+        state: state.slug,
+        city: cityData.city.toLowerCase().replace(/\s+/g, '-'),
+      }
+    })
+    .filter(Boolean)
+
+  // Deduplicate by state/city combination
+  const paramsMap = new Map()
+  dynamicCities.forEach((param: any) => {
+    const key = `${param.state}/${param.city}`
+    if (!paramsMap.has(key)) {
+      paramsMap.set(key, param)
+    }
+  })
+
+  return Array.from(paramsMap.values())
 }
 
 export const revalidate = 86400 // 24 hours
@@ -32,19 +63,31 @@ export async function generateMetadata({
   const currentPage = parseInt(page || '1', 10)
 
   const state = STATES.find((s) => s.slug === stateSlug)
-  const city = CITIES.find((c) => c.slug === citySlug)
-
-  if (!state || !city) {
+  if (!state) {
     return { title: 'City Not Found' }
   }
 
-  const title = `Tattoo Artists in ${city.name}, ${state.code} | Inkdex`
+  // Check if this is a featured city with editorial content
+  const featuredCity = CITIES.find((c) => c.slug === citySlug)
 
-  // Use editorial content for meta description if available
-  const editorialContent = getCityEditorialContent(citySlug)
-  const description = editorialContent
-    ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
-    : `Discover talented tattoo artists in ${city.name}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
+  // For non-featured cities, derive name from slug
+  const cityName = featuredCity?.name || citySlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+
+  const title = `Tattoo Artists in ${cityName}, ${state.code} | Inkdex`
+
+  // Use editorial content for meta description if available (featured cities only)
+  let description: string
+  if (featuredCity) {
+    const editorialContent = getCityEditorialContent(citySlug)
+    description = editorialContent
+      ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
+      : `Discover talented tattoo artists in ${cityName}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
+  } else {
+    description = `Browse tattoo artists based in ${cityName}, ${state.code}. Discover talented artists, view their portfolios, and connect via Instagram.`
+  }
 
   // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
   const canonical = currentPage === 1
@@ -61,10 +104,10 @@ export async function generateMetadata({
       siteName: 'Inkdex',
       images: [
         {
-          url: '/og-city-default.jpg', // TODO: Create city-specific OG image
+          url: '/og-city-default.jpg',
           width: 1200,
           height: 630,
-          alt: `Tattoo Artists in ${city.name}, ${state.code}`,
+          alt: `Tattoo Artists in ${cityName}, ${state.code}`,
         },
       ],
     },
@@ -91,20 +134,31 @@ export default async function CityPage({
   const { page } = await searchParams
 
   const state = STATES.find((s) => s.slug === stateSlug)
-  const city = CITIES.find((c) => c.slug === citySlug)
+  if (!state) notFound()
 
-  if (!state || !city) notFound()
+  // Check if this is a featured city with editorial content
+  const featuredCity = CITIES.find((c) => c.slug === citySlug)
+  const isFeaturedCity = !!featuredCity
+
+  // For non-featured cities, derive name from slug
+  const cityName = featuredCity?.name || citySlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 
   // Parse pagination
   const currentPage = parseInt(page || '1', 10)
   const limit = 20
   const offset = (currentPage - 1) * limit
 
-  const { artists, total } = await getCityArtists(state.code, city.name, limit, offset)
+  const { artists, total } = await getCityArtists(state.code, cityName, limit, offset)
+
+  // If no artists found for this city, return 404
+  if (total === 0) notFound()
 
   // Transform to SearchResult format for ArtistCard
   const searchResults = artists.map(artist =>
-    transformToSearchResult(artist as any, city.name)
+    transformToSearchResult(artist as any, cityName)
   )
 
   const styleSeeds = await getStyleSeeds()
@@ -130,7 +184,7 @@ export default async function CityPage({
       {
         '@type': 'ListItem',
         position: 3,
-        name: sanitizeForJsonLd(city.name),
+        name: sanitizeForJsonLd(cityName),
         item: `/${stateSlug}/${citySlug}`,
       },
     ],
@@ -167,7 +221,7 @@ export default async function CityPage({
               </li>
               <li>/</li>
               <li aria-current="page" className="text-text-primary">
-                {city.name}
+                {cityName}
               </li>
             </ol>
           </nav>
@@ -175,37 +229,45 @@ export default async function CityPage({
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-display text-display font-[700] text-text-primary mb-3">
-              {city.name}, {state.code} Tattoo Artists
+              {cityName}, {state.code} Tattoo Artists
             </h1>
             <p className="font-body text-body-large text-text-secondary">
               {total.toLocaleString()} talented {total === 1 ? 'artist' : 'artists'}{' '}
-              in {city.name}
+              in {cityName}
             </p>
           </div>
 
-          {/* Editorial Content */}
-          {(() => {
-            try {
-              const editorialContent = getCityEditorialContent(citySlug)
-              if (!editorialContent) return null
+          {/* Editorial Content - Featured cities only */}
+          {isFeaturedCity ? (
+            (() => {
+              try {
+                const editorialContent = getCityEditorialContent(citySlug)
+                if (!editorialContent) return null
 
-              return (
-                <div className="mb-12 max-w-4xl">
-                  <EditorialContent
-                    sections={[
-                      editorialContent.hero,
-                      editorialContent.scene,
-                      editorialContent.community,
-                      editorialContent.styles,
-                    ]}
-                  />
-                </div>
-              )
-            } catch (error) {
-              console.error('Error loading editorial content:', error)
-              return null
-            }
-          })()}
+                return (
+                  <div className="mb-12 max-w-4xl">
+                    <EditorialContent
+                      sections={[
+                        editorialContent.hero,
+                        editorialContent.scene,
+                        editorialContent.community,
+                        editorialContent.styles,
+                      ]}
+                    />
+                  </div>
+                )
+              } catch (error) {
+                console.error('Error loading editorial content:', error)
+                return null
+              }
+            })()
+          ) : (
+            <div className="mb-8 max-w-4xl">
+              <p className="font-body text-body text-text-secondary">
+                Browse tattoo artists based in {cityName}, {state.code}. Discover talented artists, view their portfolios, and connect via Instagram.
+              </p>
+            </div>
+          )}
 
           {/* Artists Grid */}
           {artists.length > 0 ? (
@@ -234,7 +296,7 @@ export default async function CityPage({
           ) : (
             <div className="text-center py-16">
               <p className="font-body text-body text-text-secondary">
-                No artists found in {city.name} yet.
+                No artists found in {cityName} yet.
               </p>
               {/* Only show button if state has multiple cities */}
               {state.cities.length > 1 && (
@@ -250,7 +312,7 @@ export default async function CityPage({
             <div className="mt-16 pt-12 border-t border-neutral-800">
               <div className="mb-8">
                 <h2 className="font-display text-heading-2 font-[700] text-text-primary mb-3">
-                  Browse by Style in {city.name}
+                  Browse by Style in {cityName}
                 </h2>
                 <p className="font-body text-body text-text-secondary">
                   Explore tattoo artists specializing in different styles
@@ -267,7 +329,7 @@ export default async function CityPage({
                     <div className="aspect-[3/4] relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 mb-3 group-hover:border-accent-primary transition-all duration-300">
                       <Image
                         src={style.seed_image_url}
-                        alt={`Browse ${style.display_name} tattoo artists in ${city.name}, ${state.code}`}
+                        alt={`Browse ${style.display_name} tattoo artists in ${cityName}, ${state.code}`}
                         fill
                         className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
