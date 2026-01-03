@@ -126,6 +126,32 @@ export async function invalidateAdminCaches(): Promise<number> {
 }
 
 /**
+ * Invalidate pipeline status and run history caches
+ *
+ * Called after pipeline jobs complete (scraping, embeddings, index rebuild).
+ * Updates pipeline statistics and run history displayed in admin panel.
+ *
+ * @returns Total number of cache keys deleted
+ *
+ * @example
+ * ```typescript
+ * // After scraping job completes
+ * await invalidatePipelineCache()
+ *
+ * // After embeddings generation completes
+ * await invalidatePipelineCache()
+ * ```
+ */
+export async function invalidatePipelineCache(): Promise<number> {
+  console.log('[Cache Invalidation] Invalidating pipeline caches')
+
+  return await invalidateMultiple([
+    'admin:pipeline:*', // Pipeline status, stats, runs
+    'admin:dashboard', // Dashboard overview stats
+  ])
+}
+
+/**
  * Invalidate featured artists caches
  *
  * Called when artist featured status changes or follower counts update.

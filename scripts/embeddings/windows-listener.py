@@ -69,6 +69,19 @@ class RateLimiter:
         self.requests[client_ip].append(now)
         return True
 
+
+# Job tracking state for /status endpoint
+# Allows orchestrator to poll and wait for job completion
+current_job = {
+    'status': 'idle',  # idle, running, completed, error
+    'progress': {'processed': 0, 'total': 0, 'failed': 0},
+    'started_at': None,
+    'completed_at': None,
+    'error': None
+}
+job_lock = threading.Lock()
+
+
 class EmbeddingRequestHandler(BaseHTTPRequestHandler):
     """Handle HTTP requests to trigger embedding generation"""
 
@@ -178,6 +191,22 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
 
         # Start embedding job in background thread
         def run_embedding_job():
+            global current_job
+
+            # Initialize job status
+            with job_lock:
+                current_job = {
+                    'status': 'running',
+                    'progress': {
+                        'processed': 0,
+                        'total': max_batches * batch_size,
+                        'failed': 0
+                    },
+                    'started_at': datetime.utcnow().isoformat() + 'Z',
+                    'completed_at': None,
+                    'error': None
+                }
+
             # Use venv Python to ensure dependencies are available
             venv_dir = os.path.join(os.getcwd(), 'venv')
             if os.name == 'nt':  # Windows
@@ -195,10 +224,18 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
             # Validate paths exist
             if not os.path.exists(python_exe):
                 print(f"❌ Error: Python executable not found: {python_exe}")
+                with job_lock:
+                    current_job['status'] = 'error'
+                    current_job['error'] = f'Python executable not found: {python_exe}'
+                    current_job['completed_at'] = datetime.utcnow().isoformat() + 'Z'
                 return
 
             if not os.path.exists(script_path):
                 print(f"❌ Error: Script not found: {script_path}")
+                with job_lock:
+                    current_job['status'] = 'error'
+                    current_job['error'] = f'Script not found: {script_path}'
+                    current_job['completed_at'] = datetime.utcnow().isoformat() + 'Z'
                 return
 
             cmd = [
@@ -227,13 +264,28 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
                     timeout=7200  # 2 hour timeout
                 )
 
-                if result.returncode == 0:
-                    print(f"✅ Embedding job completed successfully")
-                else:
-                    print(f"❌ Embedding job failed: {result.stderr}")
+                with job_lock:
+                    current_job['completed_at'] = datetime.utcnow().isoformat() + 'Z'
+                    if result.returncode == 0:
+                        current_job['status'] = 'completed'
+                        print(f"✅ Embedding job completed successfully")
+                    else:
+                        current_job['status'] = 'error'
+                        current_job['error'] = result.stderr[:500] if result.stderr else 'Unknown error'
+                        print(f"❌ Embedding job failed: {result.stderr}")
+
             except subprocess.TimeoutExpired:
+                with job_lock:
+                    current_job['status'] = 'error'
+                    current_job['error'] = 'Job timed out after 2 hours'
+                    current_job['completed_at'] = datetime.utcnow().isoformat() + 'Z'
                 print(f"⏰ Embedding job timed out after 2 hours")
+
             except Exception as e:
+                with job_lock:
+                    current_job['status'] = 'error'
+                    current_job['error'] = str(e)[:500]
+                    current_job['completed_at'] = datetime.utcnow().isoformat() + 'Z'
                 print(f"❌ Error running embedding job: {e}")
 
         # Start in background thread
@@ -257,7 +309,7 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
     def do_GET(self):
-        """Handle health check"""
+        """Handle health check and status endpoints"""
         if self.path == '/health':
             # Health check doesn't require auth
             self.send_response(200)
@@ -271,6 +323,23 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
                 "rate_limit": f"{self.rate_limiter.max_requests}/min" if self.rate_limiter else "none"
             }
             self.wfile.write(json.dumps(health_data).encode('utf-8'))
+
+        elif self.path == '/status':
+            # Job status endpoint - allows orchestrator to poll for completion
+            # Check authentication (if configured)
+            if not self._check_auth():
+                self.send_response(401)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(b'{"error": "Invalid API key"}')
+                return
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            with job_lock:
+                self.wfile.write(json.dumps(current_job).encode('utf-8'))
+
         else:
             self.send_response(404)
             self.end_headers()

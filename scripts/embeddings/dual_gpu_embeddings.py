@@ -187,6 +187,64 @@ class DualGPUOrchestrator:
             print(f"\n❌ Local GPU error: {e}")
             sys.exit(1)
 
+    def wait_for_windows_gpu(self, check_interval: int = 10, timeout: int = 7200) -> bool:
+        """Poll Windows GPU /status endpoint until job completes or times out
+
+        Args:
+            check_interval: Seconds between status checks (default 10)
+            timeout: Maximum wait time in seconds (default 2 hours)
+
+        Returns:
+            True if job completed successfully, False if failed/timed out
+        """
+        import time
+        print(f"\n⏳ Waiting for Windows GPU to complete...")
+        start_time = time.time()
+
+        while time.time() - start_time < timeout:
+            try:
+                headers = {}
+                if WINDOWS_GPU_API_KEY:
+                    headers['Authorization'] = f'Bearer {WINDOWS_GPU_API_KEY}'
+
+                response = requests.get(
+                    f"{WINDOWS_GPU_URL}/status",
+                    headers=headers,
+                    timeout=5
+                )
+
+                if response.ok:
+                    data = response.json()
+                    status = data.get('status')
+                    progress = data.get('progress', {})
+
+                    if status == 'idle' or status == 'completed':
+                        print(f"\n✅ Windows GPU completed")
+                        return True
+                    elif status == 'running':
+                        processed = progress.get('processed', 0)
+                        total = progress.get('total', 0)
+                        elapsed = int(time.time() - start_time)
+                        print(f"   Windows GPU: {processed}/{total} ({elapsed}s elapsed)    ", end='\r')
+                    elif status == 'error':
+                        error_msg = data.get('error', 'Unknown error')
+                        print(f"\n❌ Windows GPU failed: {error_msg}")
+                        return False
+
+                time.sleep(check_interval)
+
+            except requests.exceptions.RequestException as e:
+                # Network error - Windows GPU may be unreachable
+                print(f"\n⚠️  Failed to check Windows GPU status: {e}")
+                time.sleep(check_interval)
+            except Exception as e:
+                print(f"\n⚠️  Unexpected error checking Windows GPU: {e}")
+                time.sleep(check_interval)
+
+        print(f"\n⚠️  Windows GPU polling timed out after {timeout}s")
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Dual-GPU embedding orchestrator")
     parser.add_argument('--city', type=str, help='Filter by city')
@@ -260,6 +318,13 @@ def main():
                 max_batches=batches_a2000,
                 parallel=4
             )
+
+            # Wait for Windows GPU to complete before exiting
+            # This ensures the pipeline job doesn't mark complete prematurely
+            windows_success = orchestrator.wait_for_windows_gpu()
+            if not windows_success:
+                print("⚠️  Windows GPU may not have completed successfully")
+                # Don't exit with error - local GPU portion completed fine
     else:
         print(f"⚠️  Windows GPU not available, using A2000 only")
 
@@ -278,8 +343,6 @@ def main():
     print("\n" + "="*60)
     print("🎉 DUAL-GPU ORCHESTRATION COMPLETE")
     print("="*60)
-    print("\n💡 Tip: Windows GPU processes continue in background")
-    print("   Check Windows terminal for 4080 progress")
 
     return 0
 

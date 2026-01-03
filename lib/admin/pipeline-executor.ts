@@ -7,6 +7,7 @@
 
 import { spawn, ChildProcess } from 'child_process';
 import { createAdminClient } from '@/lib/supabase/server';
+import { invalidatePipelineCache } from '@/lib/redis/invalidation';
 
 // Maximum job runtime: 2 hours
 const MAX_JOB_RUNTIME_MS = 2 * 60 * 60 * 1000;
@@ -211,6 +212,12 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
           },
         })
         .eq('id', runId);
+
+      // Invalidate cache after job completion so dashboard shows updated stats
+      await invalidatePipelineCache().catch((err) => {
+        console.error('Failed to invalidate pipeline cache:', err);
+        // Don't fail the job if cache invalidation fails (fail-open design)
+      });
 
       if (isSuccess) {
         resolve();

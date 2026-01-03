@@ -204,7 +204,13 @@ def connect_db():
         sys.exit(1)
 
 def get_pending_artists(conn, limit=None):
-    """Get artists that haven't been scraped yet (excludes failed and blacklisted)"""
+    """Get artists that need scraping (no portfolio images yet)
+
+    This query matches the dashboard's 'Need Scraping' count exactly:
+    - Artists without any portfolio_images are included
+    - Artists WITH images are excluded (already scraped successfully)
+    - Failed scraping_jobs are retryable if artist still has no images
+    """
     cursor = conn.cursor()
 
     query = """
@@ -212,10 +218,10 @@ def get_pending_artists(conn, limit=None):
         FROM artists a
         WHERE a.instagram_private != TRUE
         AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
-        AND a.id NOT IN (
-            SELECT artist_id
-            FROM scraping_jobs
-            WHERE status IN ('completed', 'failed')
+        AND a.deleted_at IS NULL
+        AND a.instagram_handle IS NOT NULL
+        AND NOT EXISTS (
+            SELECT 1 FROM portfolio_images pi WHERE pi.artist_id = a.id
         )
         ORDER BY a.created_at
     """
@@ -599,7 +605,18 @@ def main():
 
                 if SUPABASE_URL and SUPABASE_SERVICE_KEY:
                     supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-                    print(f"✅ Progress tracking enabled (run ID: {pipeline_run_id[:8]}...)\n")
+                    print(f"✅ Progress tracking enabled (run ID: {pipeline_run_id[:8]}...)")
+
+                    # Initialize pipeline progress with 0 items (will update after counting artists)
+                    try:
+                        supabase_client.table("pipeline_runs").update({
+                            "total_items": 0,
+                            "processed_items": 0,
+                            "failed_items": 0,
+                        }).eq("id", pipeline_run_id).execute()
+                        print(f"✅ Pipeline progress initialized for run {pipeline_run_id[:8]}...\n")
+                    except Exception as e:
+                        print(f"⚠️  Could not initialize pipeline progress: {e}\n")
                 else:
                     print("⚠️  Progress tracking disabled (missing Supabase credentials)\n")
             except Exception as e:
@@ -618,8 +635,18 @@ def main():
 
         print(f"Found {len(artists)} artists to scrape\n")
 
-        # Initialize progress tracking
+        # Update progress tracking with actual artist count
         if supabase_client and pipeline_run_id:
+            try:
+                # Update with actual artist count now that we know it
+                supabase_client.table("pipeline_runs").update({
+                    "total_items": len(artists),
+                }).eq("id", pipeline_run_id).execute()
+                print(f"✅ Pipeline total set to {len(artists)} artists\n")
+            except Exception as e:
+                print(f"⚠️  Could not update pipeline total: {e}\n")
+
+            # Initialize progress counters
             update_pipeline_progress(supabase_client, pipeline_run_id, len(artists), 0, 0)
 
         print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
