@@ -1,7 +1,10 @@
 /**
- * Downgrade Warning Email Template
+ * Downgrade Warning Email Template - Transparent Design
  *
  * Sent 7 days before Pro subscription ends (cancellation or payment failure).
+ *
+ * Design: Clear, editorial aesthetic with structured information hierarchy.
+ * Empathetic tone with transparent change disclosure.
  */
 
 import {
@@ -11,11 +14,11 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Section,
   Text,
+  Hr,
 } from '@react-email/components';
 import * as React from 'react';
 import { EMAIL_CONFIG } from '../resend';
@@ -37,207 +40,382 @@ export default function DowngradeWarningEmail({
   dashboardUrl = 'https://inkdex.io/dashboard',
   to = 'artist@example.com',
 }: DowngradeWarningEmailProps) {
-  const previewText = `Your Pro subscription ends ${endDate}. Here's what will happen.`;
+  const previewText = `Your Pro subscription ends ${endDate}—here's what changes`;
 
-  const imagesToRemove = Math.max(0, portfolioImageCount - 20);
+  const imagesToHide = Math.max(0, portfolioImageCount - 20);
 
   return (
     <Html>
-      <Head />
+      <Head>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=JetBrains+Mono:wght@200;400;600&display=swap');
+        `}</style>
+      </Head>
       <Preview>{previewText}</Preview>
       <Body style={main}>
         <Container style={container}>
+          {/* Neutral gray border */}
+          <div style={neutralBorder} />
+
           {/* Logo */}
           <Section style={logoSection}>
-            <Img
-              src="https://inkdex.io/logo.png"
-              width="120"
-              height="30"
-              alt="Inkdex"
-              style={logo}
-            />
+            <Text style={logoText}>INKDEX</Text>
           </Section>
 
-          {/* Header */}
-          <Heading style={h1}>Your Pro Subscription is Ending</Heading>
+          {/* Hero - informative, not alarming */}
+          <Section style={heroSection}>
+            <Heading style={h1}>
+              Subscription<br />Ending Soon
+            </Heading>
+            <div style={accentLine} />
+          </Section>
 
-          {/* Main Content */}
-          <Text style={text}>Hi {artistName},</Text>
+          {/* Personalized greeting */}
+          <Text style={greeting}>{artistName},</Text>
 
-          <Text style={text}>
-            Your Inkdex Pro subscription will end on <strong>{endDate}</strong>. We wanted to let
-            you know what will happen to your profile.
+          <Text style={bodyText}>
+            Your Inkdex Pro subscription ends on <strong>{endDate}</strong>.
+            We want to be transparent about what happens to your profile when you return to the free tier.
           </Text>
 
-          {/* What Changes */}
-          <Section style={changesSection}>
-            <Heading style={h2}>What will change:</Heading>
-            <ul style={list}>
-              <li style={listItem}>
-                📸 <strong>Portfolio limit:</strong> Your first 20 images will remain visible
-                {imagesToRemove > 0 && ` (${imagesToRemove} images will be hidden)`}
-              </li>
-              <li style={listItem}>
-                🔄 <strong>Auto-sync disabled:</strong> New Instagram posts won't sync automatically
-              </li>
-              <li style={listItem}>
-                📌 <strong>Pinned images unpinned:</strong> Images will return to chronological order
-              </li>
-              <li style={listItem}>
-                🚀 <strong>Search ranking:</strong> Pro boost will be removed
-              </li>
-              <li style={listItem}>
-                👑 <strong>Pro badge removed:</strong> Crown badge won't display on your profile
-              </li>
-            </ul>
+          {/* What changes section - transparent and clear */}
+          <Section style={changeSection}>
+            <Text style={sectionLabel}>Changes to Your Profile</Text>
+
+            <div style={changeItem}>
+              <Text style={changeIcon}>→</Text>
+              <div>
+                <Text style={changeTitle}>Portfolio Limit Returns</Text>
+                <Text style={changeBody}>
+                  Your first 20 images remain visible.
+                  {imagesToHide > 0 && ` ${imagesToHide} images will be hidden but not deleted.`}
+                </Text>
+              </div>
+            </div>
+
+            <div style={changeItem}>
+              <Text style={changeIcon}>→</Text>
+              <div>
+                <Text style={changeTitle}>Auto-Sync Pauses</Text>
+                <Text style={changeBody}>
+                  New Instagram posts won't sync automatically. You can still update manually.
+                </Text>
+              </div>
+            </div>
+
+            <div style={changeItem}>
+              <Text style={changeIcon}>→</Text>
+              <div>
+                <Text style={changeTitle}>Pins Reset</Text>
+                <Text style={changeBody}>
+                  Pinned images return to chronological order.
+                </Text>
+              </div>
+            </div>
+
+            <div style={changeItem}>
+              <Text style={changeIcon}>→</Text>
+              <div>
+                <Text style={changeTitle}>Search Ranking Adjusts</Text>
+                <Text style={changeBody}>
+                  Pro ranking boost removed. Standard search placement resumes.
+                </Text>
+              </div>
+            </div>
+
+            <div style={changeItem}>
+              <Text style={changeIcon}>→</Text>
+              <div>
+                <Text style={changeTitle}>Pro Badge Removed</Text>
+                <Text style={changeBody}>
+                  Crown indicator no longer displays on your profile.
+                </Text>
+              </div>
+            </div>
           </Section>
 
-          {/* What Stays */}
-          <Section style={staysSection}>
-            <Heading style={h2}>What stays:</Heading>
-            <ul style={list}>
-              <li style={listItem}>✅ Your profile remains live and searchable</li>
-              <li style={listItem}>
-                ✅ Manual portfolio updates (up to 20 images)
-              </li>
-              <li style={listItem}>✅ Profile customization (bio, booking link)</li>
-              <li style={listItem}>✅ Verified badge</li>
+          {/* What stays section - reassurance */}
+          <Section style={staysCard}>
+            <Text style={staysLabel}>What Stays</Text>
+            <ul style={staysList}>
+              <li style={staysItem}>Profile remains live and searchable</li>
+              <li style={staysItem}>Manual portfolio updates (up to 20 images)</li>
+              <li style={staysItem}>Profile customization (bio, booking link)</li>
+              <li style={staysItem}>Verified status (if applicable)</li>
             </ul>
           </Section>
 
           {/* CTA */}
-          <Section style={buttonContainer}>
-            <Button style={button} href={billingPortalUrl}>
-              Reactivate Pro
+          <Section style={ctaSection}>
+            <Button style={ctaButton} href={billingPortalUrl}>
+              Reactivate Pro Subscription →
             </Button>
           </Section>
 
-          <Text style={text}>
-            Want to keep Pro features? You can reactivate your subscription anytime from your{' '}
-            <Link href={billingPortalUrl} style={link}>
+          {/* Reactivation note */}
+          <Text style={noteText}>
+            Want to keep Pro features? Reactivate anytime from your{' '}
+            <Link href={billingPortalUrl} style={noteLink}>
               billing portal
             </Link>
-            .
+            . No penalties or re-setup required.
           </Text>
 
           {/* Footer */}
-          <Text style={footer}>
-            Questions? Contact us at{' '}
-            <Link href="mailto:support@inkdex.io" style={link}>
-              support@inkdex.io
-            </Link>
-          </Text>
+          <Section style={footerSection}>
+            <Hr style={divider} />
 
-          <Text style={footer}>
-            Don&apos;t want to receive these emails?{' '}
-            <Link href={EMAIL_CONFIG.unsubscribeUrl(to)} style={link}>
-              Unsubscribe
-            </Link>
-          </Text>
+            <Text style={footerLabel}>Support</Text>
+            <Text style={footerLink}>
+              <Link href="mailto:support@inkdex.io" style={link}>
+                support@inkdex.io
+              </Link>
+            </Text>
+
+            <Text style={unsubscribeText}>
+              <Link href={EMAIL_CONFIG.unsubscribeUrl(to)} style={unsubscribeLink}>
+                Unsubscribe from emails
+              </Link>
+            </Text>
+          </Section>
         </Container>
       </Body>
     </Html>
   );
 }
 
-// Styles
+// Styles - Transparent Editorial Aesthetic
 const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+  backgroundColor: '#F8F7F5',
+  fontFamily: "'JetBrains Mono', 'Courier New', monospace",
 };
 
 const container = {
   margin: '0 auto',
-  padding: '20px 0 48px',
-  maxWidth: '580px',
+  padding: '0',
+  maxWidth: '600px',
+  background: '#FFFFFF',
+};
+
+const neutralBorder = {
+  height: '8px',
+  background: '#8B8985',
 };
 
 const logoSection = {
-  padding: '20px 0',
-};
-
-const logo = {
-  margin: '0 auto',
-};
-
-const h1 = {
-  color: '#1a1a1a',
-  fontSize: '28px',
-  fontWeight: 'bold',
-  margin: '40px 0',
-  padding: '0',
+  padding: '48px 32px 24px',
   textAlign: 'center' as const,
 };
 
-const h2 = {
-  color: '#1a1a1a',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  margin: '20px 0 12px',
+const logoText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '14px',
+  fontWeight: '600',
+  letterSpacing: '0.2em',
+  color: '#1A1A1A',
+  margin: '0',
 };
 
-const text = {
-  color: '#404040',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '16px 0',
+const heroSection = {
+  padding: '24px 32px 48px',
+  textAlign: 'center' as const,
 };
 
-const changesSection = {
-  margin: '32px 0',
-  padding: '20px',
-  backgroundColor: '#fef2f2',
-  borderLeft: '4px solid #ef4444',
-  borderRadius: '4px',
+const h1 = {
+  fontFamily: "'Playfair Display', serif",
+  fontSize: '52px',
+  fontWeight: '900',
+  lineHeight: '1.1',
+  color: '#1A1A1A',
+  margin: '0 0 24px',
+  letterSpacing: '-0.02em',
 };
 
-const staysSection = {
-  margin: '32px 0',
-  padding: '20px',
-  backgroundColor: '#f0fdf4',
-  borderLeft: '4px solid #22c55e',
-  borderRadius: '4px',
+const accentLine = {
+  width: '80px',
+  height: '2px',
+  background: '#8B8985',
+  margin: '0 auto',
 };
 
-const list = {
+const greeting = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '400',
+  letterSpacing: '0.05em',
+  color: '#8B8985',
+  textTransform: 'uppercase' as const,
+  margin: '0 32px 16px',
+};
+
+const bodyText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '15px',
+  fontWeight: '300',
+  lineHeight: '1.8',
+  color: '#4A4845',
+  margin: '0 32px 48px',
+};
+
+const changeSection = {
+  margin: '0 32px 48px',
+};
+
+const sectionLabel = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '10px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase' as const,
+  color: '#1A1A1A',
+  margin: '0 0 24px',
+};
+
+const changeItem = {
+  display: 'flex',
+  gap: '20px',
+  marginBottom: '24px',
+  alignItems: 'flex-start',
+};
+
+const changeIcon = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '24px',
+  margin: '0',
+  lineHeight: '1',
+  minWidth: '40px',
+  color: '#8B8985',
+};
+
+const changeTitle = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '14px',
+  fontWeight: '600',
+  color: '#1A1A1A',
+  margin: '0 0 6px',
+};
+
+const changeBody = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '300',
+  lineHeight: '1.7',
+  color: '#4A4845',
+  margin: '0',
+};
+
+const staysCard = {
+  margin: '0 32px 32px',
+  padding: '24px',
+  background: '#F0EFEC',
+  borderLeft: '4px solid #10B981',
+};
+
+const staysLabel = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '10px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase' as const,
+  color: '#065F46',
+  margin: '0 0 16px',
+};
+
+const staysList = {
   margin: '0',
   padding: '0 0 0 20px',
 };
 
-const listItem = {
-  color: '#404040',
-  fontSize: '15px',
-  lineHeight: '26px',
-  margin: '8px 0',
+const staysItem = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '300',
+  lineHeight: '2',
+  color: '#065F46',
+  margin: '0',
 };
 
-const buttonContainer = {
+const ctaSection = {
+  padding: '0 32px 32px',
   textAlign: 'center' as const,
-  margin: '32px 0',
 };
 
-const button = {
-  backgroundColor: '#1a1a1a',
-  borderRadius: '4px',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 24px',
-};
-
-const footer = {
-  color: '#8898aa',
+const ctaButton = {
+  fontFamily: "'JetBrains Mono', monospace",
   fontSize: '14px',
-  lineHeight: '24px',
+  fontWeight: '600',
+  letterSpacing: '0.05em',
+  color: '#FFFFFF',
+  background: '#1A1A1A',
+  padding: '16px 48px',
+  textDecoration: 'none',
+  display: 'inline-block',
+  border: 'none',
+  borderRadius: '0',
+};
+
+const noteText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '300',
+  lineHeight: '1.7',
+  color: '#4A4845',
+  margin: '0 32px 48px',
+  textAlign: 'center' as const,
+};
+
+const noteLink = {
+  color: '#1A1A1A',
+  textDecoration: 'none',
+  borderBottom: '1px solid #D8D6D2',
+};
+
+const footerSection = {
+  padding: '48px 32px',
+  background: '#F8F7F5',
+};
+
+const divider = {
+  border: 'none',
+  borderTop: '1px solid #D8D6D2',
+  margin: '0 0 24px',
+};
+
+const footerLabel = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '10px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase' as const,
+  color: '#8B8985',
+  margin: '0 0 4px',
+  marginTop: '24px',
+};
+
+const footerLink = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '400',
+  color: '#1A1A1A',
+  margin: '0 0 16px',
+};
+
+const link = {
+  color: '#1A1A1A',
+  textDecoration: 'none',
+  borderBottom: '1px solid #D8D6D2',
+};
+
+const unsubscribeText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '11px',
+  fontWeight: '300',
+  color: '#8B8985',
   margin: '32px 0 0',
   textAlign: 'center' as const,
 };
 
-const link = {
-  color: '#1a1a1a',
+const unsubscribeLink = {
+  color: '#8B8985',
   textDecoration: 'underline',
 };

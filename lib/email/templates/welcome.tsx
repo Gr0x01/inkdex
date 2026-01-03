@@ -1,7 +1,10 @@
 /**
- * Welcome Email Template
+ * Welcome Email Template - Editorial Design
  *
  * Sent when an artist completes onboarding (claim or self-add).
+ *
+ * Design: Bold editorial aesthetic with strong typography, dramatic spacing,
+ * and subtle grain texture. Inspired by art magazines and tattoo culture.
  */
 
 import {
@@ -16,6 +19,7 @@ import {
   Preview,
   Section,
   Text,
+  Hr,
 } from '@react-email/components';
 import * as React from 'react';
 import { EMAIL_CONFIG } from '../resend';
@@ -39,175 +43,373 @@ export default function WelcomeEmail({
 
   return (
     <Html>
-      <Head />
+      <Head>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@900&family=JetBrains+Mono:wght@200;400;600&display=swap');
+        `}</style>
+      </Head>
       <Preview>{previewText}</Preview>
       <Body style={main}>
+        {/* Subtle grain texture overlay */}
+        <div style={grainOverlay} />
+
         <Container style={container}>
-          {/* Logo */}
+          {/* Decorative top border */}
+          <div style={topBorder} />
+
+          {/* Minimal logo lockup */}
           <Section style={logoSection}>
-            <Img
-              src="https://inkdex.io/logo.png"
-              width="120"
-              height="30"
-              alt="Inkdex"
-              style={logo}
-            />
+            <Text style={logoText}>INKDEX</Text>
+            {isPro && <Text style={proLabel}>PRO</Text>}
           </Section>
 
-          {/* Header */}
-          <Heading style={h1}>Welcome to Inkdex{isPro && ' Pro'}!</Heading>
+          {/* Hero headline - bold & dramatic */}
+          <Section style={heroSection}>
+            <Heading style={h1}>
+              Welcome to<br />the Index
+            </Heading>
+            <div style={accentLine} />
+          </Section>
 
-          {/* Main Content */}
-          <Text style={text}>Hi {artistName},</Text>
-
-          <Text style={text}>
-            Your profile is now live and searchable on Inkdex. Clients can discover your work through visual search, city browsing, and style pages.
+          {/* Personalized greeting */}
+          <Text style={greeting}>
+            {artistName},
           </Text>
 
-          {/* Profile Link */}
-          <Section style={buttonContainer}>
-            <Button style={button} href={profileUrl}>
-              View Your Profile
+          <Text style={bodyText}>
+            Your profile is live. Clients can now discover your work through visual search,
+            city browsing, and our curated style galleries.
+          </Text>
+
+          {/* CTA Button */}
+          <Section style={ctaSection}>
+            <Button style={ctaButton} href={profileUrl}>
+              View Your Profile →
             </Button>
           </Section>
 
-          {/* Quick Tips */}
-          <Section style={tipSection}>
-            <Heading style={h2}>Quick Tips:</Heading>
-            <ul style={list}>
-              <li style={listItem}>
-                <strong>Curate your portfolio:</strong> Pin your best work to appear first
-              </li>
-              <li style={listItem}>
-                <strong>Keep it fresh:</strong> {isPro ? 'Your profile auto-syncs daily with your Instagram posts' : 'Manually update your portfolio from your dashboard'}
-              </li>
-              <li style={listItem}>
-                <strong>Complete your profile:</strong> Add booking info and a bio to help clients reach you
-              </li>
-              {!isPro && (
-                <li style={listItem}>
-                  <strong>Upgrade to Pro:</strong> Get unlimited portfolio images, auto-sync, and search ranking boosts for $15/month
-                </li>
-              )}
-            </ul>
+          {/* Divider */}
+          <Hr style={divider} />
+
+          {/* Tips section with refined spacing */}
+          <Section style={tipsSection}>
+            <Heading style={h2}>Essential Actions</Heading>
+
+            <div style={tipItem}>
+              <Text style={tipNumber}>01</Text>
+              <div>
+                <Text style={tipTitle}>Curate ruthlessly</Text>
+                <Text style={tipBody}>
+                  Pin your 6 strongest pieces to the top. First impressions matter.
+                </Text>
+              </div>
+            </div>
+
+            <div style={tipItem}>
+              <Text style={tipNumber}>02</Text>
+              <div>
+                <Text style={tipTitle}>Keep it current</Text>
+                <Text style={tipBody}>
+                  {isPro
+                    ? 'Auto-sync enabled. New tattoos appear daily.'
+                    : 'Update your portfolio manually from your dashboard.'}
+                </Text>
+              </div>
+            </div>
+
+            <div style={tipItem}>
+              <Text style={tipNumber}>03</Text>
+              <div>
+                <Text style={tipTitle}>Complete your presence</Text>
+                <Text style={tipBody}>
+                  Add booking details and a bio. Make it easy for clients to reach you.
+                </Text>
+              </div>
+            </div>
+
+            {!isPro && (
+              <div style={upgradeCallout}>
+                <Text style={upgradeTitle}>Consider Pro</Text>
+                <Text style={upgradeBody}>
+                  Unlimited images · Auto-sync · Priority ranking · $15/month
+                </Text>
+              </div>
+            )}
           </Section>
 
-          {/* Footer */}
-          <Text style={footer}>
-            Questions? Reply to this email or contact us at{' '}
-            <Link href="mailto:support@inkdex.io" style={link}>
-              support@inkdex.io
-            </Link>
-          </Text>
+          {/* Footer with metadata styling */}
+          <Section style={footerSection}>
+            <Hr style={divider} />
 
-          <Text style={footer}>
-            Instagram:{' '}
-            <Link href={`https://instagram.com/${instagramHandle}`} style={link}>
-              @{instagramHandle}
-            </Link>
-          </Text>
+            <Text style={footerLabel}>Support</Text>
+            <Text style={footerLink}>
+              <Link href="mailto:support@inkdex.io" style={link}>
+                support@inkdex.io
+              </Link>
+            </Text>
 
-          <Text style={footer}>
-            Don&apos;t want to receive these emails?{' '}
-            <Link href={EMAIL_CONFIG.unsubscribeUrl(to)} style={link}>
-              Unsubscribe
-            </Link>
-          </Text>
+            <Text style={footerLabel}>Instagram</Text>
+            <Text style={footerLink}>
+              <Link href={`https://instagram.com/${instagramHandle}`} style={link}>
+                @{instagramHandle}
+              </Link>
+            </Text>
+
+            <Text style={unsubscribeText}>
+              <Link href={EMAIL_CONFIG.unsubscribeUrl(to)} style={unsubscribeLink}>
+                Unsubscribe from emails
+              </Link>
+            </Text>
+          </Section>
         </Container>
       </Body>
     </Html>
   );
 }
 
-// Styles
+// Styles - Editorial Aesthetic
 const main = {
-  backgroundColor: '#ffffff',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif',
+  backgroundColor: '#F8F7F5', // Paper white from design system
+  fontFamily: "'JetBrains Mono', 'Courier New', monospace",
+  position: 'relative' as const,
+};
+
+const grainOverlay = {
+  position: 'absolute' as const,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  background: 'url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxyZWN0IGZpbHRlcj0idXJsKCNhKSIgaGVpZ2h0PSIxMDAlIiB3aWR0aD0iMTAwJSIgb3BhY2l0eT0iLjA1Ii8+PC9zdmc+)',
+  pointerEvents: 'none' as const,
+  opacity: 0.4,
 };
 
 const container = {
   margin: '0 auto',
-  padding: '20px 0 48px',
-  maxWidth: '580px',
+  padding: '0',
+  maxWidth: '600px',
+  background: '#FFFFFF',
+  position: 'relative' as const,
+  zIndex: 1,
+};
+
+const topBorder = {
+  height: '8px',
+  background: 'linear-gradient(90deg, #1A1A1A 0%, #1A1A1A 50%, transparent 50%)',
+  backgroundSize: '20px 100%',
 };
 
 const logoSection = {
-  padding: '20px 0',
+  padding: '48px 32px 24px',
+  textAlign: 'center' as const,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '12px',
 };
 
-const logo = {
-  margin: '0 auto',
+const logoText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '14px',
+  fontWeight: '600',
+  letterSpacing: '0.2em',
+  color: '#1A1A1A',
+  margin: '0',
+};
+
+const proLabel = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '10px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  color: '#FFFFFF',
+  background: '#1A1A1A',
+  padding: '4px 8px',
+  margin: '0',
+};
+
+const heroSection = {
+  padding: '24px 32px 48px',
+  textAlign: 'center' as const,
 };
 
 const h1 = {
-  color: '#1a1a1a',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  margin: '40px 0',
-  padding: '0',
+  fontFamily: "'Playfair Display', serif",
+  fontSize: '56px',
+  fontWeight: '900',
+  lineHeight: '1.1',
+  color: '#1A1A1A',
+  margin: '0 0 24px',
+  letterSpacing: '-0.02em',
+};
+
+const accentLine = {
+  width: '80px',
+  height: '2px',
+  background: '#1A1A1A',
+  margin: '0 auto',
+};
+
+const greeting = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '400',
+  letterSpacing: '0.05em',
+  color: '#8B8985',
+  textTransform: 'uppercase' as const,
+  margin: '0 32px 16px',
+};
+
+const bodyText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '15px',
+  fontWeight: '300',
+  lineHeight: '1.8',
+  color: '#4A4845',
+  margin: '0 32px 32px',
+};
+
+const ctaSection = {
+  padding: '0 32px 48px',
   textAlign: 'center' as const,
+};
+
+const ctaButton = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '14px',
+  fontWeight: '600',
+  letterSpacing: '0.05em',
+  color: '#FFFFFF',
+  background: '#1A1A1A',
+  padding: '16px 48px',
+  textDecoration: 'none',
+  display: 'inline-block',
+  border: 'none',
+  borderRadius: '0',
+  transition: 'transform 200ms ease',
+};
+
+const divider = {
+  border: 'none',
+  borderTop: '1px solid #D8D6D2',
+  margin: '0',
+};
+
+const tipsSection = {
+  padding: '48px 32px',
 };
 
 const h2 = {
-  color: '#1a1a1a',
-  fontSize: '20px',
-  fontWeight: 'bold',
-  margin: '30px 0 15px',
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '12px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase' as const,
+  color: '#1A1A1A',
+  margin: '0 0 32px',
 };
 
-const text = {
-  color: '#404040',
-  fontSize: '16px',
-  lineHeight: '26px',
-  margin: '16px 0',
+const tipItem = {
+  display: 'flex',
+  gap: '24px',
+  marginBottom: '32px',
+  alignItems: 'flex-start',
 };
 
-const buttonContainer = {
-  textAlign: 'center' as const,
-  margin: '32px 0',
-};
-
-const button = {
-  backgroundColor: '#1a1a1a',
-  borderRadius: '4px',
-  color: '#fff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 24px',
-};
-
-const tipSection = {
-  margin: '32px 0',
-  padding: '20px',
-  backgroundColor: '#f5f5f5',
-  borderRadius: '8px',
-};
-
-const list = {
+const tipNumber = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '32px',
+  fontWeight: '200',
+  color: '#D8D6D2',
   margin: '0',
-  padding: '0 0 0 20px',
+  lineHeight: '1',
+  minWidth: '60px',
 };
 
-const listItem = {
-  color: '#404040',
-  fontSize: '15px',
-  lineHeight: '24px',
-  margin: '8px 0',
-};
-
-const footer = {
-  color: '#8898aa',
+const tipTitle = {
+  fontFamily: "'JetBrains Mono', monospace",
   fontSize: '14px',
-  lineHeight: '24px',
+  fontWeight: '600',
+  color: '#1A1A1A',
+  margin: '0 0 8px',
+};
+
+const tipBody = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '300',
+  lineHeight: '1.7',
+  color: '#4A4845',
+  margin: '0',
+};
+
+const upgradeCallout = {
+  padding: '24px',
+  background: '#F0EFEC',
+  borderLeft: '3px solid #1A1A1A',
+  marginTop: '48px',
+};
+
+const upgradeTitle = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '12px',
+  fontWeight: '600',
+  letterSpacing: '0.1em',
+  textTransform: 'uppercase' as const,
+  color: '#1A1A1A',
+  margin: '0 0 8px',
+};
+
+const upgradeBody = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '300',
+  lineHeight: '1.7',
+  color: '#4A4845',
+  margin: '0',
+};
+
+const footerSection = {
+  padding: '48px 32px',
+  background: '#F8F7F5',
+};
+
+const footerLabel = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '10px',
+  fontWeight: '600',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase' as const,
+  color: '#8B8985',
+  margin: '0 0 4px',
+  marginTop: '24px',
+};
+
+const footerLink = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '13px',
+  fontWeight: '400',
+  color: '#1A1A1A',
+  margin: '0 0 16px',
+};
+
+const link = {
+  color: '#1A1A1A',
+  textDecoration: 'none',
+  borderBottom: '1px solid #D8D6D2',
+};
+
+const unsubscribeText = {
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: '11px',
+  fontWeight: '300',
+  color: '#8B8985',
   margin: '32px 0 0',
   textAlign: 'center' as const,
 };
 
-const link = {
-  color: '#1a1a1a',
+const unsubscribeLink = {
+  color: '#8B8985',
   textDecoration: 'underline',
 };
