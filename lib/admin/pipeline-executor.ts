@@ -32,6 +32,12 @@ function getFilteredEnv(): Record<string, string | undefined> {
       filtered[key] = process.env[key];
     }
   }
+
+  // Python scripts expect SUPABASE_URL (not NEXT_PUBLIC_SUPABASE_URL)
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && !filtered.SUPABASE_URL) {
+    filtered.SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  }
+
   return filtered;
 }
 
@@ -129,11 +135,29 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
     .eq('id', runId);
 
   return new Promise((resolve, reject) => {
+    const env = getFilteredEnv() as NodeJS.ProcessEnv;
+    // Pass the pipeline run ID to child process for progress tracking
+    env.PIPELINE_RUN_ID = runId;
+
     const childProcess: ChildProcess = spawn(config.command, config.args, {
       cwd: config.cwd,
-      env: getFilteredEnv() as NodeJS.ProcessEnv,
+      env,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+
+    // Store the PID for cancellation
+    if (childProcess.pid) {
+      adminClient
+        .from('pipeline_runs')
+        .update({ process_pid: childProcess.pid })
+        .eq('id', runId)
+        .then(() => {
+          console.log(`Pipeline run ${runId} started with PID ${childProcess.pid}`);
+        })
+        .catch((err) => {
+          console.error(`Failed to store PID for run ${runId}:`, err);
+        });
+    }
 
     let stdout = '';
     let stderr = '';

@@ -13,6 +13,7 @@ import {
   Cpu,
   Database,
   Cog,
+  X,
 } from 'lucide-react';
 
 interface PipelineRun {
@@ -32,6 +33,7 @@ interface PipelineRun {
 interface PipelineRunsTableProps {
   runs: PipelineRun[];
   loading?: boolean;
+  onCancel?: (runId: string) => void;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -125,8 +127,18 @@ function formatDuration(startedAt: string | null, completedAt: string | null) {
   return `${seconds}s`;
 }
 
-export default function PipelineRunsTable({ runs, loading }: PipelineRunsTableProps) {
+export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineRunsTableProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+
+  const handleCancel = async (runId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCancelling(runId);
+    if (onCancel) {
+      await onCancel(runId);
+    }
+    setCancelling(null);
+  };
 
   if (loading) {
     return (
@@ -211,11 +223,35 @@ export default function PipelineRunsTable({ runs, loading }: PipelineRunsTablePr
               {expandedId === run.id && (
                 <tr className="bg-gray-50/30">
                   <td colSpan={6} className="px-2 py-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
                       <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
                       <DetailItem label="Total Items" value={run.totalItems} />
                       <DetailItem label="Processed" value={run.processedItems} />
                       <DetailItem label="Failed" value={run.failedItems} />
+
+                      {/* Cancel button */}
+                      <div className="flex justify-end">
+                        {(run.status === 'pending' || run.status === 'running') && (
+                          <button
+                            onClick={(e) => handleCancel(run.id, e)}
+                            disabled={cancelling === run.id}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-status-error/10 text-status-error text-[11px] font-body
+                                     hover:bg-status-error/20 disabled:opacity-50 transition-colors"
+                          >
+                            {cancelling === run.id ? (
+                              <>
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                Cancelling...
+                              </>
+                            ) : (
+                              <>
+                                <X className="w-2.5 h-2.5" />
+                                Cancel Job
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {run.errorMessage && (

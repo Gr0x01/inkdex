@@ -54,6 +54,7 @@ class BatchEmbeddingGenerator:
         self.parallel = parallel
         self.prefer_local = prefer_local
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        self.pipeline_run_id = os.getenv("PIPELINE_RUN_ID")
 
         # Statistics
         self.stats = {
@@ -80,6 +81,21 @@ class BatchEmbeddingGenerator:
         except Exception:
             return False
         return False
+
+    def update_pipeline_progress(self, total_items: int, processed_items: int, failed_items: int):
+        """Update pipeline_runs table with progress"""
+        if not self.pipeline_run_id:
+            return
+
+        try:
+            self.supabase.table("pipeline_runs").update({
+                "total_items": total_items,
+                "processed_items": processed_items,
+                "failed_items": failed_items,
+            }).eq("id", self.pipeline_run_id).execute()
+        except Exception as e:
+            # Don't fail the job if progress update fails
+            print(f"Warning: Failed to update pipeline progress: {e}")
 
     async def generate_embedding_async(
         self,
@@ -342,6 +358,27 @@ def main():
             print("❌ Error: Neither local GPU nor Modal is available")
             return 1
 
+    # Get total count of pending images for progress tracking
+    total_query = generator.supabase.table("portfolio_images") \
+        .select("id", count="exact") \
+        .is_("embedding", "null") \
+        .eq("status", "pending")
+
+    if args.city:
+        artists = generator.supabase.table("artists") \
+            .select("id") \
+            .eq("city", args.city) \
+            .execute()
+        artist_ids = [a["id"] for a in artists.data]
+        if artist_ids:
+            total_query = total_query.in_("artist_id", artist_ids)
+
+    total_count_result = total_query.execute()
+    total_pending = total_count_result.count if total_count_result.count else 0
+
+    # Initialize pipeline progress
+    generator.update_pipeline_progress(total_pending, 0, 0)
+
     # Process batches
     total_processed = 0
     batch_num = 0
@@ -361,6 +398,10 @@ def main():
             break
 
         total_processed += count
+
+        # Update progress after each batch
+        failed = generator.stats["errors"]
+        generator.update_pipeline_progress(total_pending, total_processed, failed)
         batch_num += 1
 
     overall_time = time.time() - overall_start

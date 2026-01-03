@@ -216,6 +216,30 @@ export default function PipelineDashboard() {
     }
   };
 
+  const handleCancelRun = async (runId: string) => {
+    try {
+      const res = await fetch('/api/admin/pipeline/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ runId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to cancel job');
+      }
+
+      setTriggerMessage({ type: 'success', text: 'Job cancelled successfully' });
+      fetchData();
+    } catch (err) {
+      setTriggerMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to cancel job',
+      });
+    }
+  };
+
   if (loading && !status) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -430,7 +454,11 @@ export default function PipelineDashboard() {
                 Recent Pipeline Runs
               </h3>
             </div>
-            <PipelineRunsTable runs={status.recentRuns} loading={loading && status.recentRuns.length === 0} />
+            <PipelineRunsTable
+              runs={status.recentRuns}
+              loading={loading && status.recentRuns.length === 0}
+              onCancel={handleCancelRun}
+            />
           </div>
         </>
       )}
