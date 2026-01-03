@@ -285,3 +285,50 @@ export const OnDarkBackground: Story = {
     backgrounds: { default: 'ink' },
   },
 };
+
+/**
+ * Multi-location artist with +N badge
+ * Shows badge when artist works in multiple cities
+ */
+export const MultiLocationArtist: Story = {
+  args: {
+    artist: {
+      ...createMockSearchResult({
+        artist_name: 'Traveling Artist',
+        artist_slug: 'traveling-artist',
+        city: 'Austin',
+        similarity: 0.32,
+      }),
+      locations: [
+        {
+          id: 'loc-1',
+          city: 'Austin',
+          region: 'TX',
+          country_code: 'US',
+          location_type: 'city' as const,
+          is_primary: true,
+          display_order: 0,
+        },
+        {
+          id: 'loc-2',
+          city: 'Dallas',
+          region: 'TX',
+          country_code: 'US',
+          location_type: 'city' as const,
+          is_primary: false,
+          display_order: 1,
+        },
+        {
+          id: 'loc-3',
+          city: 'Houston',
+          region: 'TX',
+          country_code: 'US',
+          location_type: 'city' as const,
+          is_primary: false,
+          display_order: 2,
+        },
+      ],
+    },
+    displayMode: 'search',
+  },
+};
