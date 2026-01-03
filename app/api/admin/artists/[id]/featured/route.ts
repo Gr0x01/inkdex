@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 import { logAdminAction, getClientInfo } from '@/lib/admin/audit-log';
+import { invalidateCache } from '@/lib/redis/cache';
 import { z } from 'zod';
 
 const updateSchema = z.object({
@@ -100,6 +101,9 @@ export async function PATCH(
       newValue: { is_featured },
       ...clientInfo,
     });
+
+    // Invalidate artist-related caches (fire-and-forget)
+    invalidateCache('admin:artists:*');
 
     const response = NextResponse.json({
       success: true,

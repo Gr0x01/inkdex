@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
+import { getCached } from '@/lib/redis/cache';
 
 export interface PipelineStatus {
   artists: {
@@ -51,14 +52,23 @@ export async function GET() {
   const adminClient = createAdminClient();
 
   try {
-    // Run all queries in parallel
-    const [
+    // Use Redis cache with 5-minute TTL
+    const response = await getCached(
+      'admin:pipeline:status',
+      { ttl: 300, pattern: 'admin:dashboard' },
+      async () => {
+        // Run all queries in parallel (including scraping job counts)
+        const [
       _artistsWithImagesResult,
       artistsWithoutImagesResult,
       totalArtistsResult,
       imagesResult,
       imagesWithEmbeddingsResult,
-      scrapingJobsResult,
+      scrapingJobsTotalResult,
+      scrapingJobsPendingResult,
+      scrapingJobsRunningResult,
+      scrapingJobsCompletedResult,
+      scrapingJobsFailedResult,
       recentRunsResult,
     ] = await Promise.all([
       // Artists with portfolio images
@@ -69,7 +79,7 @@ export async function GET() {
         .not('instagram_handle', 'is', null)
         .filter('id', 'in', `(SELECT DISTINCT artist_id FROM portfolio_images)`),
 
-      // Artists without portfolio images (simpler approach - count all then subtract)
+      // Artists without portfolio images (uses RPC from Phase 1 migration)
       adminClient.rpc('count_artists_without_images'),
 
       // Total artists
@@ -90,8 +100,30 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .not('embedding', 'is', null),
 
-      // Scraping jobs by status
-      adminClient.from('scraping_jobs').select('status'),
+      // Scraping jobs counts by status (optimized: 5 count queries instead of loading all rows)
+      adminClient
+        .from('scraping_jobs')
+        .select('id', { count: 'exact', head: true }),
+
+      adminClient
+        .from('scraping_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending'),
+
+      adminClient
+        .from('scraping_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'running'),
+
+      adminClient
+        .from('scraping_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'completed'),
+
+      adminClient
+        .from('scraping_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'failed'),
 
       // Recent pipeline runs
       adminClient
@@ -101,14 +133,13 @@ export async function GET() {
         .limit(10),
     ]);
 
-    // Process scraping jobs
-    const scrapingJobs = scrapingJobsResult.data || [];
+    // Aggregate scraping job counts (no in-memory filtering needed)
     const scrapingStats = {
-      total: scrapingJobs.length,
-      pending: scrapingJobs.filter((j) => j.status === 'pending').length,
-      running: scrapingJobs.filter((j) => j.status === 'running').length,
-      completed: scrapingJobs.filter((j) => j.status === 'completed').length,
-      failed: scrapingJobs.filter((j) => j.status === 'failed').length,
+      total: scrapingJobsTotalResult.count || 0,
+      pending: scrapingJobsPendingResult.count || 0,
+      running: scrapingJobsRunningResult.count || 0,
+      completed: scrapingJobsCompletedResult.count || 0,
+      failed: scrapingJobsFailedResult.count || 0,
     };
 
     // Calculate artist stats
@@ -143,22 +174,24 @@ export async function GET() {
       errorMessage: run.error_message,
     }));
 
-    const response: PipelineStatus = {
-      artists: {
-        total: totalArtists,
-        withoutImages: artistsWithoutImages,
-        withImages: artistsWithImages,
-        pendingEmbeddings: imagesWithoutEmbeddings > 0 ? artistsWithImages : 0,
-        complete: imagesWithEmbeddings > 0 ? artistsWithImages : 0,
-      },
-      images: {
-        total: totalImages,
-        withEmbeddings: imagesWithEmbeddings,
-        withoutEmbeddings: imagesWithoutEmbeddings,
-      },
-      scrapingJobs: scrapingStats,
-      recentRuns,
-    };
+        return {
+          artists: {
+            total: totalArtists,
+            withoutImages: artistsWithoutImages,
+            withImages: artistsWithImages,
+            pendingEmbeddings: imagesWithoutEmbeddings > 0 ? artistsWithImages : 0,
+            complete: imagesWithEmbeddings > 0 ? artistsWithImages : 0,
+          },
+          images: {
+            total: totalImages,
+            withEmbeddings: imagesWithEmbeddings,
+            withoutEmbeddings: imagesWithoutEmbeddings,
+          },
+          scrapingJobs: scrapingStats,
+          recentRuns,
+        } as PipelineStatus;
+      }
+    );
 
     return NextResponse.json(response);
   } catch (error) {

@@ -118,8 +118,8 @@ export default function MiningDashboard() {
   useEffect(() => {
     fetchData();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
+    // Auto-refresh every 60 seconds (mining jobs run hourly/daily, not real-time)
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

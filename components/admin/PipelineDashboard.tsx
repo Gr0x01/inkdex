@@ -111,8 +111,8 @@ export default function PipelineDashboard() {
   useEffect(() => {
     fetchData();
 
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchData, 10000);
+    // Auto-refresh every 30 seconds (with caching, 30s is sufficient for status updates)
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

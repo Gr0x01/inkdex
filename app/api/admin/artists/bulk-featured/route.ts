@@ -11,6 +11,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 import { logAdminAction, getClientInfo } from '@/lib/admin/audit-log';
 import { checkRateLimit } from '@/lib/redis/rate-limiter';
+import { invalidateCache } from '@/lib/redis/cache';
 import { z } from 'zod';
 
 const bulkUpdateSchema = z.object({
@@ -111,6 +112,9 @@ export async function POST(request: NextRequest) {
       newValue: { is_featured, updated: updatedCount },
       ...clientInfo,
     });
+
+    // Invalidate artist-related caches (fire-and-forget)
+    invalidateCache('admin:artists:*');
 
     const response = NextResponse.json({
       success: true,
