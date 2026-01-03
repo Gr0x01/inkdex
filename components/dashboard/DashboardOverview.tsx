@@ -63,7 +63,7 @@ export default function DashboardOverview({
     setLoading(true)
     fetch(`/api/analytics/${artistId}?days=${timeRange}`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: AnalyticsData) => {
         setData(data)
         setLoading(false)
       })
