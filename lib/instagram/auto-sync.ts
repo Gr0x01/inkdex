@@ -18,6 +18,8 @@ import { fetchInstagramProfileImages } from './profile-fetcher';
 import { generateImageEmbedding } from '@/lib/embeddings/hybrid-client';
 import OpenAI from 'openai';
 import { randomUUID, createHash } from 'crypto';
+import { sendSyncFailedEmail } from '@/lib/email';
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/utils/fetch-with-timeout';
 
 // Types
 export interface SyncResult {
@@ -446,8 +448,28 @@ async function processSingleImage(
   img: { url: string; mediaId: string; classified: boolean }
 ): Promise<ProcessedImage> {
   try {
-    // Download image
-    const response = await fetch(img.url);
+    // Download image with timeout
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(img.url, {
+        timeout: TIMEOUTS.SLOW, // 60s for Instagram CDN images
+      });
+    } catch (error: any) {
+      // Provide specific logging for timeout vs other errors
+      if (error.message?.includes('timeout')) {
+        console.error(`[AutoSync] Timeout downloading ${img.mediaId} from Instagram CDN`);
+      } else {
+        console.error(`[AutoSync] Download error for ${img.mediaId}:`, error);
+      }
+      return {
+        id: randomUUID(),
+        url: img.url,
+        instagramMediaId: img.mediaId,
+        embedding: null,
+        classified: img.classified,
+      };
+    }
+
     if (!response.ok) {
       console.error(`[AutoSync] Failed to download ${img.mediaId}: ${response.status}`);
       return {
@@ -552,15 +574,27 @@ async function handleSyncFailure(
   artistId: string,
   reason: string
 ): Promise<void> {
-  // Get current failure count
+  // Get current failure count and artist info
   const { data: artist } = await supabase
     .from('artists')
-    .select('sync_consecutive_failures')
+    .select('sync_consecutive_failures, name, slug, instagram_handle, claimed_by_user_id')
     .eq('id', artistId)
     .single();
 
   const currentFailures = artist?.sync_consecutive_failures || 0;
   const newFailures = currentFailures + 1;
+
+  // Get user email if artist is claimed
+  let userEmail: string | null = null;
+  if (artist?.claimed_by_user_id) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', artist.claimed_by_user_id)
+      .single();
+
+    userEmail = userData?.email || null;
+  }
 
   // Disable auto-sync if threshold reached
   if (newFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -573,12 +607,74 @@ async function handleSyncFailure(
         sync_disabled_reason: `consecutive_failures:${reason}`,
       })
       .eq('id', artistId);
+
+    // Send email notification for auto-sync disabled
+    if (userEmail && artist) {
+      const needsReauth = reason.includes('auth') || reason.includes('token') || reason.includes('permission');
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io';
+      const dashboardUrl = `${baseUrl}/dashboard`;
+
+      sendSyncFailedEmail({
+        to: userEmail,
+        artistName: artist.name,
+        failureReason: formatFailureReason(reason),
+        failureCount: newFailures,
+        dashboardUrl,
+        instagramHandle: artist.instagram_handle,
+        needsReauth,
+      }).catch((error) => {
+        console.error('[AutoSync] Failed to send sync failure email:', error);
+        // Don't fail the sync process if email fails
+      });
+    }
+  } else if (newFailures >= 2) {
+    // Send warning email after 2 failures (before auto-disable)
+    await supabase
+      .from('artists')
+      .update({ sync_consecutive_failures: newFailures })
+      .eq('id', artistId);
+
+    if (userEmail && artist) {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io';
+      const dashboardUrl = `${baseUrl}/dashboard`;
+
+      sendSyncFailedEmail({
+        to: userEmail,
+        artistName: artist.name,
+        failureReason: formatFailureReason(reason),
+        failureCount: newFailures,
+        dashboardUrl,
+        instagramHandle: artist.instagram_handle,
+        needsReauth: false,
+      }).catch((error) => {
+        console.error('[AutoSync] Failed to send sync warning email:', error);
+      });
+    }
   } else {
+    // Just increment failure count
     await supabase
       .from('artists')
       .update({ sync_consecutive_failures: newFailures })
       .eq('id', artistId);
   }
+}
+
+/**
+ * Format failure reason for user-facing display
+ */
+function formatFailureReason(reason: string): string {
+  const reasons: Record<string, string> = {
+    'fetch_failed': 'Failed to fetch posts from Instagram. This may be due to rate limiting or a temporary Instagram issue.',
+    'auth_failed': 'Instagram authentication failed. You may need to reconnect your Instagram account.',
+    'token_expired': 'Your Instagram access token has expired. Please reconnect your Instagram account.',
+    'permission_denied': 'Instagram denied access. Check your app permissions in Instagram settings.',
+    'insert_failed': 'Failed to save new posts to your portfolio. This is a database error - please contact support.',
+    'classification_failed': 'Failed to classify images. This may be a temporary issue with our AI service.',
+    'embedding_failed': 'Failed to generate image embeddings. This is required for visual search.',
+    'unexpected_error': 'An unexpected error occurred during sync. Please try again.',
+  };
+
+  return reasons[reason] || `Sync failed: ${reason}`;
 }
 
 /**

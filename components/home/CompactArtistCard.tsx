@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
 import { ProBadge } from '@/components/badges/ProBadge'
+import { sanitizeText } from '@/lib/utils/sanitize'
 
 interface CompactArtistCardProps {
   artist: FeaturedArtist & { city: string; state: string }
@@ -50,7 +51,7 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
           {/* Shop Name */}
           {artist.shop_name && (
             <p className="font-mono text-xs font-medium text-gray-400 truncate tracking-wider uppercase">
-              {artist.shop_name}
+              {sanitizeText(artist.shop_name)}
             </p>
           )}
         </div>

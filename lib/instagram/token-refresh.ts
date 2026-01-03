@@ -19,7 +19,8 @@
  * @see app/auth/callback/route.ts - Initial token acquisition
  */
 
-import { getInstagramTokens, storeInstagramTokens } from '@/lib/supabase/vault'
+import { getInstagramTokens, storeInstagramTokens } from '@/lib/supabase/vault';
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/utils/fetch-with-timeout';
 
 // Facebook Graph API endpoint for token refresh (Instagram Graph API uses Facebook auth)
 // Instagram tokens are refreshed via Facebook, not Instagram directly
@@ -105,9 +106,21 @@ export async function refreshInstagramToken(userId: string): Promise<boolean> {
       fb_exchange_token: tokens.access_token,
     })
 
-    const response = await fetch(`${FACEBOOK_TOKEN_REFRESH_URL}?${params}`, {
-      method: 'GET',
-    })
+    let response: Response;
+    try {
+      response = await fetchWithTimeout(`${FACEBOOK_TOKEN_REFRESH_URL}?${params}`, {
+        method: 'GET',
+        timeout: TIMEOUTS.STANDARD, // 30s for Facebook Graph API
+      })
+    } catch (error: any) {
+      // Distinguish timeout from other errors for better monitoring
+      if (error.message?.includes('timeout')) {
+        console.error(`[Token Refresh] Facebook Graph API timeout for user ${userId}`)
+      } else {
+        console.error(`[Token Refresh] Network error for user ${userId}:`, error)
+      }
+      return false
+    }
 
     if (!response.ok) {
       const errorText = await response.text()

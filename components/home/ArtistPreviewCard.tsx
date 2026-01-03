@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
 import { isArtistFeatured } from '@/lib/utils/featured'
+import { sanitizeText } from '@/lib/utils/sanitize'
 
 interface ArtistPreviewCardProps {
   artist: FeaturedArtist
@@ -56,7 +57,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
             {/* Shop Name */}
             {artist.shop_name && (
               <p className="font-mono text-xs font-medium text-gray-400 truncate tracking-wider uppercase">
-                {artist.shop_name}
+                {sanitizeText(artist.shop_name)}
               </p>
             )}
           </div>

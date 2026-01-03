@@ -1,3 +1,5 @@
+import { sanitizeText } from '@/lib/utils/sanitize'
+
 interface BioInterstitialProps {
   artistName: string
   bio: string
@@ -23,7 +25,7 @@ export default function BioInterstitial({
         </h3>
 
         <p className="font-accent text-body-large leading-relaxed text-text-primary italic">
-          {bio}
+          {sanitizeText(bio)}
         </p>
       </div>
     </div>

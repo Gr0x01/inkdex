@@ -5,6 +5,8 @@
  * for both images and text queries using OpenCLIP ViT-L-14 (768 dimensions).
  */
 
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/utils/fetch-with-timeout';
+
 /**
  * Generate CLIP embedding for an image
  *
@@ -51,15 +53,25 @@ export async function generateImageEmbedding(imageFile: File): Promise<number[]>
   const base64 = Buffer.from(buffer).toString('base64')
 
   // Call Modal.com CLIP embedding function
-  const response = await fetch(`${modalUrl}/generate_single_embedding`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      image_data: base64,
-    }),
-  })
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${modalUrl}/generate_single_embedding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image_data: base64,
+      }),
+      timeout: TIMEOUTS.VERY_SLOW, // 120s - ML inference can be slow
+    })
+  } catch (error: any) {
+    // Provide specific error message for timeouts
+    if (error.message?.includes('timeout')) {
+      throw new Error('Image processing timed out after 2 minutes. Please try a smaller image.')
+    }
+    throw error
+  }
 
   if (!response.ok) {
     const errorText = await response.text()
@@ -127,15 +139,25 @@ export async function generateTextEmbedding(text: string): Promise<number[]> {
   }
 
   // Call Modal.com CLIP text embedding function
-  const response = await fetch(`${modalUrl}/generate_text_query_embedding`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      text: text.trim(),
-    }),
-  })
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(`${modalUrl}/generate_text_query_embedding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: text.trim(),
+      }),
+      timeout: TIMEOUTS.SLOW, // 60s - text embeddings are faster than images
+    })
+  } catch (error: any) {
+    // Provide specific error message for timeouts
+    if (error.message?.includes('timeout')) {
+      throw new Error('Text query timed out after 60 seconds. Please try a shorter query.')
+    }
+    throw error
+  }
 
   if (!response.ok) {
     const errorText = await response.text()

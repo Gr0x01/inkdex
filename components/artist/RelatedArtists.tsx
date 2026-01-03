@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { getRelatedArtists } from '@/lib/supabase/queries'
+import { sanitizeText } from '@/lib/utils/sanitize'
 
 interface RelatedArtist {
   id: string
@@ -129,7 +130,7 @@ export default async function RelatedArtists({
 
                   {artist.shop_name && (
                     <p className="font-body text-[0.8125rem] text-gray-500 mb-3 truncate italic no-underline">
-                      {artist.shop_name}
+                      {sanitizeText(artist.shop_name)}
                     </p>
                   )}
 

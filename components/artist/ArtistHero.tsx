@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { getArtistFeaturedImageUrl } from '@/lib/utils/images'
+import { sanitizeText } from '@/lib/utils/sanitize'
 
 interface ArtistHeroProps {
   artist: {
@@ -27,7 +28,7 @@ interface ArtistHeroProps {
 }
 
 export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
-  const displayBio = artist.bio_override || artist.bio
+  const displayBio = sanitizeText(artist.bio_override || artist.bio)
   const fullImageUrl = getArtistFeaturedImageUrl(
     featuredImage,
     artist.profile_image_url
@@ -62,7 +63,7 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
               <p className="font-body text-body text-text-secondary">
                 {artist.city}
                 {artist.state && `, ${artist.state}`}
-                {artist.shop_name && ` • ${artist.shop_name}`}
+                {artist.shop_name && ` • ${sanitizeText(artist.shop_name)}`}
               </p>
             </div>
 

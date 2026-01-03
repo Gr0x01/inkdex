@@ -1,8 +1,14 @@
+'use client'
+
+import { useState } from 'react'
 import Image from 'next/image'
 import { isArtistFeatured } from '@/lib/utils/featured'
 import FindSimilarArtistsButton from './FindSimilarArtistsButton'
 import ClaimProfileButton from './ClaimProfileButton'
 import { ProBadge } from '@/components/badges/ProBadge'
+import { trackClick } from '@/lib/analytics/client'
+import { sanitizeText } from '@/lib/utils/sanitize'
+import { ArtistLocation } from '@/types/search'
 
 interface PortfolioImage {
   id: string
@@ -31,6 +37,7 @@ interface ArtistInfoColumnProps {
     follower_count: number | null
     verification_status: string
     is_pro: boolean | null
+    locations?: ArtistLocation[]
   }
   portfolioImages?: PortfolioImage[]
 }
@@ -39,11 +46,32 @@ export default function ArtistInfoColumn({
   artist,
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
+  const [showAllLocations, setShowAllLocations] = useState(false)
+
   const isFeatured = isArtistFeatured(artist.follower_count)
-  const displayBio = artist.bio_override || artist.bio
+  const displayBio = sanitizeText(artist.bio_override || artist.bio)
 
   // Calculate portfolio stats
   const portfolioCount = portfolioImages.length
+
+  // Multi-location support
+  const locations = artist.locations || []
+  const primaryLocation = locations.find(l => l.is_primary) || {
+    city: artist.city,
+    region: artist.state,
+    country_code: 'US'
+  }
+  const otherLocations = locations.filter(l => !l.is_primary)
+  const hasMultipleLocations = otherLocations.length > 0
+
+  // Format location string (US vs international)
+  const formatLocation = (loc: ArtistLocation | typeof primaryLocation) => {
+    if (loc.country_code === 'US') {
+      return `${loc.city}${loc.region ? `, ${loc.region}` : ''}`
+    } else {
+      return `${loc.city || ''}${loc.region ? `, ${loc.region}` : ''}${loc.country_code ? `, ${loc.country_code}` : ''}`
+    }
+  }
 
   return (
     <div className="bg-paper relative">
@@ -98,10 +126,33 @@ export default function ArtistInfoColumn({
               {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
             </div>
 
-            {/* Location - very compact */}
-            <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
-              {artist.city}{artist.state && `, ${artist.state}`}
-            </p>
+            {/* Location - expandable for multi-location artists */}
+            <div className="space-y-1">
+              <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
+                {formatLocation(primaryLocation)}
+              </p>
+
+              {/* Multi-location indicator */}
+              {hasMultipleLocations && (
+                <button
+                  onClick={() => setShowAllLocations(!showAllLocations)}
+                  className="text-xs text-accent-primary hover:underline transition-all duration-150"
+                >
+                  {showAllLocations ? 'Hide' : `Also works in ${otherLocations.length} other ${otherLocations.length === 1 ? 'city' : 'cities'}`}
+                </button>
+              )}
+
+              {/* Expandable location list */}
+              {showAllLocations && hasMultipleLocations && (
+                <div className="space-y-0.5 pt-1">
+                  {otherLocations.map((loc) => (
+                    <p key={loc.id} className="font-mono text-xs text-gray-400 uppercase">
+                      {formatLocation(loc)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Shop name if present */}
             {artist.shop_name && (
@@ -187,6 +238,7 @@ export default function ArtistInfoColumn({
                 href={artist.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackClick('booking_click', artist.id)}
                 className="block py-1.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Book

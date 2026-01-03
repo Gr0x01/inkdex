@@ -12,6 +12,8 @@
  * Design: Paper-white editorial with ink-black accents
  */
 
+import { sanitizeText } from '@/lib/utils/sanitize'
+
 export interface PreviewStepProps {
   name: string;
   city: string;
@@ -171,7 +173,7 @@ export function PreviewStep({
                   Bio
                 </p>
                 <p className="font-body text-base text-[var(--gray-700)] italic leading-relaxed">
-                  &ldquo;{bio}&rdquo;
+                  &ldquo;{sanitizeText(bio)}&rdquo;
                 </p>
               </div>
             )}
