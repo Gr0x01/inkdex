@@ -2,7 +2,7 @@
  * Content Sanitization Utilities
  *
  * Prevents XSS attacks by sanitizing user-generated content before rendering.
- * Uses DOMPurify (isomorphic - works in both client and server components).
+ * Uses lightweight regex-based sanitization (works in both client and server components).
  *
  * When to use:
  * - Artist bios (bio, bio_override)
@@ -16,8 +16,6 @@
  * - sanitizeStrict: Strips everything, no HTML at all
  */
 
-import DOMPurify from 'isomorphic-dompurify';
-
 /**
  * Sanitize text content (strips all HTML)
  * Use for: Bios, captions, shop names
@@ -29,10 +27,15 @@ export function sanitizeText(text: string | null | undefined): string {
   if (!text) return '';
 
   // Strip all HTML tags, return plain text
-  return DOMPurify.sanitize(text, {
-    ALLOWED_TAGS: [], // No HTML tags allowed
-    KEEP_CONTENT: true, // Keep text content
-  }).trim();
+  // This regex matches opening tags, closing tags, and self-closing tags
+  return text
+    .replace(/<[^>]*>/g, '') // Remove all HTML tags
+    .replace(/&lt;/g, '<') // Decode HTML entities
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
 /**
@@ -45,12 +48,8 @@ export function sanitizeText(text: string | null | undefined): string {
 export function sanitizeHTML(html: string | null | undefined): string {
   if (!html) return '';
 
-  // Allow basic formatting tags only
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'br', 'p'],
-    ALLOWED_ATTR: ['href', 'title'], // Only for links
-    ALLOW_DATA_ATTR: false,
-  }).trim();
+  // For now, strip all HTML. If we need rich text later, use client-side DOMPurify
+  return sanitizeText(html);
 }
 
 /**
@@ -63,11 +62,8 @@ export function sanitizeHTML(html: string | null | undefined): string {
 export function sanitizeStrict(text: string | null | undefined): string {
   if (!text) return '';
 
-  // Strip all HTML and decode entities
-  const stripped = DOMPurify.sanitize(text, {
-    ALLOWED_TAGS: [],
-    KEEP_CONTENT: true,
-  });
+  // Strip all HTML first
+  const stripped = sanitizeText(text);
 
   // Remove any remaining special characters that could be dangerous
   return stripped
@@ -85,14 +81,19 @@ export function sanitizeStrict(text: string | null | undefined): string {
 export function sanitizeCaption(caption: string | null | undefined): string {
   if (!caption) return '';
 
-  // Strip HTML but keep line breaks
-  const sanitized = DOMPurify.sanitize(caption, {
-    ALLOWED_TAGS: ['br'], // Only allow line breaks
-    KEEP_CONTENT: true,
-  }).trim();
+  // Strip all HTML except <br> tags
+  const withLineBreaks = caption
+    .replace(/<br\s*\/?>/gi, '\n') // Convert existing <br> to newlines
+    .replace(/<[^>]*>/g, '') // Remove all other HTML tags
+    .replace(/&lt;/g, '<') // Decode HTML entities
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 
-  // Convert \n to <br> for display (after sanitization)
-  return sanitized.replace(/\n/g, '<br>');
+  // Convert \n back to <br> for display
+  return withLineBreaks.replace(/\n/g, '<br>');
 }
 
 /**
