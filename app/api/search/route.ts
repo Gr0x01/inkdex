@@ -331,9 +331,14 @@ export async function POST(request: NextRequest) {
               )
             `)
             .eq('id', artistId)
-            .eq('portfolio_images.status', 'active')
-            .not('portfolio_images.embedding', 'is', null)
             .single()
+
+          // Filter images client-side for active status and non-null embeddings
+          if (artist) {
+            artist.portfolio_images = artist.portfolio_images.filter(
+              (img: any) => img.status === 'active' && img.embedding != null
+            )
+          }
 
           if (artistError || !artist) {
             return NextResponse.json(

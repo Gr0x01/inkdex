@@ -9,6 +9,7 @@ import { STATES, CITIES } from '@/lib/constants/cities'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
 import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
 import RelatedArtists from '@/components/artist/RelatedArtists'
+import FindSimilarArtistsButton from '@/components/artist/FindSimilarArtistsButton'
 import AnalyticsTracker from '@/components/analytics/AnalyticsTracker'
 
 export async function generateStaticParams() {
@@ -273,6 +274,15 @@ export default async function ArtistPage({
               images={artist.portfolio_images || []}
               artistName={artist.name}
             />
+
+            {/* Find Similar Artists - positioned after portfolio */}
+            <div className="mt-8 mb-12 max-w-md mx-auto">
+              <FindSimilarArtistsButton
+                artistId={artist.id}
+                artistName={artist.name}
+                city={artist.city}
+              />
+            </div>
 
             {/* Related Artists Section */}
             <RelatedArtists

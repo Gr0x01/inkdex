@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
 import Image from 'next/image'
 import { isArtistFeatured } from '@/lib/utils/featured'
-import FindSimilarArtistsButton from './FindSimilarArtistsButton'
 import ClaimProfileButton from './ClaimProfileButton'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { trackClick } from '@/lib/analytics/client'
@@ -46,8 +44,6 @@ export default function ArtistInfoColumn({
   artist,
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
-  const [showAllLocations, setShowAllLocations] = useState(false)
-
   const isFeatured = isArtistFeatured(artist.follower_count)
   const displayBio = sanitizeText(artist.bio_override || artist.bio)
 
@@ -119,35 +115,28 @@ export default function ArtistInfoColumn({
             </p>
 
             {/* Handle with Pro badge */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap !mt-0 mb-2">
+            <div className="flex items-center justify-center gap-2 flex-wrap !mt-0 mb-2">
               <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink">
                 @{artist.instagram_handle}
               </h1>
-              {artist.is_pro && <ProBadge variant="icon-only" size="sm" />}
+              {artist.is_pro && <ProBadge variant="badge" size="md" />}
             </div>
 
-            {/* Location - expandable for multi-location artists */}
+            {/* Location - all locations shown by default */}
             <div className="space-y-1">
               <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
                 {formatLocation(primaryLocation)}
               </p>
 
-              {/* Multi-location indicator */}
+              {/* Other locations - always visible */}
               {hasMultipleLocations && (
-                <button
-                  onClick={() => setShowAllLocations(!showAllLocations)}
-                  className="text-xs text-accent-primary hover:underline transition-all duration-150"
-                >
-                  {showAllLocations ? 'Hide' : `Also works in ${otherLocations.length} other ${otherLocations.length === 1 ? 'city' : 'cities'}`}
-                </button>
-              )}
-
-              {/* Expandable location list */}
-              {showAllLocations && hasMultipleLocations && (
                 <div className="space-y-0.5 pt-1">
+                  <p className="font-mono text-xs text-gray-400 uppercase">
+                    Also works in:
+                  </p>
                   {otherLocations.map((loc) => (
                     <p key={loc.id} className="font-mono text-xs text-gray-400 uppercase">
-                      {formatLocation(loc)}
+                      • {formatLocation(loc)}
                     </p>
                   ))}
                 </div>
@@ -194,10 +183,10 @@ export default function ArtistInfoColumn({
           </div>
         )}
 
-        {/* Bio - Truncated at 3 lines, expandable */}
+        {/* Bio - Truncated at 4 lines */}
         {displayBio && (
           <div className="pt-1">
-            <p className="font-body text-xs font-light text-gray-700 leading-snug line-clamp-3 italic">
+            <p className="font-body text-sm font-light text-gray-700 leading-snug line-clamp-4 italic">
               &ldquo;{displayBio}&rdquo;
             </p>
           </div>
@@ -205,65 +194,101 @@ export default function ArtistInfoColumn({
 
         {/* CTAs - Compact */}
         <div className="pt-2 space-y-1.5">
-          {/* Primary CTA: Instagram */}
-          {artist.instagram_url && (
-            <div
-              className="group relative transition-all duration-200 overflow-hidden"
-              style={{
-                background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-                padding: '2px'
-              }}
-            >
-              <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
-                <a
-                  href={artist.instagram_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full py-2 text-paper text-center
-                           font-mono text-xs tracking-widest uppercase font-semibold
-                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
-                >
-                  <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
-                    Instagram →
-                  </span>
-                </a>
+          {/* Primary CTAs: Instagram + Book side-by-side if both exist */}
+          {artist.instagram_url && artist.booking_url ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {/* Instagram - Primary with gradient */}
+              <div
+                className="group relative transition-all duration-200 overflow-hidden"
+                style={{
+                  background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  padding: '2px'
+                }}
+              >
+                <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                  <a
+                    href={artist.instagram_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2.5 text-paper text-center
+                             font-mono text-xs tracking-widest uppercase font-semibold
+                             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                  >
+                    <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                      Instagram →
+                    </span>
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Secondary CTAs - Side by Side */}
-          <div className="grid grid-cols-2 gap-1.5">
-            {artist.booking_url && (
+              {/* Book - Secondary */}
               <a
                 href={artist.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick('booking_click', artist.id)}
-                className="block py-1.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
               >
                 Book
               </a>
-            )}
-            {artist.website_url && (
-              <a
-                href={artist.website_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block py-1.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
-              >
-                Website
-              </a>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Instagram only - full width */}
+              {artist.instagram_url && (
+                <div
+                  className="group relative transition-all duration-200 overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                    padding: '2px'
+                  }}
+                >
+                  <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                    <a
+                      href={artist.instagram_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full py-2.5 text-paper text-center
+                               font-mono text-xs tracking-widest uppercase font-semibold
+                               focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
+                    >
+                      <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                        Instagram →
+                      </span>
+                    </a>
+                  </div>
+                </div>
+              )}
 
-          {/* Tertiary CTAs: Find Similar + Claim */}
-          <div className="pt-2 border-t border-gray-200 space-y-2">
-            <FindSimilarArtistsButton
-              artistId={artist.id}
-              artistName={artist.name}
-              city={artist.city}
-            />
+              {/* Book only - full width */}
+              {artist.booking_url && !artist.instagram_url && (
+                <a
+                  href={artist.booking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => trackClick('booking_click', artist.id)}
+                  className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                >
+                  Book
+                </a>
+              )}
+            </>
+          )}
 
+          {/* Website - always full width below */}
+          {artist.website_url && (
+            <a
+              href={artist.website_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+            >
+              Website
+            </a>
+          )}
+
+          {/* Claim Profile CTA */}
+          <div className="pt-2 border-t border-gray-200">
             <ClaimProfileButton
               artistId={artist.id}
               artistName={artist.name}
