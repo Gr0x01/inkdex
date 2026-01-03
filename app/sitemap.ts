@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Fetch all cities with 3+ artists for dynamic sitemap generation
   const allCities = await getAllCitiesWithMinArtists(3)
-  const featuredCitySlugs = new Set(CITIES.map(c => c.slug))
+  const featuredCitySlugs: Set<string> = new Set(CITIES.map(c => c.slug as string))
 
   // Fallback to featured cities if database query fails
   const citiesToUse = (allCities && allCities.length > 0)
