@@ -25,22 +25,22 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-paper flex">
-      {/* Sidebar - Editorial style */}
-      <aside className="w-52 bg-paper border-r-2 border-ink/10 flex flex-col">
+      {/* Sidebar - Compact admin style */}
+      <aside className="w-40 bg-paper border-r border-ink/10 flex flex-col text-[13px]">
         {/* Logo */}
-        <div className="px-4 py-4 border-b-2 border-ink/10">
+        <div className="px-3 py-2.5 border-b border-ink/10">
           <Link href="/admin" className="block">
-            <span className="font-display text-xl font-[900] text-ink tracking-tight">
+            <span className="font-display text-sm font-[900] text-ink tracking-tight">
               INKDEX
             </span>
-            <span className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] block mt-0.5">
+            <span className="font-mono text-[9px] text-gray-400 uppercase tracking-wider block">
               Admin
             </span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-2 py-3">
+        <nav className="flex-1 px-1.5 py-2">
           <ul className="space-y-0.5">
             {navItems.map((item) => {
               const active = isActive(item.href, item.exact);
@@ -51,16 +51,16 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
                   <Link
                     href={item.href}
                     className={`
-                      flex items-center gap-2 px-3 py-2 text-sm font-body
-                      transition-colors duration-150
+                      flex items-center gap-1.5 px-2 py-1.5 text-[13px] font-body
+                      transition-colors duration-100
                       ${
                         active
                           ? 'bg-ink text-paper'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          : 'text-gray-600 hover:bg-gray-100'
                       }
                     `}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5" />
                     {item.label}
                   </Link>
                 </li>
@@ -70,23 +70,23 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
         </nav>
 
         {/* User section */}
-        <div className="p-3 border-t-2 border-ink/10">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-ink text-paper flex items-center justify-center font-mono text-xs font-medium">
+        <div className="px-2 py-2 border-t border-ink/10">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 bg-ink text-paper flex items-center justify-center font-mono text-[10px] font-medium flex-shrink-0">
               {userEmail.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-body text-ink truncate">
+              <p className="text-[11px] font-body text-gray-600 truncate">
                 {userEmail.split('@')[0]}
               </p>
             </div>
             <form action="/api/admin/auth/logout" method="POST">
               <button
                 type="submit"
-                className="p-1.5 text-gray-500 hover:text-ink hover:bg-gray-100 transition-colors"
+                className="p-1 text-gray-400 hover:text-ink hover:bg-gray-100 transition-colors"
                 title="Log out"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3 h-3" />
               </button>
             </form>
           </div>
@@ -95,8 +95,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
 
       {/* Main content area */}
       <main className="flex-1 overflow-auto">
-        {/* Page content */}
-        <div className="p-6">
+        <div className="p-4">
           {children}
         </div>
       </main>

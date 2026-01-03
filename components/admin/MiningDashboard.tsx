@@ -228,11 +228,13 @@ export default function MiningDashboard() {
                   ? 'warning'
                   : 'default'
               }
+              compact
             />
             <StatsCard
               label="Completed"
               value={stats.hashtag.completed + stats.follower.completed}
               variant="success"
+              compact
             />
             <StatsCard
               label="Failed"
@@ -242,23 +244,25 @@ export default function MiningDashboard() {
                   ? 'error'
                   : 'default'
               }
+              compact
             />
             <StatsCard
               label="Artists"
               value={stats.totals.artistsInserted}
               subValue={`$${stats.totals.costPerArtist.toFixed(4)}/artist`}
+              compact
             />
           </div>
 
           {/* Pipeline breakdown cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             {/* Hashtag Mining Card */}
-            <div className="bg-paper border-2 border-ink/10 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Hash className="w-4 h-4 text-gray-500" />
-                <h3 className="font-heading text-sm font-semibold text-ink">Hashtag Mining</h3>
+            <div className="bg-paper border border-ink/10 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Hash className="w-3.5 h-3.5 text-gray-500" />
+                <h3 className="font-heading text-[13px] font-semibold text-ink">Hashtag Mining</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <MetricItem label="Posts Scraped" value={stats.hashtag.postsScraped} />
                 <MetricItem label="Artists Inserted" value={stats.hashtag.artistsInserted} />
                 <MetricItem label="Apify Cost" value={`$${stats.hashtag.estimatedApifyCost.toFixed(4)}`} />
@@ -267,12 +271,12 @@ export default function MiningDashboard() {
             </div>
 
             {/* Follower Mining Card */}
-            <div className="bg-paper border-2 border-ink/10 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="w-4 h-4 text-gray-500" />
-                <h3 className="font-heading text-sm font-semibold text-ink">Follower Mining</h3>
+            <div className="bg-paper border border-ink/10 p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Users className="w-3.5 h-3.5 text-gray-500" />
+                <h3 className="font-heading text-[13px] font-semibold text-ink">Follower Mining</h3>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <MetricItem label="Followers Scraped" value={stats.follower.followersScraped} />
                 <MetricItem label="Artists Inserted" value={stats.follower.artistsInserted} />
                 <MetricItem label="Skipped (Private)" value={stats.follower.skippedPrivate} />
@@ -301,10 +305,10 @@ export default function MiningDashboard() {
           )}
 
           {/* Runs Table with Tabs */}
-          <div className="bg-paper border-2 border-ink/10">
+          <div className="bg-paper border border-ink/10">
             {/* Tabs */}
-            <div className="border-b-2 border-ink/10 px-4">
-              <nav className="flex gap-4">
+            <div className="border-b border-ink/10 px-2">
+              <nav className="flex gap-3">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
@@ -318,7 +322,7 @@ export default function MiningDashboard() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`
-                        flex items-center gap-1.5 py-3 border-b-2 text-sm font-body transition-colors -mb-[2px]
+                        flex items-center gap-1 py-2 border-b text-[13px] font-body transition-colors -mb-px
                         ${
                           isActive
                             ? 'border-ink text-ink'
@@ -326,9 +330,9 @@ export default function MiningDashboard() {
                         }
                       `}
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className="w-2.5 h-2.5" />
                       {tab.label}
-                      <span className="font-mono text-xs text-gray-500">
+                      <span className="font-mono text-[11px] text-gray-400">
                         {count}
                       </span>
                     </button>
@@ -350,8 +354,8 @@ export default function MiningDashboard() {
 function MetricItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">{label}</p>
-      <p className="text-base font-heading font-semibold text-ink tabular-nums">
+      <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <p className="text-[13px] font-heading font-semibold text-ink tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
     </div>

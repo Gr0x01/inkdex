@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20', 10)));
     const search = searchParams.get('search') || '';
-    const city = searchParams.get('city') || '';
-    const isPro = searchParams.get('is_pro');
+    const location = searchParams.get('location') || '';
+    const tier = searchParams.get('tier');
     const isFeatured = searchParams.get('is_featured');
 
     const offset = (page - 1) * limit;
@@ -68,20 +68,22 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${sanitizedSearch}%,instagram_handle.ilike.%${sanitizedSearch}%`);
     }
 
-    if (city) {
-      const trimmedCity = city.slice(0, 100);
-      const sanitizedCity = trimmedCity
-        .replace(/\\/g, '\\\\')
-        .replace(/%/g, '\\%')
-        .replace(/_/g, '\\_')
-        .replace(/[,()'"]/g, '');
-      query = query.ilike('city', `%${sanitizedCity}%`);
+    // Location filter - expects "City, State" format from dropdown
+    if (location) {
+      const parts = location.split(', ');
+      if (parts.length === 2) {
+        const [city, state] = parts;
+        query = query.eq('city', city).eq('state', state);
+      }
     }
 
-    if (isPro === 'true') {
-      query = query.eq('is_pro', true);
-    } else if (isPro === 'false') {
-      query = query.eq('is_pro', false);
+    // Tier filter: unclaimed, free (claimed + not pro), pro (claimed + pro)
+    if (tier === 'unclaimed') {
+      query = query.eq('verification_status', 'unclaimed');
+    } else if (tier === 'free') {
+      query = query.eq('verification_status', 'claimed').eq('is_pro', false);
+    } else if (tier === 'pro') {
+      query = query.eq('verification_status', 'claimed').eq('is_pro', true);
     }
 
     if (isFeatured === 'true') {

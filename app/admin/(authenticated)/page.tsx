@@ -1,6 +1,5 @@
-import { redirect } from 'next/navigation';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 
 export default function AdminPage() {
-  // Redirect to mining dashboard as the default view
-  redirect('/admin/mining');
+  return <AdminDashboard />;
 }

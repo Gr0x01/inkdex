@@ -71,30 +71,30 @@ export default function CostTracker({
   };
 
   return (
-    <div className="bg-paper border-2 border-ink/10 p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-heading text-sm font-semibold text-ink">Cost Tracking</h3>
+    <div className="bg-paper border border-ink/10 p-3">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-heading text-[13px] font-semibold text-ink">Cost Tracking</h3>
         <button
           onClick={fetchLiveCosts}
           disabled={loading}
-          className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 hover:text-ink
+          className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] text-gray-500 hover:text-ink
                    bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 font-mono"
         >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-2.5 h-2.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Database Estimates */}
         <div>
-          <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-3">
+          <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider mb-2">
             Database Estimates
           </p>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <CostRow label="Apify" value={formatCurrency(estimatedApify)} />
             <CostRow label="OpenAI" value={formatCurrency(estimatedOpenAI)} />
-            <div className="border-t border-ink/10 pt-2">
+            <div className="border-t border-ink/10 pt-1.5">
               <CostRow label="Total" value={formatCurrency(estimatedTotal)} bold />
             </div>
             <CostRow label="Per Artist" value={formatCurrency(costPerArtist)} muted />
@@ -103,21 +103,21 @@ export default function CostTracker({
 
         {/* Live API Costs */}
         <div>
-          <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-3">
+          <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider mb-2">
             Live API Usage (This Month)
           </p>
 
           {error && (
-            <div className="flex items-center gap-1.5 text-status-error text-sm mb-3 p-2 bg-status-error/10">
-              <AlertCircle className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-status-error text-[11px] mb-2 p-1.5 bg-status-error/10">
+              <AlertCircle className="w-3 h-3" />
               {error}
             </div>
           )}
 
           {loading && !liveCosts ? (
-            <div className="text-gray-500 text-sm font-body">Loading...</div>
+            <div className="text-gray-500 text-[12px] font-body">Loading...</div>
           ) : liveCosts ? (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <CostRow
                 label="Apify"
                 value={formatCurrency(liveCosts.apify.usage)}
@@ -128,10 +128,10 @@ export default function CostTracker({
                 value={formatCurrency(liveCosts.openai.usage)}
                 error={liveCosts.openai.error}
               />
-              <div className="border-t border-ink/10 pt-2">
+              <div className="border-t border-ink/10 pt-1.5">
                 <CostRow label="Total" value={formatCurrency(liveCosts.total.usage)} bold />
               </div>
-              <p className="font-mono text-[10px] text-gray-500 mt-2">
+              <p className="font-mono text-[9px] text-gray-400 mt-1.5">
                 Updated: {formatDate(liveCosts.apify.lastUpdated)}
               </p>
             </div>
@@ -157,16 +157,16 @@ function CostRow({
 }) {
   return (
     <div className="flex justify-between items-center">
-      <span className={`text-sm font-body ${muted ? 'text-gray-500' : 'text-gray-700'}`}>{label}</span>
+      <span className={`text-[12px] font-body ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
       <div className="text-right">
         <span
-          className={`text-sm font-mono tabular-nums ${
-            bold ? 'font-semibold text-ink' : muted ? 'text-gray-500' : 'text-gray-700'
+          className={`text-[13px] font-mono tabular-nums ${
+            bold ? 'font-semibold text-ink' : muted ? 'text-gray-400' : 'text-ink'
           }`}
         >
           {value}
         </span>
-        {error && <p className="text-[10px] text-status-warning mt-0.5">{error}</p>}
+        {error && <p className="text-[9px] text-status-warning mt-0.5">{error}</p>}
       </div>
     </div>
   );

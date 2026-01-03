@@ -8,8 +8,9 @@ import {
   Star,
   Crown,
   ExternalLink,
-  Check,
 } from 'lucide-react';
+import AdminSelect from './AdminSelect';
+import AdminLocationSelect from './AdminLocationSelect';
 
 interface Artist {
   id: string;
@@ -43,8 +44,8 @@ export default function ArtistTable() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [cityFilter, setCityFilter] = useState('');
-  const [isProFilter, setIsProFilter] = useState<string>('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [tierFilter, setTierFilter] = useState<string>('');
   const [isFeaturedFilter, setIsFeaturedFilter] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
@@ -59,8 +60,8 @@ export default function ArtistTable() {
     });
 
     if (search) params.set('search', search);
-    if (cityFilter) params.set('city', cityFilter);
-    if (isProFilter) params.set('is_pro', isProFilter);
+    if (locationFilter) params.set('location', locationFilter);
+    if (tierFilter) params.set('tier', tierFilter);
     if (isFeaturedFilter) params.set('is_featured', isFeaturedFilter);
 
     try {
@@ -75,7 +76,7 @@ export default function ArtistTable() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, cityFilter, isProFilter, isFeaturedFilter]);
+  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter]);
 
   useEffect(() => {
     fetchArtists();
@@ -176,89 +177,86 @@ export default function ArtistTable() {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 text-[13px]">
       {/* Search and Filters */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-64">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name or @handle..."
+            placeholder="Search name or @handle..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-neutral-800 border border-neutral-700 rounded-lg
-                       text-white placeholder-neutral-500
-                       focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500"
+            className="w-full pl-8 pr-3 py-1.5 bg-paper border border-ink/10
+                       text-ink font-body text-[13px] placeholder-gray-400
+                       focus:outline-none focus:border-ink/30 transition-colors"
           />
         </div>
 
-        <input
-          type="text"
-          placeholder="City..."
-          value={cityFilter}
-          onChange={(e) => {
-            setCityFilter(e.target.value);
+        <AdminLocationSelect
+          value={locationFilter}
+          onChange={(val) => {
+            setLocationFilter(val);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          className="w-32 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg
-                     text-white placeholder-neutral-500 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+          className="w-36"
         />
 
-        <select
-          value={isProFilter}
-          onChange={(e) => {
-            setIsProFilter(e.target.value);
+        <AdminSelect
+          value={tierFilter}
+          onChange={(val) => {
+            setTierFilter(val);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg
-                     text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-        >
-          <option value="">All Tiers</option>
-          <option value="true">Pro Only</option>
-          <option value="false">Free Only</option>
-        </select>
+          options={[
+            { value: '', label: 'All' },
+            { value: 'unclaimed', label: 'Unclaimed' },
+            { value: 'free', label: 'Free' },
+            { value: 'pro', label: 'Pro' },
+          ]}
+          className="w-28"
+        />
 
-        <select
+        <AdminSelect
           value={isFeaturedFilter}
-          onChange={(e) => {
-            setIsFeaturedFilter(e.target.value);
+          onChange={(val) => {
+            setIsFeaturedFilter(val);
             setPagination((p) => ({ ...p, page: 1 }));
           }}
-          className="px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-lg
-                     text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-        >
-          <option value="">All Status</option>
-          <option value="true">Featured Only</option>
-          <option value="false">Not Featured</option>
-        </select>
+          options={[
+            { value: '', label: 'Any' },
+            { value: 'true', label: 'Featured' },
+            { value: 'false', label: 'Not Featured' },
+          ]}
+          className="w-28"
+        />
       </div>
 
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center gap-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-          <span className="text-amber-500 text-sm">
-            {selectedIds.size} artist{selectedIds.size !== 1 ? 's' : ''} selected
+        <div className="flex items-center gap-3 px-2.5 py-1.5 bg-status-warning/10 border border-status-warning/30">
+          <span className="text-status-warning text-[13px] font-body">
+            {selectedIds.size} selected
           </span>
           <button
             onClick={() => handleBulkUpdate(true)}
             disabled={bulkUpdating}
-            className="px-3 py-1.5 bg-amber-500 text-black text-sm font-medium rounded-lg
-                       hover:bg-amber-400 disabled:opacity-50 transition-colors"
+            className="px-2 py-1 bg-ink text-paper text-[12px] font-body
+                       hover:bg-gray-800 disabled:opacity-50 transition-colors"
           >
-            Feature Selected
+            Feature
           </button>
           <button
             onClick={() => handleBulkUpdate(false)}
             disabled={bulkUpdating}
-            className="px-3 py-1.5 bg-neutral-700 text-white text-sm font-medium rounded-lg
-                       hover:bg-neutral-600 disabled:opacity-50 transition-colors"
+            className="px-2 py-1 bg-paper border border-ink/20 text-ink text-[12px] font-body
+                       hover:border-ink/40 disabled:opacity-50 transition-colors"
           >
-            Unfeature Selected
+            Unfeature
           </button>
           <button
             onClick={() => setSelectedIds(new Set())}
-            className="text-neutral-400 hover:text-white text-sm transition-colors"
+            className="text-gray-500 hover:text-ink text-[12px] font-body transition-colors"
           >
             Clear
           </button>
@@ -266,47 +264,48 @@ export default function ArtistTable() {
       )}
 
       {/* Table */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+      <div className="bg-paper border border-ink/10 overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-neutral-800">
-              <th className="px-4 py-3 w-10">
+            <tr className="border-b border-ink/10 bg-gray-50">
+              <th className="w-10 py-2 text-center">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === artists.length && artists.length > 0}
                   onChange={toggleSelectAll}
-                  className="w-4 h-4 rounded border-neutral-600 bg-neutral-800
-                             text-amber-500 focus:ring-amber-500/50"
+                  className="w-3.5 h-3.5 border border-ink/30 bg-paper
+                             text-ink focus:ring-0 focus:ring-offset-0
+                             checked:bg-ink checked:border-ink"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-neutral-500 font-medium">
+              <th className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500">
                 Artist
               </th>
-              <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-neutral-500 font-medium">
+              <th className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500">
                 Location
               </th>
-              <th className="px-4 py-3 text-center text-xs uppercase tracking-wider text-neutral-500 font-medium">
+              <th className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500">
                 Status
               </th>
-              <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
-                Images
+              <th className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                Imgs
               </th>
-              <th className="px-4 py-3 text-center text-xs uppercase tracking-wider text-neutral-500 font-medium">
-                Featured
+              <th className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500 w-16">
+                Feat
               </th>
-              <th className="px-4 py-3 w-10"></th>
+              <th className="px-2 py-2 w-8"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   Loading...
                 </td>
               </tr>
             ) : artists.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
+                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   No artists found
                 </td>
               </tr>
@@ -314,80 +313,81 @@ export default function ArtistTable() {
               artists.map((artist) => (
                 <tr
                   key={artist.id}
-                  className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors"
+                  className="border-b border-ink/5 hover:bg-gray-50/50 transition-colors"
                 >
-                  <td className="px-4 py-3">
+                  <td className="w-10 py-1.5 text-center">
                     <input
                       type="checkbox"
                       checked={selectedIds.has(artist.id)}
                       onChange={() => toggleSelect(artist.id)}
-                      className="w-4 h-4 rounded border-neutral-600 bg-neutral-800
-                                 text-amber-500 focus:ring-amber-500/50"
+                      className="w-3.5 h-3.5 border border-ink/30 bg-paper
+                                 text-ink focus:ring-0 focus:ring-offset-0
+                                 checked:bg-ink checked:border-ink"
                     />
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">{artist.name}</span>
+                  <td className="px-2 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1">
+                          <span className="text-ink font-medium text-[13px] truncate">
+                            {artist.name}
+                          </span>
                           {artist.is_pro && (
-                            <Crown className="w-4 h-4 text-amber-500" />
+                            <Crown className="w-2.5 h-2.5 text-status-warning flex-shrink-0" />
                           )}
                         </div>
-                        <span className="text-neutral-500 text-sm">
+                        <span className="text-gray-400 font-mono text-[11px]">
                           @{artist.instagram_handle}
                         </span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-neutral-300">
+                  <td className="px-2 py-1.5">
+                    <span className="text-ink text-[13px]">
                       {artist.city}, {artist.state}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-2 py-1.5 text-center">
                     <span
-                      className={`px-2 py-0.5 text-xs font-medium rounded ${
+                      className={`px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${
                         artist.verification_status === 'claimed'
-                          ? 'bg-green-500/10 text-green-500'
-                          : 'bg-neutral-500/10 text-neutral-500'
+                          ? 'bg-status-success/10 text-status-success'
+                          : 'bg-gray-100 text-gray-400'
                       }`}
                     >
                       {artist.verification_status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right text-neutral-300 tabular-nums">
+                  <td className="px-2 py-1.5 text-right font-mono text-[13px] text-ink tabular-nums">
                     {artist.image_count}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-2 py-1.5 text-center">
                     <button
                       onClick={() => toggleFeatured(artist)}
                       disabled={updatingIds.has(artist.id)}
-                      className={`p-2 rounded-lg transition-colors ${
+                      className={`p-1 transition-colors ${
                         artist.is_featured
-                          ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30'
-                          : 'bg-neutral-800 text-neutral-500 hover:text-white hover:bg-neutral-700'
+                          ? 'text-status-warning hover:text-status-warning/80'
+                          : 'text-gray-300 hover:text-gray-500'
                       } disabled:opacity-50`}
                       title={artist.is_featured ? 'Remove from featured' : 'Add to featured'}
                     >
                       {updatingIds.has(artist.id) ? (
-                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : artist.is_featured ? (
-                        <Star className="w-5 h-5 fill-current" />
+                        <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Star className="w-5 h-5" />
+                        <Star className={`w-3.5 h-3.5 ${artist.is_featured ? 'fill-current' : ''}`} />
                       )}
                     </button>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-1.5">
                     <a
                       href={getProfileUrl(artist)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 text-neutral-500 hover:text-white transition-colors inline-block"
+                      className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
                       title="View profile"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </td>
                 </tr>
@@ -398,32 +398,41 @@ export default function ArtistTable() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-neutral-500">
-          Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-          {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-          {pagination.total.toLocaleString()} artists
+      <div className="flex items-center justify-between text-[12px]">
+        <span className="text-gray-500 font-body">
+          <span className="font-mono text-ink">
+            {(pagination.page - 1) * pagination.limit + 1}
+          </span>
+          –
+          <span className="font-mono text-ink">
+            {Math.min(pagination.page * pagination.limit, pagination.total)}
+          </span>
+          {' '}of{' '}
+          <span className="font-mono text-ink">
+            {pagination.total.toLocaleString()}
+          </span>
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
             disabled={pagination.page <= 1}
-            className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg
-                       text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-1 bg-paper border border-ink/10 hover:border-ink/30
+                       text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
-          <span className="text-sm text-neutral-400 px-3">
-            Page {pagination.page} of {pagination.totalPages}
+          <span className="text-gray-500 font-body px-2">
+            <span className="font-mono text-ink">{pagination.page}</span>
+            /<span className="font-mono text-ink">{pagination.totalPages}</span>
           </span>
           <button
             onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
             disabled={pagination.page >= pagination.totalPages}
-            className="p-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg
-                       text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="p-1 bg-paper border border-ink/10 hover:border-ink/30
+                       text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
