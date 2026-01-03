@@ -383,7 +383,7 @@ export default async function StylePage({
                 </h2>
                 <p className="text-sm text-neutral-500">{total} total results</p>
               </div>
-              <div className="grid gap-3 sm:gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-2 md:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {artists.map((artist: SearchResult) => (
                   <ArtistCard key={artist.artist_id} artist={artist} />
                 ))}

@@ -18,7 +18,7 @@ export default function SearchLoading() {
       </div>
 
       {/* Results Skeleton */}
-      <div className="container mx-auto px-4 py-8 md:py-12 relative z-10">
+      <div className="w-full px-4 md:container md:mx-auto md:px-6 pt-4 pb-6 md:pb-12 relative z-10">
         {/* Title Skeleton */}
         <div className="mb-8 md:mb-12">
           <div className="h-10 w-64 bg-surface-mid rounded animate-shimmer mb-3" style={{
@@ -32,7 +32,7 @@ export default function SearchLoading() {
         </div>
 
         {/* Artist Cards Skeleton Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4">
           {[...Array(6)].map((_, i) => (
             <div
               key={i}

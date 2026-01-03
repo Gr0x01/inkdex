@@ -38,7 +38,7 @@ export default function FeaturedArtistsGrid({ artists, city }: FeaturedArtistsGr
       </div>
 
       {/* Artists Grid - Responsive: 1-col → 2-col → 3-col */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
         {artists.map((artist) => (
           <ArtistPreviewCard key={artist.id} artist={artist} />
         ))}
