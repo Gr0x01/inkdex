@@ -279,22 +279,21 @@ export default function NavbarSearch() {
             font-mono text-xs md:text-sm font-bold uppercase tracking-widest
             transition-all duration-150
             ${
-              canSubmit
-                ? 'bg-ink text-paper border-ink hover:bg-ink/90 active:bg-ink/80'
-                : 'bg-ink/5 text-ink/25 border-transparent cursor-not-allowed'
+              isSubmitting
+                ? 'bg-ink text-paper border-ink cursor-wait'
+                : canSubmit
+                  ? 'bg-ink text-paper border-ink hover:bg-ink/90 active:bg-ink/80'
+                  : 'bg-ink/5 text-ink/25 border-transparent cursor-not-allowed'
             }
           `}
         >
-          Search
+          {isSubmitting ? (
+            <div className="w-3 h-3 border-[1.5px] border-paper/30 border-t-paper rounded-full animate-spin" />
+          ) : (
+            'Search'
+          )}
         </button>
       </div>
-
-      {/* Inline Loading Spinner (overlay) */}
-      {isSubmitting && (
-        <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-ink/20 border-t-ink animate-spin" />
-        </div>
-      )}
 
       {/* Error Message */}
       {error && !isSubmitting && (
