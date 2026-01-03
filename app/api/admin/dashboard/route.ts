@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
+import { getCached, generateCacheKey } from '@/lib/redis/cache';
 
 /**
  * Safely parse a float value, returning 0 for invalid inputs
@@ -27,7 +28,15 @@ export async function GET() {
   const adminClient = createAdminClient();
 
   try {
-    // Run all queries in parallel for efficiency
+    // Generate cache key for dashboard stats
+    const cacheKey = generateCacheKey('admin:dashboard', { type: 'stats' });
+
+    // Fetch stats from cache or database
+    const stats = await getCached(
+      cacheKey,
+      { ttl: 300, pattern: 'admin:dashboard' }, // 5 minutes TTL
+      async () => {
+        // Run all queries in parallel for efficiency
     const [
       contentResult,
       hashtagResult,
@@ -144,44 +153,48 @@ export async function GET() {
     const citiesData = citiesResult.data || [];
     const uniqueCities = new Set(citiesData.map(c => c.city).filter(Boolean)).size;
 
-    // Process recent claims
-    const recentClaims = (recentClaimsResult.data || []).map(a => ({
-      id: a.id,
-      name: a.name,
-      instagramHandle: a.instagram_handle,
-      claimedAt: a.claimed_at,
-    }));
+        // Process recent claims
+        const recentClaims = (recentClaimsResult.data || []).map(a => ({
+          id: a.id,
+          name: a.name,
+          instagramHandle: a.instagram_handle,
+          claimedAt: a.claimed_at,
+        }));
 
-    return NextResponse.json({
-      artists: artistStats,
-      content: {
-        totalImages,
-        imagesWithEmbeddings: imagesWithEmbeddings || 0,
-      },
-      mining: {
-        hashtag: {
-          total: hashtagStats.total,
-          completed: hashtagStats.completed,
-          failed: hashtagStats.failed,
-          running: hashtagStats.running,
-        },
-        follower: {
-          total: followerStats.total,
-          completed: followerStats.completed,
-          failed: followerStats.failed,
-          running: followerStats.running,
-        },
-        totalCost: totalMiningCost,
-        costPerArtist,
-        totalArtistsInserted: totalArtistsFromMining,
-      },
-      activity: {
-        totalSearches: searchesResult.count || 0,
-        uniqueCities,
-        recentClaims,
-      },
-      scraping: scrapingStats,
-    });
+        return {
+          artists: artistStats,
+          content: {
+            totalImages,
+            imagesWithEmbeddings: imagesWithEmbeddings || 0,
+          },
+          mining: {
+            hashtag: {
+              total: hashtagStats.total,
+              completed: hashtagStats.completed,
+              failed: hashtagStats.failed,
+              running: hashtagStats.running,
+            },
+            follower: {
+              total: followerStats.total,
+              completed: followerStats.completed,
+              failed: followerStats.failed,
+              running: followerStats.running,
+            },
+            totalCost: totalMiningCost,
+            costPerArtist,
+            totalArtistsInserted: totalArtistsFromMining,
+          },
+          activity: {
+            totalSearches: searchesResult.count || 0,
+            uniqueCities,
+            recentClaims,
+          },
+          scraping: scrapingStats,
+        };
+      }
+    );
+
+    return NextResponse.json(stats);
   } catch (error) {
     console.error('Dashboard API error:', error);
     return NextResponse.json(

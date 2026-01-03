@@ -10,46 +10,8 @@ import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 import { logAdminAction, getClientInfo } from '@/lib/admin/audit-log';
+import { checkRateLimit } from '@/lib/redis/rate-limiter';
 import { z } from 'zod';
-
-// Rate limiting for bulk operations
-const bulkAttempts = new Map<string, { count: number; resetAt: number }>();
-const BULK_MAX_ATTEMPTS = 5;
-const BULK_WINDOW_MS = 60 * 1000; // 1 minute
-
-function checkBulkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const attempts = bulkAttempts.get(userId);
-
-  if (!attempts || now > attempts.resetAt) {
-    bulkAttempts.set(userId, { count: 1, resetAt: now + BULK_WINDOW_MS });
-    return true;
-  }
-
-  if (attempts.count >= BULK_MAX_ATTEMPTS) {
-    return false;
-  }
-
-  attempts.count++;
-  return true;
-}
-
-// Cleanup expired entries periodically (with unref to not keep process alive)
-let bulkCleanupIntervalId: ReturnType<typeof setInterval> | null = null;
-if (typeof globalThis !== 'undefined' && !bulkCleanupIntervalId) {
-  bulkCleanupIntervalId = setInterval(() => {
-    const now = Date.now();
-    for (const [key, data] of bulkAttempts.entries()) {
-      if (now > data.resetAt) {
-        bulkAttempts.delete(key);
-      }
-    }
-  }, 5 * 60 * 1000);
-  // Prevent interval from keeping serverless function alive
-  if (bulkCleanupIntervalId.unref) {
-    bulkCleanupIntervalId.unref();
-  }
-}
 
 const bulkUpdateSchema = z.object({
   artistIds: z.array(z.string().uuid()).min(1).max(100),
@@ -68,8 +30,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Rate limit bulk operations
-    if (!checkBulkRateLimit(user.id)) {
+    // Rate limit bulk operations (Redis-based, 5 operations per minute)
+    const rateLimitResult = await checkRateLimit(
+      `admin-bulk-featured:${user.id}`,
+      5, // max operations
+      60 * 1000 // 1 minute window
+    );
+
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Too many bulk operations. Please wait before trying again.' },
         { status: 429 }

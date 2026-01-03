@@ -11,51 +11,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdminEmail } from '@/lib/admin/whitelist';
+import { checkRateLimit } from '@/lib/redis/rate-limiter';
 import { z } from 'zod';
-
-// Rate limiting: Track login attempts per email
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const WINDOW_MS = 60 * 1000; // 1 minute
-const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-
-// Periodic cleanup to prevent memory leak
-function cleanupExpiredAttempts() {
-  const now = Date.now();
-  for (const [email, data] of loginAttempts.entries()) {
-    if (now > data.resetAt) {
-      loginAttempts.delete(email);
-    }
-  }
-}
-
-// Start cleanup interval (only once per process)
-let cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
-if (typeof globalThis !== 'undefined' && !cleanupIntervalId) {
-  cleanupIntervalId = setInterval(cleanupExpiredAttempts, CLEANUP_INTERVAL_MS);
-  // Prevent interval from keeping process alive
-  if (cleanupIntervalId.unref) {
-    cleanupIntervalId.unref();
-  }
-}
-
-function checkRateLimit(email: string): boolean {
-  const now = Date.now();
-  const key = email.toLowerCase();
-  const attempts = loginAttempts.get(key);
-
-  if (!attempts || now > attempts.resetAt) {
-    loginAttempts.set(key, { count: 1, resetAt: now + WINDOW_MS });
-    return true;
-  }
-
-  if (attempts.count >= MAX_ATTEMPTS) {
-    return false;
-  }
-
-  attempts.count++;
-  return true;
-}
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -77,8 +34,14 @@ export async function POST(request: NextRequest) {
     const { email } = result.data;
     const normalizedEmail = email.toLowerCase();
 
-    // Check rate limit
-    if (!checkRateLimit(normalizedEmail)) {
+    // Check rate limit (Redis-based, 5 attempts per minute)
+    const rateLimitResult = await checkRateLimit(
+      `admin-login:${normalizedEmail}`,
+      5, // max attempts
+      60 * 1000 // 1 minute window
+    );
+
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Too many login attempts. Please try again in a minute.' },
         { status: 429 }

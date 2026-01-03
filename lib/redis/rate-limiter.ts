@@ -33,25 +33,12 @@ export async function checkRateLimit(
   const resetAt = now + windowMs
 
   try {
-    // Generate unique member identifier (must be stored to remove if over limit)
-    const member = `${now}-${Math.random().toString(36).substring(2)}`
-
-    // Use Redis pipeline for atomic operations
+    // Step 1: Clean expired entries and count current requests
+    // Use pipeline to make these operations atomic
     const pipeline = redis.pipeline()
-
-    // 1. Remove expired entries (older than window)
     pipeline.zremrangebyscore(key, '-inf', windowStart)
-
-    // 2. Count current requests in window
     pipeline.zcard(key)
 
-    // 3. Add current request with timestamp
-    pipeline.zadd(key, now, member)
-
-    // 4. Set expiry on key (cleanup)
-    pipeline.expire(key, Math.ceil(windowMs / 1000))
-
-    // Execute all commands atomically
     const results = await pipeline.exec()
 
     if (!results) {
@@ -66,20 +53,21 @@ export async function checkRateLimit(
 
     const currentCount = countResult[1] as number
 
-    // Check if within limit (count BEFORE adding current request)
-    const withinLimit = currentCount <= limit
+    // Step 2: Check if we're within limit BEFORE adding request
+    if (currentCount < limit) {
+      // Within limit - add the request
+      const member = `${now}-${Math.random().toString(36).substring(2)}`
+      await redis.zadd(key, now, member)
+      await redis.expire(key, Math.ceil(windowMs / 1000))
 
-    if (withinLimit) {
       return {
         success: true,
         limit,
-        remaining: limit - currentCount,
+        remaining: limit - currentCount - 1, // -1 because we just added one
         reset: resetAt,
       }
     } else {
-      // Over limit - remove the request we just added (using same member value)
-      await redis.zrem(key, member)
-
+      // Over limit - reject without adding
       return {
         success: false,
         limit,

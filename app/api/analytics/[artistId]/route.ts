@@ -11,6 +11,7 @@ import {
   getTopPerformingImages,
   getAnalyticsTimeSeries,
 } from '@/lib/analytics/queries'
+import { getCached, generateCacheKey } from '@/lib/redis/cache'
 
 // Validation schemas
 const paramsSchema = z.object({
@@ -68,11 +69,39 @@ export async function GET(
       )
     }
 
-    // Fetch analytics data in parallel
+    // Generate cache keys for each analytics query
+    // Cache separately to allow partial cache hits
+    const summaryKey = generateCacheKey('analytics:summary', {
+      artistId,
+      days: String(days || 'all'),
+    })
+    const topImagesKey = generateCacheKey('analytics:top-images', {
+      artistId,
+      days: String(days || 'all'),
+    })
+    const timeSeriesKey = generateCacheKey('analytics:timeseries', {
+      artistId,
+      days: String(days || 90),
+    })
+
+    // Fetch analytics data in parallel with 30-minute cache
+    // This ensures consistent data across dashboard refreshes
     const [summary, topImages, timeSeries] = await Promise.all([
-      getArtistAnalytics(artistId, days),
-      getTopPerformingImages(artistId, days, 10),
-      getAnalyticsTimeSeries(artistId, days || 90), // Default to 90 days for chart
+      getCached(
+        summaryKey,
+        { ttl: 1800, pattern: 'analytics:summary' }, // 30 minutes
+        () => getArtistAnalytics(artistId, days)
+      ),
+      getCached(
+        topImagesKey,
+        { ttl: 1800, pattern: 'analytics:top-images' }, // 30 minutes
+        () => getTopPerformingImages(artistId, days, 10)
+      ),
+      getCached(
+        timeSeriesKey,
+        { ttl: 1800, pattern: 'analytics:timeseries' }, // 30 minutes
+        () => getAnalyticsTimeSeries(artistId, days || 90)
+      ),
     ])
 
     return NextResponse.json({
