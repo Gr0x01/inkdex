@@ -166,6 +166,34 @@ async function getExistingHandles(): Promise<Set<string>> {
   return handles;
 }
 
+async function getFailedCandidates(): Promise<Set<string>> {
+  console.log('[Mining] Fetching recently failed candidates...');
+
+  // Get handles that failed classification (bio=false, image=false) in the last 30 days
+  // Older failures can be retried in case the account changed
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from('mining_candidates')
+    .select('instagram_handle')
+    .eq('bio_filter_passed', false)
+    .eq('image_filter_passed', false)
+    .gte('processed_at', thirtyDaysAgo.toISOString());
+
+  if (error) {
+    console.error('[Mining] Error fetching failed candidates:', error);
+    return new Set();
+  }
+
+  const handles = new Set(
+    data.map(c => c.instagram_handle?.toLowerCase()).filter(Boolean)
+  );
+
+  console.log(`[Mining] Found ${handles.size} recently failed candidates (will skip for 30 days)`);
+  return handles;
+}
+
 async function getProcessedSeeds(): Promise<Set<string>> {
   const { data, error } = await supabase
     .from('follower_mining_runs')
@@ -298,6 +326,7 @@ async function processSeed(
   seedAccount: string,
   seedType: SeedType,
   existingHandles: Set<string>,
+  failedCandidates: Set<string>,
   skipImages: boolean
 ): Promise<{
   followersScraped: number;
@@ -344,13 +373,20 @@ async function processSeed(
       apify_cost_estimate: stats.apifyCost,
     });
 
-    // Step 2: Filter out existing handles
+    // Step 2: Filter out existing handles and previously failed candidates
+    const existingCount = scrapeResult.followers.filter(
+      f => existingHandles.has(f.username.toLowerCase())
+    ).length;
+    const failedCount = scrapeResult.followers.filter(
+      f => !existingHandles.has(f.username.toLowerCase()) && failedCandidates.has(f.username.toLowerCase())
+    ).length;
+
     const newFollowers = scrapeResult.followers.filter(
-      f => !existingHandles.has(f.username.toLowerCase())
+      f => !existingHandles.has(f.username.toLowerCase()) && !failedCandidates.has(f.username.toLowerCase())
     );
     stats.newFollowers = newFollowers.length;
 
-    console.log(`[Mining] ${newFollowers.length} new followers (${scrapeResult.followers.length - newFollowers.length} already exist)`);
+    console.log(`[Mining] ${newFollowers.length} new followers (${existingCount} already exist, ${failedCount} previously failed)`);
 
     if (newFollowers.length === 0) {
       await updateMiningRun(runId, {
@@ -550,8 +586,9 @@ async function main() {
     return;
   }
 
-  // Get existing handles for deduplication
+  // Get existing handles and failed candidates for deduplication
   const existingHandles = await getExistingHandles();
+  const failedCandidates = await getFailedCandidates();
   const processedSeeds = await getProcessedSeeds();
 
   // Filter out already-processed seeds
@@ -587,7 +624,7 @@ async function main() {
     console.log(`Seed ${i + 1}/${seedsToProcess.length}: @${account} (${type})`);
     console.log('─'.repeat(60));
 
-    const stats = await processSeed(account, type, existingHandles, skipImages);
+    const stats = await processSeed(account, type, existingHandles, failedCandidates, skipImages);
 
     // Aggregate stats
     totalStats.followersScraped += stats.followersScraped;

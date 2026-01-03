@@ -203,6 +203,34 @@ async function getExistingHandles(): Promise<Set<string>> {
   return handles;
 }
 
+async function getFailedCandidates(): Promise<Set<string>> {
+  console.log('[Mining] Fetching recently failed candidates...');
+
+  // Get handles that failed classification (bio=false, image=false) in the last 30 days
+  // Older failures can be retried in case the account changed
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from('mining_candidates')
+    .select('instagram_handle')
+    .eq('bio_filter_passed', false)
+    .eq('image_filter_passed', false)
+    .gte('processed_at', thirtyDaysAgo.toISOString());
+
+  if (error) {
+    console.error('[Mining] Error fetching failed candidates:', error);
+    return new Set();
+  }
+
+  const handles = new Set(
+    data.map(c => c.instagram_handle?.toLowerCase()).filter(Boolean)
+  );
+
+  console.log(`[Mining] Found ${handles.size} recently failed candidates (will skip for 30 days)`);
+  return handles;
+}
+
 async function getProcessedHashtags(): Promise<Set<string>> {
   const { data, error } = await supabase
     .from('hashtag_mining_runs')
@@ -332,6 +360,7 @@ async function saveMiningCandidate(candidate: {
 async function processHashtag(
   hashtag: string,
   existingHandles: Set<string>,
+  failedCandidates: Set<string>,
   skipImages: boolean,
   maxPosts: number = CONFIG.postsPerHashtag
 ): Promise<{
@@ -376,13 +405,20 @@ async function processHashtag(
       apify_cost_estimate: stats.apifyCost,
     });
 
-    // Step 2: Filter out existing handles
+    // Step 2: Filter out existing handles and previously failed candidates
+    const existingCount = scrapeResult.uniqueUsernames.filter(
+      u => existingHandles.has(u.toLowerCase())
+    ).length;
+    const failedCount = scrapeResult.uniqueUsernames.filter(
+      u => !existingHandles.has(u.toLowerCase()) && failedCandidates.has(u.toLowerCase())
+    ).length;
+
     const newUsernames = scrapeResult.uniqueUsernames.filter(
-      u => !existingHandles.has(u.toLowerCase())
+      u => !existingHandles.has(u.toLowerCase()) && !failedCandidates.has(u.toLowerCase())
     );
     stats.newHandles = newUsernames.length;
 
-    console.log(`[Mining] ${newUsernames.length} new handles (${scrapeResult.uniqueUsers - newUsernames.length} already exist)`);
+    console.log(`[Mining] ${newUsernames.length} new handles (${existingCount} already exist, ${failedCount} previously failed)`);
 
     if (newUsernames.length === 0) {
       await updateMiningRun(runId, {
@@ -576,8 +612,9 @@ async function main() {
     return;
   }
 
-  // Get existing handles for deduplication
+  // Get existing handles and failed candidates for deduplication
   const existingHandles = await getExistingHandles();
+  const failedCandidates = await getFailedCandidates();
   const processedHashtags = await getProcessedHashtags();
 
   // Filter out already-processed hashtags
@@ -613,7 +650,7 @@ async function main() {
     console.log(`Hashtag ${i + 1}/${hashtagsToProcess.length}: #${hashtag}`);
     console.log('─'.repeat(60));
 
-    const stats = await processHashtag(hashtag, existingHandles, skipImages, postsPerHashtag);
+    const stats = await processHashtag(hashtag, existingHandles, failedCandidates, skipImages, postsPerHashtag);
 
     // Aggregate stats
     totalStats.postsScraped += stats.postsScraped;

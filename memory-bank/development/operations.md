@@ -291,6 +291,22 @@ npm run mine:status
 - `mining_candidates` - All discovered profiles with classification status
   - `bio_filter_passed` (boolean) - Did bio keywords match?
   - `image_filter_passed` (boolean/null) - Did images pass? (null = pending)
+  - `processed_at` (timestamp) - When classification was completed
+
+**Deduplication & Retry Logic:**
+- Existing artists (in `artists` table) are always skipped
+- Failed candidates (bio=false AND image=false) are skipped for **30 days**
+- After 30 days, failed candidates can be re-evaluated (accounts may change)
+- This saves tokens while allowing recovery of accounts that start posting tattoo work
+
+**Artist Pipeline Status:**
+- `artists.pipeline_status` tracks discovery-to-searchable lifecycle:
+  - `pending_scrape` - New artist, needs Instagram portfolio scraping
+  - `scraping` - Currently being scraped
+  - `pending_embeddings` - Scraped, waiting for CLIP embeddings
+  - `complete` - Fully processed, searchable
+  - `failed` - Scraping failed (private account, no posts, etc.)
+- Trigger auto-updates status to `complete` when all images have embeddings
 
 **Cost Estimates (Flex Tier):**
 - Hashtag scraping: ~$0.004/post (Apify)

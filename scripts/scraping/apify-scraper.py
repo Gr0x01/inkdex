@@ -218,12 +218,19 @@ def create_scraping_job(conn, artist_id):
 
         cursor.execute(query, (artist_id,))
         job_id = cursor.fetchone()[0]
+
+        # Update artist pipeline status
+        cursor.execute(
+            "UPDATE artists SET pipeline_status = 'scraping' WHERE id = %s",
+            (artist_id,)
+        )
+
         conn.commit()
         cursor.close()
 
         return job_id
 
-def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=None):
+def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=None, artist_id=None):
     """Update scraping job status (thread-safe)"""
     with db_lock:
         cursor = conn.cursor()
@@ -238,6 +245,20 @@ def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=No
         """
 
         cursor.execute(query, (status, images_scraped, error_message, status, job_id))
+
+        # Update artist pipeline status if artist_id provided
+        if artist_id:
+            if status == 'completed':
+                cursor.execute(
+                    "UPDATE artists SET pipeline_status = 'pending_embeddings' WHERE id = %s",
+                    (artist_id,)
+                )
+            elif status == 'failed':
+                cursor.execute(
+                    "UPDATE artists SET pipeline_status = 'failed' WHERE id = %s",
+                    (artist_id,)
+                )
+
         conn.commit()
         cursor.close()
 
@@ -485,7 +506,7 @@ def process_single_artist(artist_data, apify_client, conn):
 
             if error:
                 print(f"   ⚠️  Error: {error}")
-                update_scraping_job(conn, job_id, 'failed', images_scraped, error)
+                update_scraping_job(conn, job_id, 'failed', images_scraped, error, artist_id)
 
                 # Still save profile metadata if available (even on error)
                 if profile_pic_url or follower_count:
@@ -494,7 +515,7 @@ def process_single_artist(artist_data, apify_client, conn):
 
                 return {'success': False, 'artist_id': artist_id, 'images': 0}
             else:
-                update_scraping_job(conn, job_id, 'completed', images_scraped)
+                update_scraping_job(conn, job_id, 'completed', images_scraped, None, artist_id)
 
                 # Save profile metadata
                 update_artist_profile_metadata(conn, artist_id, profile_pic_url, follower_count)
@@ -504,7 +525,7 @@ def process_single_artist(artist_data, apify_client, conn):
 
         except Exception as e:
             print(f"   ❌ Unexpected error for {artist_name}: {e}")
-            update_scraping_job(conn, job_id, 'failed', 0, str(e))
+            update_scraping_job(conn, job_id, 'failed', 0, str(e), artist_id)
             return {'success': False, 'artist_id': artist_id, 'images': 0}
 
     except Exception as e:
