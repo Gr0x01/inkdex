@@ -29,7 +29,7 @@ export async function POST(_request: NextRequest) {
     // 2. Get artist and check Pro status
     const { data: artist, error: artistError } = await supabase
       .from('artists')
-      .select('id, is_pro, auto_sync_enabled, instagram_handle')
+      .select('id, is_pro, auto_sync_enabled, instagram_handle, filter_non_tattoo_content')
       .eq('claimed_by_user_id', user.id)
       .eq('verification_status', 'claimed')
       .single();
@@ -59,8 +59,9 @@ export async function POST(_request: NextRequest) {
     }
 
     // 4. Trigger sync
-    console.log(`[ManualSync] Starting sync for @${artist.instagram_handle} (user: ${user.id})`);
-    const result = await syncArtistPortfolio(artist.id, user.id, 'manual');
+    const filterNonTattoo = artist.filter_non_tattoo_content !== false; // Default true if null
+    console.log(`[ManualSync] Starting sync for @${artist.instagram_handle} (user: ${user.id}, filter: ${filterNonTattoo})`);
+    const result = await syncArtistPortfolio(artist.id, user.id, 'manual', filterNonTattoo);
 
     // 5. Return result
     return NextResponse.json({

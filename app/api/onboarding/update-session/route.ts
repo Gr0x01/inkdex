@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
 
     switch (step) {
       case 'info':
-        // NEW: Step 1 - Combined profile info + booking (streamlined flow)
+        // Step 1 - Combined profile info + booking + sync preferences
         {
           const infoData = data as {
             name?: string
@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
             city?: string
             state?: string
             bookingLink?: string
+            autoSyncEnabled?: boolean
+            filterNonTattoo?: boolean
           };
           updateData = {
             profile_updates: {
@@ -127,11 +129,77 @@ export async function POST(request: NextRequest) {
               // Legacy format for backward compatibility
               city: infoData.locations?.[0]?.city || infoData.city || '',
               state: infoData.locations?.[0]?.region || infoData.state || '',
+              // Sync preferences (Pro-only, enforced server-side in finalize)
+              autoSyncEnabled: infoData.autoSyncEnabled || false,
+              filterNonTattoo: infoData.filterNonTattoo !== undefined ? infoData.filterNonTattoo : true,
             },
             booking_link: infoData.bookingLink || null,
             current_step: 1,
           };
           newStep = 1;
+        }
+        break;
+
+      case 'locations':
+        // Step 2: Location selection
+        {
+          const locationsData = data as {
+            locations?: Array<{
+              city?: string | null;
+              region?: string | null;
+              countryCode?: string;
+              locationType?: string;
+              isPrimary?: boolean;
+            }>;
+            city?: string;
+            state?: string;
+          };
+
+          // Get existing profile_updates to merge
+          const { data: currentSession } = await supabase
+            .from('onboarding_sessions')
+            .select('profile_updates')
+            .eq('id', sessionId)
+            .single();
+
+          const existingUpdates = (currentSession?.profile_updates || {}) as Record<string, unknown>;
+
+          updateData = {
+            profile_updates: {
+              ...existingUpdates,
+              locations: locationsData.locations,
+              city: locationsData.locations?.[0]?.city || locationsData.city || '',
+              state: locationsData.locations?.[0]?.region || locationsData.state || '',
+            },
+            current_step: 2,
+          };
+          newStep = 2;
+        }
+        break;
+
+      case 'sync_preferences':
+        // Step 3: Sync preferences (NEW)
+        {
+          const syncData = data as { autoSyncEnabled?: boolean; filterNonTattoo?: boolean };
+
+          // Get existing profile_updates to merge
+          const { data: currentSession } = await supabase
+            .from('onboarding_sessions')
+            .select('profile_updates')
+            .eq('id', sessionId)
+            .single();
+
+          const existingUpdates = (currentSession?.profile_updates || {}) as Record<string, unknown>;
+
+          updateData = {
+            profile_updates: {
+              ...existingUpdates,
+              autoSyncEnabled: syncData.autoSyncEnabled || false,
+              filterNonTattoo: syncData.filterNonTattoo !== undefined ? syncData.filterNonTattoo : true,
+            },
+            current_step: 3,
+          };
+          newStep = 3;
         }
         break;
 

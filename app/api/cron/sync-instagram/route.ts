@@ -48,7 +48,7 @@ function verifyCronAuth(request: NextRequest): boolean {
  * Process artists in parallel batches
  */
 async function processBatches(
-  artists: { id: string; userId: string; instagramHandle: string }[]
+  artists: { id: string; userId: string; instagramHandle: string; filterNonTattoo: boolean }[]
 ): Promise<SyncResult[]> {
   const results: SyncResult[] = [];
 
@@ -60,7 +60,7 @@ async function processBatches(
     );
 
     const batchResults = await Promise.allSettled(
-      batch.map((artist) => syncArtistPortfolio(artist.id, artist.userId, 'auto'))
+      batch.map((artist) => syncArtistPortfolio(artist.id, artist.userId, 'auto', artist.filterNonTattoo))
     );
 
     for (const result of batchResults) {

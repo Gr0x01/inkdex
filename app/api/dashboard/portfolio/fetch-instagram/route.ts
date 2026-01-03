@@ -127,37 +127,54 @@ export async function POST(_request: NextRequest) {
       );
     }
 
+    // 4.5. Get artist's filter preference
+    const { data: artist } = await supabase
+      .from('artists')
+      .select('filter_non_tattoo_content')
+      .eq('claimed_by_user_id', user.id)
+      .eq('verification_status', 'claimed')
+      .single();
+
+    const filterNonTattoo = artist?.filter_non_tattoo_content !== false; // Default true if null or no artist
+
     // 5. Fetch 50 images from Instagram (via Apify or mock)
     console.log(`[Portfolio] Fetching Instagram images for @${userData.instagram_username}...`);
     const profile = await fetchInstagramProfileImages(userData.instagram_username, 50);
 
-    // 6. Classify images in parallel (batch of 6 concurrent, resilient to failures)
-    console.log(`[Portfolio] Classifying ${profile.images.length} images...`);
-    const batchSize = 6;
-    const classificationResults: boolean[] = [];
+    // 6. Classify images in parallel (batch of 6 concurrent, resilient to failures) - if filtering enabled
+    let classificationResults: boolean[];
 
-    for (let i = 0; i < profile.images.length; i += batchSize) {
-      const batch = profile.images.slice(i, i + batchSize);
+    if (filterNonTattoo) {
+      console.log(`[Portfolio] Classifying ${profile.images.length} images (filter enabled)...`);
+      const batchSize = 6;
+      classificationResults = [];
 
-      // Use Promise.allSettled to handle individual failures gracefully
-      const batchResults = await Promise.allSettled(
-        batch.map((url, localIdx) => classifyImage(url, i + localIdx))
-      );
+      for (let i = 0; i < profile.images.length; i += batchSize) {
+        const batch = profile.images.slice(i, i + batchSize);
 
-      // Extract results, defaulting to false on error
-      const results = batchResults.map((result, idx) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        } else {
-          console.error(
-            `[Portfolio] Classification failed for image ${i + idx}:`,
-            result.reason
-          );
-          return false; // Conservative: assume not tattoo on error
-        }
-      });
+        // Use Promise.allSettled to handle individual failures gracefully
+        const batchResults = await Promise.allSettled(
+          batch.map((url, localIdx) => classifyImage(url, i + localIdx))
+        );
 
-      classificationResults.push(...results);
+        // Extract results, defaulting to false on error
+        const results = batchResults.map((result, idx) => {
+          if (result.status === 'fulfilled') {
+            return result.value;
+          } else {
+            console.error(
+              `[Portfolio] Classification failed for image ${i + idx}:`,
+              result.reason
+            );
+            return false; // Conservative: assume not tattoo on error
+          }
+        });
+
+        classificationResults.push(...results);
+      }
+    } else {
+      console.log(`[Portfolio] Filter disabled - showing all ${profile.images.length} images without classification`);
+      classificationResults = new Array(profile.images.length).fill(true);
     }
 
     // 6. Build response with classified images

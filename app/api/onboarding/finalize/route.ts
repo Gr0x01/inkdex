@@ -128,6 +128,8 @@ export async function POST(request: NextRequest) {
       }>
       city?: string
       state?: string
+      autoSyncEnabled?: boolean
+      filterNonTattoo?: boolean
     }
     interface FetchedImage {
       classified?: boolean
@@ -178,6 +180,15 @@ export async function POST(request: NextRequest) {
     if (session.artist_id) {
       artistId = session.artist_id;
 
+      // Get artist's Pro status to enforce feature restrictions
+      const { data: existingArtist } = await supabase
+        .from('artists')
+        .select('is_pro')
+        .eq('id', session.artist_id)
+        .single();
+
+      const isPro = existingArtist?.is_pro || false;
+
       // Update existing artist
       const { data: artist, error: updateError } = await supabase
         .from('artists')
@@ -190,6 +201,12 @@ export async function POST(request: NextRequest) {
           verification_status: 'claimed',
           claimed_by_user_id: user.id,
           claimed_at: new Date().toISOString(),
+          // Pro-only: Auto-sync can only be enabled by Pro users
+          auto_sync_enabled: isPro ? (profileUpdates.autoSyncEnabled || false) : false,
+          // Pro-only: Filter can only be disabled by Pro users (free users always filter)
+          filter_non_tattoo_content: isPro
+            ? (profileUpdates.filterNonTattoo !== undefined ? profileUpdates.filterNonTattoo : true)
+            : true,
         })
         .eq('id', artistId)
         .select('slug')
@@ -243,6 +260,8 @@ export async function POST(request: NextRequest) {
         artistSlug = `${artistSlug}-${nextNumber}`;
       }
 
+      // New artists start as free tier (is_pro defaults to FALSE)
+      // Pro features can only be enabled after upgrading
       const { error: insertError } = await supabase
         .from('artists')
         .insert({
@@ -262,6 +281,9 @@ export async function POST(request: NextRequest) {
           claimed_by_user_id: user.id,
           claimed_at: new Date().toISOString(),
           discovery_source: 'self_add',
+          // New artists are free tier - Pro features disabled regardless of preference
+          auto_sync_enabled: false, // Pro only
+          filter_non_tattoo_content: true, // Free users always filter
         });
 
       if (insertError) {

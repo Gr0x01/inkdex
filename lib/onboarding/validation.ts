@@ -156,14 +156,24 @@ export const infoStepSchema = z.object({
 export type InfoStepData = z.infer<typeof infoStepSchema>;
 
 /**
+ * Step 3 (NEW): Sync Preferences - Auto-sync and filtering settings
+ */
+export const syncPreferencesSchema = z.object({
+  autoSyncEnabled: z.boolean().default(false),
+  filterNonTattoo: z.boolean().default(true),
+});
+
+export type SyncPreferencesData = z.infer<typeof syncPreferencesSchema>;
+
+/**
  * Update Session Request (supports both new and legacy steps)
  */
 export const updateSessionSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID'),
-  step: z.enum(['info', 'preview', 'portfolio', 'booking'], {
+  step: z.enum(['info', 'locations', 'sync_preferences', 'preview', 'portfolio', 'booking'], {
     errorMap: () => ({ message: 'Invalid onboarding step' }),
   }),
-  data: z.union([infoStepSchema, profileDataSchema, portfolioSelectionSchema, bookingLinkSchema]),
+  data: z.union([infoStepSchema, locationSchema, syncPreferencesSchema, profileDataSchema, portfolioSelectionSchema, bookingLinkSchema]),
 });
 
 export type UpdateSessionRequest = z.infer<typeof updateSessionSchema>;

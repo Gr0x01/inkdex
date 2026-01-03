@@ -45,7 +45,7 @@ export async function GET(_request: NextRequest) {
     const { data: artist, error: artistError } = await supabase
       .from('artists')
       .select(
-        'id, is_pro, auto_sync_enabled, last_instagram_sync_at, sync_consecutive_failures, sync_disabled_reason'
+        'id, is_pro, auto_sync_enabled, filter_non_tattoo_content, last_instagram_sync_at, sync_consecutive_failures, sync_disabled_reason'
       )
       .eq('claimed_by_user_id', user.id)
       .eq('verification_status', 'claimed')
@@ -82,6 +82,7 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({
       isPro: artist.is_pro || false,
       autoSyncEnabled: artist.auto_sync_enabled || false,
+      filterNonTattoo: artist.filter_non_tattoo_content !== false, // Default true if null
       lastSyncAt: artist.last_instagram_sync_at,
       syncDisabledReason: artist.sync_disabled_reason,
       consecutiveFailures: artist.sync_consecutive_failures || 0,

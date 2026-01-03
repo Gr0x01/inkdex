@@ -34,41 +34,69 @@ interface SyncLog {
 interface SyncStatus {
   isPro: boolean;
   autoSyncEnabled: boolean;
+  filterNonTattoo: boolean;
   lastSyncAt: string | null;
   syncDisabledReason: string | null;
   consecutiveFailures: number;
   recentLogs: SyncLog[];
 }
 
-export function SyncSettingsCard() {
+interface SyncSettingsCardProps {
+  /**
+   * Optional initial status for Storybook stories.
+   * If provided, component won't fetch from API on mount.
+   */
+  initialStatus?: SyncStatus;
+  /**
+   * Optional mock fetch function for Storybook.
+   * If provided, this will be used instead of real API calls.
+   */
+  onFetch?: () => Promise<SyncStatus>;
+}
+
+export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardProps = {}) {
   const [status, setStatus] = useState<SyncStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [toggling, setToggling] = useState(false);
+  const [togglingFilter, setTogglingFilter] = useState(false);
   const [_error, setError] = useState<string | null>(null);
   const [_showHistory, _setShowHistory] = useState(false);
 
   // Fetch status on mount
   const fetchStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/dashboard/sync/status');
-      if (!response.ok) {
-        throw new Error('Failed to fetch sync status');
+      // Use mock fetch if provided (for Storybook)
+      if (onFetch) {
+        const data = await onFetch();
+        setStatus(data);
+        setError(null);
+      } else {
+        const response = await fetch('/api/dashboard/sync/status');
+        if (!response.ok) {
+          throw new Error('Failed to fetch sync status');
+        }
+        const data = await response.json();
+        setStatus(data);
+        setError(null);
       }
-      const data = await response.json();
-      setStatus(data);
-      setError(null);
     } catch (err) {
       console.error('[SyncSettingsCard] Fetch error:', err);
       setError('Failed to load sync status');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onFetch]);
 
   useEffect(() => {
-    fetchStatus();
-  }, [fetchStatus]);
+    // Use initial status if provided (for Storybook)
+    if (initialStatus) {
+      setStatus(initialStatus);
+      setLoading(false);
+    } else {
+      fetchStatus();
+    }
+  }, [fetchStatus, initialStatus]);
 
   // Toggle auto-sync
   const handleToggle = async () => {
@@ -95,6 +123,34 @@ export function SyncSettingsCard() {
       setError(err instanceof Error ? err.message : 'Failed to toggle auto-sync');
     } finally {
       setToggling(false);
+    }
+  };
+
+  // Toggle filter non-tattoo content
+  const handleFilterToggle = async () => {
+    if (!status) return;
+
+    setTogglingFilter(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/dashboard/sync/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filterNonTattoo: !status.filterNonTattoo }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update settings');
+      }
+
+      // Refresh status
+      await fetchStatus();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle filter');
+    } finally {
+      setTogglingFilter(false);
     }
   };
 
@@ -191,45 +247,104 @@ export function SyncSettingsCard() {
       {/* Sync Status Badge */}
       <SyncStatusBadge status={getSyncStatus()} lastSyncAt={status?.lastSyncAt} />
 
-      {/* Auto-sync Toggle - Editorial Split-Button Design */}
-      <button
-        onClick={handleToggle}
-        disabled={toggling}
-        className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20 sm:w-24"
-        role="switch"
-        aria-checked={status?.autoSyncEnabled}
-        aria-label="Toggle auto-sync"
-      >
-        {/* Sliding Background - covers exactly half */}
-        <div
-          className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
-          style={{
-            width: '50%',
-            left: status?.autoSyncEnabled ? '50%' : '0'
-          }}
-        />
+      {/* Two-column grid for toggles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+        {/* Auto-sync Toggle */}
+        <div className="space-y-1">
+          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
+            Auto-Sync
+          </label>
+          <button
+            onClick={handleToggle}
+            disabled={toggling}
+            className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20"
+            role="switch"
+            aria-checked={status?.autoSyncEnabled}
+            aria-label="Toggle auto-sync"
+          >
+            {/* Sliding Background */}
+            <div
+              className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
+              style={{
+                width: '50%',
+                left: status?.autoSyncEnabled ? '50%' : '0'
+              }}
+            />
 
-        {/* OFF Label - exactly 50% width */}
-        <span
-          className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-            !status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
-          }`}
-        >
-          OFF
-        </span>
+            {/* OFF Label */}
+            <span
+              className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                !status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+              }`}
+            >
+              OFF
+            </span>
 
-        {/* Divider - absolutely centered */}
-        <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+            {/* Divider */}
+            <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
 
-        {/* ON Label - exactly 50% width */}
-        <span
-          className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-            status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
-          }`}
-        >
-          ON
-        </span>
-      </button>
+            {/* ON Label */}
+            <span
+              className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+              }`}
+            >
+              ON
+            </span>
+          </button>
+          <p className="font-body text-[11px] text-gray-500">
+            Daily Instagram sync at 2am UTC
+          </p>
+        </div>
+
+        {/* Filter Toggle */}
+        <div className="space-y-1">
+          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
+            Filter Content
+          </label>
+          <button
+            onClick={handleFilterToggle}
+            disabled={togglingFilter}
+            className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20"
+            role="switch"
+            aria-checked={status?.filterNonTattoo}
+            aria-label="Toggle filter non-tattoo content"
+          >
+            {/* Sliding Background */}
+            <div
+              className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
+              style={{
+                width: '50%',
+                left: status?.filterNonTattoo ? '50%' : '0'
+              }}
+            />
+
+            {/* OFF Label */}
+            <span
+              className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                !status?.filterNonTattoo ? 'text-paper' : 'text-ink'
+              }`}
+            >
+              OFF
+            </span>
+
+            {/* Divider */}
+            <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+
+            {/* ON Label */}
+            <span
+              className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                status?.filterNonTattoo ? 'text-paper' : 'text-ink'
+              }`}
+            >
+              ON
+            </span>
+          </button>
+          <p className="font-body text-[11px] text-gray-500">
+            AI filters non-tattoo posts
+          </p>
+        </div>
+      </div>
 
       {/* Manual Sync Button */}
       <div

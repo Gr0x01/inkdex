@@ -143,7 +143,8 @@ async function releaseSyncLock(
 export async function syncArtistPortfolio(
   artistId: string,
   userId: string,
-  syncType: 'auto' | 'manual'
+  syncType: 'auto' | 'manual',
+  filterNonTattoo: boolean = true
 ): Promise<SyncResult> {
   const startTime = Date.now();
   const supabase = getServiceClient();
@@ -214,12 +215,18 @@ export async function syncArtistPortfolio(
       return createSuccessResult(artistId, startTime, fetchedImages.length, 0, 0);
     }
 
-    // 4. Classify new images (which ones are tattoos?)
-    console.log(`[AutoSync] Classifying ${newImages.length} new images...`);
-    const classifiedImages = await classifyImages(newImages);
-    const tattooImages = classifiedImages.filter((img) => img.classified);
+    // 4. Classify new images (which ones are tattoos?) - if filtering enabled
+    let tattooImages: { url: string; mediaId: string; classified: boolean }[];
 
-    console.log(`[AutoSync] Found ${tattooImages.length} tattoo images out of ${newImages.length}`);
+    if (filterNonTattoo) {
+      console.log(`[AutoSync] Classifying ${newImages.length} new images (filter enabled)...`);
+      const classifiedImages = await classifyImages(newImages);
+      tattooImages = classifiedImages.filter((img) => img.classified);
+      console.log(`[AutoSync] Found ${tattooImages.length} tattoo images out of ${newImages.length}`);
+    } else {
+      console.log(`[AutoSync] Filter disabled - importing all ${newImages.length} images without classification`);
+      tattooImages = newImages.map((img) => ({ ...img, classified: true }));
+    }
 
     if (tattooImages.length === 0) {
       // No tattoo images found, but sync was successful
@@ -241,10 +248,25 @@ export async function syncArtistPortfolio(
     // 6. Insert into portfolio
     if (successfulImages.length > 0) {
       const portfolioRecords = successfulImages.map((img) => {
-        // Validate embedding values are finite numbers to prevent injection
-        const validatedEmbedding = img.embedding!.map((v) => {
+        // Validate embedding array length (CLIP ViT-L/14 produces 768-dimensional embeddings)
+        const EXPECTED_EMBEDDING_DIM = 768;
+        if (!img.embedding || img.embedding.length !== EXPECTED_EMBEDDING_DIM) {
+          throw new Error(
+            `Invalid embedding dimensions: expected ${EXPECTED_EMBEDDING_DIM}, got ${img.embedding?.length || 0}`
+          );
+        }
+
+        // Validate embedding values are finite numbers and within reasonable range
+        // CLIP embeddings are typically normalized to [-1, 1] range, but allow some margin
+        const MAX_EMBEDDING_VALUE = 10; // Conservative upper bound to catch anomalies
+        const validatedEmbedding = img.embedding.map((v, idx) => {
           if (typeof v !== 'number' || !Number.isFinite(v)) {
-            throw new Error(`Invalid embedding value: ${v}`);
+            throw new Error(`Invalid embedding value at index ${idx}: ${v} (type: ${typeof v})`);
+          }
+          if (Math.abs(v) > MAX_EMBEDDING_VALUE) {
+            throw new Error(
+              `Embedding value out of expected range at index ${idx}: ${v} (abs > ${MAX_EMBEDDING_VALUE})`
+            );
           }
           return v;
         });
@@ -754,13 +776,13 @@ function createSuccessResult(
  * Used by cron job
  */
 export async function getEligibleArtists(): Promise<
-  { id: string; userId: string; instagramHandle: string }[]
+  { id: string; userId: string; instagramHandle: string; filterNonTattoo: boolean }[]
 > {
   const supabase = getServiceClient();
 
   const { data, error } = await supabase
     .from('artists')
-    .select('id, claimed_by_user_id, instagram_handle')
+    .select('id, claimed_by_user_id, instagram_handle, filter_non_tattoo_content')
     .eq('is_pro', true)
     .eq('auto_sync_enabled', true)
     .is('deleted_at', null)
@@ -776,6 +798,7 @@ export async function getEligibleArtists(): Promise<
     .map((a) => ({
       id: a.id,
       userId: a.claimed_by_user_id!,
+      filterNonTattoo: a.filter_non_tattoo_content !== false, // Default true if null
       instagramHandle: a.instagram_handle,
     }));
 }

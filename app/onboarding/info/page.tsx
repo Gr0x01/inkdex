@@ -2,6 +2,8 @@
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { Crown, Sparkles } from 'lucide-react';
 
 function InfoContent() {
   const router = useRouter();
@@ -11,6 +13,9 @@ function InfoContent() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [bookingLink, setBookingLink] = useState('');
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [filterNonTattoo, setFilterNonTattoo] = useState(true);
+  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,7 +71,17 @@ function InfoContent() {
         setName(updates.name || profileData.username || '');
         setBio(updates.bio || profileData.bio || '');
         setBookingLink(session.booking_link || '');
+        setAutoSyncEnabled(updates.autoSyncEnabled || false);
+        setFilterNonTattoo(updates.filterNonTattoo !== undefined ? updates.filterNonTattoo : true);
 
+        // Check if user has Pro subscription
+        const { data: artist } = await supabase
+          .from('artists')
+          .select('is_pro')
+          .eq('claimed_by_user_id', user.id)
+          .single();
+
+        setIsPro(artist?.is_pro || false);
         setInitialLoading(false);
       } catch (err: any) {
         console.error('[Info] Error fetching session:', err);
@@ -131,6 +146,8 @@ function InfoContent() {
             name,
             bio,
             bookingLink,
+            autoSyncEnabled: isPro ? autoSyncEnabled : false,
+            filterNonTattoo: isPro ? filterNonTattoo : true,
           },
         }),
       });
@@ -222,6 +239,105 @@ function InfoContent() {
             <p className="font-body text-sm text-gray-500 mt-1.5 leading-relaxed">
               Instagram DM link, website, Calendly, or any booking method
             </p>
+          </div>
+
+          {/* Sync Preferences - Pro Only */}
+          <div className="border-t-2 border-border-subtle pt-5">
+            <h3 className="font-mono text-xs text-gray-700 mb-4 uppercase tracking-widest">
+              Portfolio Sync <span className="font-body text-gray-500 normal-case tracking-normal">(Pro)</span>
+            </h3>
+
+            {/* Auto-Sync Toggle */}
+            <div className={`mb-3 rounded border-2 ${isPro ? 'border-border-subtle bg-gray-50' : 'border-purple-200 bg-purple-50'} p-4`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="font-mono text-xs text-gray-900 uppercase tracking-widest">
+                      Daily Auto-Sync
+                    </label>
+                    {!isPro && <Crown className="h-3.5 w-3.5 text-purple-600" />}
+                  </div>
+                  <p className="font-body text-sm text-gray-600 leading-relaxed">
+                    Automatically sync your latest Instagram posts daily at 2am UTC
+                  </p>
+                </div>
+                {isPro ? (
+                  <button
+                    type="button"
+                    onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
+                    className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                      autoSyncEnabled ? 'bg-ink' : 'bg-gray-300'
+                    }`}
+                    aria-label="Toggle auto-sync"
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                        autoSyncEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href="/pricing"
+                    className="flex-shrink-0 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
+                  >
+                    Upgrade
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {/* Filter Non-Tattoo Toggle */}
+            <div className={`rounded border-2 ${isPro ? 'border-border-subtle bg-gray-50' : 'border-purple-200 bg-purple-50'} p-4`}>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="font-mono text-xs text-gray-900 uppercase tracking-widest">
+                      Filter Non-Tattoo Content
+                    </label>
+                    {!isPro && <Crown className="h-3.5 w-3.5 text-purple-600" />}
+                  </div>
+                  <p className="font-body text-sm text-gray-600 leading-relaxed">
+                    Use AI to filter out lifestyle photos and non-tattoo posts
+                  </p>
+                  {isPro && (
+                    <p className="flex items-center gap-1.5 mt-1 font-body text-xs text-gray-500">
+                      <Sparkles className="h-3 w-3" />
+                      Powered by GPT-5-mini vision
+                    </p>
+                  )}
+                </div>
+                {isPro ? (
+                  <button
+                    type="button"
+                    onClick={() => setFilterNonTattoo(!filterNonTattoo)}
+                    className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
+                      filterNonTattoo ? 'bg-ink' : 'bg-gray-300'
+                    }`}
+                    aria-label="Toggle filter non-tattoo content"
+                  >
+                    <span
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                        filterNonTattoo ? 'translate-x-5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href="/pricing"
+                    className="flex-shrink-0 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
+                  >
+                    Upgrade
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            {!isPro && (
+              <p className="font-body text-xs text-gray-600 mt-3 leading-relaxed">
+                <strong className="text-gray-900">Free tier:</strong> Manual portfolio management only. Upgrade to Pro for auto-sync.
+              </p>
+            )}
           </div>
 
           {error && (

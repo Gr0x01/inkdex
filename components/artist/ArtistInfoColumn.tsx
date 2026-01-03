@@ -35,6 +35,7 @@ interface ArtistInfoColumnProps {
     follower_count: number | null
     verification_status: string
     is_pro: boolean | null
+    last_instagram_sync_at: string | null
     locations?: ArtistLocation[]
   }
   portfolioImages?: PortfolioImage[]
@@ -49,6 +50,24 @@ export default function ArtistInfoColumn({
 
   // Calculate portfolio stats
   const portfolioCount = portfolioImages.length
+
+  // Format sync time for Pro users
+  const formatSyncTime = (timestamp: string | null): string => {
+    if (!timestamp) return 'Never synced'
+    const now = new Date()
+    const syncDate = new Date(timestamp)
+    const diffMs = now.getTime() - syncDate.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays}d ago`
+    return syncDate.toLocaleDateString()
+  }
 
   // Multi-location support
   const locations = artist.locations || []
@@ -90,7 +109,14 @@ export default function ArtistInfoColumn({
               />
             </div>
 
-            {/* Featured Badge - Hanging Tag */}
+            {/* Pro Badge - Hanging Tag (top when both Pro and Featured) */}
+            {artist.is_pro && (
+              <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[4.5rem]' : 'bottom-2'}`}>
+                <ProBadge variant="badge" size="md" className="py-[0.75rem]" />
+              </div>
+            )}
+
+            {/* Featured Badge - Hanging Tag (below Pro if both exist) */}
             {isFeatured && (
               <div className="absolute bottom-2 -right-1 z-10">
                 <div className="bg-featured px-2 py-[0.75rem] flex items-center justify-center">
@@ -114,34 +140,24 @@ export default function ArtistInfoColumn({
               {artist.name}
             </p>
 
-            {/* Handle with Pro badge */}
-            <div className="flex items-center justify-center gap-2 flex-wrap !mt-0 mb-2">
-              <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink">
-                @{artist.instagram_handle}
-              </h1>
-              {artist.is_pro && <ProBadge variant="badge" size="md" />}
-            </div>
+            {/* Handle */}
+            <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink !mt-0 mb-2">
+              @{artist.instagram_handle}
+            </h1>
 
-            {/* Location - all locations shown by default */}
-            <div className="space-y-1">
-              <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
-                {formatLocation(primaryLocation)}
-              </p>
-
-              {/* Other locations - always visible */}
-              {hasMultipleLocations && (
-                <div className="space-y-0.5 pt-1">
-                  <p className="font-mono text-xs text-gray-400 uppercase">
-                    Also works in:
-                  </p>
+            {/* Location - horizontal with [P] primary indicator */}
+            <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
+              {hasMultipleLocations ? (
+                <>
+                  [P] {formatLocation(primaryLocation)}
                   {otherLocations.map((loc) => (
-                    <p key={loc.id} className="font-mono text-xs text-gray-400 uppercase">
-                      • {formatLocation(loc)}
-                    </p>
+                    <span key={loc.id}> • {formatLocation(loc)}</span>
                   ))}
-                </div>
+                </>
+              ) : (
+                formatLocation(primaryLocation)
               )}
-            </div>
+            </p>
 
             {/* Shop name if present */}
             {artist.shop_name && (
@@ -154,40 +170,51 @@ export default function ArtistInfoColumn({
 
         {/* Stats - Inline, No Box, Typographic Only */}
         {(artist.follower_count || portfolioCount > 0) && (
-          <div className="flex items-center justify-center gap-2.5 text-xs pt-1">
-            {artist.follower_count && artist.follower_count > 0 && (
-              <div>
-                <span className="font-heading font-black text-ink">
-                  {artist.follower_count >= 1000
-                    ? `${(artist.follower_count / 1000).toFixed(1)}K`
-                    : artist.follower_count.toLocaleString()}
-                </span>
-                <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
-                  followers
-                </span>
-              </div>
-            )}
-            {artist.follower_count && portfolioCount > 0 && (
-              <span className="text-gray-300 font-light">•</span>
-            )}
-            {portfolioCount > 0 && (
-              <div>
-                <span className="font-heading font-black text-ink">
-                  {portfolioCount}
-                </span>
-                <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
-                  pieces
+          <div className="pt-1 space-y-1">
+            <div className="flex items-center justify-center gap-2.5 text-xs">
+              {artist.follower_count && artist.follower_count > 0 && (
+                <div>
+                  <span className="font-heading font-black text-ink">
+                    {artist.follower_count >= 1000
+                      ? `${(artist.follower_count / 1000).toFixed(1)}K`
+                      : artist.follower_count.toLocaleString()}
+                  </span>
+                  <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
+                    followers
+                  </span>
+                </div>
+              )}
+              {artist.follower_count && portfolioCount > 0 && (
+                <span className="text-gray-300 font-light">•</span>
+              )}
+              {portfolioCount > 0 && (
+                <div>
+                  <span className="font-heading font-black text-ink">
+                    {portfolioCount}
+                  </span>
+                  <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
+                    pieces
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Sync status for Pro users */}
+            {artist.is_pro && artist.last_instagram_sync_at && (
+              <div className="flex items-center justify-center gap-1.5 text-xs">
+                <span className="font-mono text-gray-400 uppercase tracking-wide">
+                  Synced {formatSyncTime(artist.last_instagram_sync_at)}
                 </span>
               </div>
             )}
           </div>
         )}
 
-        {/* Bio - Truncated at 4 lines */}
+        {/* Bio - Prominent, supports paragraphs */}
         {displayBio && (
           <div className="pt-1">
-            <p className="font-body text-sm font-light text-gray-700 leading-snug line-clamp-4 italic">
-              &ldquo;{displayBio}&rdquo;
+            <p className="font-body text-base font-normal text-gray-900 leading-relaxed whitespace-pre-wrap">
+              {displayBio}
             </p>
           </div>
         )}
@@ -288,7 +315,7 @@ export default function ArtistInfoColumn({
           )}
 
           {/* Claim Profile CTA */}
-          <div className="pt-2 border-t border-gray-200">
+          <div className="pt-2">
             <ClaimProfileButton
               artistId={artist.id}
               artistName={artist.name}
