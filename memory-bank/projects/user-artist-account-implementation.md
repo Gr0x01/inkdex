@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 10 phases complete, 4 pending (legal, stripe, email, analytics)
+Status: Production Ready - 13/14 phases complete (93%) - Only Stripe integration remaining
 ---
 
 # User & Artist Account Implementation Spec
@@ -10,7 +10,7 @@ Status: Production Ready - 10 phases complete, 4 pending (legal, stripe, email, 
 
 ## Implementation Status Summary
 
-### ✅ Completed Phases (12/14)
+### ✅ Completed Phases (13/14)
 1. **Phase 1:** Database Foundation - Schema, RLS policies, helper functions
 2. **Phase 2:** Instagram OAuth - Supabase Auth integration with Vault encryption
 3. **Phase 3:** Claim Flow - Handle-based verification with atomic transactions
@@ -22,12 +22,12 @@ Status: Production Ready - 10 phases complete, 4 pending (legal, stripe, email, 
 9. **Phase 10:** Email Notifications - Resend integration (welcome, sync failure)
 10. **Phase 11:** Auto-Sync - Daily Instagram sync for Pro artists
 11. **Phase 12:** Search Ranking - Pro/Featured boosts + badge system
-12. **Phase 14:** Admin Panel - Mining dashboard + featured artist management
-13. **Phase 15:** Multi-Location - International support, tier-based limits
+12. **Phase 13:** Analytics Dashboard - Pro-only analytics with Redis caching
+13. **Phase 14:** Admin Panel - Mining dashboard + featured artist management
+14. **Phase 15:** Multi-Location - International support, tier-based limits
 
-### ⏳ Pending Phases (2/14)
+### ⏳ Pending Phases (1/14)
 - **Phase 9:** Stripe Integration - Subscription payments + webhooks
-- **Phase 13:** Analytics Dashboard - Pro-only views/clicks tracking
 
 ---
 
@@ -457,7 +457,7 @@ Implement Row-Level Security policies:
 
 ## Implementation Phases
 
-**Quick Reference:** Phases 1-8, 10-12, 14-15 are complete (12/14). Only Phases 9 (Stripe) and 13 (Analytics) remain.
+**Quick Reference:** Phases 1-8, 10-15 are complete (13/14). Only Phase 9 (Stripe) remains.
 
 ### Phase 1: Foundation ✅ COMPLETE (Jan 2, 2026)
 - Database schema migrations applied
@@ -634,12 +634,32 @@ Implement Row-Level Security policies:
 - Badge priority logic (Pro takes precedence in UI, both boost ranking)
 - Test ranking verified with seeded users
 
-### Phase 13: Analytics ⏳ PENDING
-- Analytics tracking functions (profile views, clicks, search appearances)
-- Dashboard (Pro only)
-- Charts: line (views over time), bar (top images), pie (click distribution)
-- Metrics: 7/30/90 day views, Instagram clicks, booking clicks
-- Daily aggregation with 365-day retention
+### Phase 13: Analytics ✅ COMPLETE (Jan 3, 2026)
+- **Analytics Dashboard:** Pro-only dashboard at `/dashboard/analytics`
+  - Time ranges: 7 days, 30 days, 90 days, all time
+  - Recharts visualization (line charts, bar charts)
+  - Top-performing images by view count
+- **Tracking:**
+  - Profile views (server-side on page load)
+  - Image views (client-side AnalyticsTracker component)
+  - Instagram link clicks
+  - Booking link clicks
+  - Search appearances (batch tracking in results)
+- **Database:**
+  - `portfolio_image_analytics` table
+  - `increment_image_view()` RPC function
+  - Daily aggregation with 365-day retention
+- **Deduplication:** Redis SET NX pattern (5-minute window prevents duplicate events)
+- **API Endpoints:**
+  - `GET /api/analytics/[artistId]` - Fetch analytics data
+  - `POST /api/analytics/track` - Track events
+- **Caching:** 30-minute Redis cache for analytics queries (ensures consistent dashboard data)
+- **Components:**
+  - `AnalyticsDashboard` - Main dashboard component
+  - `MetricsCards` - Summary statistics
+  - `ViewsChart` - Line chart for views over time
+  - `TopImagesGrid` - Top 10 images by views
+  - `AnalyticsTracker` - Client-side tracking component
 
 ### Phase 14: Admin Panel ✅ COMPLETE (Jan 3, 2026)
 - Magic link authentication with email whitelist
@@ -1812,13 +1832,13 @@ npx tsx scripts/seed/create-test-users.ts
 
 ---
 
-**Current Status:** Production ready with 12 phases complete. Only 2 phases remaining: Stripe integration and Analytics dashboard.
+**Current Status:** Production ready with 13 phases complete. Only 1 phase remaining: Stripe integration.
 
 **Next Steps:**
 1. **Phase 9:** Stripe integration - Enable Pro subscriptions (legal pages ready for checkout)
-2. **Phase 13:** Analytics dashboard - Pro users can see profile views, clicks, engagement
 
 **Completed Since Last Update:**
 - ✅ Phase 8: Legal pages (terms, privacy, about, contact) - Stripe-ready
 - ✅ Phase 10: Email notifications (welcome, sync failures via Resend)
-- Platform is now **86% complete** (12/14 phases)
+- ✅ Phase 13: Analytics dashboard with Redis caching (views, clicks, top images)
+- Platform is now **93% complete** (13/14 phases)
