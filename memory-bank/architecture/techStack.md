@@ -35,6 +35,25 @@ Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
   - Why: Better for 10k-100k+ vectors, good recall/speed tradeoff
   - Index Config: `lists = 100` for MVP (10k images), scale to `lists = 316` for 100k
   - Alternative Considered: HNSW (better for <10k, more memory)
+- **Redis**: Railway (distributed caching + rate limiting)
+  - Why: Serverless-safe rate limiting, analytics caching, fail-open resilience
+  - Client: ioredis v5.8.2 with singleton pattern
+  - Deployment: Railway (512MB, $5/month)
+  - Use Cases:
+    - **Rate limiting** (sliding window algorithm with sorted sets)
+    - **Analytics caching** (30-min TTL for consistent dashboard data)
+    - **Admin dashboard caching** (5-min TTL for stats)
+    - **Metrics tracking** (cache hit rates, performance timing)
+  - Architecture:
+    - Fail-open design (system works if Redis unavailable)
+    - Fire-and-forget writes (non-blocking cache sets)
+    - Pattern-based cache invalidation (SCAN, not KEYS)
+    - Type-safe cache key generation
+  - Security:
+    - Input sanitization (colon replacement prevents key injection)
+    - Whitelist validation on admin endpoints
+    - Race condition prevention (check-before-add, isFlushing flags)
+    - Atomic operations via Redis pipelines
 - **Image Embeddings**: OpenCLIP ViT-L-14 (768 dimensions) - **Hybrid Architecture** (Jan 1, 2026)
   - Why: CLIP is multimodal (text + image share same vector space!)
   - Model: `ViT-L-14` with `laion2b_s32b_b82k` weights (768-dim L2 normalized vectors)
@@ -113,11 +132,13 @@ Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
   - `GET /api/admin/artists` - Paginated artist list
   - `PATCH /api/admin/artists/[id]/featured` - Toggle featured
   - `POST /api/admin/artists/bulk-featured` - Bulk update
+  - `GET /api/admin/redis/stats` - Cache metrics and Redis health
 - **Security**:
   - SQL injection prevention (PostgREST escaping)
   - CSRF protection (SameSite=strict for admin cookies)
-  - Rate limiting (in-memory with cleanup)
+  - Rate limiting (Redis-based, serverless-safe)
   - Audit logging (admin_audit_log table)
+  - Input validation (Zod schemas, whitelist checking)
 
 ---
 
@@ -315,6 +336,12 @@ POST /api/claim-profile (POST-MVP)
 - Query optimization: Avoid N+1 with joins, use `jsonb_agg` for images
 
 **Caching Strategy:**
+- **Redis Caching** (Jan 3, 2026): Application-level caching for dynamic data
+  - **Analytics**: 30-minute TTL (ensures consistent dashboard data during viewing sessions)
+  - **Admin Stats**: 5-minute TTL (reduces database load, acceptable staleness)
+  - **Pattern-based invalidation**: Smart cache clearing on data updates
+  - **Metrics tracking**: Hit/miss rates, performance timing, Redis health monitoring
+  - **Admin endpoint**: `GET /api/admin/redis/stats` for observability
 - **ISR (Incremental Static Regeneration)**: 24h revalidation for artist/city pages
   - Why: Content changes slowly (daily Instagram scrapes)
   - Fallback: Stale-while-revalidate (serve cached, rebuild in background)

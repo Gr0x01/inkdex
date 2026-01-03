@@ -18,6 +18,42 @@ Status: Production Ready
 
 ## Recent Completions
 
+### Jan 3, 2026 (Session 7)
+- **Redis caching infrastructure** - Production-ready distributed caching
+  - **Core utilities:**
+    - `/lib/redis/types.ts` - TypeScript interfaces for type safety
+    - `/lib/redis/cache.ts` - Core caching layer with fail-open design
+    - `/lib/redis/metrics.ts` - Observability layer (hit/miss tracking, health checks)
+    - `/lib/redis/invalidation.ts` - Smart cache clearing helpers
+  - **Rate limiting migration:**
+    - Admin login: Migrated from in-memory Map to Redis sliding window (5/minute)
+    - Bulk featured operations: Migrated to Redis (5/minute per admin)
+    - Sliding window algorithm using Redis sorted sets (accurate across serverless instances)
+  - **Analytics caching:**
+    - 30-minute TTL for summary/topImages/timeSeries queries
+    - Ensures consistent dashboard data during Pro user viewing sessions
+    - Separate cache keys for partial cache hits (summary vs top images vs time series)
+  - **Admin dashboard caching:**
+    - 5-minute TTL for dashboard statistics
+    - Reduces database load from 7 parallel COUNT queries
+  - **Security hardening:**
+    - Fixed rate limiter race condition (check-then-add pattern)
+    - Cache key injection prevention (colon sanitization)
+    - Admin endpoint input validation (pattern whitelist)
+    - Metrics flush race condition prevention (isFlushing flag)
+  - **Admin metrics endpoint:** `GET /api/admin/redis/stats`
+    - Returns: health (latency, memory, uptime), metricsByPattern, totalMetrics
+    - Admin-only access with whitelist validation
+  - **Architecture:**
+    - Fail-open design (system works if Redis unavailable)
+    - Fire-and-forget cache writes (non-blocking)
+    - Pattern-based invalidation using SCAN (production-safe)
+    - In-memory metrics aggregation with 10-second batch flush
+    - Generic getCached<T>() for type-safe caching
+  - **Files created:** 4 core utilities + 1 admin API endpoint
+  - **Files modified:** 4 API routes migrated to Redis
+  - **Commit:** `8da7635` - Security fixes and caching infrastructure
+
 ### Jan 3, 2026 (Session 6)
 - **13-City Expansion Research** - DataForSEO market analysis complete
   - **Cities Analyzed:** 13 mid-tier markets (artsy, growing metros, tourism cities)
@@ -216,7 +252,7 @@ Status: Production Ready
 | Classification | ~$4 |
 | Embeddings | ~$2 |
 | **Total one-time** | ~$200 |
-| **Monthly** | ~$7 |
+| **Monthly** | ~$12 ($7 infrastructure + $5 Redis) |
 
 ## Architecture Decisions
 
@@ -225,11 +261,12 @@ Status: Production Ready
 3. **GPT-5-mini flex** for classification - ~$0.00012/profile (6 images)
 4. **Hybrid CLIP** - 90% cost reduction vs Modal-only
 5. **Handle matching** for claims - All artists have handles, none have IDs
+6. **Redis caching** - Serverless-safe rate limiting + analytics consistency (Jan 3, 2026)
 
 ## Known Issues
 
 - ESLint warnings in `/scripts` (dev tools, non-blocking)
-- Rate limiter in-memory (resets on deploy, acceptable for MVP)
+- Pre-existing syntax error in `components/dashboard/DashboardHome.tsx:143-144` (TypeScript compilation blocked)
 
 ## Next Priorities
 

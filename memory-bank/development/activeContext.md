@@ -74,10 +74,10 @@ Status: Production Ready - 12/14 Phases Complete (86%) + 13-City Expansion Plann
 
 ## Pending Phases
 
-| Phase | Description |
-|-------|-------------|
-| 9 | Stripe subscription + webhooks |
-| 13 | Analytics dashboard (Pro only) |
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 9 | Stripe subscription + webhooks | Not started |
+| 13 | Analytics dashboard (Pro only) | Backend complete (Redis caching), UI pending |
 
 ## Ready-to-Run Pipelines
 
@@ -137,6 +137,7 @@ Access via `/dev/login` (development only):
 - **Auth:** Supabase Auth + Instagram OAuth via Facebook Login
 - **Tokens:** Encrypted in Supabase Vault (no plaintext)
 - **Embeddings:** Local GPU primary, Modal.com fallback
+- **Caching:** Redis (Railway) - rate limiting + analytics caching (fail-open design)
 
 ## Reference Docs
 
