@@ -23,7 +23,32 @@ export default function AnalyticsDashboard({
   artistName: _artistName,
 }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(30)
-  const [data, setData] = useState<{ totalViews?: number; totalSearchAppearances?: number; viewsByDate?: Array<{ date: string; views: number }>; searchesByDate?: Array<{ date: string; searches: number }> } | null>(null)
+  const [data, setData] = useState<{
+    summary: {
+      profileViews: number
+      imageViews: number
+      instagramClicks: number
+      bookingClicks: number
+      searchAppearances: number
+      totalEngagement: number
+    }
+    topImages: Array<{
+      imageId: string
+      imageUrl: string
+      instagramUrl: string | null
+      viewCount: number
+      postCaption: string | null
+    }>
+    timeSeries: Array<{
+      date: string
+      profileViews: number
+      imageViews: number
+      instagramClicks: number
+      bookingClicks: number
+      searchAppearances: number
+    }>
+    timeRange: number | null
+  } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

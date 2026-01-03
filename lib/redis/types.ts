@@ -146,8 +146,8 @@ export interface RedisStatsResponse {
   /** Redis server health information */
   health: CacheHealth
 
-  /** Metrics broken down by pattern */
-  metricsByPattern: Record<CacheKeyPattern, CacheMetrics>
+  /** Metrics broken down by pattern (with calculated hit rate) */
+  metricsByPattern: Record<string, { hits: number; misses: number; hitRate: number }>
 
   /** Aggregated metrics across all patterns */
   totalMetrics: TotalCacheMetrics

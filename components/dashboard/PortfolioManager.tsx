@@ -214,7 +214,7 @@ export default function PortfolioManager({
 
   // Unused props kept for interface compatibility
   void artistId;
-  void visibleCount;
+  void _visibleCount;
 
   return (
     <div className="max-w-7xl">{/* Content wrapper */}

@@ -13,18 +13,18 @@ export interface FeaturedArtist {
   id: string
   name: string
   slug: string
-  shop_name: string | null
-  verification_status: string
-  follower_count: number | null
-  is_pro?: boolean | null
-  is_featured?: boolean | null
+  shop_name?: string | null
+  verification_status?: string
+  follower_count?: number | null
+  is_pro?: boolean
+  is_featured?: boolean
   instagram_handle?: string
   profile_image_url?: string | null
   portfolio_images: Array<{
     id: string
     url: string
     instagram_url?: string
-    likes_count: number | null
+    likes_count?: number | null
   }>
 }
 

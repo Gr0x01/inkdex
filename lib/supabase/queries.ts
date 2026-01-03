@@ -648,13 +648,13 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
     id: string
     name: string
     slug: string
-    city: string | undefined
-    state: string | undefined
-    shop_name: string | null | undefined
-    verification_status: string | undefined
-    follower_count: number | null | undefined
-    is_pro: boolean | undefined
-    portfolio_images: Array<{ id: string; url: string; likes_count: number | null | undefined }>
+    city: string
+    state: string
+    shop_name?: string | null
+    verification_status?: string
+    follower_count?: number | null
+    is_pro?: boolean
+    portfolio_images: Array<{ id: string; url: string; likes_count?: number | null }>
   }
 
   // Process all artists first
@@ -671,15 +671,15 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
       id: row.id,
       name: row.name,
       slug: row.slug,
-      city: row.city,
-      state: row.state,
+      city: row.city || 'Unknown',
+      state: row.state || 'Unknown',
       shop_name: row.shop_name,
       verification_status: row.verification_status,
       follower_count: row.follower_count,
       is_pro: row.is_pro,
       portfolio_images: portfolioImages,
     }
-  }).filter((artist) => artist.portfolio_images.length >= 4)
+  }).filter((artist) => artist.portfolio_images.length >= 4 && artist.state !== 'Unknown')
 
   // Randomize using Fisher-Yates shuffle
   const shuffled = [...allArtists]
@@ -1151,6 +1151,8 @@ export async function getArtistsByStyle(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
+    is_pro: result.is_pro ?? false,
+    is_featured: result.is_featured ?? false,
     matching_images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
@@ -1158,7 +1160,7 @@ export async function getArtistsByStyle(
       likes_count: img.likes_count,
     })),
     similarity: result.similarity,
-    max_likes: result.max_likes,
+    max_likes: result.max_likes ?? undefined,
   }))
 
   return {
@@ -1244,6 +1246,8 @@ export async function getArtistsByStyleSeed(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
+    is_pro: result.is_pro ?? false,
+    is_featured: result.is_featured ?? false,
     matching_images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
@@ -1251,7 +1255,7 @@ export async function getArtistsByStyleSeed(
       likes_count: img.likes_count,
     })),
     similarity: result.similarity,
-    max_likes: result.max_likes,
+    max_likes: result.max_likes ?? undefined,
   }))
 
   return { artists, total: artists.length }

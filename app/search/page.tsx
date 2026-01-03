@@ -137,15 +137,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     <main className="min-h-screen bg-light">
       {/* COMPACT EDITORIAL FILTER BAR - Mobile Optimized */}
       <div className="sticky top-0 z-40 bg-[#F8F7F5] backdrop-blur-md border-b border-ink/10 shadow-sm">
-        <div className="w-full px-4 md:container md:mx-auto md:px-6">
-          <div className="flex items-center gap-2 md:gap-4 h-16 md:h-14 overflow-x-auto scrollbar-hide">
+        <div className="w-full px-3 md:px-4 md:container md:mx-auto md:px-6">
+          <div className="flex items-center gap-1.5 md:gap-4 h-12 md:h-14 overflow-x-auto scrollbar-hide">
             {/* Back Link - Mobile Friendly */}
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 font-mono text-xs font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.15em]"
+              className="inline-flex items-center gap-1 md:gap-1.5 font-mono text-[10px] md:text-xs font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.15em]"
             >
               <svg
-                className="w-4 h-4 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
+                className="w-3.5 h-3.5 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -162,7 +162,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </Link>
 
             {/* Vertical Divider */}
-            <div className="h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+            <div className="h-3 md:h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
 
             {/* Query Info - Mobile Responsive */}
             {queryType === 'text' && queryText && (
@@ -280,13 +280,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </>
             )}
 
-            {/* Results Count - Mobile Friendly */}
-            <div className="font-mono text-xs font-medium text-ink/70 uppercase tracking-[0.15em] whitespace-nowrap flex-shrink-0">
+            {/* Results Count - Desktop Only */}
+            <div className="hidden md:block font-mono text-xs font-medium text-ink/70 uppercase tracking-[0.15em] whitespace-nowrap flex-shrink-0">
               {total} {total === 1 ? 'Artist' : 'Artists'}
             </div>
 
-            {/* Vertical Divider */}
-            <div className="h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+            {/* Vertical Divider - Desktop Only */}
+            <div className="hidden md:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
 
             {/* City Filter - Mobile Optimized */}
             <div className="flex-shrink-0">

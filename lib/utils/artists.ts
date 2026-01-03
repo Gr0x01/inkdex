@@ -38,7 +38,7 @@ export function transformToSearchResult(
     artist_slug: artist.slug,
     city: city,
     profile_image_url: artist.profile_image_url || null,
-    follower_count: artist.follower_count,
+    follower_count: artist.follower_count ?? null,
     instagram_url: buildInstagramUrl(artist.instagram_handle),
     is_verified: artist.verification_status === 'verified',
     is_pro: artist.is_pro ?? false,

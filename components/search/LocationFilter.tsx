@@ -25,6 +25,14 @@ interface CityOption {
   artist_count: number
 }
 
+interface FlatLocationOption {
+  value: string
+  label: string
+  type: 'country' | 'region' | 'city'
+  country?: string
+  region?: string
+}
+
 // US state name lookup
 const US_STATE_NAME_MAP = new Map(US_STATES.map(s => [s.code, s.name]))
 
@@ -74,6 +82,8 @@ export default function LocationFilter() {
   const [countriesError, setCountriesError] = useState(false)
   const [regionsError, setRegionsError] = useState(false)
   const [citiesError, setCitiesError] = useState(false)
+  const [flatLocations, setFlatLocations] = useState<FlatLocationOption[]>([])
+  const [loadingFlatLocations, setLoadingFlatLocations] = useState(true)
 
   // Refs for request cancellation and retry
   const countriesAbortRef = useRef<AbortController | null>(null)
@@ -168,6 +178,66 @@ export default function LocationFilter() {
       () => fetchCities(country, region)
     )
   }, [fetchWithRetry])
+
+  // Fetch all locations and flatten into single searchable list
+  const fetchFlatLocations = useCallback(async () => {
+    setLoadingFlatLocations(true)
+    try {
+      // Fetch all data in parallel
+      const [countriesRes, regionsRes, citiesRes] = await Promise.all([
+        fetch('/api/locations/countries').then(r => r.json()),
+        fetch('/api/locations/regions?country=US').then(r => r.json()),
+        fetch('/api/cities/with-counts?country=US&min_count=1').then(r => r.json())
+      ])
+
+      const flattened: FlatLocationOption[] = []
+
+      // Add countries
+      countriesRes.forEach((c: CountryOption) => {
+        flattened.push({
+          value: `country-${c.code}`,
+          label: c.name,
+          type: 'country',
+          country: c.code
+        })
+      })
+
+      // Add regions/states
+      regionsRes.forEach((r: RegionOption) => {
+        const stateName = US_STATE_NAME_MAP.get(r.region) || r.region_name
+        flattened.push({
+          value: `region-${r.region}`,
+          label: `${stateName} (${r.artist_count})`,
+          type: 'region',
+          country: 'US',
+          region: r.region
+        })
+      })
+
+      // Add cities
+      citiesRes.forEach((c: CityOption) => {
+        const stateName = US_STATE_NAME_MAP.get(c.region) || c.region
+        flattened.push({
+          value: `city-${c.city}`,
+          label: `${c.city.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
+          type: 'city',
+          country: c.country_code,
+          region: c.region
+        })
+      })
+
+      setFlatLocations(flattened)
+      setLoadingFlatLocations(false)
+    } catch (error) {
+      console.error('Failed to fetch flat locations:', error)
+      setLoadingFlatLocations(false)
+    }
+  }, [])
+
+  // Fetch flat locations on mount
+  useEffect(() => {
+    fetchFlatLocations()
+  }, [fetchFlatLocations])
 
   // Fetch countries on mount
   useEffect(() => {
@@ -324,77 +394,56 @@ export default function LocationFilter() {
     }))
   ]
 
+  // Get current selected value for single smart dropdown
+  const getCurrentValue = (): string | null => {
+    if (currentCity) return `city-${currentCity}`
+    if (currentRegion) return `region-${currentRegion}`
+    if (currentCountry) return `country-${currentCountry}`
+    return null
+  }
+
+  // Handle smart dropdown selection
+  const handleSmartSelection = (value: string | null) => {
+    if (!value) {
+      updateFilters({ country: '', region: '', city: '' })
+      return
+    }
+
+    const option = flatLocations.find(loc => loc.value === value)
+    if (!option) return
+
+    if (option.type === 'country') {
+      updateFilters({ country: option.country || '', region: '', city: '' })
+    } else if (option.type === 'region') {
+      updateFilters({ country: option.country || '', region: option.region || '', city: '' })
+    } else if (option.type === 'city') {
+      updateFilters({
+        country: option.country || '',
+        region: option.region || '',
+        city: value.replace('city-', '')
+      })
+    }
+  }
+
+  // Convert flat locations to Select options
+  const smartOptions = [
+    { value: '', label: 'All Locations' },
+    ...flatLocations.map(loc => ({
+      value: loc.value,
+      label: loc.label
+    }))
+  ]
+
   return (
-    <div className="flex items-center gap-2">
-      {/* Country Dropdown */}
-      {countriesError ? (
-        <RetryButton
-          onClick={() => {
-            countriesRetryCount.current = 0
-            fetchCountries()
-          }}
-          label="countries"
-        />
-      ) : (
-        <Select
-          value={currentCountry}
-          onChange={(value) => updateFilters({ country: value || '' })}
-          options={countryOptions}
-          placeholder={loadingCountries ? 'Loading...' : 'Select country'}
-          className="w-[140px]"
-          size="sm"
-        />
-      )}
-
-      {/* Region/State Dropdown - shown when country selected */}
-      {currentCountry && (
-        <>
-          {regionsError ? (
-            <RetryButton
-              onClick={() => {
-                regionsRetryCount.current = 0
-                fetchRegions(currentCountry)
-              }}
-              label="regions"
-            />
-          ) : (
-            <Select
-              value={currentRegion}
-              onChange={(value) => updateFilters({ region: value || '' })}
-              options={regionOptions}
-              placeholder={loadingRegions ? 'Loading...' : 'Select region'}
-              className="w-[140px]"
-              size="sm"
-            />
-          )}
-        </>
-      )}
-
-      {/* City Dropdown - shown when country selected */}
-      {currentCountry && (
-        <>
-          {citiesError ? (
-            <RetryButton
-              onClick={() => {
-                citiesRetryCount.current = 0
-                fetchCities(currentCountry, currentRegion || null)
-              }}
-              label="cities"
-            />
-          ) : (
-            <Select
-              value={currentCity}
-              onChange={(value) => updateFilters({ city: value || '' })}
-              options={cityOptions}
-              placeholder={loadingCities ? 'Loading...' : 'Select city'}
-              className="w-[160px]"
-              searchable
-              searchPlaceholder="Search cities..."
-              size="sm"
-            />
-          )}
-        </>
-      )}
-    </div>
+    <Select
+      value={getCurrentValue()}
+      onChange={handleSmartSelection}
+      options={smartOptions}
+      placeholder={loadingFlatLocations ? 'Loading...' : 'Select location'}
+      className="w-[140px] md:w-[200px]"
+      searchable
+      searchPlaceholder="Search locations..."
+      size="sm"
+    />
   )
 }

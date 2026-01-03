@@ -81,7 +81,12 @@ export async function GET(request: NextRequest) {
     // Convert Map to plain object for JSON serialization
     const metricsByPattern: Record<string, { hits: number; misses: number; hitRate: number }> = {}
     for (const [pattern, metrics] of metricsMap.entries()) {
-      metricsByPattern[pattern] = metrics
+      const total = metrics.hits + metrics.misses
+      metricsByPattern[pattern] = {
+        hits: metrics.hits,
+        misses: metrics.misses,
+        hitRate: total > 0 ? metrics.hits / total : 0,
+      }
     }
 
     const response: RedisStatsResponse = {
