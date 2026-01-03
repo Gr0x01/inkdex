@@ -192,7 +192,7 @@ export default function LocationPicker({
             </div>
 
             {locationType === 'city' ? (
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                     City
@@ -379,7 +379,7 @@ export default function LocationPicker({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                 City
@@ -421,7 +421,7 @@ export default function LocationPicker({
             type="button"
             onClick={handleAddLocation}
             disabled={!newCity.trim() && newCountry !== 'US'}
-            className="w-full py-2 bg-[var(--ink-black)] text-[var(--paper-white)] font-mono text-[11px] uppercase tracking-wider hover:bg-[var(--gray-800)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 sm:py-2.5 bg-[var(--ink-black)] text-[var(--paper-white)] font-mono text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-[var(--gray-800)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Add Location
           </button>

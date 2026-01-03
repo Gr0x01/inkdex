@@ -19,26 +19,7 @@ const STEPS = [
 
 export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
   return (
-    <div className="w-full max-w-xl mx-auto px-4 pt-6 pb-4">
-      {/* Step labels (desktop) */}
-      <div className="hidden md:flex justify-between mb-3">
-        {STEPS.map((step) => (
-          <div key={step.id} className="flex-1 text-center">
-            <span
-              className={`font-mono text-[11px] tracking-[0.15em] uppercase transition-colors ${
-                step.id === currentStep
-                  ? 'text-[var(--ink-black)] font-medium'
-                  : step.id < currentStep
-                    ? 'text-[var(--gray-500)]'
-                    : 'text-[var(--gray-400)]'
-              }`}
-            >
-              {step.name}
-            </span>
-          </div>
-        ))}
-      </div>
-
+    <div className="w-full max-w-xl mx-auto px-3 sm:px-4 lg:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
       {/* Progress bar */}
       <div className="relative flex">
         {/* Background line - connects the dots */}
@@ -72,7 +53,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
               <div className="relative z-10 flex flex-col items-center">
                 {/* Dot */}
                 <div
-                  className={`w-4 h-4 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
+                  className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
                     isCurrent
                       ? 'bg-[var(--ink-black)] border-[var(--ink-black)] scale-110'
                       : isCompleted
@@ -83,7 +64,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
                   {/* Completed checkmark */}
                   {isCompleted && (
                     <svg
-                      className="w-3 h-3 text-[var(--paper-white)]"
+                      className="w-2 h-2 sm:w-3 sm:h-3 text-[var(--paper-white)]"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -96,9 +77,9 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
                   )}
                 </div>
 
-                {/* Step label (mobile) */}
+                {/* Step label (mobile/tablet only - hidden on desktop) */}
                 <span
-                  className={`md:hidden mt-2 font-mono text-[8px] tracking-[0.1em] uppercase transition-colors ${
+                  className={`block lg:hidden mt-1.5 sm:mt-2 font-mono text-[9px] sm:text-[10px] tracking-[0.1em] uppercase transition-colors ${
                     isCurrent
                       ? 'text-[var(--ink-black)] font-medium'
                       : isCompleted

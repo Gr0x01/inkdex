@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useState } from 'react';
-import { ProgressIndicator } from '@/components/onboarding/ProgressIndicator';
 import LocationPicker, { Location } from '@/components/onboarding/LocationPicker';
 
 /**
@@ -101,19 +100,16 @@ function OnboardingFlowSimulator() {
         <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
         <div className="relative">
-          {/* Progress indicator */}
-          <ProgressIndicator currentStep={1} />
-
           {/* Info Form */}
-          <main className="container mx-auto px-4 pb-8 max-w-2xl">
-            <div className="bg-paper border-2 border-border-subtle p-6 md:p-8 shadow-md">
+          <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
+            <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
               {/* Header */}
-              <div className="mb-6">
-                <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">Basic Info</h1>
-                <p className="font-body text-gray-700">Let's start with the essentials</p>
+              <div className="mb-5 sm:mb-6">
+                <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Basic Info</h1>
+                <p className="font-body text-sm sm:text-base text-gray-700">Let's start with the essentials</p>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-4 sm:space-y-5">
                 {/* Name */}
                 <div>
                   <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
@@ -171,13 +167,13 @@ function OnboardingFlowSimulator() {
                 <button
                   onClick={handleContinueStep1}
                   disabled={loading}
-                  className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Saving...' : 'Continue →'}
                 </button>
 
                 {/* Subtle helper text */}
-                <p className="font-mono text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+                <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
                   Step 1 of 3
                 </p>
               </div>
@@ -206,19 +202,16 @@ function OnboardingFlowSimulator() {
         <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
         <div className="relative">
-          {/* Progress indicator */}
-          <ProgressIndicator currentStep={2} />
-
           {/* Locations Form */}
-          <main className="container mx-auto px-4 pb-8 max-w-2xl">
-            <div className="bg-paper border-2 border-border-subtle p-6 md:p-8 shadow-md">
+          <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
+            <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
               {/* Header */}
-              <div className="mb-6">
-                <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">Where Do You Work?</h1>
-                <p className="font-body text-gray-700">Add your shop location(s)</p>
+              <div className="mb-5 sm:mb-6">
+                <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Where Do You Work?</h1>
+                <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s)</p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 {/* Locations */}
                 <LocationPicker
                   isPro={false}
@@ -228,24 +221,24 @@ function OnboardingFlowSimulator() {
                 />
 
                 {/* Navigation buttons */}
-                <div className="flex gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                   <button
                     onClick={() => setCurrentStep(1)}
-                    className="btn btn-secondary px-8 py-3"
+                    className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
                   >
                     ← Back
                   </button>
                   <button
                     onClick={handleContinueStep2}
                     disabled={loading}
-                    className="btn btn-primary flex-1 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Saving...' : 'Continue →'}
                   </button>
                 </div>
 
                 {/* Subtle helper text */}
-                <p className="font-mono text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+                <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
                   Step 2 of 3
                 </p>
               </div>
@@ -273,18 +266,15 @@ function OnboardingFlowSimulator() {
       <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
       <div className="relative">
-        {/* Progress indicator */}
-        <ProgressIndicator currentStep={3} />
-
         {/* Complete Screen */}
-        <main className="container mx-auto px-4 pb-8 max-w-2xl">
+        <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
           <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-paper border-2 border-border-subtle p-8 md:p-10 shadow-md">
+            <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md">
               {/* Loading Spinner */}
-              <div className="w-16 h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-5" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-5" />
 
-              <h1 className="font-display text-3xl text-ink mb-2">Creating Your Profile...</h1>
-              <p className="font-body text-gray-700">Setting up your profile</p>
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Creating Your Profile...</h1>
+              <p className="font-body text-sm sm:text-base text-gray-700">Setting up your profile</p>
 
               {/* Info Box */}
               <div className="mt-6 p-5 bg-gray-100 border-2 border-border-subtle">
@@ -302,7 +292,7 @@ function OnboardingFlowSimulator() {
               {/* Reset Button */}
               <button
                 onClick={handleReset}
-                className="mt-6 btn btn-secondary px-8 py-3"
+                className="mt-6 btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
               >
                 ← Try Again
               </button>
@@ -384,18 +374,18 @@ type Story = StoryObj<typeof meta>;
 export const InteractiveFlow: Story = {};
 
 /**
- * Mobile view of the flow
+ * Mobile view of the flow (375px × 667px)
  */
 export const MobileFlow: Story = {
   parameters: {
     viewport: {
-      defaultViewport: 'mobile1',
+      defaultViewport: 'mobile',
     },
   },
 };
 
 /**
- * Tablet view of the flow
+ * Tablet view of the flow (768px × 1024px)
  */
 export const TabletFlow: Story = {
   parameters: {

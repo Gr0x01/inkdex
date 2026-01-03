@@ -157,14 +157,14 @@ function LocationsContent() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-paper border-2 border-border-subtle p-6 md:p-8 shadow-md">
+      <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">Where Do You Work?</h1>
-          <p className="font-body text-gray-700">Add your shop location(s)</p>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Where Do You Work?</h1>
+          <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s)</p>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5 sm:space-y-6">
           {/* Locations */}
           <LocationPicker
             isPro={false}
@@ -180,24 +180,24 @@ function LocationsContent() {
           )}
 
           {/* Navigation buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
             <button
               onClick={() => router.push(`/onboarding/info?session_id=${sessionId}`)}
-              className="btn btn-secondary px-8 py-3"
+              className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
             >
               ← Back
             </button>
             <button
               onClick={handleContinue}
               disabled={loading}
-              className="btn btn-primary flex-1 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Saving...' : 'Continue →'}
             </button>
           </div>
 
           {/* Subtle helper text */}
-          <p className="font-mono text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+          <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
             Step 2 of 3
           </p>
         </div>

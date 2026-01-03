@@ -168,14 +168,14 @@ function InfoContent() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-paper border-2 border-border-subtle p-6 md:p-8 shadow-md">
+      <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">Basic Info</h1>
-          <p className="font-body text-gray-700">Let's start with the essentials</p>
+        <div className="mb-5 sm:mb-6">
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Basic Info</h1>
+          <p className="font-body text-sm sm:text-base text-gray-700">Let's start with the essentials</p>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {/* Name */}
           <div>
             <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
@@ -233,13 +233,13 @@ function InfoContent() {
           <button
             onClick={handleContinue}
             disabled={loading}
-            className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Saving...' : 'Continue →'}
           </button>
 
           {/* Subtle helper text */}
-          <p className="font-mono text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+          <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
             Step 1 of 3
           </p>
         </div>
