@@ -6,10 +6,12 @@
  * Uses two-stage classification: bio keywords first, then GPT-5-mini image fallback.
  *
  * Usage:
- *   npm run mine:hashtags                    # Run with default hashtags
+ *   npm run mine:hashtags                              # Run with default hashtags
  *   npm run mine:hashtags -- --hashtag tattooartist
- *   npm run mine:hashtags -- --dry-run       # Estimate costs without scraping
- *   npm run mine:hashtags -- --skip-images   # Skip image classification (bio only)
+ *   npm run mine:hashtags -- --dry-run                 # Estimate costs without scraping
+ *   npm run mine:hashtags -- --skip-images             # Skip image classification (bio only)
+ *   npm run mine:hashtags -- --limit 50                # IMPORTANT: Limit candidates to process (controls Apify profile costs!)
+ *   npm run mine:hashtags -- --posts 100               # Limit posts per hashtag (controls Apify hashtag costs)
  */
 
 import dotenv from 'dotenv';
@@ -145,6 +147,7 @@ function parseArgs(): {
   skipImages: boolean;
   maxHashtags: number;
   postsPerHashtag: number;
+  maxCandidates: number;
 } {
   const args = process.argv.slice(2);
   const hashtags: string[] = [];
@@ -152,6 +155,7 @@ function parseArgs(): {
   let skipImages = false;
   let maxHashtags = Infinity;
   let postsPerHashtag = CONFIG.postsPerHashtag;
+  let maxCandidates = Infinity; // Default: no limit (DANGEROUS - use --limit!)
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--hashtag' && args[i + 1]) {
@@ -167,6 +171,9 @@ function parseArgs(): {
     } else if (args[i] === '--posts' && args[i + 1]) {
       postsPerHashtag = parseInt(args[i + 1], 10);
       i++;
+    } else if (args[i] === '--limit' && args[i + 1]) {
+      maxCandidates = parseInt(args[i + 1], 10);
+      i++;
     }
   }
 
@@ -179,7 +186,7 @@ function parseArgs(): {
     );
   }
 
-  return { hashtags: hashtags.slice(0, maxHashtags), dryRun, skipImages, maxHashtags, postsPerHashtag };
+  return { hashtags: hashtags.slice(0, maxHashtags), dryRun, skipImages, maxHashtags, postsPerHashtag, maxCandidates };
 }
 
 async function getExistingHandles(): Promise<Set<string>> {
@@ -362,7 +369,8 @@ async function processHashtag(
   existingHandles: Set<string>,
   failedCandidates: Set<string>,
   skipImages: boolean,
-  maxPosts: number = CONFIG.postsPerHashtag
+  maxPosts: number = CONFIG.postsPerHashtag,
+  maxCandidates: number = Infinity
 ): Promise<{
   postsScraped: number;
   uniqueHandles: number;
@@ -413,12 +421,22 @@ async function processHashtag(
       u => !existingHandles.has(u.toLowerCase()) && failedCandidates.has(u.toLowerCase())
     ).length;
 
-    const newUsernames = scrapeResult.uniqueUsernames.filter(
+    let newUsernames = scrapeResult.uniqueUsernames.filter(
       u => !existingHandles.has(u.toLowerCase()) && !failedCandidates.has(u.toLowerCase())
     );
+    const totalNewHandles = newUsernames.length;
+
+    // CRITICAL: Apply limit to control Apify profile scraping costs (~$0.02 per profile!)
+    if (maxCandidates < Infinity && newUsernames.length > maxCandidates) {
+      console.log(`[Mining] ⚠️ LIMITING candidates from ${newUsernames.length} to ${maxCandidates} (--limit flag)`);
+      newUsernames = newUsernames.slice(0, maxCandidates);
+    }
     stats.newHandles = newUsernames.length;
 
-    console.log(`[Mining] ${newUsernames.length} new handles (${existingCount} already exist, ${failedCount} previously failed)`);
+    console.log(`[Mining] ${newUsernames.length} candidates to process (${totalNewHandles} new, ${existingCount} already exist, ${failedCount} previously failed)`);
+    if (maxCandidates < Infinity) {
+      console.log(`[Mining] Estimated profile scraping cost: ~$${(newUsernames.length * 0.02).toFixed(2)} (${newUsernames.length} profiles @ ~$0.02/each)`);
+    }
 
     if (newUsernames.length === 0) {
       await updateMiningRun(runId, {
@@ -590,13 +608,21 @@ async function main() {
   console.log('HASHTAG MINING - Tattoo Artist Discovery');
   console.log('='.repeat(60));
 
-  const { hashtags, dryRun, skipImages, postsPerHashtag } = parseArgs();
+  const { hashtags, dryRun, skipImages, postsPerHashtag, maxCandidates } = parseArgs();
 
   console.log(`\nConfiguration:`);
   console.log(`  Hashtags: ${hashtags.length}`);
   console.log(`  Posts per hashtag: ${postsPerHashtag}`);
+  console.log(`  Max candidates per hashtag: ${maxCandidates === Infinity ? 'UNLIMITED ⚠️' : maxCandidates}`);
   console.log(`  Dry run: ${dryRun}`);
   console.log(`  Skip image classification: ${skipImages}`);
+
+  // WARN if no limit is set - profile scraping is expensive!
+  if (maxCandidates === Infinity && !dryRun) {
+    console.log(`\n⚠️  WARNING: No --limit set! Each candidate costs ~$0.02 for profile scraping.`);
+    console.log(`   A hashtag with 5000 posts could have 3000+ unique handles = ~$60 in profile costs!`);
+    console.log(`   Consider using: --limit 50 for testing, --limit 500 for production runs\n`);
+  }
 
   // Estimate costs
   const estimatedApifyCost = estimateHashtagScrapingCost(hashtags, postsPerHashtag);
@@ -650,7 +676,7 @@ async function main() {
     console.log(`Hashtag ${i + 1}/${hashtagsToProcess.length}: #${hashtag}`);
     console.log('─'.repeat(60));
 
-    const stats = await processHashtag(hashtag, existingHandles, failedCandidates, skipImages, postsPerHashtag);
+    const stats = await processHashtag(hashtag, existingHandles, failedCandidates, skipImages, postsPerHashtag, maxCandidates);
 
     // Aggregate stats
     totalStats.postsScraped += stats.postsScraped;

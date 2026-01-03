@@ -7,6 +7,7 @@
  */
 
 import OpenAI from 'openai';
+import axios from 'axios';
 import { fetchInstagramProfileImages, InstagramProfileData } from './profile-fetcher';
 
 export interface ClassifierResult {
@@ -122,6 +123,28 @@ export function getMatchingBioKeywords(bio: string | undefined): string[] {
 }
 
 /**
+ * Download an image and convert to base64 data URL
+ * Instagram CDN URLs expire quickly, so we must download before sending to OpenAI
+ */
+async function downloadAsBase64(imageUrl: string): Promise<string | null> {
+  try {
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    const base64 = Buffer.from(response.data).toString('base64');
+    return `data:${contentType};base64,${base64}`;
+  } catch (error) {
+    console.warn(`[Classifier] Failed to download image: ${error instanceof Error ? error.message : 'unknown'}`);
+    return null;
+  }
+}
+
+/**
  * Classify images using GPT-5-mini to determine if they show tattoo work
  * Need at least 3 out of 6 images to show tattoos
  */
@@ -142,9 +165,30 @@ async function classifyImages(images: string[]): Promise<{
 
   const client = new OpenAI({ apiKey });
 
-  // Classify up to 6 images in parallel
-  const imagesToClassify = images.slice(0, 6);
-  const classificationPromises = imagesToClassify.map(async (imageUrl, index) => {
+  // Download up to 6 images as base64 (Instagram CDN URLs expire quickly)
+  const imagesToProcess = images.slice(0, 6);
+  console.log(`[Classifier] Downloading ${imagesToProcess.length} images as base64...`);
+
+  const base64Images = await Promise.all(
+    imagesToProcess.map(url => downloadAsBase64(url))
+  );
+
+  // Filter out failed downloads
+  const validImages = base64Images.filter((img): img is string => img !== null);
+
+  if (validImages.length === 0) {
+    console.warn('[Classifier] No images could be downloaded');
+    return {
+      passed: false,
+      confidence: 0,
+      details: 'Could not download any images for classification',
+    };
+  }
+
+  console.log(`[Classifier] Downloaded ${validImages.length}/${imagesToProcess.length} images`);
+
+  // Classify images in parallel
+  const classificationPromises = validImages.map(async (base64Image, index) => {
     try {
       const response = await client.chat.completions.create({
         model: 'gpt-5-mini',
@@ -173,20 +217,20 @@ Answer only 'yes' or 'no'.`,
               {
                 type: 'image_url',
                 image_url: {
-                  url: imageUrl,
+                  url: base64Image,
                   detail: 'low',
                 },
               },
             ],
           },
         ],
-        max_tokens: 10,
+        max_completion_tokens: 10,
       });
 
       const result = response.choices[0]?.message?.content?.trim().toLowerCase();
       const isTattoo = result === 'yes';
 
-      console.log(`[Classifier] Image ${index + 1}/${imagesToClassify.length}: ${isTattoo ? 'TATTOO' : 'NOT TATTOO'}`);
+      console.log(`[Classifier] Image ${index + 1}/${validImages.length}: ${isTattoo ? 'TATTOO' : 'NOT TATTOO'}`);
 
       return isTattoo;
     } catch (error) {
