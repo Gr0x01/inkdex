@@ -101,43 +101,53 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-paper flex items-center justify-center px-4">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-6">
-          <span className="font-display text-3xl font-[900] text-ink tracking-tight">
+    <div className="min-h-screen bg-paper flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <h1 className="font-display text-4xl font-[900] text-ink tracking-tight mb-2">
             INKDEX
-          </span>
-          <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mt-1">
-            Admin Panel
-          </p>
+          </h1>
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <div className="h-px w-8 bg-gray-300" />
+            <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.2em]">
+              Admin Panel
+            </p>
+            <div className="h-px w-8 bg-gray-300" />
+          </div>
         </div>
 
         {/* Login Card */}
-        <div className="bg-paper border-2 border-ink/10 p-6">
+        <div className="bg-paper border border-gray-300 shadow-sm">
           {formState === 'authenticating' ? (
-            <div className="text-center py-6">
-              <Loader2 className="w-6 h-6 text-ink animate-spin mx-auto mb-3" />
-              <p className="text-sm font-body text-gray-700">Signing you in...</p>
+            <div className="text-center py-12 px-6">
+              <Loader2 className="w-4 h-4 text-ink animate-spin mx-auto mb-3" />
+              <p className="font-body text-sm text-gray-700">Authenticating...</p>
             </div>
           ) : formState === 'success' ? (
-            <div className="text-center py-4">
-              <CheckCircle className="w-6 h-6 text-status-success mx-auto mb-3" />
-              <p className="text-sm font-heading font-semibold text-ink mb-1">Check your email</p>
-              <p className="text-sm text-gray-500 font-body">Magic link sent to</p>
-              <p className="text-sm text-ink font-body font-medium">{email}</p>
+            <div className="text-center py-10 px-6">
+              <div className="w-10 h-10 rounded-full bg-status-success/10 mx-auto mb-4 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-status-success" />
+              </div>
+              <h2 className="font-heading text-lg text-ink mb-2">Check your inbox</h2>
+              <p className="font-body text-sm text-gray-600 mb-1">Magic link sent to</p>
+              <p className="font-body text-sm text-ink font-semibold">{email}</p>
 
               {/* Development mode: Show clickable link */}
               {devLink && (
-                <div className="mt-4 p-3 bg-status-warning/10 border border-status-warning/20">
-                  <p className="font-mono text-[10px] text-status-warning uppercase tracking-[0.15em] mb-1">
-                    Dev Mode
-                  </p>
+                <div className="mt-6 p-4 bg-status-warning/5 border border-status-warning/20">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <div className="h-px w-4 bg-status-warning/30" />
+                    <p className="font-mono text-[9px] text-status-warning uppercase tracking-[0.2em]">
+                      Development
+                    </p>
+                    <div className="h-px w-4 bg-status-warning/30" />
+                  </div>
                   <a
                     href={devLink}
-                    className="text-status-warning hover:underline text-sm break-all font-body"
+                    className="text-status-warning hover:underline text-xs break-all font-body block"
                   >
-                    Click to login
+                    Click here to sign in
                   </a>
                 </div>
               )}
@@ -148,59 +158,61 @@ export default function AdminLoginPage() {
                   setEmail('');
                   setDevLink(null);
                 }}
-                className="mt-4 text-sm text-gray-500 hover:text-ink font-body transition-colors"
+                className="mt-6 text-xs text-gray-500 hover:text-ink font-mono uppercase tracking-[0.1em] transition-colors"
               >
-                Try a different email
+                Use different email
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
+            <form onSubmit={handleSubmit} className="p-8">
+              <div className="mb-6">
                 <label
                   htmlFor="email"
-                  className="block font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2"
+                  className="block font-mono text-[10px] text-gray-500 uppercase tracking-[0.2em] mb-3"
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="w-4 h-4 text-gray-500" />
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <Mail className="w-3.5 h-3.5 text-gray-400" />
                   </div>
                   <input
                     id="email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@inkdex.io"
+                    placeholder="your.email@example.com"
                     required
                     disabled={formState === 'loading'}
-                    className="w-full pl-10 pr-3 py-2.5 bg-paper border-2 border-ink/10
-                             text-ink font-body placeholder-gray-500
-                             focus:outline-none focus:border-ink
+                    className="w-full pl-10 pr-4 py-3 bg-paper border border-gray-300
+                             text-ink font-body text-sm placeholder:text-gray-400 placeholder:italic
+                             focus:outline-none focus:border-ink focus:ring-1 focus:ring-ink
                              disabled:opacity-50 disabled:cursor-not-allowed
-                             transition-colors"
+                             transition-all"
                   />
                 </div>
               </div>
 
               {formState === 'error' && (
-                <div className="mb-4 p-3 bg-status-error/10 border border-status-error/20 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-status-error shrink-0 mt-0.5" />
-                  <p className="text-status-error text-sm font-body">{errorMessage}</p>
+                <div className="mb-6 p-3 bg-status-error/5 border border-status-error/20 flex items-start gap-2.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-status-error shrink-0 mt-0.5" />
+                  <p className="text-status-error text-xs font-body leading-relaxed">{errorMessage}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={formState === 'loading' || !email}
-                className="w-full py-2.5 px-4 bg-ink hover:bg-gray-900
-                         text-paper font-body text-sm
+                className="w-full py-3 px-4 bg-ink hover:bg-gray-900
+                         text-paper font-mono text-[10px] uppercase tracking-[0.15em]
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors"
+                         transition-all duration-200
+                         border-2 border-ink hover:border-gray-900
+                         focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2"
               >
                 {formState === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     Sending...
                   </span>
                 ) : (
@@ -212,9 +224,11 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-500 text-xs font-mono mt-4">
-          Authorized administrators only
-        </p>
+        <div className="mt-6 text-center">
+          <p className="font-mono text-[9px] text-gray-400 uppercase tracking-[0.2em]">
+            Authorized Access Only
+          </p>
+        </div>
       </div>
     </div>
   );
