@@ -21,9 +21,10 @@ export default function OnboardingLayout({
 
   // Determine current step from pathname
   const getCurrentStep = () => {
-    // New 2-step flow
+    // New 3-step flow
     if (pathname.includes('/info')) return 1;
-    if (pathname.includes('/complete')) return 2;
+    if (pathname.includes('/locations')) return 2;
+    if (pathname.includes('/complete')) return 3;
 
     // Old 5-step flow (backward compatibility)
     if (pathname.includes('/fetch')) return 1;
@@ -47,7 +48,7 @@ export default function OnboardingLayout({
         <ProgressIndicator currentStep={currentStep} />
 
         {/* Page content */}
-        <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <main className="container mx-auto px-4 pb-8 max-w-4xl">
           {children}
         </main>
       </div>

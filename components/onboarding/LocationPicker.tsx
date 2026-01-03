@@ -140,14 +140,14 @@ export default function LocationPicker({
   // ===== FREE TIER UI =====
   if (!isPro) {
     return (
-      <div className="space-y-4">
-        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+      <div className="space-y-3">
+        <label className="block font-mono text-xs tracking-widest uppercase text-gray-700 mb-2">
           Where are you based? <span className="text-[var(--error)]">*</span>
         </label>
 
         {/* Country Selector */}
         <div>
-          <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+          <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
             Country
           </label>
           <Select
@@ -168,7 +168,7 @@ export default function LocationPicker({
         {/* US-specific: City OR State toggle */}
         {selectedCountry === 'US' && (
           <>
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
@@ -192,9 +192,9 @@ export default function LocationPicker({
             </div>
 
             {locationType === 'city' ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                     City
                   </label>
                   <CitySelect
@@ -206,7 +206,7 @@ export default function LocationPicker({
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                     State
                   </label>
                   <Select
@@ -221,7 +221,7 @@ export default function LocationPicker({
               </div>
             ) : (
               <div>
-                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                   State
                 </label>
                 <Select
@@ -242,9 +242,9 @@ export default function LocationPicker({
 
         {/* International: City + Region (optional) */}
         {selectedCountry !== 'US' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                 City <span className="text-[var(--error)]">*</span>
               </label>
               <input
@@ -256,7 +256,7 @@ export default function LocationPicker({
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                 Region / Province
                 <span className="ml-2 font-normal text-[var(--gray-400)] normal-case tracking-normal">(Optional)</span>
               </label>
@@ -280,7 +280,7 @@ export default function LocationPicker({
 
   // ===== PRO TIER UI =====
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
         <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
           <Globe className="inline w-4 h-4 mr-1 -mt-0.5" />
@@ -348,7 +348,7 @@ export default function LocationPicker({
 
       {/* Add new location form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-[var(--gray-300)] p-4 space-y-4">
+        <div className="border-2 border-dashed border-[var(--gray-300)] p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
               Add new location
@@ -363,7 +363,7 @@ export default function LocationPicker({
           </div>
 
           <div>
-            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
               Country
             </label>
             <Select
@@ -379,9 +379,9 @@ export default function LocationPicker({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                 City
               </label>
               <input
@@ -393,7 +393,7 @@ export default function LocationPicker({
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
                 {newCountry === 'US' ? 'State' : 'Region'}
               </label>
               {newCountry === 'US' ? (

@@ -1,7 +1,6 @@
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import LocationPicker, { Location } from '@/components/onboarding/LocationPicker';
 
 function InfoContent() {
   const router = useRouter();
@@ -9,13 +8,11 @@ function InfoContent() {
   const sessionId = searchParams.get('session_id');
 
   const [name, setName] = useState('');
-  const [locations, setLocations] = useState<Location[]>([]);
   const [bio, setBio] = useState('');
   const [bookingLink, setBookingLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
-  const [locationError, setLocationError] = useState('');
 
   // Load existing session data
   useEffect(() => {
@@ -69,20 +66,6 @@ function InfoContent() {
         setBio(updates.bio || profileData.bio || '');
         setBookingLink(session.booking_link || '');
 
-        // Pre-populate locations if available
-        if (updates.locations && Array.isArray(updates.locations)) {
-          setLocations(updates.locations);
-        } else if (updates.city && updates.state) {
-          // Legacy format: convert city/state to location
-          setLocations([{
-            city: updates.city,
-            region: updates.state,
-            countryCode: 'US',
-            locationType: 'city',
-            isPrimary: true,
-          }]);
-        }
-
         setInitialLoading(false);
       } catch (err: any) {
         console.error('[Info] Error fetching session:', err);
@@ -127,27 +110,6 @@ function InfoContent() {
       return;
     }
 
-    // Validate location
-    if (locations.length === 0) {
-      setLocationError('Please add at least one location');
-      return;
-    }
-
-    // Validate location has required fields
-    const primaryLocation = locations[0];
-    if (primaryLocation.locationType === 'city' && !primaryLocation.city) {
-      setLocationError('City is required');
-      return;
-    }
-    if (primaryLocation.locationType === 'region' && !primaryLocation.region) {
-      setLocationError('State is required');
-      return;
-    }
-    if (primaryLocation.countryCode !== 'US' && !primaryLocation.city) {
-      setLocationError('City is required for international locations');
-      return;
-    }
-
     // Validate booking link if provided
     if (bookingLink && !isValidUrl(bookingLink)) {
       setError('Please enter a valid URL (starting with http:// or https://)');
@@ -155,7 +117,6 @@ function InfoContent() {
     }
 
     setError('');
-    setLocationError('');
     setLoading(true);
 
     try {
@@ -168,14 +129,13 @@ function InfoContent() {
           data: {
             name,
             bio,
-            locations,
             bookingLink,
           },
         }),
       });
 
       if (!res.ok) throw new Error('Failed to save');
-      router.push(`/onboarding/complete?session_id=${sessionId}`);
+      router.push(`/onboarding/locations?session_id=${sessionId}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -187,8 +147,8 @@ function InfoContent() {
       <div className="max-w-2xl mx-auto">
         <div className="flex justify-center items-center min-h-[400px]">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-gray-400">Loading your profile...</p>
+            <div className="w-16 h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="font-body text-gray-700">Loading your profile...</p>
           </div>
         </div>
       </div>
@@ -198,9 +158,9 @@ function InfoContent() {
   if (error && !name) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-6 text-center">
-          <p className="text-red-400 mb-4">{error}</p>
-          <p className="text-gray-500 text-sm">Redirecting...</p>
+        <div className="bg-paper border-2 border-status-error p-6 text-center">
+          <p className="font-body text-status-error mb-4">{error}</p>
+          <p className="font-mono text-xs text-gray-500 uppercase tracking-wider">Redirecting...</p>
         </div>
       </div>
     );
@@ -208,69 +168,80 @@ function InfoContent() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-paper-dark border border-gray-800 rounded-lg p-8">
-        <h1 className="font-display text-3xl text-white mb-4">Create Your Profile</h1>
-        <p className="text-gray-400 mb-8">Tell us about yourself</p>
+      <div className="bg-paper border-2 border-border-subtle p-6 md:p-8 shadow-md">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="font-display text-3xl md:text-4xl text-ink mb-2">Basic Info</h1>
+          <p className="font-body text-gray-700">Let's start with the essentials</p>
+        </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Name */}
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Name *</label>
+            <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
+              Name *
+            </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
+              className="input w-full"
               placeholder="Your name"
             />
           </div>
 
-          {/* Locations */}
-          <LocationPicker
-            isPro={false}
-            locations={locations}
-            onChange={setLocations}
-            error={locationError}
-          />
-
           {/* Bio */}
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Bio (optional)</label>
+            <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
+              Bio <span className="font-body text-gray-500 normal-case tracking-normal">(optional)</span>
+            </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={500}
-              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none resize-none"
-              placeholder="Tell people about your style..."
+              className="input w-full resize-none"
+              placeholder="Tell people about your style, experience, and what inspires you..."
             />
-            <p className="text-xs text-gray-600 mt-1">{bio.length}/500</p>
+            <p className="font-mono text-xs text-gray-500 mt-1">{bio.length}/500</p>
           </div>
 
           {/* Booking Link */}
           <div>
-            <label className="block text-sm text-gray-400 mb-2">Booking Link (optional)</label>
+            <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
+              Booking Link <span className="font-body text-gray-500 normal-case tracking-normal">(optional)</span>
+            </label>
             <input
               type="url"
               value={bookingLink}
               onChange={(e) => setBookingLink(e.target.value)}
-              className="w-full px-4 py-3 bg-ink border border-gray-800 rounded text-white focus:border-ether focus:outline-none"
+              className="input w-full"
               placeholder="https://instagram.com/yourhandle"
             />
-            <p className="text-xs text-gray-600 mt-2">
+            <p className="font-body text-sm text-gray-500 mt-1.5 leading-relaxed">
               Instagram DM link, website, Calendly, or any booking method
             </p>
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && (
+            <div className="bg-status-error/10 border-2 border-status-error p-3">
+              <p className="font-body text-status-error text-sm">{error}</p>
+            </div>
+          )}
 
+          {/* Primary CTA */}
           <button
             onClick={handleContinue}
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 transition"
+            className="btn btn-primary w-full py-3 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Saving...' : 'Continue →'}
           </button>
+
+          {/* Subtle helper text */}
+          <p className="font-mono text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+            Step 1 of 3
+          </p>
         </div>
       </div>
     </div>
@@ -282,8 +253,8 @@ function InfoLoadingFallback() {
     <div className="max-w-2xl mx-auto">
       <div className="flex justify-center items-center min-h-[400px]">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-ether border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400">Loading...</p>
+          <div className="w-16 h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="font-body text-gray-700">Loading...</p>
         </div>
       </div>
     </div>
