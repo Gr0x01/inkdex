@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useMemo } from 'react'
 import { CITIES } from '@/lib/constants/cities'
-import { getStateSlug } from '@/lib/utils/city-helpers'
+import { buildCityUrl } from '@/lib/utils/city-helpers'
 import { CookieSettingsLink } from '@/components/consent/CookieSettingsLink'
 
 export default function Footer() {
@@ -39,7 +39,7 @@ export default function Footer() {
               {sortedCities.map((city) => (
                 <li key={city.slug}>
                   <Link
-                    href={`/${getStateSlug(city.state)}/${city.slug}`}
+                    href={buildCityUrl(city.state, city.slug)}
                     className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent inline-flex items-baseline gap-1.5"
                   >
                     <span className="font-medium">{city.name}</span>

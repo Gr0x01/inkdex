@@ -30,6 +30,8 @@ export interface SearchResult {
   artist_name: string
   artist_slug: string
   city: string
+  region?: string        // State/province code (e.g., 'TX', 'Ontario')
+  country_code?: string  // ISO 3166-1 alpha-2 (e.g., 'US', 'UK')
   profile_image_url: string | null
   follower_count: number | null
   instagram_url: string | null
@@ -49,6 +51,9 @@ export interface SearchResultsResponse {
   queryTime: number
   queryType: SearchQueryType
   queryText?: string
+  // Location filters
+  country?: string | null
+  region?: string | null
   city?: string | null
   // Instagram attribution metadata
   instagramUsername?: string

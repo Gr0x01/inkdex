@@ -2,97 +2,50 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getCityArtists, getStyleSeeds, getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
+import { getLocationArtists, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
-import { CITIES, STATES } from '@/lib/constants/cities'
+import { getCountryName, getRegionName, slugToName } from '@/lib/utils/location'
 import ArtistCard from '@/components/search/ArtistCard'
 import { transformToSearchResult } from '@/lib/utils/artists'
-import { getCityEditorialContent } from '@/lib/content/editorial/cities'
-import EditorialContent from '@/components/editorial/EditorialContent'
 import Pagination from '@/components/pagination/Pagination'
 
-export async function generateStaticParams() {
-  // Fetch all cities with 3+ artists from database
-  const allCities = await getAllCitiesWithMinArtists(3)
+// Validation patterns
+const COUNTRY_CODE_REGEX = /^[a-z]{2}$/
+const REGION_REGEX = /^[a-z0-9-]+$/
+const CITY_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-  if (!allCities || allCities.length === 0) {
-    console.error('Failed to fetch cities for static generation, falling back to featured cities')
-    // Fallback to featured cities if database query fails
-    return CITIES.map((city) => ({
-      state: STATES.find((s) => s.code === city.state)?.slug || '',
-      city: city.slug,
-    }))
-  }
-
-  // Transform database results to params
-  const dynamicCities = allCities
-    .map((cityData: any) => {
-      const state = STATES.find((s) => s.code === cityData.region)
-      if (!state) return null
-
-      return {
-        state: state.slug,
-        city: cityData.city.toLowerCase().replace(/\s+/g, '-'),
-      }
-    })
-    .filter(Boolean)
-
-  // Deduplicate by state/city combination
-  const paramsMap = new Map()
-  dynamicCities.forEach((param: any) => {
-    const key = `${param.state}/${param.city}`
-    if (!paramsMap.has(key)) {
-      paramsMap.set(key, param)
-    }
-  })
-
-  return Array.from(paramsMap.values())
-}
-
+// Use ISR with dynamicParams to avoid N+1 queries at build time
+// Pages are generated on-demand and cached for 24 hours
+export const dynamicParams = true
 export const revalidate = 86400 // 24 hours
 
 export async function generateMetadata({
   params,
   searchParams,
 }: {
-  params: Promise<{ state: string; city: string }>
+  params: Promise<{ country: string; region: string; city: string }>
   searchParams: Promise<{ page?: string }>
 }): Promise<Metadata> {
-  const { state: stateSlug, city: citySlug } = await params
+  const { country: countrySlug, region: regionSlug, city: citySlug } = await params
   const { page } = await searchParams
   const currentPage = parseInt(page || '1', 10)
 
-  const state = STATES.find((s) => s.slug === stateSlug)
-  if (!state) {
+  if (!COUNTRY_CODE_REGEX.test(countrySlug) || !REGION_REGEX.test(regionSlug) || !CITY_SLUG_REGEX.test(citySlug)) {
     return { title: 'City Not Found' }
   }
 
-  // Check if this is a featured city with editorial content
-  const featuredCity = CITIES.find((c) => c.slug === citySlug)
+  const countryCode = countrySlug.toUpperCase()
+  const regionCode = regionSlug.toUpperCase()
+  const cityName = slugToName(citySlug)
+  const regionName = getRegionName(regionCode, countryCode)
 
-  // For non-featured cities, derive name from slug
-  const cityName = featuredCity?.name || citySlug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-
-  const title = `Tattoo Artists in ${cityName}, ${state.code} | Inkdex`
-
-  // Use editorial content for meta description if available (featured cities only)
-  let description: string
-  if (featuredCity) {
-    const editorialContent = getCityEditorialContent(citySlug)
-    description = editorialContent
-      ? sanitizeForJsonLd(editorialContent.hero.paragraphs[0].substring(0, 155) + '...')
-      : `Discover talented tattoo artists in ${cityName}, ${state.code}. Browse portfolios, view styles, and connect via Instagram.`
-  } else {
-    description = `Browse tattoo artists based in ${cityName}, ${state.code}. Discover talented artists, view their portfolios, and connect via Instagram.`
-  }
+  const title = `Tattoo Artists in ${cityName}, ${regionCode} | Inkdex`
+  const description = `Discover talented tattoo artists in ${cityName}, ${regionName}. Browse portfolios, view styles, and connect via Instagram.`
 
   // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
   const canonical = currentPage === 1
-    ? `https://inkdex.io/${stateSlug}/${citySlug}`
-    : `https://inkdex.io/${stateSlug}/${citySlug}?page=${currentPage}`
+    ? `https://inkdex.io/${countrySlug}/${regionSlug}/${citySlug}`
+    : `https://inkdex.io/${countrySlug}/${regionSlug}/${citySlug}?page=${currentPage}`
 
   return {
     title,
@@ -107,7 +60,7 @@ export async function generateMetadata({
           url: '/og-city-default.jpg',
           width: 1200,
           height: 630,
-          alt: `Tattoo Artists in ${cityName}, ${state.code}`,
+          alt: `Tattoo Artists in ${cityName}, ${regionCode}`,
         },
       ],
     },
@@ -127,44 +80,44 @@ export default async function CityPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ state: string; city: string }>
+  params: Promise<{ country: string; region: string; city: string }>
   searchParams: Promise<{ page?: string }>
 }) {
-  const { state: stateSlug, city: citySlug } = await params
+  const { country: countrySlug, region: regionSlug, city: citySlug } = await params
   const { page } = await searchParams
 
-  const state = STATES.find((s) => s.slug === stateSlug)
-  if (!state) notFound()
+  // Validate params format
+  if (!COUNTRY_CODE_REGEX.test(countrySlug) || !REGION_REGEX.test(regionSlug) || !CITY_SLUG_REGEX.test(citySlug)) {
+    notFound()
+  }
 
-  // Check if this is a featured city with editorial content
-  const featuredCity = CITIES.find((c) => c.slug === citySlug)
-  const isFeaturedCity = !!featuredCity
-
-  // For non-featured cities, derive name from slug
-  const cityName = featuredCity?.name || citySlug
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
+  const countryCode = countrySlug.toUpperCase()
+  const regionCode = regionSlug.toUpperCase()
+  const cityName = slugToName(citySlug)
+  const countryName = getCountryName(countryCode)
+  const regionName = getRegionName(regionCode, countryCode)
 
   // Parse pagination
   const currentPage = parseInt(page || '1', 10)
   const limit = 20
   const offset = (currentPage - 1) * limit
 
-  const { artists, total } = await getCityArtists(state.code, cityName, limit, offset)
+  // Fetch artists for this city
+  const { artists, total } = await getLocationArtists(countryCode, regionCode, cityName, limit, offset)
 
   // If no artists found for this city, return 404
   if (total === 0) notFound()
 
   // Transform to SearchResult format for ArtistCard
   const searchResults = artists.map(artist =>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- transformToSearchResult accepts flexible artist type
     transformToSearchResult(artist as any, cityName)
   )
 
   const styleSeeds = await getStyleSeeds()
   const totalPages = Math.ceil(total / limit)
 
-  // JSON-LD Breadcrumbs (sanitized)
+  // JSON-LD Breadcrumbs
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -173,19 +126,25 @@ export default async function CityPage({
         '@type': 'ListItem',
         position: 1,
         name: 'Home',
-        item: '/',
+        item: 'https://inkdex.io',
       },
       {
         '@type': 'ListItem',
         position: 2,
-        name: sanitizeForJsonLd(state.name),
-        item: `/${stateSlug}`,
+        name: sanitizeForJsonLd(countryName),
+        item: `https://inkdex.io/${countrySlug}`,
       },
       {
         '@type': 'ListItem',
         position: 3,
+        name: sanitizeForJsonLd(regionName),
+        item: `https://inkdex.io/${countrySlug}/${regionSlug}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
         name: sanitizeForJsonLd(cityName),
-        item: `/${stateSlug}/${citySlug}`,
+        item: `https://inkdex.io/${countrySlug}/${regionSlug}/${citySlug}`,
       },
     ],
   }
@@ -213,10 +172,19 @@ export default async function CityPage({
               <li>/</li>
               <li>
                 <Link
-                  href={`/${stateSlug}`}
+                  href={`/${countrySlug}`}
                   className="hover:text-accent-primary transition-colors"
                 >
-                  {state.name}
+                  {countryName}
+                </Link>
+              </li>
+              <li>/</li>
+              <li>
+                <Link
+                  href={`/${countrySlug}/${regionSlug}`}
+                  className="hover:text-accent-primary transition-colors"
+                >
+                  {regionName}
                 </Link>
               </li>
               <li>/</li>
@@ -229,7 +197,7 @@ export default async function CityPage({
           {/* Header */}
           <div className="mb-8">
             <h1 className="font-display text-display font-[700] text-text-primary mb-3">
-              {cityName}, {state.code} Tattoo Artists
+              {cityName}, {regionCode} Tattoo Artists
             </h1>
             <p className="font-body text-body-large text-text-secondary">
               {total.toLocaleString()} talented {total === 1 ? 'artist' : 'artists'}{' '}
@@ -237,37 +205,12 @@ export default async function CityPage({
             </p>
           </div>
 
-          {/* Editorial Content - Featured cities only */}
-          {isFeaturedCity ? (
-            (() => {
-              try {
-                const editorialContent = getCityEditorialContent(citySlug)
-                if (!editorialContent) return null
-
-                return (
-                  <div className="mb-12 max-w-4xl">
-                    <EditorialContent
-                      sections={[
-                        editorialContent.hero,
-                        editorialContent.scene,
-                        editorialContent.community,
-                        editorialContent.styles,
-                      ]}
-                    />
-                  </div>
-                )
-              } catch (error) {
-                console.error('Error loading editorial content:', error)
-                return null
-              }
-            })()
-          ) : (
-            <div className="mb-8 max-w-4xl">
-              <p className="font-body text-body text-text-secondary">
-                Browse tattoo artists based in {cityName}, {state.code}. Discover talented artists, view their portfolios, and connect via Instagram.
-              </p>
-            </div>
-          )}
+          {/* Description */}
+          <div className="mb-8 max-w-4xl">
+            <p className="font-body text-body text-text-secondary">
+              Browse tattoo artists based in {cityName}, {regionName}. Discover talented artists, view their portfolios, and connect via Instagram.
+            </p>
+          </div>
 
           {/* Artists Grid */}
           {artists.length > 0 ? (
@@ -288,8 +231,8 @@ export default async function CityPage({
                 totalPages={totalPages}
                 buildUrl={(pageNum) =>
                   pageNum === 1
-                    ? `/${stateSlug}/${citySlug}`
-                    : `/${stateSlug}/${citySlug}?page=${pageNum}`
+                    ? `/${countrySlug}/${regionSlug}/${citySlug}`
+                    : `/${countrySlug}/${regionSlug}/${citySlug}?page=${pageNum}`
                 }
               />
             </>
@@ -298,12 +241,9 @@ export default async function CityPage({
               <p className="font-body text-body text-text-secondary">
                 No artists found in {cityName} yet.
               </p>
-              {/* Only show button if state has multiple cities */}
-              {state.cities.length > 1 && (
-                <Link href={`/${stateSlug}`} className="btn btn-secondary mt-6">
-                  View Other Cities in {state.name}
-                </Link>
-              )}
+              <Link href={`/${countrySlug}/${regionSlug}`} className="btn btn-secondary mt-6">
+                View Other Cities in {regionName}
+              </Link>
             </div>
           )}
 
@@ -322,28 +262,28 @@ export default async function CityPage({
                 {styleSeeds.map((style) => (
                   <Link
                     key={style.style_name}
-                    href={`/${stateSlug}/${citySlug}/${style.style_name}`}
+                    href={`/${countrySlug}/${regionSlug}/${citySlug}/${style.style_name}`}
                     className="group block relative"
                   >
-                    {/* Image Container - Clean, no heavy overlay */}
+                    {/* Image Container */}
                     <div className="aspect-[3/4] relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 mb-3 group-hover:border-accent-primary transition-all duration-300">
                       <Image
                         src={style.seed_image_url}
-                        alt={`Browse ${style.display_name} tattoo artists in ${cityName}, ${state.code}`}
+                        alt={`Browse ${style.display_name} tattoo artists in ${cityName}, ${regionCode}`}
                         fill
                         className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                         loading="lazy"
                         quality={90}
                       />
-                      {/* Subtle vignette only - lets tattoo shine */}
+                      {/* Subtle vignette */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
 
                       {/* Hover state accent bar */}
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent-primary transform translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                     </div>
 
-                    {/* Text Content - Below image, editorial style */}
+                    {/* Text Content */}
                     <div className="space-y-1">
                       <h3 className="font-display text-body-large font-[700] text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
                         {style.display_name}

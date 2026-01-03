@@ -22,7 +22,7 @@ export default function NotFound() {
           <Link href="/" className="btn btn-primary">
             Back to Home
           </Link>
-          <Link href="/texas/austin" className="btn btn-secondary">
+          <Link href="/us/tx/austin" className="btn btn-secondary">
             Browse Austin Artists
           </Link>
         </div>

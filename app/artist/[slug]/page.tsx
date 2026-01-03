@@ -5,7 +5,8 @@ import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
-import { STATES, CITIES } from '@/lib/constants/cities'
+import { CITIES } from '@/lib/constants/cities'
+import { US_STATES } from '@/lib/constants/states'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
 import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
 import RelatedArtists from '@/components/artist/RelatedArtists'
@@ -111,11 +112,13 @@ export default async function ArtistPage({
 
   if (!artist) notFound()
 
-  // Get state and city slugs for breadcrumb navigation
-  const state = STATES.find((s) => s.code === artist.state)
+  // Get state and city data for breadcrumb navigation
+  // Using new international URL format: /us/tx/austin
+  const state = US_STATES.find((s) => s.code === artist.state)
   const city = CITIES.find((c) => c.name === artist.city)
-  const stateSlug = state?.slug || ''
-  const citySlug = city?.slug || ''
+  const countrySlug = 'us' // Currently US-only, can be expanded later
+  const stateSlug = artist.state?.toLowerCase() || ''
+  const citySlug = city?.slug || artist.city?.toLowerCase().replace(/\s+/g, '-') || ''
 
   // JSON-LD structured data (sanitized to prevent XSS)
   const jsonLd = {
@@ -169,7 +172,7 @@ export default async function ArtistPage({
               '@type': 'ListItem',
               position: 2,
               name: sanitizeForJsonLd(state.name),
-              item: `/${stateSlug}`,
+              item: `/${countrySlug}/${stateSlug}`,
             },
           ]
         : []),
@@ -179,7 +182,7 @@ export default async function ArtistPage({
               '@type': 'ListItem',
               position: state ? 3 : 2,
               name: sanitizeForJsonLd(city.name),
-              item: `/${stateSlug}/${citySlug}`,
+              item: `/${countrySlug}/${stateSlug}/${citySlug}`,
             },
           ]
         : []),
@@ -231,7 +234,7 @@ export default async function ArtistPage({
                 <li>/</li>
                 <li>
                   <Link
-                    href={`/${stateSlug}`}
+                    href={`/${countrySlug}/${stateSlug}`}
                     className="hover:text-accent-primary transition-colors"
                   >
                     {state.name}
@@ -244,7 +247,7 @@ export default async function ArtistPage({
                 <li>/</li>
                 <li>
                   <Link
-                    href={`/${stateSlug}/${citySlug}`}
+                    href={`/${countrySlug}/${stateSlug}/${citySlug}`}
                     className="hover:text-accent-primary transition-colors"
                   >
                     {city.name}

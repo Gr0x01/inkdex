@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { CITIES, type City } from '@/lib/constants/cities'
-import { getStateSlug } from '@/lib/utils/city-helpers'
+import { buildCityUrl } from '@/lib/utils/city-helpers'
 import NavbarSearch from '@/components/layout/NavbarSearch'
 import { NavbarUserMenu, NavbarUserMenuMobile } from '@/components/layout/NavbarUserMenu'
 
@@ -33,7 +33,7 @@ function CityLink({
   return (
     <Link
       key={city.slug}
-      href={`/${getStateSlug(city.state)}/${city.slug}`}
+      href={buildCityUrl(city.state, city.slug)}
       className={className}
       role="menuitem"
       onClick={onClick}

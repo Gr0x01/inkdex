@@ -171,9 +171,8 @@ export default function ArtistTable() {
   };
 
   const getProfileUrl = (artist: Artist) => {
-    const stateSlug = artist.state?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
-    const citySlug = artist.city?.toLowerCase().replace(/\s+/g, '-') || 'unknown';
-    return `/${stateSlug}/${citySlug}/artists/${artist.slug}`;
+    // New international URL format: /us/tx/austin (artist pages are at /artist/[slug])
+    return `/artist/${artist.slug}`;
   };
 
   return (

@@ -14,7 +14,7 @@ interface PaginationProps {
  *   - 10 pages, on page 1: [1, 2, 3, ..., 10]
  *   - 10 pages, on page 5: [1, ..., 4, 5, 6, ..., 10]
  */
-function generatePageNumbers(current: number, total: number): (number | '...')[] {
+export function generatePageNumbers(current: number, total: number): (number | '...')[] {
   // Show all pages if 7 or fewer
   if (total <= 7) {
     return Array.from({ length: total }, (_, i) => i + 1)
