@@ -175,6 +175,14 @@ async function flushMetricsIfNeeded(): Promise<void> {
 
   try {
     const redis = getRedisClient()
+
+    // If Redis is not available, skip flushing
+    if (!redis) {
+      metricsStore.clear()
+      isFlushing = false
+      return
+    }
+
     const pipeline = redis.pipeline()
 
     // Persist each pattern's metrics to Redis Hash

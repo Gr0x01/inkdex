@@ -10,8 +10,9 @@ let redis: Redis | null = null
 /**
  * Get or create Redis client
  * Uses Railway Redis connection string from environment
+ * Returns null if REDIS_URL is not set (graceful degradation)
  */
-export function getRedisClient(): Redis {
+export function getRedisClient(): Redis | null {
   if (redis) {
     return redis
   }
@@ -19,7 +20,8 @@ export function getRedisClient(): Redis {
   const redisUrl = process.env.REDIS_URL
 
   if (!redisUrl) {
-    throw new Error('REDIS_URL environment variable is not set')
+    console.warn('[Redis] REDIS_URL not set, Redis features disabled')
+    return null
   }
 
   redis = new Redis(redisUrl, {

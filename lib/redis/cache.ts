@@ -53,6 +53,12 @@ export async function getCached<T>(
 
   try {
     const redis = getRedisClient()
+
+    // If Redis is not available, skip caching and use fallback
+    if (!redis) {
+      return await fallback()
+    }
+
     const cached = await redis.get(key)
 
     if (cached) {

@@ -15,6 +15,11 @@ import { getRedisClient } from './client'
 export async function shouldTrackEvent(key: string, ttlSeconds: number = 300): Promise<boolean> {
   const redis = getRedisClient()
 
+  // If Redis is not available, allow all events (fail open)
+  if (!redis) {
+    return true
+  }
+
   try {
     // Try to set the key only if it doesn't exist (NX flag)
     // Returns 1 if key was set, 0 if it already existed
