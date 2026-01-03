@@ -34,59 +34,42 @@ interface MiningRunsTableProps {
 function StatusBadge({ status }: { status: string }) {
   const config = {
     completed: {
-      bg: 'bg-emerald-50',
-      text: 'text-emerald-700',
+      text: 'text-status-success',
       icon: CheckCircle,
     },
     running: {
-      bg: 'bg-amber-50',
-      text: 'text-amber-700',
+      text: 'text-status-warning',
       icon: Clock,
     },
     pending: {
-      bg: 'bg-blue-50',
-      text: 'text-blue-700',
+      text: 'text-gray-500',
       icon: Clock,
     },
     failed: {
-      bg: 'bg-red-50',
-      text: 'text-red-700',
+      text: 'text-status-error',
       icon: XCircle,
     },
     cancelled: {
-      bg: 'bg-gray-50',
-      text: 'text-gray-700',
+      text: 'text-gray-500',
       icon: XCircle,
     },
   };
 
-  const { bg, text, icon: Icon } = config[status as keyof typeof config] || config.pending;
+  const { text, icon: Icon } = config[status as keyof typeof config] || config.pending;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${bg} ${text}`}>
-      <Icon className="w-3.5 h-3.5" />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+    <span className={`inline-flex items-center gap-1 text-xs font-mono ${text}`}>
+      <Icon className="w-3 h-3" />
+      {status}
     </span>
   );
 }
 
 function TypeBadge({ type }: { type: 'hashtag' | 'follower' }) {
   if (type === 'hashtag') {
-    return (
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-          <Hash className="w-4 h-4 text-amber-600" />
-        </div>
-      </div>
-    );
+    return <Hash className="w-3.5 h-3.5 text-gray-500" />;
   }
-  return (
-    <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-        <Users className="w-4 h-4 text-blue-600" />
-      </div>
-    </div>
-  );
+  return <Users className="w-3.5 h-3.5 text-gray-500" />;
 }
 
 function formatDate(dateStr: string | null) {
@@ -120,16 +103,16 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
 
   if (loading) {
     return (
-      <div className="p-12 text-center">
-        <p className="text-gray-500">Loading runs...</p>
+      <div className="p-8 text-center">
+        <p className="text-gray-500 text-sm font-body">Loading runs...</p>
       </div>
     );
   }
 
   if (runs.length === 0) {
     return (
-      <div className="p-12 text-center">
-        <p className="text-gray-500">No mining runs found</p>
+      <div className="p-8 text-center">
+        <p className="text-gray-500 text-sm font-body">No mining runs found</p>
       </div>
     );
   }
@@ -138,93 +121,93 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-100">
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+          <tr className="border-b-2 border-ink/10">
+            <th className="px-4 py-3 text-left font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Source
             </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-left font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Status
             </th>
-            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-right font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Scraped
             </th>
-            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-right font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Inserted
             </th>
-            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-right font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Cost
             </th>
-            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-right font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Duration
             </th>
-            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-3 text-right font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">
               Date
             </th>
-            <th className="px-6 py-4 w-10"></th>
+            <th className="px-4 py-3 w-8"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50">
+        <tbody>
           {runs.map((run) => (
             <Fragment key={run.id}>
               <tr
-                className={`hover:bg-gray-50/50 cursor-pointer transition-colors ${
-                  expandedId === run.id ? 'bg-gray-50/50' : ''
+                className={`border-b border-ink/5 hover:bg-gray-100/50 cursor-pointer transition-colors ${
+                  expandedId === run.id ? 'bg-gray-100/50' : ''
                 }`}
                 onClick={() => setExpandedId(expandedId === run.id ? null : run.id)}
               >
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
                     <TypeBadge type={run.type} />
-                    <span className="text-sm font-medium text-gray-900">{run.identifier}</span>
+                    <span className="text-sm font-body text-ink">{run.identifier}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-3">
                   <StatusBadge status={run.status} />
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-gray-700 font-mono tabular-nums">
                   {run.stats.scraped.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-gray-700 font-mono tabular-nums">
                   {run.stats.inserted.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
+                <td className="px-4 py-3 text-right text-sm text-gray-700 font-mono tabular-nums">
                   ${(run.costs.apify + run.costs.openai).toFixed(4)}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-500">
+                <td className="px-4 py-3 text-right text-sm text-gray-500 font-mono">
                   {formatDuration(run.startedAt, run.completedAt)}
                 </td>
-                <td className="px-6 py-4 text-right text-sm text-gray-500">
+                <td className="px-4 py-3 text-right text-sm text-gray-500 font-mono">
                   {formatDate(run.createdAt)}
                 </td>
-                <td className="px-6 py-4 text-right">
+                <td className="px-4 py-3 text-right">
                   {run.error ? (
-                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    <AlertCircle className="w-4 h-4 text-status-error" />
                   ) : expandedId === run.id ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-gray-400" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
                   )}
                 </td>
               </tr>
 
               {/* Expanded details */}
               {expandedId === run.id && (
-                <tr className="bg-gray-50/30">
-                  <td colSpan={8} className="px-6 py-5">
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                      <DetailItem label="Bio Filter Passed" value={run.stats.bioPass} />
-                      <DetailItem label="Image Filter Passed" value={run.stats.imagePass} />
-                      <DetailItem label="Duplicates Skipped" value={run.stats.duplicates || 0} />
+                <tr className="bg-gray-100/30">
+                  <td colSpan={8} className="px-4 py-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      <DetailItem label="Bio Pass" value={run.stats.bioPass} />
+                      <DetailItem label="Image Pass" value={run.stats.imagePass} />
+                      <DetailItem label="Duplicates" value={run.stats.duplicates || 0} />
                       {run.type === 'follower' && (
-                        <DetailItem label="Private Skipped" value={run.stats.private || 0} />
+                        <DetailItem label="Private" value={run.stats.private || 0} />
                       )}
-                      <DetailItem label="Apify Cost" value={`$${run.costs.apify.toFixed(4)}`} />
-                      <DetailItem label="OpenAI Cost" value={`$${run.costs.openai.toFixed(4)}`} />
+                      <DetailItem label="Apify" value={`$${run.costs.apify.toFixed(4)}`} />
+                      <DetailItem label="OpenAI" value={`$${run.costs.openai.toFixed(4)}`} />
                     </div>
 
                     {run.error && (
-                      <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
-                        <p className="text-red-700 text-sm">{run.error}</p>
+                      <div className="mt-3 p-3 bg-status-error/10 border border-status-error/20">
+                        <p className="text-status-error text-sm font-body">{run.error}</p>
                       </div>
                     )}
                   </td>
@@ -241,8 +224,8 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
 function DetailItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className="text-sm font-medium text-gray-900 tabular-nums">
+      <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em]">{label}</p>
+      <p className="text-sm font-heading font-semibold text-ink tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
     </div>

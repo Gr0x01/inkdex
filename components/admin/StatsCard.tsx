@@ -9,7 +9,6 @@ interface StatsCardProps {
     direction: 'up' | 'down' | 'neutral';
   };
   variant?: 'default' | 'success' | 'warning' | 'error';
-  accentColor?: string;
 }
 
 export default function StatsCard({
@@ -18,58 +17,40 @@ export default function StatsCard({
   subValue,
   trend,
   variant = 'default',
-  accentColor,
 }: StatsCardProps) {
-  const variantConfig = {
-    default: {
-      accent: accentColor || 'bg-gray-500',
-      text: 'text-gray-900',
-    },
-    success: {
-      accent: 'bg-emerald-500',
-      text: 'text-emerald-600',
-    },
-    warning: {
-      accent: 'bg-amber-500',
-      text: 'text-amber-600',
-    },
-    error: {
-      accent: 'bg-red-500',
-      text: 'text-red-600',
-    },
-  };
-
-  const config = variantConfig[variant];
-
   const trendColor =
     trend?.direction === 'up'
-      ? 'text-emerald-600 bg-emerald-50'
+      ? 'text-status-success'
       : trend?.direction === 'down'
-      ? 'text-red-600 bg-red-50'
-      : 'text-gray-600 bg-gray-50';
+      ? 'text-status-error'
+      : 'text-gray-500';
 
   const TrendIcon = trend?.direction === 'up' ? TrendingUp : TrendingDown;
 
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
-      {/* Accent bar */}
-      <div className={`w-12 h-1 rounded-full ${config.accent} mb-4`} />
+  const variantBorder = {
+    default: 'border-ink/10',
+    success: 'border-status-success/30',
+    warning: 'border-status-warning/30',
+    error: 'border-status-error/30',
+  };
 
-      <p className="text-sm text-gray-500 font-medium mb-1">{label}</p>
+  return (
+    <div className={`bg-paper border-2 ${variantBorder[variant]} p-4 hover:-translate-y-0.5 transition-transform duration-150`}>
+      <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-1">{label}</p>
 
       <div className="flex items-end justify-between">
         <div>
-          <p className={`text-3xl font-semibold ${config.text} tabular-nums font-[family-name:var(--font-space-grotesk)]`}>
+          <p className="text-2xl font-heading font-bold text-ink tabular-nums">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {subValue && (
-            <p className="text-sm text-gray-400 mt-1">{subValue}</p>
+            <p className="text-sm text-gray-500 font-body mt-0.5">{subValue}</p>
           )}
         </div>
 
         {trend && (
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${trendColor}`}>
-            <TrendIcon className="w-3.5 h-3.5" />
+          <div className={`flex items-center gap-1 text-xs font-mono ${trendColor}`}>
+            <TrendIcon className="w-3 h-3" />
             {trend.value}
           </div>
         )}
