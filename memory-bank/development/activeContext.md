@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 8 Cities Live
+Status: Production Ready - 8 Cities Live + Admin Panel
 ---
 
 # Active Context: Inkdex
@@ -20,6 +20,7 @@ Status: Production Ready - 8 Cities Live
 - **Multi-location support** (Free: 1 location, Pro: up to 20)
 - International artist support (195+ countries)
 - Storybook component development
+- **Admin panel** (magic link auth, mining dashboard, featured artist management)
 
 ## Completed Phases
 
@@ -35,6 +36,7 @@ Status: Production Ready - 8 Cities Live
 | 11 | ✅ | Instagram auto-sync for Pro (daily cron) |
 | 12 | ✅ | Search ranking boosts + Pro/Featured badges |
 | 15 | ✅ | Multi-location support (international, tier-based limits) |
+| 14 | ✅ | Admin panel (mining dashboard, featured artist management) |
 
 ## Pending Phases
 
@@ -44,7 +46,6 @@ Status: Production Ready - 8 Cities Live
 | 9 | Stripe subscription + webhooks |
 | 10 | Email notifications (Resend) |
 | 13 | Analytics dashboard (Pro only) |
-| 14 | Admin panel (featured curation, promo codes) |
 
 ## Ready-to-Run Pipelines
 
@@ -61,6 +62,13 @@ npm run mine:status                # View stats
 3. `npm run scrape-instagram -- --city "city-slug"`
 4. `python scripts/embeddings/local_batch_embeddings.py`
 5. Update vector index via `npx tsx scripts/embeddings/create-vector-index.ts`
+
+## Admin Access
+
+Access via `/admin/login`:
+- **Whitelisted emails:** rbaten@gmail.com, gr0x01@pm.me
+- **Auth method:** Magic link (Supabase)
+- **Dev mode:** Magic link URL returned in API response (no email required)
 
 ## Test Users
 

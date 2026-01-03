@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-02
 Maintainer: RB
-Status: Phase 12 Search Ranking & Badges Complete - Pro/Featured boost in search + badge display
+Status: Phase 11 Auto-Sync Complete - Daily Instagram sync for Pro artists with security hardening
 ---
 
 # User & Artist Account Implementation Spec
@@ -1268,5 +1268,115 @@ npx tsx scripts/seed/create-test-users.ts
 
 ---
 
+### Phase 11: Instagram Auto-Sync (Pro Feature) ✅ (Jan 2, 2026)
+- **2 migrations applied:** Phase 11 schema + sync lock columns
+- **8 files created:** Core sync logic, 4 API routes, cron endpoint, 2 UI components
+- **5 files modified:** Rate limiter, 5 onboarding pages (Suspense fixes)
+- **Daily auto-sync:** Vercel Cron at 2am UTC for Pro artists
+- **Manual sync:** 1 per hour rate limit, immediate feedback
+- **Sync locking:** Race condition prevention with atomic lock acquisition
+- **Security hardening:** All 5 critical code review issues fixed
+
+**Implementation Overview:**
+- **Core sync logic:** `lib/instagram/auto-sync.ts` (400+ lines)
+  - Fetches recent Instagram posts via Apify
+  - Classifies with GPT-5-mini (tattoo vs non-tattoo)
+  - Generates CLIP embeddings for new images
+  - Deduplicates via SHA-256 media ID hashing
+  - Logs all operations to `instagram_sync_log`
+- **Lock mechanism:** Prevents concurrent syncs on same artist
+  - Atomic lock acquisition with conditional update
+  - Stale lock detection (1 hour timeout)
+  - Guaranteed release via try-finally pattern
+- **Failure handling:**
+  - 3 consecutive failures → auto-disable sync
+  - Token revocation → disable sync with reason
+  - Individual image failures don't abort batch
+
+**API Endpoints (4 new routes):**
+1. `/api/cron/sync-instagram` - Daily cron job (CRON_SECRET auth required)
+2. `/api/dashboard/sync/trigger` - Manual sync (Pro only, 1/hour rate limit)
+3. `/api/dashboard/sync/settings` - Toggle auto-sync (Pro status constraint)
+4. `/api/dashboard/sync/status` - Get sync status + recent logs
+
+**UI Components (2 new files):**
+- `components/dashboard/SyncSettingsCard.tsx` - Pro-only sync management
+  - Toggle auto-sync on/off
+  - Manual sync button with rate limit feedback
+  - Sync history table (last 5 operations)
+  - Status badges (synced, syncing, failed, disabled)
+- `components/dashboard/SyncStatusBadge.tsx` - Visual status indicator
+
+**Database Changes:**
+- **Migration 1:** `20260106_001_phase11_auto_sync.sql`
+  - `portfolio_images.instagram_media_id` - Deduplication key
+  - `artists.sync_consecutive_failures` - Failure tracking
+  - `artists.sync_disabled_reason` - Disable explanation
+  - Indexes for efficient queries
+- **Migration 2:** `20260106_002_sync_lock_columns.sql`
+  - `artists.sync_in_progress` - Lock flag
+  - `artists.last_sync_started_at` - Stale lock detection
+  - Partial index for active locks
+
+**Security Fixes (5 Critical Issues):**
+1. ✅ **Race condition in lock acquisition** - Fixed `.or()` filter logic
+2. ✅ **SQL injection in embedding** - Added validation for embedding values
+3. ✅ **Cron authentication bypass** - Removed development mode bypass
+4. ✅ **Unguaranteed lock release** - Refactored to try-finally pattern
+5. ✅ **Weak media ID hash** - Changed from DJB2 to SHA-256
+
+**Additional Fixes:**
+- ✅ **Silent OpenAI failure** - Now throws error instead of returning empty
+- ✅ **Pro status race condition** - Added `is_pro = true` constraint to settings update
+- ✅ **useSearchParams Suspense** - Fixed 5 onboarding pages with Suspense boundaries
+
+**Files Created (8 total):**
+- `supabase/migrations/20260106_001_phase11_auto_sync.sql` - Schema migration
+- `supabase/migrations/20260106_002_sync_lock_columns.sql` - Lock columns
+- `lib/instagram/auto-sync.ts` - Core sync logic (400+ lines)
+- `app/api/cron/sync-instagram/route.ts` - Cron endpoint
+- `app/api/dashboard/sync/trigger/route.ts` - Manual sync trigger
+- `app/api/dashboard/sync/settings/route.ts` - Settings toggle
+- `app/api/dashboard/sync/status/route.ts` - Status endpoint
+- `components/dashboard/SyncSettingsCard.tsx` - Sync management UI
+- `components/dashboard/SyncStatusBadge.tsx` - Status badge
+
+**Files Modified (6 total):**
+- `lib/rate-limiter.ts` - Added `checkManualSyncRateLimit()`
+- `app/dashboard/portfolio/import/page.tsx` - Suspense fix
+- `app/onboarding/booking/page.tsx` - Suspense fix
+- `app/onboarding/complete/page.tsx` - Suspense fix
+- `app/onboarding/portfolio/page.tsx` - Suspense fix
+- `app/onboarding/preview/page.tsx` - Suspense fix
+
+**Vercel Configuration:**
+```json
+{
+  "crons": [{
+    "path": "/api/cron/sync-instagram",
+    "schedule": "0 2 * * *"
+  }]
+}
+```
+
+**Testing Checklist:**
+1. ✅ Pro user: SyncSettingsCard visible on dashboard
+2. ✅ Pro user: Toggle auto-sync on/off
+3. ✅ Pro user: Click "Sync Now" → images synced
+4. ✅ Pro user: Rate limit blocks second sync within hour
+5. ✅ Free user: No SyncSettingsCard visible
+6. ✅ Free user: API returns 403 on sync endpoints
+7. ✅ Cron: Requires CRON_SECRET (no development bypass)
+8. ✅ Deduplication: Same media ID not imported twice
+9. ✅ Lock: Concurrent sync attempts properly blocked
+
+**Build & Verification:**
+- ✅ TypeScript compilation: PASS
+- ✅ ESLint: PASS
+- ✅ Production build: PASS
+- ✅ Code review: All 5 critical issues fixed
+
+---
+
 **Last Updated:** 2026-01-02
-**Status:** Phase 12 complete - Search ranking boosts and badge display implemented. Pro artists get +0.05 boost, Featured artists get +0.02 boost. Badges display in search results with Pro taking priority over Featured. Next: Phase 13 (Analytics) or Phase 14 (Admin Panel)
+**Status:** Phase 11 Auto-Sync complete - Daily Instagram sync for Pro artists with comprehensive security hardening. Next: Phase 13 (Analytics) or Phase 14 (Admin Panel)

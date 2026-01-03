@@ -18,6 +18,34 @@ Status: Production Ready
 
 ## Recent Completions
 
+### Jan 3, 2026 (Session 2)
+- **Phase 14 complete** - Admin panel with magic link auth
+  - **Authentication:**
+    - Magic link auth via Supabase `generateLink()` API
+    - Email whitelist: rbaten@gmail.com, gr0x01@pm.me
+    - Route group architecture: `(authenticated)` separates login from protected routes
+    - URL hash token parsing with `setSession()` for auth callback
+  - **Mining Dashboard** (`/admin/mining`):
+    - Stats cards: running/completed/failed jobs, total artists/images
+    - Conversion funnel visualization (scraped → passed bio → classified → inserted)
+    - City distribution bar chart
+    - Live Apify/OpenAI billing (5-minute cache)
+    - Mining runs table with status badges, errors expansion
+  - **Featured Artists** (`/admin/artists`):
+    - Search by name/handle with SQL injection protection
+    - Filters: city dropdown, is_pro toggle, is_featured toggle
+    - Individual toggle switch per artist
+    - Bulk feature/unfeature with checkbox selection
+    - Pagination controls
+  - **Security hardening:**
+    - SQL injection: PostgREST escaping (`%`, `_`, `\`, `,`, `()'"`)
+    - CSRF protection: SameSite=strict for admin auth cookies
+    - Rate limiting: 5 login attempts/minute, 10 bulk ops/minute
+    - Memory leak prevention: cleanup intervals with `unref()`
+    - Audit logging utility (created table + lib/admin/audit-log.ts)
+    - Content-Type validation, Cache-Control headers
+    - Request timeouts for external APIs (Apify 10s, OpenAI 15s)
+
 ### Jan 3, 2026
 - **Batch classification script** - `npm run mine:classify`
   - Processes pending mining candidates (bio filter failed, images not classified)
@@ -98,5 +126,6 @@ Status: Production Ready
 
 1. **Phase 8** - Legal pages before Pro launch
 2. **Phase 9** - Stripe integration
-3. **Phase 13** - Analytics dashboard
-4. Run mining pipeline for 10k+ artists
+3. **Phase 10** - Email notifications (Resend)
+4. **Phase 13** - Analytics dashboard
+5. Run mining pipeline for 10k+ artists

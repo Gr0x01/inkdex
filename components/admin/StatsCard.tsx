@@ -1,9 +1,15 @@
+import { TrendingUp, TrendingDown } from 'lucide-react';
+
 interface StatsCardProps {
   label: string;
   value: string | number;
   subValue?: string;
-  trend?: string;
+  trend?: {
+    value: string;
+    direction: 'up' | 'down' | 'neutral';
+  };
   variant?: 'default' | 'success' | 'warning' | 'error';
+  accentColor?: string;
 }
 
 export default function StatsCard({
@@ -12,61 +18,62 @@ export default function StatsCard({
   subValue,
   trend,
   variant = 'default',
+  accentColor,
 }: StatsCardProps) {
   const variantConfig = {
     default: {
-      bg: 'bg-neutral-900/30',
-      border: 'border-neutral-800/50',
-      dot: 'bg-neutral-600',
-      label: 'text-neutral-500',
+      accent: accentColor || 'bg-gray-500',
+      text: 'text-gray-900',
     },
     success: {
-      bg: 'bg-emerald-500/5',
-      border: 'border-emerald-500/20',
-      dot: 'bg-emerald-500',
-      label: 'text-emerald-500/70',
+      accent: 'bg-emerald-500',
+      text: 'text-emerald-600',
     },
     warning: {
-      bg: 'bg-amber-500/5',
-      border: 'border-amber-500/20',
-      dot: 'bg-amber-500',
-      label: 'text-amber-500/70',
+      accent: 'bg-amber-500',
+      text: 'text-amber-600',
     },
     error: {
-      bg: 'bg-red-500/5',
-      border: 'border-red-500/20',
-      dot: 'bg-red-500',
-      label: 'text-red-500/70',
+      accent: 'bg-red-500',
+      text: 'text-red-600',
     },
   };
 
   const config = variantConfig[variant];
 
-  const trendColor = trend?.startsWith('+')
-    ? 'text-emerald-500'
-    : trend?.startsWith('-')
-    ? 'text-red-500'
-    : 'text-neutral-500';
+  const trendColor =
+    trend?.direction === 'up'
+      ? 'text-emerald-600 bg-emerald-50'
+      : trend?.direction === 'down'
+      ? 'text-red-600 bg-red-50'
+      : 'text-gray-600 bg-gray-50';
+
+  const TrendIcon = trend?.direction === 'up' ? TrendingUp : TrendingDown;
 
   return (
-    <div className={`rounded-lg border p-4 ${config.bg} ${config.border}`}>
-      <div className="flex items-center gap-1.5 mb-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-        <p className={`text-[10px] uppercase tracking-wider font-mono ${config.label}`}>
-          {label}
-        </p>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <p className="text-xl font-semibold text-white tabular-nums font-[family-name:var(--font-space-grotesk)]">
-          {typeof value === 'number' ? value.toLocaleString() : value}
-        </p>
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow">
+      {/* Accent bar */}
+      <div className={`w-12 h-1 rounded-full ${config.accent} mb-4`} />
+
+      <p className="text-sm text-gray-500 font-medium mb-1">{label}</p>
+
+      <div className="flex items-end justify-between">
+        <div>
+          <p className={`text-3xl font-semibold ${config.text} tabular-nums font-[family-name:var(--font-space-grotesk)]`}>
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          {subValue && (
+            <p className="text-sm text-gray-400 mt-1">{subValue}</p>
+          )}
+        </div>
+
         {trend && (
-          <span className={`text-xs font-mono ${trendColor}`}>{trend}</span>
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${trendColor}`}>
+            <TrendIcon className="w-3.5 h-3.5" />
+            {trend.value}
+          </div>
         )}
       </div>
-      {subValue && (
-        <p className="text-[11px] text-neutral-500 mt-1 font-mono">{subValue}</p>
-      )}
     </div>
   );
 }

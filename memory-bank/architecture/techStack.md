@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 8 Cities + Analytics Integrated ✅
+Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
 ---
 
 # Technology Stack: Inkdex
@@ -79,8 +79,11 @@ Status: Production Ready - 8 Cities + Analytics Integrated ✅
   - **DataForSEO**: City selection + keyword research (Phase 0 - DONE)
   - **Google Places API**: Artist/shop discovery via Maps
   - **Apify**: Managed Instagram scraping (legal, managed IPs)
+    - `apify/instagram-hashtag-scraper` - Hashtag post mining ($2.60/1K posts)
+    - `apify/instagram-scraper` - Follower mining ($0.10/1K followers)
   - **Modal.com**: Serverless GPU for CLIP embeddings
   - **Instagram Graph API**: OAuth verification (post-MVP)
+  - **OpenAI**: GPT-5-mini for image classification (~$0.02/profile)
 
 ### Architecture Pattern
 - **Server Components**: Default for data fetching (faster, less JS)
@@ -90,6 +93,31 @@ Status: Production Ready - 8 Cities + Analytics Integrated ✅
 - **URL-Based State**: Search results via `?id={searchId}` (no client state needed)
 - **Container Warmup**: Fire-and-forget warmup on homepage load (reduces first search latency)
 - **Future Auth Context**: AuthProvider wrapper (ready but unused in MVP)
+
+### Admin Panel Architecture (Jan 3, 2026)
+- **Route Structure**: `app/admin/` with `(authenticated)` route group
+  - `/admin/login` - Public (outside route group)
+  - `/admin/mining` - Protected (inside route group)
+  - `/admin/artists` - Protected (inside route group)
+- **Authentication**: Magic link via Supabase Auth
+  - Email whitelist in `lib/admin/whitelist.ts`
+  - Middleware protection in `lib/supabase/middleware.ts`
+  - Double-check in `(authenticated)/layout.tsx`
+- **API Endpoints**:
+  - `POST /api/admin/auth/login` - Generate magic link
+  - `POST /api/admin/auth/logout` - Sign out
+  - `GET /api/admin/mining/stats` - Job counts, totals
+  - `GET /api/admin/mining/runs` - Recent mining runs
+  - `GET /api/admin/mining/costs/live` - Apify/OpenAI billing
+  - `GET /api/admin/mining/cities` - Artist count by city
+  - `GET /api/admin/artists` - Paginated artist list
+  - `PATCH /api/admin/artists/[id]/featured` - Toggle featured
+  - `POST /api/admin/artists/bulk-featured` - Bulk update
+- **Security**:
+  - SQL injection prevention (PostgREST escaping)
+  - CSRF protection (SameSite=strict for admin cookies)
+  - Rate limiting (in-memory with cleanup)
+  - Audit logging (admin_audit_log table)
 
 ---
 
@@ -558,5 +586,5 @@ Scripts (Node.js + Python)
 
 ---
 
-**Last Review:** 2026-01-05 (Storybook setup complete)
-**Next Review:** After Phase 7 (Subscription integration & analytics dashboard)
+**Last Review:** 2026-01-03 (Admin panel complete)
+**Next Review:** After Phase 9 (Stripe subscription integration)
