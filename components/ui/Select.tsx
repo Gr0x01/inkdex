@@ -6,9 +6,11 @@
  * Replaces native <select> with a fully styled dropdown
  * Sharp corners, monospace labels, editorial aesthetic
  * Supports typeahead search for faster selection
+ * Uses React Portal to avoid overflow clipping issues
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface SelectOption {
@@ -24,6 +26,7 @@ interface SelectProps {
   className?: string;
   searchable?: boolean;
   searchPlaceholder?: string;
+  size?: 'default' | 'sm';
 }
 
 export default function Select({
@@ -34,13 +37,36 @@ export default function Select({
   className = '',
   searchable = false,
   searchPlaceholder = 'Type to search...',
+  size = 'default',
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Track mounted state for portal
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  // Update dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4, // 4px gap (mt-1)
+        left: rect.left + window.scrollX,
+        width: rect.width, // min-width will be the button width
+      });
+    }
+  }, [isOpen]);
 
   // Filter options based on search query
   const filteredOptions = searchable && searchQuery
@@ -57,17 +83,23 @@ export default function Select({
     setHighlightedIndex(-1);
   }, []);
 
-  // Close on outside click
+  // Close on outside click (check both container and dropdown portal)
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedContainer = containerRef.current && containerRef.current.contains(target);
+      const clickedDropdown = dropdownRef.current && dropdownRef.current.contains(target);
+
+      if (!clickedContainer && !clickedDropdown) {
         closeDropdown();
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [closeDropdown]);
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen, closeDropdown]);
 
   // Focus search input when opening
   useEffect(() => {
@@ -129,33 +161,29 @@ export default function Select({
 
   const selectedOption = options.find((opt) => opt.value === value);
 
-  return (
-    <div ref={containerRef} className={`relative ${className}`} onKeyDown={handleKeyDown}>
-      {/* Trigger Button */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-[var(--paper-white)] border-2 border-[var(--border-subtle)] text-left font-body text-[1.0625rem] text-[var(--text-primary)] transition-all duration-150 hover:border-[var(--gray-500)] focus:outline-none focus:border-[var(--ink-black)] focus:shadow-sm flex items-center justify-between"
-        style={{ padding: 'var(--space-sm) var(--space-sm)' }}
-        aria-haspopup="listbox"
-        aria-expanded={isOpen}
-      >
-        <span className={selectedOption ? '' : 'text-[var(--text-tertiary)] italic'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
-        <ChevronDown
-          className={`w-3 h-3 text-[var(--gray-500)] transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
+  // Size-specific classes
+  const triggerClasses = size === 'sm'
+    ? 'px-2 py-1 text-[13px]'
+    : 'px-3 py-2.5 text-[1.0625rem]';
 
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-[var(--paper-white)] border-2 border-[var(--ink-black)] shadow-lg">
+  const optionClasses = size === 'sm'
+    ? 'px-2 py-1 text-[13px]'
+    : 'px-4 py-2.5 text-[1.0625rem]';
+
+  // Render dropdown content
+  const dropdownContent = isOpen && isMounted && (
+    <div
+      ref={dropdownRef}
+      className="fixed z-[100] bg-[var(--paper-white)] border-2 border-[var(--ink-black)] shadow-lg"
+      style={{
+        top: `${dropdownPosition.top}px`,
+        left: `${dropdownPosition.left}px`,
+        width: `${dropdownPosition.width}px`,
+      }}
+    >
           {/* Search Input */}
           {searchable && (
-            <div className="p-2 border-b border-[var(--gray-200)]">
+            <div className="p-1.5 border-b border-[var(--gray-200)]">
               <input
                 ref={searchInputRef}
                 type="text"
@@ -165,7 +193,7 @@ export default function Select({
                   setHighlightedIndex(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="w-full pl-3 pr-3 py-2 font-body text-sm border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)]"
+                className="w-full px-2 py-1 font-body text-[13px] border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)]"
               />
             </div>
           )}
@@ -187,7 +215,7 @@ export default function Select({
                     closeDropdown();
                   }}
                   onMouseEnter={() => setHighlightedIndex(index)}
-                  className={`w-full px-4 py-2.5 text-left font-body text-[1.0625rem] transition-colors duration-100 ${
+                  className={`w-full text-left font-body transition-colors duration-100 overflow-hidden text-ellipsis whitespace-nowrap ${optionClasses} ${
                     value === option.value
                       ? 'bg-[var(--ink-black)] text-[var(--paper-white)]'
                       : highlightedIndex === index
@@ -196,6 +224,7 @@ export default function Select({
                   }`}
                   role="option"
                   aria-selected={value === option.value}
+                  title={option.label}
                 >
                   {option.label}
                 </button>
@@ -203,7 +232,31 @@ export default function Select({
             )}
           </div>
         </div>
-      )}
+  );
+
+  return (
+    <div ref={containerRef} className={`relative ${className}`} onKeyDown={handleKeyDown}>
+      {/* Trigger Button */}
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full bg-[var(--paper-white)] border-2 border-[var(--border-subtle)] text-left font-body text-[var(--text-primary)] transition-all duration-150 hover:border-[var(--gray-500)] focus:outline-none focus:border-[var(--ink-black)] focus:shadow-sm flex items-center justify-between gap-2 ${triggerClasses}`}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className={selectedOption ? 'truncate' : 'text-[var(--text-tertiary)] italic truncate'}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          className={`w-3 h-3 text-[var(--gray-500)] flex-shrink-0 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Dropdown Menu - Rendered via Portal */}
+      {typeof window !== 'undefined' && dropdownContent && createPortal(dropdownContent, document.body)}
     </div>
   );
 }

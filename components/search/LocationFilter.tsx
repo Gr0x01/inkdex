@@ -74,7 +74,6 @@ export default function LocationFilter() {
   const [countriesError, setCountriesError] = useState(false)
   const [regionsError, setRegionsError] = useState(false)
   const [citiesError, setCitiesError] = useState(false)
-  const [filterApplied, setFilterApplied] = useState(false)
 
   // Refs for request cancellation and retry
   const countriesAbortRef = useRef<AbortController | null>(null)
@@ -252,10 +251,6 @@ export default function LocationFilter() {
 
       // Navigate with new filters
       router.push(`/search?${params.toString()}`)
-
-      // Show filter applied feedback
-      setFilterApplied(true)
-      setTimeout(() => setFilterApplied(false), 2000)
     }, FILTER_DEBOUNCE_MS)
   }, [searchParams, router])
 
@@ -331,18 +326,6 @@ export default function LocationFilter() {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Filter applied indicator with screen reader context */}
-      {filterApplied && (
-        <span
-          className="text-xs text-green-600 font-medium animate-fade-in"
-          role="status"
-          aria-live="polite"
-        >
-          Filters applied
-          <span className="sr-only">. {getFilterDescription()}</span>
-        </span>
-      )}
-
       {/* Country Dropdown */}
       {countriesError ? (
         <RetryButton
@@ -359,6 +342,7 @@ export default function LocationFilter() {
           options={countryOptions}
           placeholder={loadingCountries ? 'Loading...' : 'Select country'}
           className="w-[140px]"
+          size="sm"
         />
       )}
 
@@ -380,6 +364,7 @@ export default function LocationFilter() {
               options={regionOptions}
               placeholder={loadingRegions ? 'Loading...' : 'Select region'}
               className="w-[140px]"
+              size="sm"
             />
           )}
         </>
@@ -405,6 +390,7 @@ export default function LocationFilter() {
               className="w-[160px]"
               searchable
               searchPlaceholder="Search cities..."
+              size="sm"
             />
           )}
         </>
