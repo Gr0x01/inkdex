@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Clock } from 'lucide-react';
+import { RefreshCw, Hash, Users } from 'lucide-react';
 import StatsCard from './StatsCard';
 import CostTracker from './CostTracker';
 import MiningRunsTable from './MiningRunsTable';
@@ -72,6 +72,8 @@ interface CityData {
   count: number;
 }
 
+type TabType = 'all' | 'hashtag' | 'follower';
+
 export default function MiningDashboard() {
   const [stats, setStats] = useState<MiningStats | null>(null);
   const [runs, setRuns] = useState<MiningRun[]>([]);
@@ -79,6 +81,7 @@ export default function MiningDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('all');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -120,12 +123,18 @@ export default function MiningDashboard() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  // Filter runs by tab
+  const filteredRuns = runs.filter((run) => {
+    if (activeTab === 'all') return true;
+    return run.type === activeTab;
+  });
+
   if (loading && !stats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="flex items-center gap-3 text-neutral-500">
-          <RefreshCw className="w-4 h-4 animate-spin" />
-          <span className="text-sm font-mono">Loading pipeline data...</span>
+        <div className="flex items-center gap-3 text-gray-500">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+          <span className="text-sm">Loading mining data...</span>
         </div>
       </div>
     );
@@ -134,7 +143,7 @@ export default function MiningDashboard() {
   if (error && !stats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-400 font-mono text-sm">Error: {error}</div>
+        <div className="text-red-500 text-sm">Error: {error}</div>
       </div>
     );
   }
@@ -145,7 +154,7 @@ export default function MiningDashboard() {
         {
           label: 'Posts/Followers Scraped',
           value: stats.hashtag.postsScraped + stats.follower.followersScraped,
-          color: '#6b7280',
+          color: '#9ca3af',
         },
         {
           label: 'Unique Handles Found',
@@ -170,33 +179,38 @@ export default function MiningDashboard() {
       ]
     : [];
 
+  const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
+    { id: 'all', label: 'All Runs', icon: RefreshCw },
+    { id: 'hashtag', label: 'Hashtag Mining', icon: Hash },
+    { id: 'follower', label: 'Follower Mining', icon: Users },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Header - Compact, utilitarian */}
+    <div className="space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-white font-[family-name:var(--font-space-grotesk)] tracking-tight">
+          <h1 className="text-2xl font-semibold text-gray-900 font-[family-name:var(--font-space-grotesk)]">
             Mining Pipeline
           </h1>
-          <p className="text-xs text-neutral-500 font-mono mt-0.5">
-            Hashtag and follower discovery operations
+          <p className="text-gray-500 mt-1">
+            Monitor hashtag and follower discovery operations
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           {lastRefresh && (
-            <div className="flex items-center gap-1.5 text-[10px] text-neutral-600 font-mono">
-              <Clock className="w-3 h-3" />
-              {lastRefresh.toLocaleTimeString()}
-            </div>
+            <span className="text-sm text-gray-400">
+              Updated {lastRefresh.toLocaleTimeString()}
+            </span>
           )}
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono
-                     bg-neutral-800/50 hover:bg-neutral-800 border border-neutral-700/50
-                     text-neutral-300 rounded transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200
+                     text-gray-700 rounded-xl hover:bg-gray-50 transition-colors
+                     disabled:opacity-50 shadow-sm"
           >
-            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
         </div>
@@ -204,24 +218,25 @@ export default function MiningDashboard() {
 
       {stats && (
         <>
-          {/* Stats Cards - Tighter grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              label="Running"
+              label="Running Jobs"
               value={stats.hashtag.running + stats.follower.running}
               variant={
                 stats.hashtag.running + stats.follower.running > 0
                   ? 'warning'
                   : 'default'
               }
+              accentColor="bg-amber-500"
             />
             <StatsCard
-              label="Completed"
+              label="Completed Jobs"
               value={stats.hashtag.completed + stats.follower.completed}
               variant="success"
             />
             <StatsCard
-              label="Failed"
+              label="Failed Jobs"
               value={stats.hashtag.failed + stats.follower.failed}
               variant={
                 stats.hashtag.failed + stats.follower.failed > 0
@@ -230,46 +245,52 @@ export default function MiningDashboard() {
               }
             />
             <StatsCard
-              label="Discovered"
+              label="Artists Discovered"
               value={stats.totals.artistsInserted}
-              subValue={`$${stats.totals.costPerArtist.toFixed(4)}/artist`}
+              subValue={`$${stats.totals.costPerArtist.toFixed(4)} per artist`}
+              accentColor="bg-emerald-500"
             />
           </div>
 
-          {/* Pipeline breakdown - Side by side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {/* Hashtag Mining */}
-            <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                <h3 className="text-xs font-mono uppercase tracking-wider text-amber-500">
-                  Hashtag Mining
-                </h3>
+          {/* Pipeline breakdown cards */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Hashtag Mining Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                  <Hash className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Hashtag Mining</h3>
+                  <p className="text-sm text-gray-500">Posts and profiles from hashtags</p>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Metric label="Posts Scraped" value={stats.hashtag.postsScraped} />
-                <Metric label="Artists Inserted" value={stats.hashtag.artistsInserted} />
-                <Metric label="Apify Cost" value={`$${stats.hashtag.estimatedApifyCost.toFixed(4)}`} mono />
-                <Metric label="OpenAI Cost" value={`$${stats.hashtag.estimatedOpenAICost.toFixed(4)}`} mono />
+              <div className="grid grid-cols-2 gap-4">
+                <MetricItem label="Posts Scraped" value={stats.hashtag.postsScraped} />
+                <MetricItem label="Artists Inserted" value={stats.hashtag.artistsInserted} />
+                <MetricItem label="Apify Cost" value={`$${stats.hashtag.estimatedApifyCost.toFixed(4)}`} />
+                <MetricItem label="OpenAI Cost" value={`$${stats.hashtag.estimatedOpenAICost.toFixed(4)}`} />
               </div>
             </div>
 
-            {/* Follower Mining */}
-            <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <h3 className="text-xs font-mono uppercase tracking-wider text-blue-500">
-                  Follower Mining
-                </h3>
+            {/* Follower Mining Card */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Follower Mining</h3>
+                  <p className="text-sm text-gray-500">Artists from seed account followers</p>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Metric label="Followers Scraped" value={stats.follower.followersScraped} />
-                <Metric label="Artists Inserted" value={stats.follower.artistsInserted} />
-                <Metric label="Skipped (Private)" value={stats.follower.skippedPrivate} />
-                <Metric
+              <div className="grid grid-cols-2 gap-4">
+                <MetricItem label="Followers Scraped" value={stats.follower.followersScraped} />
+                <MetricItem label="Artists Inserted" value={stats.follower.artistsInserted} />
+                <MetricItem label="Skipped (Private)" value={stats.follower.skippedPrivate} />
+                <MetricItem
                   label="Total Cost"
                   value={`$${(stats.follower.estimatedApifyCost + stats.follower.estimatedOpenAICost).toFixed(4)}`}
-                  mono
                 />
               </div>
             </div>
@@ -291,12 +312,51 @@ export default function MiningDashboard() {
             <CityDistribution cities={cities.cities} total={cities.total} />
           )}
 
-          {/* Recent Runs */}
-          <div>
-            <h3 className="text-sm font-medium text-white font-[family-name:var(--font-space-grotesk)] mb-3">
-              Recent Runs
-            </h3>
-            <MiningRunsTable runs={runs} loading={loading && runs.length === 0} />
+          {/* Runs Table with Tabs */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Tabs */}
+            <div className="border-b border-gray-100 px-6">
+              <nav className="flex gap-6">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  const count =
+                    tab.id === 'all'
+                      ? runs.length
+                      : runs.filter((r) => r.type === tab.id).length;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`
+                        flex items-center gap-2 py-4 border-b-2 text-sm font-medium transition-colors
+                        ${
+                          isActive
+                            ? 'border-emerald-500 text-emerald-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${
+                          isActive
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Table */}
+            <MiningRunsTable runs={filteredRuns} loading={loading && runs.length === 0} />
           </div>
         </>
       )}
@@ -305,19 +365,11 @@ export default function MiningDashboard() {
 }
 
 // Helper component for metrics
-function Metric({
-  label,
-  value,
-  mono = false
-}: {
-  label: string;
-  value: string | number;
-  mono?: boolean;
-}) {
+function MetricItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-mono">{label}</p>
-      <p className={`text-sm text-white tabular-nums ${mono ? 'font-mono' : ''}`}>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-lg font-semibold text-gray-900 tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
     </div>

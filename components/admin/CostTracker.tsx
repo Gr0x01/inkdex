@@ -71,64 +71,61 @@ export default function CostTracker({
   };
 
   return (
-    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <DollarSign className="w-4 h-4 text-emerald-500" />
-          <h3 className="text-xs font-mono uppercase tracking-wider text-emerald-400">
-            Cost Tracking
-          </h3>
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">Cost Tracking</h3>
+            <p className="text-sm text-gray-500">Estimated vs actual API usage</p>
+          </div>
         </div>
         <button
           onClick={fetchLiveCosts}
           disabled={loading}
-          className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-mono
-                   text-neutral-500 hover:text-neutral-300
-                   bg-neutral-800/30 hover:bg-neutral-800/50
-                   rounded transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900
+                   bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Database Estimates */}
-        <div className="space-y-2">
-          <h4 className="text-[10px] uppercase tracking-wider text-neutral-600 font-mono">
+        <div>
+          <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
             Database Estimates
           </h4>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             <CostRow label="Apify" value={formatCurrency(estimatedApify)} />
             <CostRow label="OpenAI" value={formatCurrency(estimatedOpenAI)} />
-            <div className="border-t border-neutral-800/50 pt-1.5">
+            <div className="border-t border-gray-100 pt-3">
               <CostRow label="Total" value={formatCurrency(estimatedTotal)} bold />
             </div>
-            <CostRow
-              label="Per Artist"
-              value={formatCurrency(costPerArtist)}
-              muted
-            />
+            <CostRow label="Per Artist" value={formatCurrency(costPerArtist)} muted />
           </div>
         </div>
 
         {/* Live API Costs */}
-        <div className="space-y-2">
-          <h4 className="text-[10px] uppercase tracking-wider text-neutral-600 font-mono">
-            Live API Usage (Month)
+        <div>
+          <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
+            Live API Usage (This Month)
           </h4>
 
           {error && (
-            <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-mono">
-              <AlertCircle className="w-3 h-3" />
+            <div className="flex items-center gap-2 text-red-600 text-sm mb-4 p-3 bg-red-50 rounded-lg">
+              <AlertCircle className="w-4 h-4" />
               {error}
             </div>
           )}
 
           {loading && !liveCosts ? (
-            <div className="text-neutral-600 text-xs font-mono">Loading...</div>
+            <div className="text-gray-500 text-sm">Loading...</div>
           ) : liveCosts ? (
-            <div className="space-y-1.5">
+            <div className="space-y-3">
               <CostRow
                 label="Apify"
                 value={formatCurrency(liveCosts.apify.usage)}
@@ -139,15 +136,11 @@ export default function CostTracker({
                 value={formatCurrency(liveCosts.openai.usage)}
                 error={liveCosts.openai.error}
               />
-              <div className="border-t border-neutral-800/50 pt-1.5">
-                <CostRow
-                  label="Total"
-                  value={formatCurrency(liveCosts.total.usage)}
-                  bold
-                />
+              <div className="border-t border-gray-100 pt-3">
+                <CostRow label="Total" value={formatCurrency(liveCosts.total.usage)} bold />
               </div>
-              <p className="text-[9px] text-neutral-700 font-mono mt-2">
-                Updated: {formatDate(liveCosts.apify.lastUpdated)}
+              <p className="text-xs text-gray-400 mt-3">
+                Last updated: {formatDate(liveCosts.apify.lastUpdated)}
               </p>
             </div>
           ) : null}
@@ -172,20 +165,16 @@ function CostRow({
 }) {
   return (
     <div className="flex justify-between items-center">
-      <span className={`text-xs ${muted ? 'text-neutral-600' : 'text-neutral-500'}`}>
-        {label}
-      </span>
+      <span className={`text-sm ${muted ? 'text-gray-400' : 'text-gray-600'}`}>{label}</span>
       <div className="text-right">
         <span
-          className={`text-xs font-mono ${
-            bold ? 'text-white font-medium' : muted ? 'text-neutral-500' : 'text-neutral-300'
+          className={`text-sm tabular-nums ${
+            bold ? 'font-semibold text-gray-900' : muted ? 'text-gray-400' : 'text-gray-700'
           }`}
         >
           {value}
         </span>
-        {error && (
-          <p className="text-[9px] text-amber-500/70 mt-0.5">{error}</p>
-        )}
+        {error && <p className="text-xs text-amber-600 mt-0.5">{error}</p>}
       </div>
     </div>
   );

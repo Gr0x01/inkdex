@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Fragment } from 'react';
-import { ChevronDown, ChevronUp, Hash, Users, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Hash, Users, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
 
 interface MiningRun {
   id: string;
@@ -32,30 +32,60 @@ interface MiningRunsTableProps {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const styles = {
-    completed: 'text-emerald-500 bg-emerald-500/10',
-    running: 'text-amber-500 bg-amber-500/10',
-    pending: 'text-blue-500 bg-blue-500/10',
-    failed: 'text-red-500 bg-red-500/10',
-    cancelled: 'text-neutral-500 bg-neutral-500/10',
+  const config = {
+    completed: {
+      bg: 'bg-emerald-50',
+      text: 'text-emerald-700',
+      icon: CheckCircle,
+    },
+    running: {
+      bg: 'bg-amber-50',
+      text: 'text-amber-700',
+      icon: Clock,
+    },
+    pending: {
+      bg: 'bg-blue-50',
+      text: 'text-blue-700',
+      icon: Clock,
+    },
+    failed: {
+      bg: 'bg-red-50',
+      text: 'text-red-700',
+      icon: XCircle,
+    },
+    cancelled: {
+      bg: 'bg-gray-50',
+      text: 'text-gray-700',
+      icon: XCircle,
+    },
   };
 
+  const { bg, text, icon: Icon } = config[status as keyof typeof config] || config.pending;
+
   return (
-    <span
-      className={`px-1.5 py-0.5 text-[10px] font-mono uppercase rounded ${
-        styles[status as keyof typeof styles] || styles.pending
-      }`}
-    >
-      {status}
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${bg} ${text}`}>
+      <Icon className="w-3.5 h-3.5" />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
 }
 
-function TypeIcon({ type }: { type: 'hashtag' | 'follower' }) {
-  return type === 'hashtag' ? (
-    <Hash className="w-3.5 h-3.5 text-amber-500/70" />
-  ) : (
-    <Users className="w-3.5 h-3.5 text-blue-500/70" />
+function TypeBadge({ type }: { type: 'hashtag' | 'follower' }) {
+  if (type === 'hashtag') {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+          <Hash className="w-4 h-4 text-amber-600" />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+        <Users className="w-4 h-4 text-blue-600" />
+      </div>
+    </div>
   );
 }
 
@@ -90,111 +120,111 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
 
   if (loading) {
     return (
-      <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-6 text-center">
-        <p className="text-neutral-600 text-xs font-mono">Loading runs...</p>
+      <div className="p-12 text-center">
+        <p className="text-gray-500">Loading runs...</p>
       </div>
     );
   }
 
   if (runs.length === 0) {
     return (
-      <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-6 text-center">
-        <p className="text-neutral-600 text-xs font-mono">No mining runs found</p>
+      <div className="p-12 text-center">
+        <p className="text-gray-500">No mining runs found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg overflow-hidden">
+    <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-neutral-800/50">
-            <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+          <tr className="border-b border-gray-100">
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Source
             </th>
-            <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
-            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Scraped
             </th>
-            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
-              Added
+            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Inserted
             </th>
-            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Cost
             </th>
-            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
-              Time
+            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Duration
             </th>
-            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+            <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Date
             </th>
-            <th className="px-3 py-2 w-8"></th>
+            <th className="px-6 py-4 w-10"></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-gray-50">
           {runs.map((run) => (
             <Fragment key={run.id}>
               <tr
-                className={`border-b border-neutral-800/30 hover:bg-neutral-800/20 cursor-pointer transition-colors ${
-                  expandedId === run.id ? 'bg-neutral-800/20' : ''
+                className={`hover:bg-gray-50/50 cursor-pointer transition-colors ${
+                  expandedId === run.id ? 'bg-gray-50/50' : ''
                 }`}
                 onClick={() => setExpandedId(expandedId === run.id ? null : run.id)}
               >
-                <td className="px-3 py-2">
-                  <div className="flex items-center gap-1.5">
-                    <TypeIcon type={run.type} />
-                    <span className="text-xs text-neutral-300">{run.identifier}</span>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-3">
+                    <TypeBadge type={run.type} />
+                    <span className="text-sm font-medium text-gray-900">{run.identifier}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2">
+                <td className="px-6 py-4">
                   <StatusBadge status={run.status} />
                 </td>
-                <td className="px-3 py-2 text-right text-xs text-neutral-400 tabular-nums font-mono">
+                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
                   {run.stats.scraped.toLocaleString()}
                 </td>
-                <td className="px-3 py-2 text-right text-xs text-neutral-400 tabular-nums font-mono">
+                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
                   {run.stats.inserted.toLocaleString()}
                 </td>
-                <td className="px-3 py-2 text-right text-xs text-neutral-400 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-gray-600 tabular-nums">
                   ${(run.costs.apify + run.costs.openai).toFixed(4)}
                 </td>
-                <td className="px-3 py-2 text-right text-xs text-neutral-500 font-mono">
+                <td className="px-6 py-4 text-right text-sm text-gray-500">
                   {formatDuration(run.startedAt, run.completedAt)}
                 </td>
-                <td className="px-3 py-2 text-right text-xs text-neutral-500">
+                <td className="px-6 py-4 text-right text-sm text-gray-500">
                   {formatDate(run.createdAt)}
                 </td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-6 py-4 text-right">
                   {run.error ? (
-                    <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+                    <AlertCircle className="w-5 h-5 text-red-500" />
                   ) : expandedId === run.id ? (
-                    <ChevronUp className="w-3.5 h-3.5 text-neutral-600" />
+                    <ChevronUp className="w-5 h-5 text-gray-400" />
                   ) : (
-                    <ChevronDown className="w-3.5 h-3.5 text-neutral-600" />
+                    <ChevronDown className="w-5 h-5 text-gray-400" />
                   )}
                 </td>
               </tr>
 
               {/* Expanded details */}
               {expandedId === run.id && (
-                <tr className="bg-neutral-800/10">
-                  <td colSpan={8} className="px-3 py-3">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <DetailItem label="Bio Pass" value={run.stats.bioPass} />
-                      <DetailItem label="Image Pass" value={run.stats.imagePass} />
-                      <DetailItem label="Duplicates" value={run.stats.duplicates || 0} />
+                <tr className="bg-gray-50/30">
+                  <td colSpan={8} className="px-6 py-5">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                      <DetailItem label="Bio Filter Passed" value={run.stats.bioPass} />
+                      <DetailItem label="Image Filter Passed" value={run.stats.imagePass} />
+                      <DetailItem label="Duplicates Skipped" value={run.stats.duplicates || 0} />
                       {run.type === 'follower' && (
-                        <DetailItem label="Private" value={run.stats.private || 0} />
+                        <DetailItem label="Private Skipped" value={run.stats.private || 0} />
                       )}
-                      <DetailItem label="Apify" value={`$${run.costs.apify.toFixed(4)}`} mono />
-                      <DetailItem label="OpenAI" value={`$${run.costs.openai.toFixed(4)}`} mono />
+                      <DetailItem label="Apify Cost" value={`$${run.costs.apify.toFixed(4)}`} />
+                      <DetailItem label="OpenAI Cost" value={`$${run.costs.openai.toFixed(4)}`} />
                     </div>
 
                     {run.error && (
-                      <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded">
-                        <p className="text-red-400 text-[10px] font-mono">{run.error}</p>
+                      <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl">
+                        <p className="text-red-700 text-sm">{run.error}</p>
                       </div>
                     )}
                   </td>
@@ -208,21 +238,11 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
   );
 }
 
-function DetailItem({
-  label,
-  value,
-  mono = false
-}: {
-  label: string;
-  value: string | number;
-  mono?: boolean;
-}) {
+function DetailItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div>
-      <p className="text-[9px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
-        {label}
-      </p>
-      <p className={`text-xs text-neutral-300 tabular-nums ${mono ? 'font-mono' : ''}`}>
+      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-sm font-medium text-gray-900 tabular-nums">
         {typeof value === 'number' ? value.toLocaleString() : value}
       </p>
     </div>

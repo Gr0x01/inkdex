@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Terminal, Mail, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 type FormState = 'idle' | 'loading' | 'success' | 'error' | 'authenticating';
 
@@ -101,66 +101,47 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
-      {/* Background grid pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
-
-      <div className="relative w-full max-w-sm">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
-              Secure Access
-            </span>
+    <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 mb-4">
+            <span className="text-white font-bold text-2xl">I</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-neutral-700" />
-            <h1 className="text-xl font-semibold text-white tracking-tight font-[family-name:var(--font-space-grotesk)]">
-              INKDEX
-            </h1>
-          </div>
-          <p className="text-[10px] text-neutral-600 font-mono uppercase tracking-widest mt-1 ml-7">
-            Admin Console
-          </p>
+          <h1 className="text-2xl font-semibold text-gray-900 font-[family-name:var(--font-space-grotesk)]">
+            Inkdex Admin
+          </h1>
+          <p className="text-gray-500 mt-1">Sign in to access the admin panel</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-neutral-900/50 border border-neutral-800/50 rounded-lg p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
           {formState === 'authenticating' ? (
-            <div className="text-center py-6">
-              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-4" />
-              <h2 className="text-sm font-medium text-white mb-1 font-[family-name:var(--font-space-grotesk)]">
-                Authenticating
-              </h2>
-              <p className="text-[11px] text-neutral-500 font-mono">
-                Establishing secure session...
-              </p>
+            <div className="text-center py-8">
+              <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mx-auto mb-4" />
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Signing you in...</h2>
+              <p className="text-gray-500">Please wait while we verify your credentials.</p>
             </div>
           ) : formState === 'success' ? (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-6 h-6 text-emerald-500" />
+            <div className="text-center py-6">
+              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-7 h-7 text-emerald-600" />
               </div>
-              <h2 className="text-sm font-medium text-white mb-2 font-[family-name:var(--font-space-grotesk)]">
-                Check your email
-              </h2>
-              <p className="text-[11px] text-neutral-500 font-mono">
-                Magic link sent to
-              </p>
-              <p className="text-xs text-neutral-300 font-mono mt-1">{email}</p>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">Check your email</h2>
+              <p className="text-gray-500 mb-1">We&apos;ve sent a magic link to</p>
+              <p className="text-gray-900 font-medium">{email}</p>
 
               {/* Development mode: Show clickable link */}
               {devLink && (
-                <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded">
-                  <p className="text-[9px] text-amber-500/70 uppercase tracking-wider font-mono mb-2">
-                    Dev Mode
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                  <p className="text-xs text-amber-600 uppercase tracking-wider font-medium mb-2">
+                    Development Mode
                   </p>
                   <a
                     href={devLink}
-                    className="text-amber-400 hover:text-amber-300 text-xs font-mono underline break-all"
+                    className="text-amber-700 hover:text-amber-800 text-sm underline break-all"
                   >
-                    Click to login
+                    Click here to login
                   </a>
                 </div>
               )}
@@ -171,66 +152,63 @@ export default function AdminLoginPage() {
                   setEmail('');
                   setDevLink(null);
                 }}
-                className="mt-4 text-neutral-500 hover:text-neutral-300 text-[10px] font-mono uppercase tracking-wider transition-colors"
+                className="mt-6 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
               >
-                Try different email
+                Try a different email
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="flex items-center gap-2 mb-4">
-                <Mail className="w-4 h-4 text-neutral-600" />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-600">
-                  Magic Link Auth
-                </span>
-              </div>
-
-              <div className="mb-4">
+              <div className="mb-6">
                 <label
                   htmlFor="email"
-                  className="block text-[10px] uppercase tracking-wider text-neutral-600 font-mono mb-1.5"
+                  className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Email Address
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@inkdex.io"
-                  required
-                  disabled={formState === 'loading'}
-                  className="w-full px-3 py-2.5 bg-neutral-800/50 border border-neutral-700/50 rounded
-                           text-sm text-white placeholder-neutral-600 font-mono
-                           focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50
-                           disabled:opacity-50 disabled:cursor-not-allowed
-                           transition-colors"
-                />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@inkdex.io"
+                    required
+                    disabled={formState === 'loading'}
+                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
+                             text-gray-900 placeholder-gray-400
+                             focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-colors"
+                  />
+                </div>
               </div>
 
               {formState === 'error' && (
-                <div className="mb-4 p-2.5 bg-red-500/5 border border-red-500/20 rounded flex items-start gap-2">
-                  <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
-                  <p className="text-red-400 text-[11px] font-mono">{errorMessage}</p>
+                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                  <p className="text-red-700 text-sm">{errorMessage}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={formState === 'loading' || !email}
-                className="w-full py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20
-                         border border-emerald-500/30 hover:border-emerald-500/50
-                         text-emerald-400 text-xs font-mono uppercase tracking-wider rounded
+                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700
+                         text-white font-medium rounded-xl
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-all"
+                         transition-colors shadow-sm"
               >
                 {formState === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Sending...
                   </span>
                 ) : (
-                  'Request Access'
+                  'Send Magic Link'
                 )}
               </button>
             </form>
@@ -238,8 +216,8 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[9px] text-neutral-700 font-mono mt-4 uppercase tracking-wider">
-          Authorized personnel only
+        <p className="text-center text-gray-400 text-sm mt-6">
+          Only authorized administrators can access this panel.
         </p>
       </div>
     </div>
