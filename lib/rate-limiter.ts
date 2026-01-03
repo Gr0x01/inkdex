@@ -1,133 +1,17 @@
 /**
- * Simple in-memory rate limiter
+ * Redis-Based Rate Limiter
  *
- * PRODUCTION WARNING: This in-memory limiter is NOT suitable for:
- * - Multi-instance deployments (load balancing)
- * - High traffic (>1000 unique IPs/hour)
+ * Uses Railway Redis for distributed rate limiting across serverless instances.
+ * Implements sliding window algorithm for accurate rate limiting.
+ *
+ * Migration from in-memory Map (Jan 9, 2026):
+ * - Supports multi-instance deployments
  * - Persistent rate limits across deployments
- *
- * Migrate to @upstash/ratelimit for production:
- * https://upstash.com/docs/oss/sdks/ts/ratelimit/overview
+ * - Accurate sliding window (not fixed window)
+ * - No memory leaks in serverless
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-class RateLimiter {
-  private storage = new Map<string, RateLimitEntry>();
-  private cleanupInterval: NodeJS.Timeout | null = null;
-  private readonly MAX_ENTRIES = 10000; // Prevent memory exhaustion
-
-  constructor() {
-    // Clean up expired entries every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000);
-  }
-
-  /**
-   * Check if request should be allowed
-   *
-   * @param key - Unique identifier (e.g., IP address)
-   * @param limit - Maximum number of requests allowed
-   * @param windowMs - Time window in milliseconds
-   * @returns Object with success flag and metadata
-   */
-  check(
-    key: string,
-    limit: number,
-    windowMs: number
-  ): {
-    success: boolean;
-    limit: number;
-    remaining: number;
-    reset: number;
-  } {
-    // Emergency cleanup if map grows too large
-    if (this.storage.size > this.MAX_ENTRIES) {
-      console.warn(`[RateLimiter] Emergency cleanup triggered (size: ${this.storage.size})`);
-      this.cleanup();
-    }
-
-    const now = Date.now();
-    const entry = this.storage.get(key);
-
-    // No previous entry or window expired - allow request
-    if (!entry || now >= entry.resetAt) {
-      this.storage.set(key, {
-        count: 1,
-        resetAt: now + windowMs,
-      });
-
-      return {
-        success: true,
-        limit,
-        remaining: limit - 1,
-        reset: now + windowMs,
-      };
-    }
-
-    // Within rate limit window
-    if (entry.count < limit) {
-      entry.count++;
-      this.storage.set(key, entry);
-
-      return {
-        success: true,
-        limit,
-        remaining: limit - entry.count,
-        reset: entry.resetAt,
-      };
-    }
-
-    // Rate limit exceeded
-    return {
-      success: false,
-      limit,
-      remaining: 0,
-      reset: entry.resetAt,
-    };
-  }
-
-  /**
-   * Clean up expired entries from storage
-   */
-  private cleanup() {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
-
-    this.storage.forEach((entry, key) => {
-      if (now >= entry.resetAt) {
-        keysToDelete.push(key);
-      }
-    });
-
-    keysToDelete.forEach(key => this.storage.delete(key));
-  }
-
-  /**
-   * Clear all rate limit data (for testing)
-   */
-  reset() {
-    this.storage.clear();
-  }
-
-  /**
-   * Cleanup interval on shutdown
-   */
-  destroy() {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
-    this.storage.clear();
-  }
-}
-
-// Global singleton instance
-const globalRateLimiter = new RateLimiter();
+import { checkRateLimit, resetRateLimit as redisResetRateLimit } from './redis/rate-limiter';
 
 /**
  * Rate limit Instagram search requests
@@ -137,8 +21,8 @@ const globalRateLimiter = new RateLimiter();
  * @param identifier - Unique identifier (IP address or user ID)
  * @returns Rate limit check result
  */
-export function checkInstagramSearchRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkInstagramSearchRateLimit(identifier: string) {
+  return checkRateLimit(
     `instagram_search:${identifier}`,
     10, // 10 requests
     60 * 60 * 1000 // per hour
@@ -153,8 +37,8 @@ export function checkInstagramSearchRateLimit(identifier: string) {
  * @param identifier - Unique identifier (IP address or user ID)
  * @returns Rate limit check result
  */
-export function checkGeneralSearchRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkGeneralSearchRateLimit(identifier: string) {
+  return checkRateLimit(
     `general_search:${identifier}`,
     100, // 100 requests
     60 * 60 * 1000 // per hour
@@ -169,8 +53,8 @@ export function checkGeneralSearchRateLimit(identifier: string) {
  * @param identifier - Unique identifier (IP address)
  * @returns Rate limit check result
  */
-export function checkAddArtistRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkAddArtistRateLimit(identifier: string) {
+  return checkRateLimit(
     `add_artist:${identifier}`,
     5, // 5 submissions
     60 * 60 * 1000 // per hour
@@ -185,8 +69,8 @@ export function checkAddArtistRateLimit(identifier: string) {
  * @param identifier - User ID (authenticated users only)
  * @returns Rate limit check result
  */
-export function checkOnboardingRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkOnboardingRateLimit(identifier: string) {
+  return checkRateLimit(
     `onboarding:${identifier}`,
     3, // 3 sessions
     60 * 60 * 1000 // per hour
@@ -202,8 +86,8 @@ export function checkOnboardingRateLimit(identifier: string) {
  * @param identifier - User ID (authenticated users only)
  * @returns Rate limit check result
  */
-export function checkPortfolioFetchRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkPortfolioFetchRateLimit(identifier: string) {
+  return checkRateLimit(
     `portfolio_fetch:${identifier}`,
     5, // 5 fetches (more lenient than onboarding)
     60 * 60 * 1000 // per hour
@@ -219,8 +103,8 @@ export function checkPortfolioFetchRateLimit(identifier: string) {
  * @param identifier - User ID (authenticated users only)
  * @returns Rate limit check result
  */
-export function checkProfileUpdateRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkProfileUpdateRateLimit(identifier: string) {
+  return checkRateLimit(
     `profile_update:${identifier}`,
     10, // 10 updates
     60 * 60 * 1000 // per hour
@@ -236,8 +120,8 @@ export function checkProfileUpdateRateLimit(identifier: string) {
  * @param identifier - User ID (authenticated users only)
  * @returns Rate limit check result
  */
-export function checkProfileDeleteRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkProfileDeleteRateLimit(identifier: string) {
+  return checkRateLimit(
     `profile_delete:${identifier}`,
     1, // 1 delete attempt
     24 * 60 * 60 * 1000 // per day
@@ -288,13 +172,17 @@ export function getClientIp(request: Request): string {
  * @param identifier - User ID (authenticated Pro users only)
  * @returns Rate limit check result
  */
-export function checkManualSyncRateLimit(identifier: string) {
-  return globalRateLimiter.check(
+export async function checkManualSyncRateLimit(identifier: string) {
+  return checkRateLimit(
     `manual_sync:${identifier}`,
     1, // 1 sync
     60 * 60 * 1000 // per hour
   );
 }
 
-// Export singleton for testing
-export const rateLimiter = globalRateLimiter;
+/**
+ * Reset rate limit for testing
+ */
+export async function resetRateLimitForTesting(key: string) {
+  return redisResetRateLimit(key);
+}

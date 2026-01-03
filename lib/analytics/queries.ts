@@ -1,0 +1,195 @@
+/**
+ * Analytics Query Helpers
+ * Functions to fetch analytics data for Pro artist dashboards
+ */
+
+import { createClient } from '@/lib/supabase/server'
+
+export interface AnalyticsSummary {
+  profileViews: number
+  imageViews: number
+  instagramClicks: number
+  bookingClicks: number
+  searchAppearances: number
+  totalEngagement: number
+}
+
+export interface TopImage {
+  imageId: string
+  imageUrl: string
+  instagramUrl: string | null
+  viewCount: number
+  postCaption: string | null
+}
+
+export interface DailyMetric {
+  date: string
+  profileViews: number
+  imageViews: number
+  instagramClicks: number
+  bookingClicks: number
+  searchAppearances: number
+}
+
+/**
+ * Get aggregated analytics summary for time range
+ * @param artistId - Artist UUID
+ * @param days - Number of days to look back (7, 30, 90, or null for all time)
+ * @returns Aggregated metrics
+ */
+export async function getArtistAnalytics(
+  artistId: string,
+  days: number | null = 30
+): Promise<AnalyticsSummary> {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from('artist_analytics')
+    .select('profile_views, image_views, instagram_clicks, booking_link_clicks, search_appearances')
+    .eq('artist_id', artistId)
+
+  if (days !== null) {
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+    query = query.gte('date', startDate.toISOString().split('T')[0])
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[Analytics] Error fetching artist analytics:', error)
+    throw error
+  }
+
+  // Aggregate results
+  const summary = (data || []).reduce(
+    (acc, row) => ({
+      profileViews: acc.profileViews + (row.profile_views || 0),
+      imageViews: acc.imageViews + (row.image_views || 0),
+      instagramClicks: acc.instagramClicks + (row.instagram_clicks || 0),
+      bookingClicks: acc.bookingClicks + (row.booking_link_clicks || 0),
+      searchAppearances: acc.searchAppearances + (row.search_appearances || 0),
+      totalEngagement: acc.totalEngagement +
+        (row.profile_views || 0) +
+        (row.instagram_clicks || 0) +
+        (row.booking_link_clicks || 0),
+    }),
+    {
+      profileViews: 0,
+      imageViews: 0,
+      instagramClicks: 0,
+      bookingClicks: 0,
+      searchAppearances: 0,
+      totalEngagement: 0,
+    }
+  )
+
+  return summary
+}
+
+/**
+ * Get top performing images by view count
+ * @param artistId - Artist UUID
+ * @param days - Number of days to look back (or null for all time)
+ * @param limit - Max number of images to return
+ * @returns Array of top images with view counts
+ */
+export async function getTopPerformingImages(
+  artistId: string,
+  days: number | null = 30,
+  limit: number = 10
+): Promise<TopImage[]> {
+  const supabase = await createClient()
+
+  // Build date filter
+  const startDate = days !== null
+    ? new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    : null
+
+  // Query with aggregation
+  let query = supabase
+    .from('portfolio_image_analytics')
+    .select(`
+      image_id,
+      view_count,
+      portfolio_images!inner(
+        storage_thumb_640,
+        instagram_url,
+        post_caption
+      )
+    `)
+    .eq('artist_id', artistId)
+
+  if (startDate) {
+    query = query.gte('date', startDate)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('[Analytics] Error fetching top images:', error)
+    throw error
+  }
+
+  // Aggregate by image_id
+  const imageMap = new Map<string, TopImage>()
+
+  data?.forEach((row: any) => {
+    const existing = imageMap.get(row.image_id)
+    const views = row.view_count || 0
+
+    if (existing) {
+      existing.viewCount += views
+    } else {
+      imageMap.set(row.image_id, {
+        imageId: row.image_id,
+        imageUrl: row.portfolio_images.storage_thumb_640,
+        instagramUrl: row.portfolio_images.instagram_url,
+        viewCount: views,
+        postCaption: row.portfolio_images.post_caption,
+      })
+    }
+  })
+
+  // Sort by view count and limit
+  return Array.from(imageMap.values())
+    .sort((a, b) => b.viewCount - a.viewCount)
+    .slice(0, limit)
+}
+
+/**
+ * Get daily time series data for charts
+ * @param artistId - Artist UUID
+ * @param days - Number of days to look back
+ * @returns Array of daily metrics ordered by date
+ */
+export async function getAnalyticsTimeSeries(
+  artistId: string,
+  days: number = 30
+): Promise<DailyMetric[]> {
+  const supabase = await createClient()
+
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+
+  const { data, error } = await supabase
+    .from('artist_analytics')
+    .select('date, profile_views, image_views, instagram_clicks, booking_link_clicks, search_appearances')
+    .eq('artist_id', artistId)
+    .gte('date', startDate.toISOString().split('T')[0])
+    .order('date', { ascending: true })
+
+  if (error) {
+    console.error('[Analytics] Error fetching time series:', error)
+    throw error
+  }
+
+  return (data || []).map(row => ({
+    date: row.date,
+    profileViews: row.profile_views || 0,
+    imageViews: row.image_views || 0,
+    instagramClicks: row.instagram_clicks || 0,
+    bookingClicks: row.booking_link_clicks || 0,
+    searchAppearances: row.search_appearances || 0,
+  }))
+}

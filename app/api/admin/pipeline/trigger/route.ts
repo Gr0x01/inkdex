@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
-import { rateLimiter } from '@/lib/rate-limiter';
+import { checkRateLimit } from '@/lib/redis/rate-limiter';
 import { triggerPipelineJob, hasRunningJob } from '@/lib/admin/pipeline-executor';
 import { triggerJobSchema } from '@/lib/admin/pipeline-validation';
 import { logAdminAction, getClientInfo } from '@/lib/admin/audit-log';
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   // Rate limiting per admin
   const rateLimitKey = `pipeline-trigger:${user.email}`;
-  const rateLimitResult = rateLimiter.check(rateLimitKey, RATE_LIMIT_JOBS, RATE_LIMIT_WINDOW_MS);
+  const rateLimitResult = await checkRateLimit(rateLimitKey, RATE_LIMIT_JOBS, RATE_LIMIT_WINDOW_MS);
 
   if (!rateLimitResult.success) {
     return NextResponse.json(

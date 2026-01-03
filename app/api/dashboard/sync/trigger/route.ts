@@ -46,7 +46,7 @@ export async function POST(_request: NextRequest) {
     }
 
     // 3. Rate limit check (1 per hour)
-    const rateLimit = checkManualSyncRateLimit(user.id);
+    const rateLimit = await checkManualSyncRateLimit(user.id);
     if (!rateLimit.success) {
       const retryAfter = Math.ceil((rateLimit.reset - Date.now()) / 1000 / 60);
       return NextResponse.json(

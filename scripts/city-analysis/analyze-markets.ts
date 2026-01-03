@@ -30,15 +30,26 @@ const DATAFORSEO_API_URL = 'https://api.dataforseo.com/v3';
 const authHeader = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
 
 // Candidate cities for analysis (using US country code 2840)
+// MID-TIER CITIES - Good demand potential without major metro competition
 const CANDIDATE_CITIES = [
-  { name: 'Los Angeles', state: 'CA', location_code: 2840 }, // US - will analyze nationally
-  { name: 'New York', state: 'NY', location_code: 2840 },
-  { name: 'Austin', state: 'TX', location_code: 2840 },
-  { name: 'Miami', state: 'FL', location_code: 2840 },
-  { name: 'Portland', state: 'OR', location_code: 2840 },
-  { name: 'Chicago', state: 'IL', location_code: 2840 },
-  { name: 'Seattle', state: 'WA', location_code: 2840 },
-  { name: 'Denver', state: 'CO', location_code: 2840 },
+  // Artsy/Cultural Cities
+  { name: 'Nashville', state: 'TN', location_code: 2840 },
+  { name: 'San Diego', state: 'CA', location_code: 2840 },
+  { name: 'San Francisco', state: 'CA', location_code: 2840 },
+  { name: 'Richmond', state: 'VA', location_code: 2840 },
+  { name: 'Asheville', state: 'NC', location_code: 2840 },
+
+  // Growing Metros
+  { name: 'Phoenix', state: 'AZ', location_code: 2840 },
+  { name: 'Philadelphia', state: 'PA', location_code: 2840 },
+  { name: 'Charlotte', state: 'NC', location_code: 2840 },
+  { name: 'Columbus', state: 'OH', location_code: 2840 },
+
+  // Tourism/Lifestyle Cities
+  { name: 'Las Vegas', state: 'NV', location_code: 2840 },
+  { name: 'Tampa', state: 'FL', location_code: 2840 },
+  { name: 'Salt Lake City', state: 'UT', location_code: 2840 },
+  { name: 'San Antonio', state: 'TX', location_code: 2840 },
 ];
 
 // Keyword categories to analyze

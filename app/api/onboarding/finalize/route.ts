@@ -18,6 +18,7 @@ import { finalizeOnboardingSchema } from '@/lib/onboarding/validation';
 import { checkOnboardingRateLimit } from '@/lib/rate-limiter';
 import { ZodError } from 'zod';
 import { randomUUID } from 'crypto';
+import { sendWelcomeEmail } from '@/lib/email';
 
 // Helper to generate artist slug from name
 function generateSlug(name: string): string {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Check rate limit
-    const rateLimit = checkOnboardingRateLimit(user.id);
+    const rateLimit = await checkOnboardingRateLimit(user.id);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Too many requests. Please slow down.' },
@@ -332,7 +333,33 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Onboarding] Finalized for user ${user.id}: ${isNewArtist ? 'created' : 'updated'} artist ${artistId}`);
 
-    // 10. TODO: Trigger background embedding generation
+    // 10. Send welcome email (async, non-blocking)
+    if (user.email) {
+      // Check if artist has Pro subscription
+      const { data: subscription } = await supabase
+        .from('artist_subscriptions')
+        .select('tier, status')
+        .eq('artist_id', artistId)
+        .eq('status', 'active')
+        .single();
+
+      const isPro = subscription?.tier === 'pro';
+      const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'}/${artistSlug}`;
+
+      // Send email asynchronously (don't await to avoid blocking)
+      sendWelcomeEmail({
+        to: user.email,
+        artistName: profileUpdates.name,
+        profileUrl,
+        instagramHandle: instagramUsername,
+        isPro,
+      }).catch((error) => {
+        console.error('[Onboarding] Failed to send welcome email:', error);
+        // Don't fail the request if email fails
+      });
+    }
+
+    // 11. TODO: Trigger background embedding generation
     // This will be implemented later as an async job
 
     return NextResponse.json({

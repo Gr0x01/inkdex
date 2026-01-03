@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-03 (Session 6 - 13-City Expansion Planned)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Mining Pipeline
+Status: Production Ready - 8 Cities Live + 13 Cities Planned
 ---
 
 # Quickstart: Inkdex
@@ -27,6 +27,33 @@ Inkdex - AI-powered tattoo artist discovery platform where users search in *thei
 6. **Portland, OR** - 199 artists, 1,578 images
 7. **Seattle, WA** - 172 artists, 1,507 images
 8. **Miami, FL** - 145 artists, 1,075 images
+
+## Planned Expansion (Next 13 Cities)
+**DataForSEO Analysis Complete (Jan 3, 2026)** - All scored 77-84/100 (HIGH priority)
+
+**Tier 1 - Lowest Competition (11-14%):**
+1. **Asheville, NC** - 250k searches/month, 11% competition, Score: 84/100
+2. **Richmond, VA** - 254k searches/month, 13% competition, Score: 84/100
+3. **Charlotte, NC** - 256k searches/month, 14% competition, Score: 84/100
+
+**Tier 2 - Strong Mid-Market (22-42%):**
+4. **Columbus, OH** - 252k searches/month, 25% competition, Score: 81/100
+5. **Salt Lake City, UT** - 251k searches/month, 22% competition, Score: 81/100
+6. **Philadelphia, PA** - 255k searches/month, 27% competition, Score: 82/100
+7. **Nashville, TN** - 266k searches/month, 38% competition, Score: 80/100
+8. **San Francisco, CA** - 254k searches/month, 42% competition, Score: 80/100
+
+**Tier 3 - High Volume Markets (317k+ searches):**
+9. **Phoenix, AZ** - 317k searches/month, 45% competition, Score: 79/100
+10. **Las Vegas, NV** - 297k searches/month, 42% competition, Score: 80/100
+11. **San Diego, CA** - 266k searches/month, 55% competition, Score: 77/100
+12. **San Antonio, TX** - 259k searches/month, 36% competition, Score: 79/100
+13. **Tampa, FL** - 258k searches/month, 41% competition, Score: 78/100
+
+**Key Insights:**
+- All cities: 250k-317k monthly searches, 0 keyword difficulty
+- Visual search gap exists in all markets (low competition on inspiration/portfolio queries)
+- Recommended rollout: Start with Tier 1 (easiest wins), then Tier 2 (volume + ease), then Tier 3 (scale)
 
 ## Key Commands
 ```bash

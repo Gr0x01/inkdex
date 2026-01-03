@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Rate limit (5 fetches per hour per user)
-    const rateLimit = checkPortfolioFetchRateLimit(user.id);
+    const rateLimit = await checkPortfolioFetchRateLimit(user.id);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Too many portfolio fetch requests. Please try again later.' },

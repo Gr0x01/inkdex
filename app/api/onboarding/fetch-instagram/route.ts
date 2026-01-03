@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Check rate limit (3 onboarding sessions per hour)
-    const rateLimit = checkOnboardingRateLimit(user.id);
+    const rateLimit = await checkOnboardingRateLimit(user.id);
     if (!rateLimit.success) {
       return NextResponse.json(
         { error: 'Too many onboarding attempts. Please try again later.' },

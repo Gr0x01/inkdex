@@ -148,6 +148,23 @@ export default function DashboardHome({
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-ink group-hover:translate-x-1 transition-all" />
               </div>
             </a>
+
+            {isPro && (
+              <a
+                href="/dashboard/analytics"
+                className="group border border-gray-200 bg-white p-5 hover:border-gray-400 hover:shadow-sm transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-heading text-lg mb-1">View Analytics</h3>
+                    <p className="font-body text-sm text-gray-600">
+                      Track your performance and engagement
+                    </p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-ink group-hover:translate-x-1 transition-all" />
+                </div>
+              </a>
+            )}
           </div>
         </section>
 

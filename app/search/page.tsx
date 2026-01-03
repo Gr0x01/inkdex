@@ -146,6 +146,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? allResults.filter(artist => artist.artist_id !== excludeArtistId)
     : allResults
 
+  // Track search appearances (fire-and-forget)
+  const artistIds = artists.map(a => a.artist_id)
+  if (artistIds.length > 0) {
+    // Fire-and-forget with error logging
+    void (async () => {
+      try {
+        await supabase.rpc('increment_search_appearances', { p_artist_ids: artistIds })
+      } catch (err) {
+        console.error('[Search] Tracking failed:', err)
+      }
+    })()
+  }
+
   // Extract results for rendering
   const total = totalCount  // ✓ FIXED: Use total count from count query
   const queryType = search.query_type

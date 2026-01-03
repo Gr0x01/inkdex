@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
         // Rate limiting for Instagram searches (10 per hour per IP)
         const clientIp = getClientIp(request)
-        const rateLimitResult = checkInstagramSearchRateLimit(clientIp)
+        const rateLimitResult = await checkInstagramSearchRateLimit(clientIp)
 
         if (!rateLimitResult.success) {
           return NextResponse.json(
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
 
         // Rate limiting for Instagram searches (10 per hour per IP)
         const clientIp = getClientIp(request)
-        const rateLimitResult = checkInstagramSearchRateLimit(clientIp)
+        const rateLimitResult = await checkInstagramSearchRateLimit(clientIp)
 
         if (!rateLimitResult.success) {
           return NextResponse.json(

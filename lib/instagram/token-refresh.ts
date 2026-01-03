@@ -89,6 +89,18 @@ export async function needsTokenRefresh(userId: string): Promise<boolean> {
  * ```
  */
 export async function refreshInstagramToken(userId: string): Promise<boolean> {
+  // Import distributed lock utilities at runtime to avoid circular dependencies
+  const { acquireLock, releaseLock } = await import('@/lib/redis/locks')
+
+  // Try to acquire distributed lock (5-minute timeout for token refresh)
+  const lockKey = `token-refresh:${userId}`
+  const lockToken = await acquireLock(lockKey, 300) // 5 minutes
+
+  if (!lockToken) {
+    console.log(`[Token Refresh] Lock already held for user ${userId} - skipping (another instance is refreshing)`)
+    return true // Assume the other instance will succeed
+  }
+
   try {
     const tokens = await getInstagramTokens(userId)
     if (!tokens) {
@@ -149,6 +161,9 @@ export async function refreshInstagramToken(userId: string): Promise<boolean> {
   } catch (error) {
     console.error(`[Token Refresh] Error for user ${userId}:`, error)
     return false
+  } finally {
+    // Always release the lock, even if refresh fails
+    await releaseLock(lockKey, lockToken)
   }
 }
 

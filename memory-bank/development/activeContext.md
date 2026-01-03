@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-03 (Session 5 - Admin Pipeline Control Complete)
+Last-Updated: 2026-01-03 (Session 6 - 13-City Expansion Researched)
 Maintainer: RB
-Status: Production Ready - 12/14 Phases Complete (86%) - Stripe & Analytics Remaining
+Status: Production Ready - 12/14 Phases Complete (86%) + 13-City Expansion Planned
 ---
 
 # Active Context: Inkdex
@@ -13,6 +13,36 @@ Status: Production Ready - 12/14 Phases Complete (86%) - Stripe & Analytics Rema
 **Live Cities:** Austin, Atlanta, Los Angeles, New York, Chicago, Portland, Seattle, Miami
 
 **Pending Pipeline:** 2,178 artists need image scraping
+
+## Expansion Plan (Next 13 Cities)
+
+**Market Research Complete:** DataForSEO analysis on Jan 3, 2026 identified 13 mid-tier cities with high opportunity scores (77-84/100).
+
+**Recommended Rollout Strategy:**
+
+**Phase A - Quick Wins (Tier 1: Lowest Competition)**
+1. Richmond, VA (84/100, 13% comp, 254k searches)
+2. Asheville, NC (84/100, 11% comp, 250k searches)
+3. Charlotte, NC (84/100, 14% comp, 256k searches)
+
+**Phase B - Volume Play (Tier 2: Strong Mid-Market)**
+4. Philadelphia, PA (82/100, 27% comp, 255k searches)
+5. Columbus, OH (81/100, 25% comp, 252k searches)
+6. Salt Lake City, UT (81/100, 22% comp, 251k searches)
+7. Nashville, TN (80/100, 38% comp, 266k searches)
+8. San Francisco, CA (80/100, 42% comp, 254k searches)
+
+**Phase C - Scale (Tier 3: Highest Volume)**
+9. Phoenix, AZ (79/100, 45% comp, **317k searches** - highest demand)
+10. Las Vegas, NV (80/100, 42% comp, 297k searches)
+11. San Diego, CA (77/100, 55% comp, 266k searches)
+12. San Antonio, TX (79/100, 36% comp, 259k searches)
+13. Tampa, FL (78/100, 41% comp, 258k searches)
+
+**Next Actions:**
+- Add cities to `lib/constants/cities.ts`
+- Run discovery pipeline for Tier 1 cities first
+- Batch scraping + embeddings via admin panel
 
 **Core Features Working:**
 - Multi-modal search (image, text, Instagram post/profile links)

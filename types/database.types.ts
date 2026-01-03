@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_email: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          admin_email: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          admin_email?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       artist_analytics: {
         Row: {
           artist_id: string | null
@@ -178,7 +217,7 @@ export type Database = {
           bio: string | null
           bio_override: string | null
           booking_url: string | null
-          city: string
+          city: string | null
           claimed_at: string | null
           claimed_by_user_id: string | null
           contact_email: string | null
@@ -197,7 +236,9 @@ export type Database = {
           is_pro: boolean | null
           last_instagram_sync_at: string | null
           last_scraped_at: string | null
+          last_sync_started_at: string | null
           name: string
+          pipeline_status: string | null
           pricing_info: string | null
           profile_image_url: string | null
           shop_name: string | null
@@ -205,6 +246,7 @@ export type Database = {
           state: string | null
           sync_consecutive_failures: number | null
           sync_disabled_reason: string | null
+          sync_in_progress: boolean | null
           updated_at: string | null
           verification_status: string | null
           verification_token: string | null
@@ -216,7 +258,7 @@ export type Database = {
           bio?: string | null
           bio_override?: string | null
           booking_url?: string | null
-          city: string
+          city?: string | null
           claimed_at?: string | null
           claimed_by_user_id?: string | null
           contact_email?: string | null
@@ -235,7 +277,9 @@ export type Database = {
           is_pro?: boolean | null
           last_instagram_sync_at?: string | null
           last_scraped_at?: string | null
+          last_sync_started_at?: string | null
           name: string
+          pipeline_status?: string | null
           pricing_info?: string | null
           profile_image_url?: string | null
           shop_name?: string | null
@@ -243,6 +287,7 @@ export type Database = {
           state?: string | null
           sync_consecutive_failures?: number | null
           sync_disabled_reason?: string | null
+          sync_in_progress?: boolean | null
           updated_at?: string | null
           verification_status?: string | null
           verification_token?: string | null
@@ -254,7 +299,7 @@ export type Database = {
           bio?: string | null
           bio_override?: string | null
           booking_url?: string | null
-          city?: string
+          city?: string | null
           claimed_at?: string | null
           claimed_by_user_id?: string | null
           contact_email?: string | null
@@ -273,7 +318,9 @@ export type Database = {
           is_pro?: boolean | null
           last_instagram_sync_at?: string | null
           last_scraped_at?: string | null
+          last_sync_started_at?: string | null
           name?: string
+          pipeline_status?: string | null
           pricing_info?: string | null
           profile_image_url?: string | null
           shop_name?: string | null
@@ -281,6 +328,7 @@ export type Database = {
           state?: string | null
           sync_consecutive_failures?: number | null
           sync_disabled_reason?: string | null
+          sync_in_progress?: boolean | null
           updated_at?: string | null
           verification_status?: string | null
           verification_token?: string | null
@@ -401,6 +449,206 @@ export type Database = {
         }
         Relationships: []
       }
+      email_log: {
+        Row: {
+          artist_id: string | null
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          resend_id: string | null
+          sent_at: string
+          subject: string
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          artist_id?: string | null
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          resend_id?: string | null
+          sent_at?: string
+          subject: string
+          success: boolean
+          user_id?: string | null
+        }
+        Update: {
+          artist_id?: string | null
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          resend_id?: string | null
+          sent_at?: string
+          subject?: string
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_log_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_preferences: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          receive_marketing: boolean
+          receive_subscription_updates: boolean
+          receive_sync_notifications: boolean
+          receive_welcome: boolean
+          unsubscribe_reason: string | null
+          unsubscribed_all: boolean
+          unsubscribed_at: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          receive_marketing?: boolean
+          receive_subscription_updates?: boolean
+          receive_sync_notifications?: boolean
+          receive_welcome?: boolean
+          unsubscribe_reason?: string | null
+          unsubscribed_all?: boolean
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          receive_marketing?: boolean
+          receive_subscription_updates?: boolean
+          receive_sync_notifications?: boolean
+          receive_welcome?: boolean
+          unsubscribe_reason?: string | null
+          unsubscribed_all?: boolean
+          unsubscribed_at?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      follower_mining_runs: {
+        Row: {
+          apify_cost_estimate: number | null
+          artists_inserted: number | null
+          artists_skipped_private: number | null
+          bio_filter_passed: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          followers_scraped: number | null
+          id: string
+          image_filter_passed: number | null
+          openai_cost_estimate: number | null
+          seed_account: string
+          seed_type: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          apify_cost_estimate?: number | null
+          artists_inserted?: number | null
+          artists_skipped_private?: number | null
+          bio_filter_passed?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          followers_scraped?: number | null
+          id?: string
+          image_filter_passed?: number | null
+          openai_cost_estimate?: number | null
+          seed_account: string
+          seed_type?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          apify_cost_estimate?: number | null
+          artists_inserted?: number | null
+          artists_skipped_private?: number | null
+          bio_filter_passed?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          followers_scraped?: number | null
+          id?: string
+          image_filter_passed?: number | null
+          openai_cost_estimate?: number | null
+          seed_account?: string
+          seed_type?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      hashtag_mining_runs: {
+        Row: {
+          apify_cost_estimate: number | null
+          artists_inserted: number | null
+          bio_filter_passed: number | null
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          hashtag: string
+          id: string
+          image_filter_passed: number | null
+          openai_cost_estimate: number | null
+          posts_scraped: number | null
+          started_at: string | null
+          status: string | null
+          unique_handles_found: number | null
+        }
+        Insert: {
+          apify_cost_estimate?: number | null
+          artists_inserted?: number | null
+          bio_filter_passed?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          hashtag: string
+          id?: string
+          image_filter_passed?: number | null
+          openai_cost_estimate?: number | null
+          posts_scraped?: number | null
+          started_at?: string | null
+          status?: string | null
+          unique_handles_found?: number | null
+        }
+        Update: {
+          apify_cost_estimate?: number | null
+          artists_inserted?: number | null
+          bio_filter_passed?: number | null
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          hashtag?: string
+          id?: string
+          image_filter_passed?: number | null
+          openai_cost_estimate?: number | null
+          posts_scraped?: number | null
+          started_at?: string | null
+          status?: string | null
+          unique_handles_found?: number | null
+        }
+        Relationships: []
+      }
       instagram_sync_log: {
         Row: {
           artist_id: string | null
@@ -458,6 +706,60 @@ export type Database = {
           },
         ]
       }
+      mining_candidates: {
+        Row: {
+          bio_filter_passed: boolean | null
+          biography: string | null
+          created_at: string | null
+          extracted_city: string | null
+          extracted_state: string | null
+          follower_count: number | null
+          id: string
+          image_filter_passed: boolean | null
+          inserted_as_artist_id: string | null
+          instagram_handle: string
+          is_private: boolean | null
+          location_confidence: string | null
+          processed_at: string | null
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          bio_filter_passed?: boolean | null
+          biography?: string | null
+          created_at?: string | null
+          extracted_city?: string | null
+          extracted_state?: string | null
+          follower_count?: number | null
+          id?: string
+          image_filter_passed?: boolean | null
+          inserted_as_artist_id?: string | null
+          instagram_handle: string
+          is_private?: boolean | null
+          location_confidence?: string | null
+          processed_at?: string | null
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          bio_filter_passed?: boolean | null
+          biography?: string | null
+          created_at?: string | null
+          extracted_city?: string | null
+          extracted_state?: string | null
+          follower_count?: number | null
+          id?: string
+          image_filter_passed?: boolean | null
+          inserted_as_artist_id?: string | null
+          instagram_handle?: string
+          is_private?: boolean | null
+          location_confidence?: string | null
+          processed_at?: string | null
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: []
+      }
       onboarding_sessions: {
         Row: {
           artist_id: string | null
@@ -511,6 +813,105 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          failed_items: number | null
+          id: string
+          job_type: string
+          processed_items: number | null
+          result_summary: Json | null
+          started_at: string | null
+          status: string
+          target_artist_ids: string[] | null
+          target_city: string | null
+          target_scope: string
+          total_items: number | null
+          triggered_by: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          failed_items?: number | null
+          id?: string
+          job_type: string
+          processed_items?: number | null
+          result_summary?: Json | null
+          started_at?: string | null
+          status?: string
+          target_artist_ids?: string[] | null
+          target_city?: string | null
+          target_scope: string
+          total_items?: number | null
+          triggered_by: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          failed_items?: number | null
+          id?: string
+          job_type?: string
+          processed_items?: number | null
+          result_summary?: Json | null
+          started_at?: string | null
+          status?: string
+          target_artist_ids?: string[] | null
+          target_city?: string | null
+          target_scope?: string
+          total_items?: number | null
+          triggered_by?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      portfolio_image_analytics: {
+        Row: {
+          artist_id: string
+          created_at: string
+          date: string
+          id: string
+          image_id: string
+          view_count: number
+        }
+        Insert: {
+          artist_id: string
+          created_at?: string
+          date: string
+          id?: string
+          image_id: string
+          view_count?: number
+        }
+        Update: {
+          artist_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          image_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_image_analytics_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_image_analytics_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio_images"
             referencedColumns: ["id"]
           },
         ]
@@ -850,6 +1251,24 @@ export type Database = {
         }
         Returns: boolean
       }
+      can_receive_email: {
+        Args: { p_email: string; p_email_type: string }
+        Returns: boolean
+      }
+      check_email_rate_limit: {
+        Args: {
+          p_email_type: string
+          p_max_per_day?: number
+          p_max_per_hour?: number
+          p_recipient_email: string
+        }
+        Returns: {
+          allowed: boolean
+          daily_count: number
+          hourly_count: number
+          reason: string
+        }[]
+      }
       claim_artist_profile: {
         Args: {
           p_artist_id: string
@@ -859,6 +1278,8 @@ export type Database = {
         }
         Returns: Json
       }
+      cleanup_old_email_logs: { Args: never; Returns: number }
+      count_artists_without_images: { Args: never; Returns: number }
       count_matching_artists: {
         Args: {
           city_filter?: string
@@ -868,6 +1289,16 @@ export type Database = {
         Returns: {
           count: number
         }[]
+      }
+      create_pipeline_run: {
+        Args: {
+          p_job_type: string
+          p_target_artist_ids?: string[]
+          p_target_city?: string
+          p_target_scope?: string
+          p_triggered_by: string
+        }
+        Returns: string
       }
       find_related_artists: {
         Args: {
@@ -928,6 +1359,17 @@ export type Database = {
           subscription_type: string
         }[]
       }
+      get_mining_stats: {
+        Args: never
+        Returns: {
+          completed_runs: number
+          source_type: string
+          total_apify_cost: number
+          total_artists_found: number
+          total_openai_cost: number
+          total_runs: number
+        }[]
+      }
       get_state_cities_with_counts: {
         Args: { state_code: string }
         Returns: {
@@ -939,6 +1381,7 @@ export type Database = {
         Args: { p_artist_id: string }
         Returns: undefined
       }
+      increment_image_view: { Args: { p_image_id: string }; Returns: undefined }
       increment_instagram_click: {
         Args: { p_artist_id: string }
         Returns: undefined
@@ -950,6 +1393,19 @@ export type Database = {
       increment_search_appearances: {
         Args: { p_artist_ids: string[] }
         Returns: undefined
+      }
+      log_email_send: {
+        Args: {
+          p_artist_id: string
+          p_email_type: string
+          p_error_message?: string
+          p_recipient_email: string
+          p_resend_id?: string
+          p_subject: string
+          p_success: boolean
+          p_user_id: string
+        }
+        Returns: string
       }
       search_artists_by_embedding: {
         Args: {
@@ -998,6 +1454,14 @@ export type Database = {
           similarity: number
           total_count: number
         }[]
+      }
+      unsubscribe_from_emails: {
+        Args: {
+          p_email: string
+          p_reason?: string
+          p_unsubscribe_all?: boolean
+        }
+        Returns: string
       }
       user_has_vault_tokens: {
         Args: { user_id_param: string }

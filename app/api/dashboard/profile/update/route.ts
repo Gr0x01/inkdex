@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Rate limit check (10 updates per hour per user)
-    const rateLimit = checkProfileUpdateRateLimit(user.id);
+    const rateLimit = await checkProfileUpdateRateLimit(user.id);
     if (!rateLimit.success) {
       return NextResponse.json(
         {

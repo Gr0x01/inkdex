@@ -6,7 +6,7 @@ import * as Select from '@radix-ui/react-select'
 import { CITIES, STATES } from '@/lib/constants/cities'
 
 // Featured city slugs for filtering dynamic results
-const FEATURED_CITY_SLUGS = new Set(CITIES.map(c => c.slug))
+const FEATURED_CITY_SLUGS: Set<string> = new Set(CITIES.map(c => c.slug))
 
 // Static filter options (always available)
 const STATIC_FILTER_OPTIONS = [

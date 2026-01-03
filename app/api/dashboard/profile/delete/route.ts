@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Rate limit check (1 delete attempt per day per user)
-    const rateLimit = checkProfileDeleteRateLimit(user.id);
+    const rateLimit = await checkProfileDeleteRateLimit(user.id);
     if (!rateLimit.success) {
       return NextResponse.json(
         {

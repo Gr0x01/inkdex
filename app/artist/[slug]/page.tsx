@@ -9,6 +9,7 @@ import { STATES, CITIES } from '@/lib/constants/cities'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
 import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
 import RelatedArtists from '@/components/artist/RelatedArtists'
+import AnalyticsTracker from '@/components/analytics/AnalyticsTracker'
 
 export async function generateStaticParams() {
   // Use service role client for build-time static generation
@@ -192,6 +193,9 @@ export default async function ArtistPage({
 
   return (
     <>
+      {/* Analytics Tracking */}
+      <AnalyticsTracker type="profile_view" artistId={artist.id} />
+
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"

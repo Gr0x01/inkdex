@@ -1075,13 +1075,22 @@ export async function getCitiesWithCounts(minCount: number = 5) {
  * @param minArtistCount - Minimum number of artists per city (default 3)
  * @returns Cities with at least minArtistCount artists
  */
-export async function getAllCitiesWithMinArtists(minArtistCount: number = 3) {
+export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Promise<Array<{ city: string; region: string; artist_count: number }>> {
   // Validate input
   validateInteger(minArtistCount, 'minArtistCount', 1, 100)
 
-  const supabase = await createClient()
+  // Use service client for build-time static generation (no cookies available)
+  // Fall back to createClient for runtime requests
+  let supabase
+  try {
+    supabase = await createClient()
+  } catch (error) {
+    // If cookies() fails (build time), use service client
+    const { createServiceClient } = await import('@/lib/supabase/service')
+    supabase = createServiceClient()
+  }
 
-  const { data, error } = await supabase.rpc('get_all_cities_with_min_artists', {
+  const { data, error } = await supabase.rpc('get_all_cities_with_min_artists' as any, {
     min_artist_count: minArtistCount
   })
 
