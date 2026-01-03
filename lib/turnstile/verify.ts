@@ -5,6 +5,8 @@
  * https://developers.cloudflare.com/turnstile/get-started/server-side-validation/
  */
 
+import { fetchWithTimeout, TIMEOUTS } from '@/lib/utils/fetch-with-timeout';
+
 interface TurnstileVerifyResponse {
   success: boolean;
   'error-codes'?: string[];
@@ -39,11 +41,12 @@ export async function verifyTurnstileToken(
       formData.append('remoteip', remoteIp);
     }
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',
       {
         method: 'POST',
         body: formData,
+        timeout: TIMEOUTS.FAST, // 5s - quick verification
       }
     );
 
