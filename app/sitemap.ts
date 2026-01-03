@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { STATES, CITIES } from '@/lib/constants/cities'
 import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
+import { getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
@@ -30,31 +31,52 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
-  // City pages
-  const cityUrls: MetadataRoute.Sitemap = CITIES.map((city) => {
-    const state = STATES.find((s) => s.code === city.state)
+  // Fetch all cities with 3+ artists for dynamic sitemap generation
+  const allCities = await getAllCitiesWithMinArtists(3)
+  const featuredCitySlugs = new Set(CITIES.map(c => c.slug))
+
+  // Fallback to featured cities if database query fails
+  const citiesToUse = (allCities && allCities.length > 0)
+    ? allCities
+    : CITIES.map(c => ({
+        city: c.slug,
+        region: c.state,
+        country_code: 'US',
+        artist_count: 0
+      }))
+
+  // City pages - with priority tiers (featured vs auto-generated)
+  const cityUrls: MetadataRoute.Sitemap = citiesToUse.map((cityData: any) => {
+    const state = STATES.find((s) => s.code === cityData.region)
+    if (!state) return null
+
+    const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
+    const isFeatured = featuredCitySlugs.has(citySlug)
+
     return {
-      url: `${baseUrl}/${state?.slug}/${city.slug}`,
+      url: `${baseUrl}/${state.slug}/${citySlug}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
-      priority: 0.9,
+      priority: isFeatured ? 0.9 : 0.7, // Featured cities get higher priority
     }
-  })
+  }).filter(Boolean) as MetadataRoute.Sitemap
 
   // Style landing pages (SEO-critical: [city] × [style] combinations)
-  // Use static style data for build-time generation
   const styleUrls: MetadataRoute.Sitemap = []
 
-  for (const city of CITIES) {
-    const state = STATES.find((s) => s.code === city.state)
+  for (const cityData of citiesToUse) {
+    const state = STATES.find((s) => s.code === cityData.region)
     if (!state) continue
+
+    const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
+    const isFeatured = featuredCitySlugs.has(citySlug)
 
     for (const style of styleSeedsData) {
       styleUrls.push({
-        url: `${baseUrl}/${state.slug}/${city.slug}/${style.styleName}`,
+        url: `${baseUrl}/${state.slug}/${citySlug}/${style.styleName}`,
         lastModified: new Date(),
         changeFrequency: 'daily' as const,
-        priority: 0.9, // Same priority as city pages (high SEO value)
+        priority: isFeatured ? 0.85 : 0.65, // Featured cities get higher priority
       })
     }
   }
