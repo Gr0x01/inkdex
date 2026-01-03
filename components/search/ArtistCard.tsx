@@ -53,6 +53,12 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     is_featured = false,
   } = artist
 
+  // Multi-location support (locations would be added to SearchResult interface)
+  // For now, we assume it might be available in the future
+  const locations = (artist as any).locations || []
+  const locationCount = locations.length || 1
+  const hasMultipleLocations = locationCount > 1
+
   // All available images
   const allImages = (matching_images || []).filter(img => img.url && img.instagramUrl)
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -175,9 +181,19 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           {artist_name}
         </p>
         <div className="flex items-center justify-between">
-          <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
-            {city}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
+              {city}
+            </p>
+            {hasMultipleLocations && (
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"
+                title={`Works in ${locationCount} locations`}
+              >
+                +{locationCount - 1}
+              </span>
+            )}
+          </div>
           {/* Right metric - Match % (search) or Follower count (browse) */}
           {displayMode === 'search' ? (
             <div

@@ -63,3 +63,30 @@ export interface SearchFormData {
   textQuery: string
   city?: string
 }
+
+/**
+ * Artist location data from artist_locations table
+ */
+export interface ArtistLocation {
+  id: string
+  city: string | null
+  region: string | null
+  country_code: string
+  location_type: 'city' | 'region' | 'country'
+  is_primary: boolean
+  display_order: number
+}
+
+/**
+ * Artist with multi-location support
+ * Extends base Artist type with locations array
+ */
+export interface ArtistWithLocations {
+  id: string
+  name: string
+  slug: string
+  city: string
+  state: string | null
+  locations?: ArtistLocation[]
+  // ... other artist fields
+}
