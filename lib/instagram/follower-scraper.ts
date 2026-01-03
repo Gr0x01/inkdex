@@ -9,7 +9,8 @@ import { ApifyClient } from 'apify-client';
 import { z } from 'zod';
 
 // Apify actor for follower scraping
-const FOLLOWER_ACTOR_ID = 'apify/instagram-scraper';
+// devil_port369-owner/instagram-follower - no cookies required
+const FOLLOWER_ACTOR_ID = 'devil_port369-owner/instagram-follower';
 
 // Zod schema for Apify follower profile response (loose validation with fallbacks)
 const ApifyFollowerSchema = z.object({
@@ -143,10 +144,8 @@ export async function scrapeFollowers(
   // Run the Apify actor
   const run = await client.actor(FOLLOWER_ACTOR_ID).call(
     {
-      directUrls: [`https://www.instagram.com/${seedUsername}/followers/`],
-      resultsLimit: maxFollowers,
-      resultsType: 'followers',
-      searchType: 'user',
+      username: `https://www.instagram.com/${seedUsername}`,
+      max_records: maxFollowers,
     },
     {
       waitSecs: timeoutSecs,

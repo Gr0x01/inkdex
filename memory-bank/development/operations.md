@@ -256,6 +256,9 @@ npm run mine:classify -- --dry-run                 # Show what would be processe
 npm run mine:status                                # View stats, costs, city distribution
 ```
 
+**Note: Follower Mining Disabled**
+Follower mining (`npm run mine:followers`) is currently non-functional. All Apify actors that scrape Instagram follower lists require authentication (cookies or API tokens). Instagram restricts follower list access to authenticated users only. Hashtag mining works without authentication and is the primary discovery method.
+
 ### Mining Pipeline Workflow
 
 **Two-Stage Artist Classification:**
