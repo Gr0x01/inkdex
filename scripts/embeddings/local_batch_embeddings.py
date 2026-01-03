@@ -22,24 +22,36 @@ Requirements:
 """
 
 import os
+import sys
 import asyncio
 import aiohttp
 import base64
 import time
 import re
 import argparse
+import requests
 from typing import Optional, Dict, List
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+# Fix Windows console encoding for emojis
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except:
+        pass
+
 # Load environment variables
-load_dotenv()
+# Load .env.local first (Next.js convention), then .env as fallback
+load_dotenv('.env.local')
+load_dotenv()  # Fallback to .env if .env.local doesn't exist
 
 # Configuration
 LOCAL_CLIP_URL = os.getenv("LOCAL_CLIP_URL", "https://clip.inkdex.io")
 CLIP_API_KEY = os.getenv("CLIP_API_KEY")
 MODAL_FUNCTION_URL = os.getenv("MODAL_FUNCTION_URL")
-SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 LOCAL_TIMEOUT = int(os.getenv("LOCAL_CLIP_TIMEOUT", "10"))
 
@@ -78,7 +90,6 @@ class BatchEmbeddingGenerator:
     def check_local_health(self) -> bool:
         """Check if local GPU is available"""
         try:
-            import requests
             headers = {}
             if CLIP_API_KEY:
                 headers['Authorization'] = f'Bearer {CLIP_API_KEY}'
@@ -91,17 +102,18 @@ class BatchEmbeddingGenerator:
             return False
         return False
 
-    def update_pipeline_progress(self, total_items: int, processed_items: int, failed_items: int):
-        """Update pipeline_runs table with progress"""
+    def increment_pipeline_progress(self, processed_delta: int, failed_delta: int):
+        """Atomically increment pipeline progress (safe for parallel execution)"""
         if not self.pipeline_run_id:
             return
 
         try:
-            self.supabase.table("pipeline_runs").update({
-                "total_items": total_items,
-                "processed_items": processed_items,
-                "failed_items": failed_items,
-            }).eq("id", self.pipeline_run_id).execute()
+            # Use RPC function for atomic increment
+            self.supabase.rpc('increment_pipeline_progress', {
+                'run_id': self.pipeline_run_id,
+                'processed_delta': processed_delta,
+                'failed_delta': failed_delta
+            }).execute()
         except Exception as e:
             # Don't fail the job if progress update fails
             print(f"Warning: Failed to update pipeline progress: {e}")
@@ -257,12 +269,12 @@ class BatchEmbeddingGenerator:
                 chunk_time = time.time() - chunk_start
                 print(f"  ✓ Chunk completed in {chunk_time:.1f}s")
 
-                # Update progress after each chunk for real-time tracking
+                # Update progress after each chunk - increment by successful count
                 if self.pipeline_run_id:
-                    total_pending = len(images)
-                    processed = min(i + chunk_size, len(images))
-                    failed = self.stats["errors"]
-                    self.update_pipeline_progress(total_pending, processed, failed)
+                    # Count successful and failed in this chunk
+                    successful_in_chunk = sum(1 for r in results if r is not None)
+                    failed_in_chunk = len(results) - successful_in_chunk
+                    self.increment_pipeline_progress(successful_in_chunk, failed_in_chunk)
 
     def fetch_pending_images(self, batch_size: int, offset: int, city: Optional[str] = None) -> List[Dict]:
         """Fetch images that need embeddings"""
@@ -392,8 +404,16 @@ def main():
     total_count_result = total_query.execute()
     total_pending = total_count_result.count if total_count_result.count else 0
 
-    # Initialize pipeline progress
-    generator.update_pipeline_progress(total_pending, 0, 0)
+    # Initialize pipeline progress - set total_items ONCE
+    if generator.pipeline_run_id:
+        try:
+            generator.supabase.table("pipeline_runs").update({
+                "total_items": total_pending,
+                "processed_items": 0,
+                "failed_items": 0,
+            }).eq("id", generator.pipeline_run_id).execute()
+        except Exception as e:
+            print(f"Warning: Failed to initialize pipeline progress: {e}")
 
     # Process batches
     total_processed = 0
@@ -414,10 +434,6 @@ def main():
             break
 
         total_processed += count
-
-        # Update progress after each batch
-        failed = generator.stats["errors"]
-        generator.update_pipeline_progress(total_pending, total_processed, failed)
         batch_num += 1
 
     overall_time = time.time() - overall_start

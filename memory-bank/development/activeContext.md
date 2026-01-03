@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03 (Session 7 - Redis Infrastructure + Analytics Complete)
+Last-Updated: 2026-01-03 (Session 8 - Dual-GPU Embedding Setup)
 Maintainer: RB
 Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 ---
@@ -92,7 +92,11 @@ npm run mine:status                # View stats
 ```bash
 npm run scrape-instagram           # Apify parallel scraping
 npm run process-images             # Upload to Supabase Storage
-python3 scripts/embeddings/local_batch_embeddings.py  # Generate CLIP embeddings
+
+# Embeddings (choose one):
+python3 scripts/embeddings/local_batch_embeddings.py  # A2000 only (5 hours/20k)
+python3 scripts/embeddings/dual_gpu_embeddings.py     # Dual-GPU (1.5 hours/20k, local only)
+
 npx tsx scripts/embeddings/create-vector-index.ts     # Rebuild vector index
 ```
 
@@ -136,8 +140,26 @@ Access via `/dev/login` (development only):
 - **Images:** Supabase Storage (WebP thumbnails)
 - **Auth:** Supabase Auth + Instagram OAuth via Facebook Login
 - **Tokens:** Encrypted in Supabase Vault (no plaintext)
-- **Embeddings:** Local GPU primary, Modal.com fallback
+- **Embeddings:** Dual-GPU setup (A2000 + RTX 4080) - local network only
 - **Caching:** Redis (Railway) - rate limiting + analytics caching (fail-open design)
+
+## Embedding Infrastructure
+
+**Dual-GPU Setup (Local Development Only):**
+- **Primary GPU:** NVIDIA A2000 12GB (Mac/Linux) - `https://clip.inkdex.io`
+- **Secondary GPU:** NVIDIA RTX 4080 16GB (Windows) - `http://10.2.0.10:5000`
+- **Performance:** ~1.5 hours for 20k images (vs 5 hours A2000 alone)
+- **Work Distribution:** 4080 processes 60%, A2000 processes 40%
+
+**Current Limitations:**
+- Dual-GPU only works when running admin panel locally (`localhost:3000`)
+- Production admin panel (Vercel) can only use A2000 (Windows GPU not accessible)
+- To enable dual-GPU in production, would need Cloudflare Tunnel setup (documented in `docs/dual-gpu-cloudflare-setup.md`)
+
+**Recommendation:**
+- Use dual-GPU for large local batches (>10k images)
+- Use A2000 only for smaller production jobs via admin panel
+- For overnight jobs, A2000 alone is fine (5 hours for 20k images)
 
 ## Reference Docs
 

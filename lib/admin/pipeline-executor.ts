@@ -23,6 +23,8 @@ const ENV_WHITELIST = [
   'CLIP_API_KEY',
   'APIFY_API_TOKEN',
   'OPENAI_API_KEY',
+  'WINDOWS_GPU_URL',
+  'WINDOWS_GPU_API_KEY',
 ];
 
 function getFilteredEnv(): Record<string, string | undefined> {
@@ -63,7 +65,7 @@ const JOB_CONFIGS: Record<JobType, JobConfig> = {
   },
   embeddings: {
     command: 'python3',
-    args: ['scripts/embeddings/local_batch_embeddings.py', '--parallel', '4', '--batch-size', '10'],
+    args: ['scripts/embeddings/dual_gpu_embeddings.py'],
     cwd: process.cwd(),
   },
   index_rebuild: {
@@ -147,16 +149,18 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
 
     // Store the PID for cancellation
     if (childProcess.pid) {
-      adminClient
+      void adminClient
         .from('pipeline_runs')
         .update({ process_pid: childProcess.pid })
         .eq('id', runId)
-        .then(() => {
-          console.log(`Pipeline run ${runId} started with PID ${childProcess.pid}`);
-        })
-        .catch((err) => {
-          console.error(`Failed to store PID for run ${runId}:`, err);
-        });
+        .then(
+          () => {
+            console.log(`Pipeline run ${runId} started with PID ${childProcess.pid}`);
+          },
+          (err: unknown) => {
+            console.error(`Failed to store PID for run ${runId}:`, err);
+          }
+        );
     }
 
     let stdout = '';
