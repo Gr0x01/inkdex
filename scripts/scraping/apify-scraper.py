@@ -204,17 +204,18 @@ def connect_db():
         sys.exit(1)
 
 def get_pending_artists(conn, limit=None):
-    """Get artists that haven't been scraped yet"""
+    """Get artists that haven't been scraped yet (excludes failed and blacklisted)"""
     cursor = conn.cursor()
 
     query = """
         SELECT a.id, a.instagram_handle, a.name
         FROM artists a
         WHERE a.instagram_private != TRUE
+        AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
         AND a.id NOT IN (
             SELECT artist_id
             FROM scraping_jobs
-            WHERE status = 'completed'
+            WHERE status IN ('completed', 'failed')
         )
         ORDER BY a.created_at
     """
