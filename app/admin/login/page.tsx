@@ -101,47 +101,43 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-paper flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 mb-4">
-            <span className="text-white font-bold text-2xl">I</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-gray-900 font-[family-name:var(--font-space-grotesk)]">
-            Inkdex Admin
-          </h1>
-          <p className="text-gray-500 mt-1">Sign in to access the admin panel</p>
+        <div className="text-center mb-6">
+          <span className="font-display text-3xl font-[900] text-ink tracking-tight">
+            INKDEX
+          </span>
+          <p className="font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mt-1">
+            Admin Panel
+          </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+        <div className="bg-paper border-2 border-ink/10 p-6">
           {formState === 'authenticating' ? (
-            <div className="text-center py-8">
-              <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Signing you in...</h2>
-              <p className="text-gray-500">Please wait while we verify your credentials.</p>
+            <div className="text-center py-6">
+              <Loader2 className="w-6 h-6 text-ink animate-spin mx-auto mb-3" />
+              <p className="text-sm font-body text-gray-700">Signing you in...</p>
             </div>
           ) : formState === 'success' ? (
-            <div className="text-center py-6">
-              <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-7 h-7 text-emerald-600" />
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Check your email</h2>
-              <p className="text-gray-500 mb-1">We&apos;ve sent a magic link to</p>
-              <p className="text-gray-900 font-medium">{email}</p>
+            <div className="text-center py-4">
+              <CheckCircle className="w-6 h-6 text-status-success mx-auto mb-3" />
+              <p className="text-sm font-heading font-semibold text-ink mb-1">Check your email</p>
+              <p className="text-sm text-gray-500 font-body">Magic link sent to</p>
+              <p className="text-sm text-ink font-body font-medium">{email}</p>
 
               {/* Development mode: Show clickable link */}
               {devLink && (
-                <div className="mt-6 p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                  <p className="text-xs text-amber-600 uppercase tracking-wider font-medium mb-2">
-                    Development Mode
+                <div className="mt-4 p-3 bg-status-warning/10 border border-status-warning/20">
+                  <p className="font-mono text-[10px] text-status-warning uppercase tracking-[0.15em] mb-1">
+                    Dev Mode
                   </p>
                   <a
                     href={devLink}
-                    className="text-amber-700 hover:text-amber-800 text-sm underline break-all"
+                    className="text-status-warning hover:underline text-sm break-all font-body"
                   >
-                    Click here to login
+                    Click to login
                   </a>
                 </div>
               )}
@@ -152,23 +148,23 @@ export default function AdminLoginPage() {
                   setEmail('');
                   setDevLink(null);
                 }}
-                className="mt-6 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
+                className="mt-4 text-sm text-gray-500 hover:text-ink font-body transition-colors"
               >
                 Try a different email
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <div className="mb-6">
+              <div className="mb-4">
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block font-mono text-[10px] text-gray-500 uppercase tracking-[0.15em] mb-2"
                 >
                   Email Address
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="w-5 h-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="w-4 h-4 text-gray-500" />
                   </div>
                   <input
                     id="email"
@@ -178,9 +174,9 @@ export default function AdminLoginPage() {
                     placeholder="admin@inkdex.io"
                     required
                     disabled={formState === 'loading'}
-                    className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl
-                             text-gray-900 placeholder-gray-400
-                             focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
+                    className="w-full pl-10 pr-3 py-2.5 bg-paper border-2 border-ink/10
+                             text-ink font-body placeholder-gray-500
+                             focus:outline-none focus:border-ink
                              disabled:opacity-50 disabled:cursor-not-allowed
                              transition-colors"
                   />
@@ -188,23 +184,23 @@ export default function AdminLoginPage() {
               </div>
 
               {formState === 'error' && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-red-700 text-sm">{errorMessage}</p>
+                <div className="mb-4 p-3 bg-status-error/10 border border-status-error/20 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-status-error shrink-0 mt-0.5" />
+                  <p className="text-status-error text-sm font-body">{errorMessage}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={formState === 'loading' || !email}
-                className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700
-                         text-white font-medium rounded-xl
+                className="w-full py-2.5 px-4 bg-ink hover:bg-gray-900
+                         text-paper font-body text-sm
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         transition-colors shadow-sm"
+                         transition-colors"
               >
                 {formState === 'loading' ? (
                   <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Sending...
                   </span>
                 ) : (
@@ -216,8 +212,8 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-400 text-sm mt-6">
-          Only authorized administrators can access this panel.
+        <p className="text-center text-gray-500 text-xs font-mono mt-4">
+          Authorized administrators only
         </p>
       </div>
     </div>
