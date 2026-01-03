@@ -1,5 +1,7 @@
 'use client';
 
+import { MapPin } from 'lucide-react';
+
 interface CityData {
   city: string;
   count: number;
@@ -17,36 +19,44 @@ export default function CityDistribution({ cities, total }: CityDistributionProp
   const othersCount = total - topCities.reduce((sum, c) => sum + c.count, 0);
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white">Artists by City</h3>
-        <span className="text-sm text-neutral-500">
-          {total.toLocaleString()} total from mining
+    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-cyan-500" />
+          <h3 className="text-xs font-mono uppercase tracking-wider text-cyan-400">
+            City Distribution
+          </h3>
+        </div>
+        <span className="text-[10px] text-neutral-600 font-mono">
+          {total.toLocaleString()} mined
         </span>
       </div>
 
       {topCities.length === 0 ? (
-        <p className="text-neutral-500 text-sm">No city data available</p>
+        <p className="text-neutral-600 text-xs font-mono">No city data</p>
       ) : (
-        <div className="space-y-3">
-          {topCities.map((city) => {
+        <div className="space-y-1.5">
+          {topCities.map((city, index) => {
             const percentage = maxCount > 0 ? (city.count / maxCount) * 100 : 0;
 
             return (
-              <div key={city.city} className="flex items-center gap-4">
-                <div className="w-32 shrink-0">
-                  <span className="text-sm text-neutral-300 truncate block">
+              <div key={city.city} className="flex items-center gap-3">
+                <div className="w-3 text-[10px] text-neutral-600 font-mono tabular-nums">
+                  {index + 1}
+                </div>
+                <div className="w-28 shrink-0">
+                  <span className="text-xs text-neutral-400 truncate block">
                     {city.city}
                   </span>
                 </div>
-                <div className="flex-1 h-5 bg-neutral-800 rounded-sm overflow-hidden">
+                <div className="flex-1 h-3 bg-neutral-800/50 rounded-sm overflow-hidden">
                   <div
-                    className="h-full bg-amber-500/60 transition-all duration-500"
+                    className="h-full bg-cyan-500/40 transition-all duration-500"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <div className="w-16 text-right">
-                  <span className="text-sm text-white tabular-nums font-medium">
+                <div className="w-12 text-right">
+                  <span className="text-xs text-white tabular-nums font-mono">
                     {city.count.toLocaleString()}
                   </span>
                 </div>
@@ -55,15 +65,16 @@ export default function CityDistribution({ cities, total }: CityDistributionProp
           })}
 
           {othersCount > 0 && cities.length > 10 && (
-            <div className="flex items-center gap-4 pt-2 border-t border-neutral-800">
-              <div className="w-32 shrink-0">
-                <span className="text-sm text-neutral-500">
+            <div className="flex items-center gap-3 pt-2 border-t border-neutral-800/50">
+              <div className="w-3" />
+              <div className="w-28 shrink-0">
+                <span className="text-xs text-neutral-600">
                   +{cities.length - 10} more
                 </span>
               </div>
               <div className="flex-1" />
-              <div className="w-16 text-right">
-                <span className="text-sm text-neutral-400 tabular-nums">
+              <div className="w-12 text-right">
+                <span className="text-xs text-neutral-500 tabular-nums font-mono">
                   {othersCount.toLocaleString()}
                 </span>
               </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { Terminal, Mail, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 type FormState = 'idle' | 'loading' | 'success' | 'error' | 'authenticating';
 
@@ -101,85 +102,65 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Logo/Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            INKDEX
-          </h1>
-          <p className="text-neutral-500 text-sm mt-1 uppercase tracking-widest">
-            Admin Panel
+      {/* Background grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+      <div className="relative w-full max-w-sm">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-600">
+              Secure Access
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Terminal className="w-5 h-5 text-neutral-700" />
+            <h1 className="text-xl font-semibold text-white tracking-tight font-[family-name:var(--font-space-grotesk)]">
+              INKDEX
+            </h1>
+          </div>
+          <p className="text-[10px] text-neutral-600 font-mono uppercase tracking-widest mt-1 ml-7">
+            Admin Console
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8">
+        <div className="bg-neutral-900/50 border border-neutral-800/50 rounded-lg p-6">
           {formState === 'authenticating' ? (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <svg
-                  className="animate-spin h-10 w-10 text-amber-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
-                Authenticating...
+            <div className="text-center py-6">
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin mx-auto mb-4" />
+              <h2 className="text-sm font-medium text-white mb-1 font-[family-name:var(--font-space-grotesk)]">
+                Authenticating
               </h2>
-              <p className="text-neutral-400 text-sm">
-                Please wait while we log you in.
+              <p className="text-[11px] text-neutral-500 font-mono">
+                Establishing secure session...
               </p>
             </div>
           ) : formState === 'success' ? (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-8 h-8 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+            <div className="text-center py-4">
+              <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-6 h-6 text-emerald-500" />
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">
+              <h2 className="text-sm font-medium text-white mb-2 font-[family-name:var(--font-space-grotesk)]">
                 Check your email
               </h2>
-              <p className="text-neutral-400 text-sm">
-                If this email is authorized, we&apos;ve sent a magic link to{' '}
-                <span className="text-white font-medium">{email}</span>
+              <p className="text-[11px] text-neutral-500 font-mono">
+                Magic link sent to
               </p>
+              <p className="text-xs text-neutral-300 font-mono mt-1">{email}</p>
 
               {/* Development mode: Show clickable link */}
               {devLink && (
-                <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                  <p className="text-amber-500 text-xs uppercase tracking-wider mb-2">
-                    Development Mode
+                <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded">
+                  <p className="text-[9px] text-amber-500/70 uppercase tracking-wider font-mono mb-2">
+                    Dev Mode
                   </p>
                   <a
                     href={devLink}
-                    className="text-amber-400 hover:text-amber-300 text-sm underline break-all"
+                    className="text-amber-400 hover:text-amber-300 text-xs font-mono underline break-all"
                   >
-                    Click here to login
+                    Click to login
                   </a>
                 </div>
               )}
@@ -190,21 +171,24 @@ export default function AdminLoginPage() {
                   setEmail('');
                   setDevLink(null);
                 }}
-                className="mt-6 text-neutral-400 hover:text-white text-sm transition-colors"
+                className="mt-4 text-neutral-500 hover:text-neutral-300 text-[10px] font-mono uppercase tracking-wider transition-colors"
               >
-                Try a different email
+                Try different email
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h2 className="text-xl font-semibold text-white mb-6">
-                Sign in with magic link
-              </h2>
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-4 h-4 text-neutral-600" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-600">
+                  Magic Link Auth
+                </span>
+              </div>
 
-              <div className="mb-6">
+              <div className="mb-4">
                 <label
                   htmlFor="email"
-                  className="block text-xs uppercase tracking-wider text-neutral-500 mb-2"
+                  className="block text-[10px] uppercase tracking-wider text-neutral-600 font-mono mb-1.5"
                 >
                   Email Address
                 </label>
@@ -213,56 +197,40 @@ export default function AdminLoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@example.com"
+                  placeholder="admin@inkdex.io"
                   required
                   disabled={formState === 'loading'}
-                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg
-                             text-white placeholder-neutral-500
-                             focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500
-                             disabled:opacity-50 disabled:cursor-not-allowed
-                             transition-colors"
+                  className="w-full px-3 py-2.5 bg-neutral-800/50 border border-neutral-700/50 rounded
+                           text-sm text-white placeholder-neutral-600 font-mono
+                           focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50
+                           disabled:opacity-50 disabled:cursor-not-allowed
+                           transition-colors"
                 />
               </div>
 
               {formState === 'error' && (
-                <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-red-400 text-sm">{errorMessage}</p>
+                <div className="mb-4 p-2.5 bg-red-500/5 border border-red-500/20 rounded flex items-start gap-2">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-red-400 text-[11px] font-mono">{errorMessage}</p>
                 </div>
               )}
 
               <button
                 type="submit"
                 disabled={formState === 'loading' || !email}
-                className="w-full py-3 px-4 bg-white text-black font-medium rounded-lg
-                           hover:bg-neutral-200
-                           disabled:opacity-50 disabled:cursor-not-allowed
-                           transition-colors"
+                className="w-full py-2.5 px-4 bg-emerald-500/10 hover:bg-emerald-500/20
+                         border border-emerald-500/30 hover:border-emerald-500/50
+                         text-emerald-400 text-xs font-mono uppercase tracking-wider rounded
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         transition-all"
               >
                 {formState === 'loading' ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-black"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     Sending...
                   </span>
                 ) : (
-                  'Send Magic Link'
+                  'Request Access'
                 )}
               </button>
             </form>
@@ -270,8 +238,8 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-neutral-600 text-xs mt-6">
-          Only authorized administrators can access this panel.
+        <p className="text-center text-[9px] text-neutral-700 font-mono mt-4 uppercase tracking-wider">
+          Authorized personnel only
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import { ChevronDown, ChevronUp, Hash, Users, AlertCircle } from 'lucide-react';
 
 interface MiningRun {
@@ -33,16 +33,16 @@ interface MiningRunsTableProps {
 
 function StatusBadge({ status }: { status: string }) {
   const styles = {
-    completed: 'bg-green-500/10 text-green-500 border-green-500/20',
-    running: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-    pending: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    failed: 'bg-red-500/10 text-red-500 border-red-500/20',
-    cancelled: 'bg-neutral-500/10 text-neutral-500 border-neutral-500/20',
+    completed: 'text-emerald-500 bg-emerald-500/10',
+    running: 'text-amber-500 bg-amber-500/10',
+    pending: 'text-blue-500 bg-blue-500/10',
+    failed: 'text-red-500 bg-red-500/10',
+    cancelled: 'text-neutral-500 bg-neutral-500/10',
   };
 
   return (
     <span
-      className={`px-2 py-0.5 text-xs font-medium rounded border ${
+      className={`px-1.5 py-0.5 text-[10px] font-mono uppercase rounded ${
         styles[status as keyof typeof styles] || styles.pending
       }`}
     >
@@ -53,9 +53,9 @@ function StatusBadge({ status }: { status: string }) {
 
 function TypeIcon({ type }: { type: 'hashtag' | 'follower' }) {
   return type === 'hashtag' ? (
-    <Hash className="w-4 h-4 text-amber-500" />
+    <Hash className="w-3.5 h-3.5 text-amber-500/70" />
   ) : (
-    <Users className="w-4 h-4 text-blue-500" />
+    <Users className="w-3.5 h-3.5 text-blue-500/70" />
   );
 }
 
@@ -90,159 +90,141 @@ export default function MiningRunsTable({ runs, loading }: MiningRunsTableProps)
 
   if (loading) {
     return (
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8 text-center">
-        <p className="text-neutral-500">Loading runs...</p>
+      <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-6 text-center">
+        <p className="text-neutral-600 text-xs font-mono">Loading runs...</p>
       </div>
     );
   }
 
   if (runs.length === 0) {
     return (
-      <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-8 text-center">
-        <p className="text-neutral-500">No mining runs found</p>
+      <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-6 text-center">
+        <p className="text-neutral-600 text-xs font-mono">No mining runs found</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg overflow-hidden">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-neutral-800">
-            <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-neutral-500 font-medium">
+          <tr className="border-b border-neutral-800/50">
+            <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
               Source
             </th>
-            <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-neutral-500 font-medium">
+            <th className="px-3 py-2 text-left text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
               Status
             </th>
-            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
+            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
               Scraped
             </th>
-            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
-              Inserted
+            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+              Added
             </th>
-            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
+            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
               Cost
             </th>
-            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
-              Duration
+            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
+              Time
             </th>
-            <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-neutral-500 font-medium">
+            <th className="px-3 py-2 text-right text-[10px] uppercase tracking-wider text-neutral-600 font-mono font-normal">
               Date
             </th>
-            <th className="px-4 py-3 w-10"></th>
+            <th className="px-3 py-2 w-8"></th>
           </tr>
         </thead>
         <tbody>
           {runs.map((run) => (
-            <>
+            <Fragment key={run.id}>
               <tr
-                key={run.id}
-                className={`border-b border-neutral-800/50 hover:bg-neutral-800/30 cursor-pointer transition-colors ${
-                  expandedId === run.id ? 'bg-neutral-800/30' : ''
+                className={`border-b border-neutral-800/30 hover:bg-neutral-800/20 cursor-pointer transition-colors ${
+                  expandedId === run.id ? 'bg-neutral-800/20' : ''
                 }`}
                 onClick={() => setExpandedId(expandedId === run.id ? null : run.id)}
               >
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
+                <td className="px-3 py-2">
+                  <div className="flex items-center gap-1.5">
                     <TypeIcon type={run.type} />
-                    <span className="text-white font-medium">{run.identifier}</span>
+                    <span className="text-xs text-neutral-300">{run.identifier}</span>
                   </div>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-2">
                   <StatusBadge status={run.status} />
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-300 tabular-nums">
+                <td className="px-3 py-2 text-right text-xs text-neutral-400 tabular-nums font-mono">
                   {run.stats.scraped.toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-300 tabular-nums">
+                <td className="px-3 py-2 text-right text-xs text-neutral-400 tabular-nums font-mono">
                   {run.stats.inserted.toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-300 font-mono text-sm">
+                <td className="px-3 py-2 text-right text-xs text-neutral-400 font-mono">
                   ${(run.costs.apify + run.costs.openai).toFixed(4)}
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-400 text-sm">
+                <td className="px-3 py-2 text-right text-xs text-neutral-500 font-mono">
                   {formatDuration(run.startedAt, run.completedAt)}
                 </td>
-                <td className="px-4 py-3 text-right text-neutral-400 text-sm">
+                <td className="px-3 py-2 text-right text-xs text-neutral-500">
                   {formatDate(run.createdAt)}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-3 py-2 text-right">
                   {run.error ? (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <AlertCircle className="w-3.5 h-3.5 text-red-500" />
                   ) : expandedId === run.id ? (
-                    <ChevronUp className="w-4 h-4 text-neutral-500" />
+                    <ChevronUp className="w-3.5 h-3.5 text-neutral-600" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-neutral-500" />
+                    <ChevronDown className="w-3.5 h-3.5 text-neutral-600" />
                   )}
                 </td>
               </tr>
 
               {/* Expanded details */}
               {expandedId === run.id && (
-                <tr key={`${run.id}-details`} className="bg-neutral-800/20">
-                  <td colSpan={8} className="px-4 py-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div>
-                        <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                          Bio Filter Passed
-                        </p>
-                        <p className="text-white tabular-nums">
-                          {run.stats.bioPass.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                          Image Filter Passed
-                        </p>
-                        <p className="text-white tabular-nums">
-                          {run.stats.imagePass.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                          Duplicates Skipped
-                        </p>
-                        <p className="text-white tabular-nums">
-                          {(run.stats.duplicates || 0).toLocaleString()}
-                        </p>
-                      </div>
+                <tr className="bg-neutral-800/10">
+                  <td colSpan={8} className="px-3 py-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <DetailItem label="Bio Pass" value={run.stats.bioPass} />
+                      <DetailItem label="Image Pass" value={run.stats.imagePass} />
+                      <DetailItem label="Duplicates" value={run.stats.duplicates || 0} />
                       {run.type === 'follower' && (
-                        <div>
-                          <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                            Private Skipped
-                          </p>
-                          <p className="text-white tabular-nums">
-                            {(run.stats.private || 0).toLocaleString()}
-                          </p>
-                        </div>
+                        <DetailItem label="Private" value={run.stats.private || 0} />
                       )}
-                      <div>
-                        <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                          Apify Cost
-                        </p>
-                        <p className="text-white font-mono">${run.costs.apify.toFixed(4)}</p>
-                      </div>
-                      <div>
-                        <p className="text-neutral-500 text-xs uppercase tracking-wider mb-1">
-                          OpenAI Cost
-                        </p>
-                        <p className="text-white font-mono">${run.costs.openai.toFixed(4)}</p>
-                      </div>
+                      <DetailItem label="Apify" value={`$${run.costs.apify.toFixed(4)}`} mono />
+                      <DetailItem label="OpenAI" value={`$${run.costs.openai.toFixed(4)}`} mono />
                     </div>
 
                     {run.error && (
-                      <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                        <p className="text-red-400 text-sm font-mono">{run.error}</p>
+                      <div className="mt-3 p-2 bg-red-500/10 border border-red-500/20 rounded">
+                        <p className="text-red-400 text-[10px] font-mono">{run.error}</p>
                       </div>
                     )}
                   </td>
                 </tr>
               )}
-            </>
+            </Fragment>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function DetailItem({
+  label,
+  value,
+  mono = false
+}: {
+  label: string;
+  value: string | number;
+  mono?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-[9px] text-neutral-600 uppercase tracking-wider font-mono mb-0.5">
+        {label}
+      </p>
+      <p className={`text-xs text-neutral-300 tabular-nums ${mono ? 'font-mono' : ''}`}>
+        {typeof value === 'number' ? value.toLocaleString() : value}
+      </p>
     </div>
   );
 }

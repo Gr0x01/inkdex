@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw, AlertCircle, DollarSign } from 'lucide-react';
 
 interface CostData {
   apify: {
@@ -71,98 +71,121 @@ export default function CostTracker({
   };
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-white">Cost Tracking</h3>
+    <div className="bg-neutral-900/30 border border-neutral-800/50 rounded-lg p-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-emerald-500" />
+          <h3 className="text-xs font-mono uppercase tracking-wider text-emerald-400">
+            Cost Tracking
+          </h3>
+        </div>
         <button
           onClick={fetchLiveCosts}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-neutral-400 hover:text-white
-                     bg-neutral-800 hover:bg-neutral-700 rounded-lg transition-colors
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-mono
+                   text-neutral-500 hover:text-neutral-300
+                   bg-neutral-800/30 hover:bg-neutral-800/50
+                   rounded transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Database Estimates */}
-        <div>
-          <h4 className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
+        <div className="space-y-2">
+          <h4 className="text-[10px] uppercase tracking-wider text-neutral-600 font-mono">
             Database Estimates
           </h4>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-neutral-400">Apify</span>
-              <span className="text-white font-mono">{formatCurrency(estimatedApify)}</span>
+          <div className="space-y-1.5">
+            <CostRow label="Apify" value={formatCurrency(estimatedApify)} />
+            <CostRow label="OpenAI" value={formatCurrency(estimatedOpenAI)} />
+            <div className="border-t border-neutral-800/50 pt-1.5">
+              <CostRow label="Total" value={formatCurrency(estimatedTotal)} bold />
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-neutral-400">OpenAI</span>
-              <span className="text-white font-mono">{formatCurrency(estimatedOpenAI)}</span>
-            </div>
-            <div className="border-t border-neutral-800 pt-3 flex justify-between items-center">
-              <span className="text-neutral-400 font-medium">Total</span>
-              <span className="text-white font-mono font-bold">{formatCurrency(estimatedTotal)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-neutral-500 text-sm">Cost per artist</span>
-              <span className="text-neutral-400 font-mono text-sm">{formatCurrency(costPerArtist)}</span>
-            </div>
+            <CostRow
+              label="Per Artist"
+              value={formatCurrency(costPerArtist)}
+              muted
+            />
           </div>
         </div>
 
         {/* Live API Costs */}
-        <div>
-          <h4 className="text-xs uppercase tracking-wider text-neutral-500 mb-4">
-            Live API Usage (This Month)
+        <div className="space-y-2">
+          <h4 className="text-[10px] uppercase tracking-wider text-neutral-600 font-mono">
+            Live API Usage (Month)
           </h4>
 
           {error && (
-            <div className="flex items-center gap-2 text-red-400 text-sm mb-4">
-              <AlertCircle className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 text-red-400 text-[10px] font-mono">
+              <AlertCircle className="w-3 h-3" />
               {error}
             </div>
           )}
 
           {loading && !liveCosts ? (
-            <div className="text-neutral-500 text-sm">Loading...</div>
+            <div className="text-neutral-600 text-xs font-mono">Loading...</div>
           ) : liveCosts ? (
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400">Apify</span>
-                <div className="text-right">
-                  <span className="text-white font-mono">
-                    {formatCurrency(liveCosts.apify.usage)}
-                  </span>
-                  {liveCosts.apify.error && (
-                    <p className="text-xs text-amber-500 mt-0.5">{liveCosts.apify.error}</p>
-                  )}
-                </div>
+            <div className="space-y-1.5">
+              <CostRow
+                label="Apify"
+                value={formatCurrency(liveCosts.apify.usage)}
+                error={liveCosts.apify.error}
+              />
+              <CostRow
+                label="OpenAI"
+                value={formatCurrency(liveCosts.openai.usage)}
+                error={liveCosts.openai.error}
+              />
+              <div className="border-t border-neutral-800/50 pt-1.5">
+                <CostRow
+                  label="Total"
+                  value={formatCurrency(liveCosts.total.usage)}
+                  bold
+                />
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400">OpenAI</span>
-                <div className="text-right">
-                  <span className="text-white font-mono">
-                    {formatCurrency(liveCosts.openai.usage)}
-                  </span>
-                  {liveCosts.openai.error && (
-                    <p className="text-xs text-amber-500 mt-0.5">{liveCosts.openai.error}</p>
-                  )}
-                </div>
-              </div>
-              <div className="border-t border-neutral-800 pt-3 flex justify-between items-center">
-                <span className="text-neutral-400 font-medium">Total</span>
-                <span className="text-white font-mono font-bold">
-                  {formatCurrency(liveCosts.total.usage)}
-                </span>
-              </div>
-              <p className="text-xs text-neutral-600 mt-2">
-                Last updated: {formatDate(liveCosts.apify.lastUpdated)}
+              <p className="text-[9px] text-neutral-700 font-mono mt-2">
+                Updated: {formatDate(liveCosts.apify.lastUpdated)}
               </p>
             </div>
           ) : null}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CostRow({
+  label,
+  value,
+  bold = false,
+  muted = false,
+  error,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  muted?: boolean;
+  error?: string;
+}) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className={`text-xs ${muted ? 'text-neutral-600' : 'text-neutral-500'}`}>
+        {label}
+      </span>
+      <div className="text-right">
+        <span
+          className={`text-xs font-mono ${
+            bold ? 'text-white font-medium' : muted ? 'text-neutral-500' : 'text-neutral-300'
+          }`}
+        >
+          {value}
+        </span>
+        {error && (
+          <p className="text-[9px] text-amber-500/70 mt-0.5">{error}</p>
+        )}
       </div>
     </div>
   );

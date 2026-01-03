@@ -1,13 +1,9 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
+import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro, Space_Grotesk } from 'next/font/google'
 import './globals.css'
-import NavbarWithAuth from '@/components/layout/NavbarWithAuth'
-import Footer from '@/components/layout/Footer'
-import { SearchProvider } from '@/components/search/SearchProvider'
-import GlobalSearchModal from '@/components/search/GlobalSearchModal'
+import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
-import { CookieBanner } from '@/components/consent/CookieBanner'
 
 // Font configurations for "Inkdex" design system
 const playfairDisplay = Playfair_Display({
@@ -26,7 +22,7 @@ const libreBaskerville = Libre_Baskerville({
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500'],
+  weight: ['100', '200', '300', '400', '500', '600'],
   variable: '--font-jetbrains-mono',
   display: 'swap',
 })
@@ -36,6 +32,14 @@ const crimsonPro = Crimson_Pro({
   weight: ['300', '400', '600'],
   style: ['normal', 'italic'],
   variable: '--font-crimson-pro',
+  display: 'swap',
+})
+
+// Admin-specific font
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-space-grotesk',
   display: 'swap',
 })
 
@@ -79,18 +83,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
+      className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable} ${spaceGrotesk.variable}`}
     >
       <body className="">
-        <SearchProvider>
-          <NavbarWithAuth />
-          <GlobalSearchModal />
+        <ConditionalLayout>
           {children}
-          <Footer />
-          <Analytics />
-          <GoogleAnalytics />
-          <CookieBanner />
-        </SearchProvider>
+        </ConditionalLayout>
+        <Analytics />
+        <GoogleAnalytics />
       </body>
     </html>
   )

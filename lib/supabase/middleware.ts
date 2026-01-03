@@ -36,8 +36,14 @@ export async function updateSession(request: NextRequest) {
     pathname.match(/^\/(austin|los-angeles|new-york|chicago|portland|seattle|miami|atlanta)/) ||
     pathname.startsWith('/artist/')
 
+  // Set pathname on request headers for ConditionalLayout to read
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set('x-pathname', pathname)
+
   let supabaseResponse = NextResponse.next({
-    request,
+    request: {
+      headers: requestHeaders,
+    },
   })
 
   const supabase = createServerClient(
@@ -51,7 +57,9 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
-            request,
+            request: {
+              headers: requestHeaders,
+            },
           })
           // Determine if this is an admin route for stricter CSRF protection
           const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/api/admin')
