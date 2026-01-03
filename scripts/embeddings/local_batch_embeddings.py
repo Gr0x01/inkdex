@@ -26,6 +26,7 @@ import asyncio
 import aiohttp
 import base64
 import time
+import re
 import argparse
 from typing import Optional, Dict, List
 from dotenv import load_dotenv
@@ -54,7 +55,15 @@ class BatchEmbeddingGenerator:
         self.parallel = parallel
         self.prefer_local = prefer_local
         self.supabase: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-        self.pipeline_run_id = os.getenv("PIPELINE_RUN_ID")
+
+        # Get pipeline run ID from environment for progress tracking
+        # Validate UUID format to prevent SQL injection
+        pipeline_run_id = os.getenv("PIPELINE_RUN_ID")
+        uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        if pipeline_run_id and not re.match(uuid_pattern, pipeline_run_id, re.IGNORECASE):
+            print("⚠️  Invalid PIPELINE_RUN_ID format, progress tracking disabled")
+            pipeline_run_id = None
+        self.pipeline_run_id = pipeline_run_id
 
         # Statistics
         self.stats = {
@@ -247,6 +256,13 @@ class BatchEmbeddingGenerator:
 
                 chunk_time = time.time() - chunk_start
                 print(f"  ✓ Chunk completed in {chunk_time:.1f}s")
+
+                # Update progress after each chunk for real-time tracking
+                if self.pipeline_run_id:
+                    total_pending = len(images)
+                    processed = min(i + chunk_size, len(images))
+                    failed = self.stats["errors"]
+                    self.update_pipeline_progress(total_pending, processed, failed)
 
     def fetch_pending_images(self, batch_size: int, offset: int, city: Optional[str] = None) -> List[Dict]:
         """Fetch images that need embeddings"""

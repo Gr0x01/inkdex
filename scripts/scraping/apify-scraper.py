@@ -32,6 +32,9 @@ APIFY_API_TOKEN = os.getenv('APIFY_API_TOKEN')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 TEMP_DIR = Path('/tmp/instagram')
 
+# Import Supabase for progress tracking
+from supabase import create_client, Client
+
 # Apify Actor ID for Instagram Profile Scraper
 APIFY_ACTOR = 'apify/instagram-profile-scraper'
 MAX_POSTS = 12  # Instagram's public API only exposes ~12 recent posts without auth
@@ -150,6 +153,27 @@ class BackgroundProcessManager:
             'successful': successful,
             'failed': failed
         }
+
+
+def update_pipeline_progress(
+    supabase_client: Client,
+    pipeline_run_id: str,
+    total_items: int,
+    processed_items: int,
+    failed_items: int
+):
+    """Update pipeline_runs table with progress"""
+    if not pipeline_run_id:
+        return
+
+    try:
+        supabase_client.table("pipeline_runs").update({
+            "total_items": total_items,
+            "processed_items": processed_items,
+            "failed_items": failed_items,
+        }).eq("id", pipeline_run_id).execute()
+    except Exception as e:
+        print(f"⚠️  Warning: Failed to update pipeline progress: {e}")
 
 
 def validate_instagram_handle(handle: str) -> bool:
@@ -557,6 +581,29 @@ def main():
         conn = connect_db()
         print("✅ Connected\n")
 
+        # Get pipeline run ID for progress tracking
+        # Validate UUID format to prevent SQL injection
+        pipeline_run_id = os.getenv("PIPELINE_RUN_ID")
+        uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+        if pipeline_run_id and not re.match(uuid_pattern, pipeline_run_id, re.IGNORECASE):
+            print("⚠️  Invalid PIPELINE_RUN_ID format, progress tracking disabled\n")
+            pipeline_run_id = None
+
+        # Initialize Supabase client for progress tracking
+        supabase_client = None
+        if pipeline_run_id:
+            try:
+                SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+                SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+                if SUPABASE_URL and SUPABASE_SERVICE_KEY:
+                    supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+                    print(f"✅ Progress tracking enabled (run ID: {pipeline_run_id[:8]}...)\n")
+                else:
+                    print("⚠️  Progress tracking disabled (missing Supabase credentials)\n")
+            except Exception as e:
+                print(f"⚠️  Progress tracking disabled: {e}\n")
+
         # Get pending artists (TEST RUN - 20 artists)
         print("📋 Finding artists to scrape...")
         TEST_LIMIT = None  # Set to an integer to limit artists for testing
@@ -569,6 +616,11 @@ def main():
             return
 
         print(f"Found {len(artists)} artists to scrape\n")
+
+        # Initialize progress tracking
+        if supabase_client and pipeline_run_id:
+            update_pipeline_progress(supabase_client, pipeline_run_id, len(artists), 0, 0)
+
         print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
         print(f"📦 Incremental processing:")
         print(f"   - Process/upload every 10 artists")
@@ -614,6 +666,18 @@ def main():
                         # Progress update
                         percentage = (completed_count / len(artists)) * 100
                         print(f"   📊 Progress: {percentage:.1f}% ({completed_count}/{len(artists)}) - {total_images} images total\n")
+
+                        # Update pipeline progress (thread-safe with lock)
+                        if supabase_client and pipeline_run_id:
+                            with db_lock:
+                                successful_count = completed_count - total_errors
+                                update_pipeline_progress(
+                                    supabase_client,
+                                    pipeline_run_id,
+                                    len(artists),
+                                    successful_count,
+                                    total_errors
+                                )
 
                         # INCREMENTAL PROCESSING: Process and upload every 10 artists (NON-BLOCKING)
                         if completed_count % PROCESS_BATCH_SIZE == 0:

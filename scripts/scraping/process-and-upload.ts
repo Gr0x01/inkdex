@@ -48,6 +48,14 @@ async function uploadWithRetry(
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Validate PIPELINE_RUN_ID format to prevent SQL injection
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+let PIPELINE_RUN_ID = process.env.PIPELINE_RUN_ID;
+if (PIPELINE_RUN_ID && !UUID_REGEX.test(PIPELINE_RUN_ID)) {
+  console.warn('⚠️  Invalid PIPELINE_RUN_ID format, progress tracking disabled');
+  PIPELINE_RUN_ID = undefined;
+}
+
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('❌ Missing required environment variables:');
   if (!SUPABASE_URL) console.error('   - NEXT_PUBLIC_SUPABASE_URL');
@@ -64,6 +72,30 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
     persistSession: false
   }
 });
+
+/**
+ * Update pipeline_runs table with progress (non-blocking)
+ */
+async function updatePipelineProgress(
+  totalItems: number,
+  processedItems: number,
+  failedItems: number
+): Promise<void> {
+  if (!PIPELINE_RUN_ID) return;
+
+  try {
+    await supabase
+      .from('pipeline_runs')
+      .update({
+        total_items: totalItems,
+        processed_items: processedItems,
+        failed_items: failedItems,
+      })
+      .eq('id', PIPELINE_RUN_ID);
+  } catch (error) {
+    console.warn(`⚠️  Warning: Failed to update pipeline progress:`, error);
+  }
+}
 
 interface ImageMetadata {
   post_id: string;
@@ -259,6 +291,24 @@ async function main() {
 
   console.log(`📂 Found ${artistDirs.length} artists to process\n`);
 
+  // Count total images for progress tracking
+  let totalImagesToProcess = 0;
+  if (PIPELINE_RUN_ID) {
+    console.log('📊 Counting images for progress tracking...');
+    for (const artistId of artistDirs) {
+      const metadataPath = join(TEMP_DIR, artistId, 'metadata.json');
+      try {
+        const metadataContent = readFileSync(metadataPath, 'utf-8');
+        const metadata = JSON.parse(metadataContent);
+        totalImagesToProcess += metadata.length;
+      } catch (error) {
+        // Skip if metadata unreadable
+      }
+    }
+    console.log(`📊 Total images to process: ${totalImagesToProcess}\n`);
+    await updatePipelineProgress(totalImagesToProcess, 0, 0);
+  }
+
   const CONCURRENT_UPLOADS = 100; // Process 100 artists in parallel
   console.log(`🚀 Running ${CONCURRENT_UPLOADS} artists in parallel\n`);
 
@@ -309,6 +359,11 @@ async function main() {
       totalProcessed += imagesProcessed;
       totalErrors += errors;
     });
+
+    // Update pipeline progress
+    if (PIPELINE_RUN_ID) {
+      await updatePipelineProgress(totalImagesToProcess, totalProcessed, totalErrors);
+    }
   };
 
   // Process in batches
