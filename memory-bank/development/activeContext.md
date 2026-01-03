@@ -1,16 +1,18 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-03 (Session 4 - Phase 10 Improvements Complete)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + Admin Panel
+Status: Production Ready - 12/14 Phases Complete (86%) - Stripe & Analytics Remaining
 ---
 
 # Active Context: Inkdex
 
 ## Current State
 
-**Platform:** Production - 8 cities, 1,501 artists, 9,803 images (100% searchable)
+**Platform:** Production - 8 cities, 3,553 artists, 9,803 images (100% searchable)
 
 **Live Cities:** Austin, Atlanta, Los Angeles, New York, Chicago, Portland, Seattle, Miami
+
+**Pending Pipeline:** 2,178 artists need image scraping
 
 **Core Features Working:**
 - Multi-modal search (image, text, Instagram post/profile links)
@@ -20,7 +22,7 @@ Status: Production Ready - 8 Cities Live + Admin Panel
 - **Multi-location support** (Free: 1 location, Pro: up to 20)
 - International artist support (195+ countries)
 - Storybook component development
-- **Admin panel** (magic link auth, mining dashboard, featured artist management)
+- **Admin panel** (magic link auth, mining dashboard, featured artist management, **pipeline control**)
 
 ## Completed Phases
 
@@ -33,18 +35,18 @@ Status: Production Ready - 8 Cities Live + Admin Panel
 | 5 | ✅ | 5-step onboarding + test user infrastructure |
 | 6 | ✅ | Portfolio management (free 20, pro 100, pinning) |
 | 7 | ✅ | Profile editor + delete flow |
+| 8 | ✅ | Legal pages (terms, privacy, about, contact - Stripe-ready) |
+| 10 | ✅ | Email notifications (Resend - welcome, sync failures, rate limiting, unsubscribe) |
 | 11 | ✅ | Instagram auto-sync for Pro (daily cron) |
 | 12 | ✅ | Search ranking boosts + Pro/Featured badges |
-| 15 | ✅ | Multi-location support (international, tier-based limits) |
 | 14 | ✅ | Admin panel (mining dashboard, featured artist management) |
+| 15 | ✅ | Multi-location support (international, tier-based limits) |
 
 ## Pending Phases
 
 | Phase | Description |
 |-------|-------------|
-| 8 | Legal pages (terms, privacy, about) |
 | 9 | Stripe subscription + webhooks |
-| 10 | Email notifications (Resend) |
 | 13 | Analytics dashboard (Pro only) |
 
 ## Ready-to-Run Pipelines
@@ -55,6 +57,20 @@ npm run mine:hashtags              # ~$2.60/1K posts
 npm run mine:followers             # ~$0.10/1K followers
 npm run mine:status                # View stats
 ```
+
+**Content Pipeline** (process artists to searchable):
+```bash
+npm run scrape-instagram           # Apify parallel scraping
+npm run process-images             # Upload to Supabase Storage
+python3 scripts/embeddings/local_batch_embeddings.py  # Generate CLIP embeddings
+npx tsx scripts/embeddings/create-vector-index.ts     # Rebuild vector index
+```
+
+**Admin Pipeline Control** (via `/admin/pipeline`):
+- View pipeline stage counts (Need Images → Need Embeddings → Complete)
+- Trigger jobs from UI (Scrape, Generate Embeddings, Rebuild Index)
+- Retry failed scraping jobs
+- View job history with progress tracking
 
 **New City Setup:**
 1. Add to `lib/constants/cities.ts`
