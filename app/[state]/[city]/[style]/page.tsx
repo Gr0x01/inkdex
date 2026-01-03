@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { getArtistsByStyleSeed, getStyleSeedBySlug, getStyleSeeds } from '@/lib/supabase/queries'
+import { getArtistsByStyleSeed, getStyleSeedBySlug, getStyleSeeds, getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { CITIES, STATES } from '@/lib/constants/cities'
 import ArtistCard from '@/components/search/ArtistCard'
@@ -14,17 +14,40 @@ import type { SearchResult } from '@/types/search'
 import Pagination from '@/components/pagination/Pagination'
 
 export async function generateStaticParams() {
-  // Use static style data instead of database query (can't use async queries in generateStaticParams)
-  // Generate params for all city × style combinations
+  // Fetch all cities with 3+ artists from database
+  const allCities = await getAllCitiesWithMinArtists(3)
+
+  if (!allCities || allCities.length === 0) {
+    console.error('Failed to fetch cities for style page generation, falling back to featured cities')
+    // Fallback to featured cities if database query fails
+    const params = []
+    for (const city of CITIES) {
+      const state = STATES.find((s) => s.code === city.state)
+      if (!state) continue
+
+      for (const style of styleSeedsData) {
+        params.push({
+          state: state.slug,
+          city: city.slug,
+          style: style.styleName,
+        })
+      }
+    }
+    return params
+  }
+
+  // Generate all city × style combinations
   const params = []
-  for (const city of CITIES) {
-    const state = STATES.find((s) => s.code === city.state)
+  for (const cityData of allCities) {
+    const state = STATES.find((s) => s.code === cityData.region)
     if (!state) continue
+
+    const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
 
     for (const style of styleSeedsData) {
       params.push({
         state: state.slug,
-        city: city.slug,
+        city: citySlug,
         style: style.styleName,
       })
     }
@@ -47,17 +70,23 @@ export async function generateMetadata({
   const currentPage = parseInt(page || '1', 10)
 
   const state = STATES.find((s) => s.slug === stateSlug)
-  const city = CITIES.find((c) => c.slug === citySlug)
   const styleSeed = await getStyleSeedBySlug(styleSlug)
 
-  if (!state || !city || !styleSeed) {
+  if (!state || !styleSeed) {
     return { title: 'Style Not Found' }
   }
 
+  // Check if this is a featured city, otherwise derive name from slug
+  const featuredCity = CITIES.find((c) => c.slug === citySlug)
+  const cityName = featuredCity?.name || citySlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+
   // Sanitize all user-facing strings to prevent XSS in metadata
-  const title = sanitizeForJsonLd(`${styleSeed.display_name} Tattoo Artists in ${city.name}, ${state.code} | Inkdex`)
+  const title = sanitizeForJsonLd(`${styleSeed.display_name} Tattoo Artists in ${cityName}, ${state.code} | Inkdex`)
   const description = sanitizeForJsonLd(
-    `${styleSeed.description} Discover ${styleSeed.display_name.toLowerCase()} tattoo artists in ${city.name}, ${state.code}. Browse portfolios and connect via Instagram.`
+    `${styleSeed.description} Discover ${styleSeed.display_name.toLowerCase()} tattoo artists in ${cityName}, ${state.code}. Browse portfolios and connect via Instagram.`
   )
 
   // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
@@ -75,10 +104,10 @@ export async function generateMetadata({
       siteName: 'Inkdex',
       images: [
         {
-          url: '/og-style-default.jpg', // TODO: Use style seed image for OG
+          url: '/og-style-default.jpg',
           width: 1200,
           height: 630,
-          alt: sanitizeForJsonLd(`${styleSeed.display_name} Tattoo in ${city.name}, ${state.code}`),
+          alt: sanitizeForJsonLd(`${styleSeed.display_name} Tattoo in ${cityName}, ${state.code}`),
         },
       ],
     },
@@ -105,10 +134,16 @@ export default async function StylePage({
   const { page } = await searchParams
 
   const state = STATES.find((s) => s.slug === stateSlug)
-  const city = CITIES.find((c) => c.slug === citySlug)
   const styleSeed = await getStyleSeedBySlug(styleSlug)
 
-  if (!state || !city || !styleSeed) notFound()
+  if (!state || !styleSeed) notFound()
+
+  // Check if this is a featured city, otherwise derive name from slug
+  const featuredCity = CITIES.find((c) => c.slug === citySlug)
+  const cityName = featuredCity?.name || citySlug
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
 
   // Parse pagination
   const currentPage = parseInt(page || '1', 10)
@@ -116,7 +151,7 @@ export default async function StylePage({
   const offset = (currentPage - 1) * limit
 
   // Get artists whose work matches this style (using pre-fetched style seed embedding)
-  const { artists, total } = await getArtistsByStyleSeed(styleSeed, city.name, limit, offset)
+  const { artists, total } = await getArtistsByStyleSeed(styleSeed, cityName, limit, offset)
   const totalPages = Math.ceil(total / limit)
 
   // Get editorial content for potential use in schema
@@ -142,7 +177,7 @@ export default async function StylePage({
       {
         '@type': 'ListItem',
         position: 3,
-        name: sanitizeForJsonLd(city.name),
+        name: sanitizeForJsonLd(cityName),
         item: sanitizeForJsonLd(`${process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'}/${stateSlug}/${citySlug}`),
       },
       {
@@ -161,7 +196,7 @@ export default async function StylePage({
     ? {
         '@context': 'https://schema.org',
         '@type': 'Article',
-        headline: sanitizeForJsonLd(`${styleSeed.display_name} Tattoo Artists in ${city.name}, ${state.code}`),
+        headline: sanitizeForJsonLd(`${styleSeed.display_name} Tattoo Artists in ${cityName}, ${state.code}`),
         description: sanitizeForJsonLd(editorialContent.intro.paragraphs[0]),
         articleBody: sanitizeForJsonLd(
           [
@@ -217,7 +252,7 @@ export default async function StylePage({
             </Link>
             <span className="text-neutral-600">/</span>
             <Link href={`/${stateSlug}/${citySlug}`} className="text-neutral-400 hover:text-white transition-colors">
-              {city.name}
+              {cityName}
             </Link>
             <span className="text-neutral-600">/</span>
             <span className="text-white">{styleSeed.display_name}</span>
@@ -235,7 +270,7 @@ export default async function StylePage({
                 {styleSeed.display_name} Tattoo Artists
               </h1>
               <p className="mt-4 font-display text-xl text-neutral-300">
-                in {city.name}, {state.code}
+                in {cityName}, {state.code}
               </p>
               {/* Editorial intro content or fallback to description */}
               {(() => {
@@ -267,7 +302,7 @@ export default async function StylePage({
                 }
               })()}
               <p className="mt-6 text-base text-neutral-500">
-                Showing <span className="font-medium text-white">{total.toLocaleString()}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {city.name}.
+                Showing <span className="font-medium text-white">{total.toLocaleString()}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {cityName}.
               </p>
 
               {/* Internal Links */}
@@ -276,7 +311,7 @@ export default async function StylePage({
                   href={`/${stateSlug}/${citySlug}`}
                   className="inline-flex items-center rounded-lg bg-neutral-800 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 transition-colors"
                 >
-                  All {city.name} Artists
+                  All {cityName} Artists
                 </Link>
                 <Link
                   href="/"
@@ -334,7 +369,7 @@ export default async function StylePage({
           {artists.length === 0 ? (
             <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-12 text-center">
               <p className="text-lg text-neutral-400">
-                No {styleSeed.display_name.toLowerCase()} artists found in {city.name} yet.
+                No {styleSeed.display_name.toLowerCase()} artists found in {cityName} yet.
               </p>
               <p className="mt-2 text-sm text-neutral-500">
                 Check back soon as we add more artists!
@@ -344,7 +379,7 @@ export default async function StylePage({
             <>
               <div className="mb-8 flex items-center justify-between">
                 <h2 className="font-display text-2xl font-bold text-white">
-                  {styleSeed.display_name} Artists in {city.name}
+                  {styleSeed.display_name} Artists in {cityName}
                 </h2>
                 <p className="text-sm text-neutral-500">{total} total results</p>
               </div>
@@ -373,7 +408,7 @@ export default async function StylePage({
       <div className="border-t border-neutral-800 bg-[#0a0a0a] py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="mb-6 font-display text-2xl font-bold text-white">
-            Explore Other Styles in {city.name}
+            Explore Other Styles in {cityName}
           </h2>
           <div className="flex flex-wrap gap-3">
             {(await getStyleSeeds())
