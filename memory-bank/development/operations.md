@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2025-12-29 (Updated: Parallelization guidance added)
+Last-Updated: 2026-01-03
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -233,6 +233,70 @@ npm run batch-embeddings    # Node.js orchestration for batch processing
 # Phase 7: SEO
 npm run seed-styles         # Populate style_seeds table
 ```
+
+### Instagram Mining Pipeline Commands
+```bash
+# Hashtag Mining - Discover artists from Instagram hashtags
+npm run mine:hashtags                              # Interactive mode
+npm run mine:hashtags -- --hashtag blackworktattoo --posts 100  # Specific hashtag
+npm run mine:hashtags -- --skip-images             # Bio-only filter (no OpenAI cost)
+npm run mine:hashtags -- --dry-run                 # Cost estimate only
+
+# Follower Mining - Mine followers of seed accounts
+npm run mine:followers                             # Interactive mode
+npm run mine:followers -- --type supply_company    # Filter by seed type
+npm run mine:followers -- --dry-run                # Cost estimate only
+
+# Batch Classification - Process pending candidates with GPT-5-mini
+npm run mine:classify                              # Process all pending
+npm run mine:classify -- --limit 50                # Limit batch size
+npm run mine:classify -- --dry-run                 # Show what would be processed
+
+# Status & Monitoring
+npm run mine:status                                # View stats, costs, city distribution
+```
+
+### Mining Pipeline Workflow
+
+**Two-Stage Artist Classification:**
+1. **Stage 1: Bio Keywords** (Free, instant)
+   - Checks Instagram bio for tattoo-related keywords
+   - Keywords: `tattoo`, `ink`, `booking`, `flash`, style names, etc.
+   - ~70% of real artists caught here
+
+2. **Stage 2: GPT-5-mini Image Classification** (Paid, ~$0.00012/profile)
+   - For profiles that fail bio check but may have tattoo portfolios
+   - Downloads 6 images, converts to base64 (Instagram CDN URLs expire)
+   - Uses flex tier pricing for 50% cost reduction
+   - Requires 3+ tattoo images to pass
+
+**Typical Workflow:**
+```bash
+# 1. Mine hashtags with --skip-images (fast, free filtering)
+npm run mine:hashtags -- --hashtag traditionaltattoo --posts 500 --skip-images
+
+# 2. Check status - see how many pending candidates
+npm run mine:status
+
+# 3. Run batch classification on pending candidates
+npm run mine:classify -- --limit 100
+
+# 4. Verify results
+npm run mine:status
+```
+
+**Database Tables:**
+- `hashtag_mining_runs` - Tracks hashtag mining runs (posts, handles, costs)
+- `follower_mining_runs` - Tracks follower mining runs
+- `mining_candidates` - All discovered profiles with classification status
+  - `bio_filter_passed` (boolean) - Did bio keywords match?
+  - `image_filter_passed` (boolean/null) - Did images pass? (null = pending)
+
+**Cost Estimates (Flex Tier):**
+- Hashtag scraping: ~$0.004/post (Apify)
+- Bio filtering: Free
+- Image classification: ~$0.00012/profile (GPT-5-mini flex, 6 images)
+- 10,000 profiles classified: ~$1.20
 
 ### Database Commands
 ```bash

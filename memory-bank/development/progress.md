@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-03
 Maintainer: RB
 Status: Production Ready
 ---
@@ -11,12 +11,19 @@ Status: Production Ready
 | Metric | Value |
 |--------|-------|
 | Cities | 8 |
-| Artists | 1,501 |
+| Artists | 1,503 |
 | Images | 9,803 (100% with embeddings) |
 | Static Pages | ~1,600 |
 | SEO Content | ~65,000 words |
 
 ## Recent Completions
+
+### Jan 3, 2026
+- **Batch classification script** - `npm run mine:classify`
+  - Processes pending mining candidates (bio filter failed, images not classified)
+  - Downloads images as base64 (OpenAI can't fetch Instagram CDN URLs)
+  - GPT-5-mini with flex tier pricing (~$0.00012/profile)
+  - Auto-inserts passing artists with `discovery_source: hashtag_mining_classified`
 
 ### Jan 7, 2026
 - **Phase 15 complete** - Multi-location support for artists
@@ -78,7 +85,7 @@ Status: Production Ready
 
 1. **IVFFlat** over HNSW - Better for our 10k vector scale
 2. **Apify** over Instaloader - 10x faster scraping
-3. **GPT-5-nano** for classification - $0.01/2,500 images
+3. **GPT-5-mini flex** for classification - ~$0.00012/profile (6 images)
 4. **Hybrid CLIP** - 90% cost reduction vs Modal-only
 5. **Handle matching** for claims - All artists have handles, none have IDs
 

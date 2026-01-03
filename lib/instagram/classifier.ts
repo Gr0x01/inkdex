@@ -20,7 +20,8 @@ export interface ClassifierResult {
 }
 
 // Tattoo artist bio keywords (case-insensitive)
-const BIO_KEYWORDS = [
+// Exported for use in bulk mining operations
+export const BIO_KEYWORDS = [
   'tattoo',
   'tattooist',
   'tattoo artist',
@@ -34,6 +35,50 @@ const BIO_KEYWORDS = [
   'tattoo studio',
 ];
 
+// Extended keywords for bulk discovery (broader matching)
+// These catch professional artists with style-focused or booking-focused bios
+export const EXTENDED_BIO_KEYWORDS = [
+  ...BIO_KEYWORDS,
+  // Booking/availability signals
+  'booking',
+  'appointments',
+  'dm for',
+  'book now',
+  'books open',
+  'books closed',
+  'waitlist',
+  // Professional terms
+  'flash',
+  'custom work',
+  'guest artist',
+  'resident artist',
+  // Style keywords (strong artist signal)
+  'blackwork',
+  'fineline',
+  'fine line',
+  'traditional',
+  'neo-traditional',
+  'realism',
+  'portrait',
+  'geometric',
+  'dotwork',
+  'watercolor',
+  'japanese',
+  'irezumi',
+  'tribal',
+  'new school',
+  'old school',
+  'lettering',
+  'script',
+  'color realism',
+  'black and grey',
+  'black & grey',
+  'ornamental',
+  'mandala',
+  'minimalist',
+  'illustrative',
+];
+
 /**
  * Check if bio contains tattoo-related keywords
  */
@@ -42,6 +87,38 @@ function checkBioForTattooKeywords(bio: string | undefined): boolean {
 
   const bioLower = bio.toLowerCase();
   return BIO_KEYWORDS.some(keyword => bioLower.includes(keyword));
+}
+
+/**
+ * Quick bio-only check for bulk mining operations
+ * Uses extended keywords for broader matching
+ *
+ * @param bio - Instagram bio text
+ * @param useExtended - Whether to use extended keywords (default: true)
+ * @returns true if bio indicates tattoo artist
+ */
+export function isTattooArtistByBio(
+  bio: string | undefined,
+  useExtended: boolean = true
+): boolean {
+  if (!bio) return false;
+
+  const bioLower = bio.toLowerCase();
+  const keywords = useExtended ? EXTENDED_BIO_KEYWORDS : BIO_KEYWORDS;
+  return keywords.some(keyword => bioLower.includes(keyword));
+}
+
+/**
+ * Get matching keywords from bio (for debugging/logging)
+ *
+ * @param bio - Instagram bio text
+ * @returns Array of matched keywords
+ */
+export function getMatchingBioKeywords(bio: string | undefined): string[] {
+  if (!bio) return [];
+
+  const bioLower = bio.toLowerCase();
+  return EXTENDED_BIO_KEYWORDS.filter(keyword => bioLower.includes(keyword));
 }
 
 /**

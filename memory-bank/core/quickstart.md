@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-01
+Last-Updated: 2026-01-03
 Maintainer: RB
-Status: Production Ready - 8 Cities Live
+Status: Production Ready - 8 Cities Live + Mining Pipeline
 ---
 
 # Quickstart: Inkdex
@@ -31,13 +31,22 @@ Inkdex - AI-powered tattoo artist discovery platform where users search in *thei
 ## Key Commands
 ```bash
 # Development
-npm run dev              # Start Next.js dev server (once initialized)
+npm run dev              # Start Next.js dev server
 npm run build            # Build for production
 npm run lint             # Run ESLint
 npm run type-check       # TypeScript type checking
+npm run storybook        # Start Storybook dev server
 
-# Data Pipeline (once scripts are built)
-npm run analyze-cities   # DataForSEO city analysis (Phase 0 - DONE)
+# Instagram Mining Pipeline
+npm run mine:hashtags              # Mine artists from Instagram hashtags
+npm run mine:hashtags -- --hashtag blackworktattoo --posts 100 --skip-images
+npm run mine:followers             # Mine from seed account followers
+npm run mine:classify              # Batch classify pending candidates (GPT-5-mini)
+npm run mine:classify -- --limit 50 --dry-run  # Preview what would be classified
+npm run mine:status                # View mining statistics and costs
+
+# Data Pipeline
+npm run analyze-cities   # DataForSEO city analysis
 npm run discover-artists # Google Maps artist discovery
 npm run scrape-instagram # Apify Instagram portfolio scraping
 npm run generate-embeddings # Modal.com CLIP embedding generation
@@ -97,6 +106,9 @@ DATAFORSEO_PASSWORD=
 # Instagram OAuth (for post-MVP)
 INSTAGRAM_CLIENT_ID=
 INSTAGRAM_CLIENT_SECRET=
+
+# Apify (Instagram Mining)
+APIFY_API_TOKEN=
 
 # Analytics
 NEXT_PUBLIC_GA_ID=
