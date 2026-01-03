@@ -14,7 +14,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { ProBadge } from '@/components/badges/ProBadge';
 
@@ -44,8 +45,8 @@ export function SyncSettingsCard() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [toggling, setToggling] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showHistory, setShowHistory] = useState(false);
+  const [_error, setError] = useState<string | null>(null);
+  const [_showHistory, _setShowHistory] = useState(false);
 
   // Fetch status on mount
   const fetchStatus = useCallback(async () => {
@@ -123,7 +124,7 @@ export function SyncSettingsCard() {
   };
 
   // Format date for display
-  const formatDate = (dateString: string) => {
+  const _formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -174,13 +175,13 @@ export function SyncSettingsCard() {
         <p className="font-body text-sm text-gray-600 mb-3">
           Automatically sync new tattoo posts from Instagram daily.
         </p>
-        <a
+        <Link
           href="/dashboard/upgrade"
           className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-purple-600 hover:text-purple-700 transition-colors"
         >
           Upgrade to Pro
           <span className="text-xs">→</span>
-        </a>
+        </Link>
       </section>
     );
   }

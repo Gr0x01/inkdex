@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
             // Use existing embeddings - instant search!
             console.log(`[Profile Search] Found in DB with ${existingArtist.portfolio_images.length} images - using existing embeddings`)
 
-            const embeddings = existingArtist.portfolio_images.map((img: any) => {
+            const embeddings = existingArtist.portfolio_images.map((img: { embedding: string | number[] }) => {
               // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
               if (typeof img.embedding === 'string') {
                 return JSON.parse(img.embedding)
@@ -336,7 +336,7 @@ export async function POST(request: NextRequest) {
           // Filter images client-side for active status and non-null embeddings
           if (artist) {
             artist.portfolio_images = artist.portfolio_images.filter(
-              (img: any) => img.status === 'active' && img.embedding != null
+              (img: { status: string; embedding: unknown }) => img.status === 'active' && img.embedding != null
             )
           }
 
@@ -357,7 +357,7 @@ export async function POST(request: NextRequest) {
           console.log(`[Similar Artist] Found ${artist.portfolio_images.length} images, aggregating embeddings...`)
 
           // Parse embeddings
-          const embeddings = artist.portfolio_images.map((img: any) => {
+          const embeddings = artist.portfolio_images.map((img: { embedding: string | number[] }) => {
             if (typeof img.embedding === 'string') {
               return JSON.parse(img.embedding)
             }

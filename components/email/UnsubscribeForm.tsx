@@ -9,8 +9,9 @@
  * 3. Unsubscribe from all emails
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 
 export function UnsubscribeForm() {
   const searchParams = useSearchParams();
@@ -71,9 +72,9 @@ export function UnsubscribeForm() {
         </p>
         <p className="text-sm text-gray-500 mt-4">
           Changed your mind?{' '}
-          <a href="/dashboard" className="text-blue-600 hover:underline">
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
             Update your preferences in your dashboard
-          </a>
+          </Link>
         </p>
       </div>
     );

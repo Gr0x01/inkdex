@@ -21,7 +21,6 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Crown, CloudDownload, AlertCircle } from 'lucide-react';
 import { MAX_PINNED_IMAGES } from '@/lib/constants/portfolio';
 import { SyncSettingsCard } from './SyncSettingsCard';
-import { ProBadge } from '@/components/badges/ProBadge';
 
 interface PortfolioImage {
   id: string;
@@ -47,10 +46,10 @@ interface PortfolioManagerProps {
 
 export default function PortfolioManager({
   artistId,
-  artistHandle,
+  artistHandle: _artistHandle,
   isPro,
   initialImages,
-  visibleCount,
+  visibleCount: _visibleCount,
   isAtLimit,
 }: PortfolioManagerProps) {
   const router = useRouter();
@@ -62,7 +61,6 @@ export default function PortfolioManager({
 
   // Filter visible images only (hidden images not shown in Free tier)
   const visibleImages = images.filter((img) => !img.hidden);
-  const currentCount = visibleImages.length;
 
   // Separate pinned and unpinned images for pro users
   const pinnedImages = visibleImages
@@ -201,9 +199,9 @@ export default function PortfolioManager({
       }
 
       router.refresh();
-    } catch (err: any) {
+    } catch (err) {
       console.error('[Portfolio] Toggle pin failed:', err);
-      setError(err.message || 'Failed to update pin status');
+      setError(err instanceof Error ? err.message : 'Failed to update pin status');
       setImages(initialImages);
     } finally {
       setPinningInProgress((prev) => {

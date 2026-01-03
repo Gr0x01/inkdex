@@ -21,8 +21,16 @@ const deleteProfileSchema = z.object({
   artistId: z.string().uuid(),
 });
 
+interface SupabaseClientWithStorage {
+  storage: {
+    from: (bucket: string) => {
+      remove: (paths: string[]) => Promise<{ error: Error | null }>
+    }
+  }
+}
+
 async function deleteStorageImages(
-  supabase: any,
+  supabase: SupabaseClientWithStorage,
   storagePaths: string[]
 ): Promise<void> {
   if (storagePaths.length === 0) return;
@@ -105,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     const storagePaths: string[] = [];
     if (portfolioImages) {
-      portfolioImages.forEach((img: any) => {
+      portfolioImages.forEach((img: { storage_original_path?: string | null; storage_thumb_320?: string | null; storage_thumb_640?: string | null; storage_thumb_1280?: string | null }) => {
         if (img.storage_original_path) storagePaths.push(img.storage_original_path);
         if (img.storage_thumb_320) storagePaths.push(img.storage_thumb_320);
         if (img.storage_thumb_640) storagePaths.push(img.storage_thumb_640);

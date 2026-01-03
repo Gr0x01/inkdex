@@ -10,7 +10,7 @@ import WelcomeEmail from './templates/welcome';
 import SyncFailedEmail from './templates/sync-failed';
 import SubscriptionCreatedEmail from './templates/subscription-created';
 import DowngradeWarningEmail from './templates/downgrade-warning';
-import { sendEmail, type EmailType } from './resend';
+import { sendEmail, type EmailType as _EmailType } from './resend';
 import {
   welcomeEmailSchema,
   syncFailedEmailSchema,

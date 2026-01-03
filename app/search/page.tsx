@@ -1,67 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Search result types vary */
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ArtistCard from '@/components/search/ArtistCard'
-import CityFilter from '@/components/search/CityFilter'
+import LocationFilter from '@/components/search/LocationFilter'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
+import { generatePageNumbers } from '@/components/pagination/Pagination'
 import { createClient } from '@/lib/supabase/server'
 import { searchArtistsWithCount } from '@/lib/supabase/queries'
-import { STATES } from '@/lib/constants/cities'
 import { getImageUrl } from '@/lib/utils/images'
+import { slugToName } from '@/lib/utils/location'
 
 interface SearchPageProps {
   searchParams: Promise<{
     id?: string
+    country?: string
+    region?: string
     city?: string
     page?: string
   }>
 }
 
-/**
- * Generate page numbers with truncation for large page counts
- * Examples:
- *   - 5 pages: [1, 2, 3, 4, 5]
- *   - 10 pages, on page 1: [1, 2, 3, ..., 10]
- *   - 10 pages, on page 5: [1, ..., 4, 5, 6, ..., 10]
- */
-function generatePageNumbers(current: number, total: number): (number | '...')[] {
-  // Show all pages if 7 or fewer
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1)
-  }
-
-  const pages: (number | '...')[] = []
-
-  // Always show first page
-  pages.push(1)
-
-  // Calculate range around current page
-  const startPage = Math.max(2, current - 1)
-  const endPage = Math.min(total - 1, current + 1)
-
-  // Add ellipsis after first page if needed
-  if (startPage > 2) {
-    pages.push('...')
-  }
-
-  // Add pages around current
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i)
-  }
-
-  // Add ellipsis before last page if needed
-  if (endPage < total - 1) {
-    pages.push('...')
-  }
-
-  // Always show last page
-  if (total > 1) {
-    pages.push(total)
-  }
-
-  return pages
-}
-
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { id, city, page } = await searchParams
+  const { id, country, region, city, page } = await searchParams
 
   // Require search ID
   if (!id) {
@@ -98,21 +58,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Extract artist_id_source for exclusion (similar_artist searches)
   const excludeArtistId = search.artist_id_source || null
 
-  // Parse location filter
-  let cities: string[] | null = null
-  if (city) {
-    if (city.startsWith('state:')) {
-      const stateSlug = city.replace('state:', '')
-      const state = STATES.find(s => s.slug === stateSlug)
-      cities = state ? (state.cities as unknown as string[]) : null
-    } else {
-      cities = [city]
-    }
-  }
-  const cityFilter = cities && cities.length > 0 ? cities[0] : null
+  // Parse location filters - convert slugs to proper format for DB query
+  const countryFilter = country?.toUpperCase() || null
+  const regionFilter = region?.toUpperCase() || null
+  // Convert city slug to name using centralized utility
+  const cityFilter = city ? slugToName(city) : null
 
   // Search artists with count (single combined query)
   const { artists: rawResults, totalCount } = await searchArtistsWithCount(embedding, {
+    country: countryFilter,
+    region: regionFilter,
     city: cityFilter,
     limit,
     offset,
@@ -171,6 +126,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Build pagination URLs with proper sanitization
   const buildSearchUrl = (pageNum: number) => {
     const params = new URLSearchParams({ id })
+    if (country) params.set('country', country)
+    if (region) params.set('region', region)
     if (city) params.set('city', city)
     params.set('page', pageNum.toString())
     return `/search?${params.toString()}`
@@ -333,7 +290,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* City Filter - Mobile Optimized */}
             <div className="flex-shrink-0">
-              <CityFilter />
+              <ErrorBoundary>
+                <LocationFilter />
+              </ErrorBoundary>
             </div>
           </div>
         </div>

@@ -37,7 +37,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // 4. Calculate classified image count
-    const fetchedImages = (session.fetched_images as any[]) || [];
+    const fetchedImages = (session.fetched_images as Array<{ classified?: boolean }>) || [];
     const imageCount = fetchedImages.filter(img => img.classified === true).length;
 
     // 5. Return status and count

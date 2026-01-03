@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase response types vary */
 /**
  * Dashboard Profile Editor
  *

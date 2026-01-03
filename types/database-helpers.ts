@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- JSONB requires any type for Supabase */
 /**
  * Database helper utilities for type-safe operations
  */

@@ -27,6 +27,7 @@ export default function ImageUpload({
   const [isFocused, setIsFocused] = useState(false)
 
   const onDrop = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- react-dropzone returns dynamic file rejection types
     (acceptedFiles: File[], rejectedFiles: any[]) => {
       setError(null)
 

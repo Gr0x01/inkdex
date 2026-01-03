@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Instagram API responses vary */
 /**
  * Instagram OAuth Token Refresh Utilities
  *

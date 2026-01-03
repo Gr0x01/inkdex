@@ -14,7 +14,7 @@ import {
   Head,
   Heading,
   Html,
-  Img,
+  Img as _Img,
   Link,
   Preview,
   Section,

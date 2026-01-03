@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Fetch API requires flexible types */
 /**
  * Fetch with Timeout Utility
  *
@@ -94,7 +95,7 @@ export async function fetchJSON<T = any>(
 
   try {
     return await response.json();
-  } catch (error) {
+  } catch (_error) {
     throw new Error(`Invalid JSON response from ${url}`);
   }
 }

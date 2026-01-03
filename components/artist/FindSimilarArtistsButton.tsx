@@ -11,7 +11,7 @@ interface FindSimilarArtistsButtonProps {
 
 export default function FindSimilarArtistsButton({
   artistId,
-  artistName,
+  artistName: _artistName,
   city,
 }: FindSimilarArtistsButtonProps) {
   const router = useRouter()

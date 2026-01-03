@@ -23,7 +23,7 @@ export default function AccountSettings({
   memberSince,
   email,
   artistId,
-  artistName,
+  artistName: _artistName,
 }: AccountSettingsProps) {
   // Delete modal state
   const [showDeleteWarning, setShowDeleteWarning] = useState(false)

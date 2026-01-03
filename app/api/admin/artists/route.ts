@@ -91,8 +91,25 @@ export async function GET(request: NextRequest) {
         // Extract total count from first row (window function COUNT(*) OVER())
         const totalCount = data && data.length > 0 ? data[0].total_count : 0;
 
+        // Define admin artist row type
+        interface AdminArtistRow {
+          id: string
+          name: string
+          instagram_handle: string | null
+          city: string | null
+          state: string | null
+          is_featured: boolean
+          is_pro: boolean
+          verification_status: string
+          follower_count: number | null
+          slug: string
+          deleted_at: string | null
+          image_count: number
+          total_count?: number
+        }
+
         // Map RPC results to expected format (remove total_count field)
-        const artists = (data || []).map((row: any) => ({
+        const artists = ((data || []) as AdminArtistRow[]).map((row) => ({
           id: row.id,
           name: row.name,
           instagram_handle: row.instagram_handle,

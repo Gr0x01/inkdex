@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Modal API responses vary */
 /**
  * Modal.com API Client for CLIP Embedding Generation
  *

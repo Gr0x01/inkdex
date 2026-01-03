@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase response types vary */
 import { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { STATES, CITIES } from '@/lib/constants/cities'

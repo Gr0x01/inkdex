@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import CompactArtistCard from './CompactArtistCard';
-import type { FeaturedArtist } from '@/lib/mock/featured-data';
+import type { FeaturedArtist as _FeaturedArtist } from '@/lib/mock/featured-data';
 import { getTestArtistSafe, TEST_USERS, FALLBACK_ARTIST } from '@/.storybook/test-data';
 
 const meta = {

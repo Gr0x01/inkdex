@@ -2,6 +2,87 @@ import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
 
 /**
+ * Internal types for RPC results
+ * These match the shape returned by Supabase RPC functions
+ */
+interface SearchArtistRpcResult {
+  artist_id: string
+  artist_name: string
+  artist_slug: string
+  city: string
+  region: string | null
+  country_code: string | null
+  profile_image_url: string | null
+  follower_count: number | null
+  shop_name: string | null
+  instagram_url: string | null
+  is_verified: boolean
+  is_pro: boolean
+  is_featured: boolean
+  matching_images: Array<{
+    thumbnail_url: string
+    image_url: string
+    similarity: number
+    likes_count: number | null
+  }> | null
+  similarity: number
+  max_likes: number | null
+  total_count?: number
+}
+
+interface ArtistLocationRow {
+  artist_id: string
+  artists: ArtistRow | null
+}
+
+interface ArtistRow {
+  id: string
+  name: string
+  slug: string
+  city?: string
+  state?: string
+  shop_name?: string | null
+  verification_status?: string
+  profile_image_url?: string | null
+  instagram_handle?: string | null
+  follower_count?: number | null
+  is_pro?: boolean
+  portfolio_images?: PortfolioImageRow[]
+}
+
+interface PortfolioImageRow {
+  id: string
+  storage_thumb_640?: string | null
+  instagram_url?: string | null
+  likes_count?: number | null
+  status?: string
+}
+
+interface StateCityRow {
+  city: string
+  artist_count: number
+}
+
+interface FeaturedImageRow {
+  id: string
+  storage_thumb_640: string | null
+  artists: { name: string; slug: string; verification_status: string } | Array<{ name: string; slug: string; verification_status: string }>
+}
+
+interface RelatedArtistRow {
+  artist_id: string
+  artist_name: string
+  artist_slug: string
+  city: string
+  profile_image_url: string | null
+  instagram_url: string | null
+  shop_name: string | null
+  is_verified: boolean
+  follower_count: number | null
+  similarity: number | null
+}
+
+/**
  * Validation helpers
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -55,15 +136,33 @@ function validateFloat(num: number, fieldName: string, min: number, max: number)
  * Escape special characters in LIKE/ILIKE patterns to prevent pattern injection
  * @param str - User-provided string to escape
  * @returns Escaped string safe for use in LIKE/ILIKE queries
+ *
+ * PERFORMANCE NOTE: ILIKE queries with escaped patterns still perform case-insensitive
+ * matching which can be slower than exact equality at scale. The migration includes
+ * functional indexes on LOWER(city) and LOWER(region) to optimize these queries.
+ * If performance degrades at scale (>100k artists), consider:
+ * 1. Storing pre-normalized lowercase city/region columns
+ * 2. Using exact equality with pre-normalized data
+ * 3. Adding trigram indexes (pg_trgm) for fuzzy matching
+ * Current approach prioritizes flexibility over raw performance.
  */
 function escapeLikePattern(str: string): string {
   return str.replace(/[%_\\]/g, '\\$&')
 }
 
 /**
+ * Location filter options for search functions
+ */
+export interface LocationFilter {
+  country?: string | null  // ISO 3166-1 alpha-2 (e.g., 'US', 'UK')
+  region?: string | null   // State/province code (e.g., 'TX', 'Ontario')
+  city?: string | null     // City name (e.g., 'Austin', 'London')
+}
+
+/**
  * Search artists by CLIP embedding vector
  * @param embedding - 768-dimension CLIP vector
- * @param options - Search options (threshold, limit, city filter, offset)
+ * @param options - Search options (threshold, limit, location filter, offset)
  * @returns Ranked artists with matching images
  */
 export async function searchArtistsByEmbedding(
@@ -71,9 +170,8 @@ export async function searchArtistsByEmbedding(
   options: {
     threshold?: number
     limit?: number
-    city?: string | null
     offset?: number
-  } = {}
+  } & LocationFilter = {}
 ) {
   // Validate embedding
   if (!Array.isArray(embedding) || embedding.length !== 768) {
@@ -88,6 +186,8 @@ export async function searchArtistsByEmbedding(
   const {
     threshold = 0.7,
     limit = 20,
+    country = null,
+    region = null,
     city = null,
     offset = 0,
   } = options
@@ -96,9 +196,9 @@ export async function searchArtistsByEmbedding(
   validateFloat(threshold, 'threshold', 0, 1)
   validateInteger(limit, 'limit', 1, 100)
   validateInteger(offset, 'offset', 0, 10000)
-  if (city !== null) {
-    validateString(city, 'city', 100)
-  }
+  if (country !== null) validateString(country, 'country', 10)
+  if (region !== null) validateString(region, 'region', 100)
+  if (city !== null) validateString(city, 'city', 100)
 
   // Sanitize embedding for SQL (explicit number validation prevents injection)
   const sanitizedEmbedding = embedding.map(n => {
@@ -113,6 +213,8 @@ export async function searchArtistsByEmbedding(
     match_threshold: threshold,
     match_count: limit,
     city_filter: city,
+    region_filter: region,
+    country_filter: country,
     offset_param: offset,
   })
 
@@ -123,11 +225,13 @@ export async function searchArtistsByEmbedding(
 
   // Transform RPC response: RPC returns matching_images as JSONB (auto-parsed),
   // but frontend expects it as 'images' with specific structure
-  return (data || []).map((result: any) => ({
+  return ((data || []) as SearchArtistRpcResult[]).map((result) => ({
     id: result.artist_id,
     name: result.artist_name,
     slug: result.artist_slug,
     city: result.city,
+    region: result.region,
+    country_code: result.country_code,
     profile_image_url: result.profile_image_url,
     follower_count: result.follower_count,
     shop_name: result.shop_name,
@@ -135,7 +239,7 @@ export async function searchArtistsByEmbedding(
     is_verified: result.is_verified,
     is_pro: result.is_pro ?? false,
     is_featured: result.is_featured ?? false,
-    images: (result.matching_images || []).map((img: any) => ({
+    images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,  // Use thumbnail_url (actual image path), not image_url (Instagram post URL)
       instagramUrl: img.image_url,  // Instagram post URL for linking
       similarity: img.similarity,
@@ -150,7 +254,7 @@ export async function searchArtistsByEmbedding(
  * Search artists by CLIP embedding with total count
  * Optimized version - single RPC call returns both results and count
  * @param embedding - 768-dimensional CLIP embedding vector
- * @param options - Search options (threshold, limit, city, offset)
+ * @param options - Search options (threshold, limit, location filter, offset)
  * @returns Object with artists array and totalCount
  */
 export async function searchArtistsWithCount(
@@ -158,9 +262,8 @@ export async function searchArtistsWithCount(
   options: {
     threshold?: number
     limit?: number
-    city?: string | null
     offset?: number
-  } = {}
+  } & LocationFilter = {}
 ) {
   // Validate embedding
   if (!Array.isArray(embedding) || embedding.length !== 768) {
@@ -171,11 +274,13 @@ export async function searchArtistsWithCount(
   }
 
   const supabase = await createClient()
-  const { threshold = 0.7, limit = 20, city = null, offset = 0 } = options
+  const { threshold = 0.7, limit = 20, country = null, region = null, city = null, offset = 0 } = options
 
   validateFloat(threshold, 'threshold', 0, 1)
   validateInteger(limit, 'limit', 1, 100)
   validateInteger(offset, 'offset', 0, 10000)
+  if (country !== null) validateString(country, 'country', 10)
+  if (region !== null) validateString(region, 'region', 100)
   if (city !== null) validateString(city, 'city', 100)
 
   const sanitizedEmbedding = embedding.map(n => {
@@ -188,6 +293,8 @@ export async function searchArtistsWithCount(
     match_threshold: threshold,
     match_count: limit,
     city_filter: city,
+    region_filter: region,
+    country_filter: country,
     offset_param: offset,
   })
 
@@ -200,11 +307,13 @@ export async function searchArtistsWithCount(
   const totalCount = data && data.length > 0 ? data[0].total_count : 0
 
   // Transform results
-  const artists = (data || []).map((result: any) => ({
+  const artists = ((data || []) as SearchArtistRpcResult[]).map((result) => ({
     id: result.artist_id,
     name: result.artist_name,
     slug: result.artist_slug,
     city: result.city,
+    region: result.region,
+    country_code: result.country_code,
     profile_image_url: result.profile_image_url,
     follower_count: result.follower_count,
     shop_name: result.shop_name,
@@ -212,7 +321,7 @@ export async function searchArtistsWithCount(
     is_verified: result.is_verified,
     is_pro: result.is_pro ?? false,
     is_featured: result.is_featured ?? false,
-    images: (result.matching_images || []).map((img: any) => ({
+    images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
       similarity: img.similarity,
@@ -284,6 +393,7 @@ export async function getArtistsByCity(city: string) {
 
   // ✅ OPTIMIZED: Single query with JOIN (no N+1)
   // Use escaped pattern to prevent ILIKE injection
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types don't support dynamic table joins
   const { data, error } = await (supabase as any)
     .from('artist_locations')
     .select(`
@@ -298,14 +408,14 @@ export async function getArtistsByCity(city: string) {
   }
 
   // Extract unique artists from results
-  const artistsMap = new Map()
-  data.forEach((row: any) => {
+  const artistsMap = new Map<string, ArtistRow>()
+  ;(data as ArtistLocationRow[]).forEach((row) => {
     if (row.artists && !artistsMap.has(row.artist_id)) {
       artistsMap.set(row.artist_id, row.artists)
     }
   })
 
-  return Array.from(artistsMap.values()).sort((a: any, b: any) =>
+  return Array.from(artistsMap.values()).sort((a, b) =>
     (a.name || '').localeCompare(b.name || '')
   )
 }
@@ -369,7 +479,7 @@ export async function getFeaturedImages(limit: number = 30) {
   }
 
   // Transform to match FeaturedImage interface and generate public URLs
-  return data.map((item: any) => {
+  return (data as FeaturedImageRow[]).map((item) => {
     const artist = Array.isArray(item.artists) ? item.artists[0] : item.artists
     const publicUrl = getImageUrl(item.storage_thumb_640)
 
@@ -406,6 +516,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
 
   // ✅ OPTIMIZED: Single query with JOINs (artist_locations + portfolio_images)
   // Eliminates 1+1 pattern, ~2x faster
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types don't support dynamic table joins
   const { data, error } = await (supabase as any)
     .from('artist_locations')
     .select(`
@@ -437,9 +548,9 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
   }
 
   // Extract unique artists from location matches
-  const artistsMap = new Map()
+  const artistsMap = new Map<string, ArtistRow>()
 
-  data.forEach((row: any) => {
+  ;(data as ArtistLocationRow[]).forEach((row) => {
     const artist = row.artists
     if (!artist || artistsMap.has(artist.id)) return
 
@@ -447,20 +558,20 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
   })
 
   const artists = Array.from(artistsMap.values())
-    .sort((a: any, b: any) => {
+    .sort((a, b) => {
       // Sort by follower count desc, then name asc
-      if (b.follower_count !== a.follower_count) {
-        return b.follower_count - a.follower_count
+      if ((b.follower_count ?? 0) !== (a.follower_count ?? 0)) {
+        return (b.follower_count ?? 0) - (a.follower_count ?? 0)
       }
       return (a.name || '').localeCompare(b.name || '')
     })
 
   // Process artists and their portfolio images
   // Note: Supabase returns nested arrays for related data
-  const processedArtists = artists.map((artist: any) => {
+  const processedArtists = artists.map((artist) => {
     // artist.portfolio_images is an array of images for this artist
     const portfolioImages = Array.isArray(artist.portfolio_images)
-      ? artist.portfolio_images.map((img: any) => ({
+      ? artist.portfolio_images.map((img) => ({
           id: img.id,
           url: getImageUrl(img.storage_thumb_640),
           likes_count: img.likes_count,
@@ -481,7 +592,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
 
   // Filter artists with 4+ images and limit results
   const filteredArtists = processedArtists
-    .filter((artist: any) => artist.portfolio_images.length >= 4)
+    .filter((artist) => artist.portfolio_images.length >= 4)
     .slice(0, limit)
 
   return filteredArtists
@@ -532,10 +643,24 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
     return {}
   }
 
+  // Define processed artist type
+  interface ProcessedArtist {
+    id: string
+    name: string
+    slug: string
+    city: string | undefined
+    state: string | undefined
+    shop_name: string | null | undefined
+    verification_status: string | undefined
+    follower_count: number | null | undefined
+    is_pro: boolean | undefined
+    portfolio_images: Array<{ id: string; url: string; likes_count: number | null | undefined }>
+  }
+
   // Process all artists first
-  const allArtists = data.map((row: any) => {
+  const allArtists: ProcessedArtist[] = (data as ArtistRow[]).map((row) => {
     const portfolioImages = Array.isArray(row.portfolio_images)
-      ? row.portfolio_images.map((img: any) => ({
+      ? row.portfolio_images.map((img) => ({
           id: img.id,
           url: getImageUrl(img.storage_thumb_640),
           likes_count: img.likes_count,
@@ -554,7 +679,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
       is_pro: row.is_pro,
       portfolio_images: portfolioImages,
     }
-  }).filter((artist: any) => artist.portfolio_images.length >= 4)
+  }).filter((artist) => artist.portfolio_images.length >= 4)
 
   // Randomize using Fisher-Yates shuffle
   const shuffled = [...allArtists]
@@ -564,9 +689,9 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
   }
 
   // Group randomized artists by state (taking first limitPerState per state)
-  const artistsByState: Record<string, any[]> = {}
+  const artistsByState: Record<string, ProcessedArtist[]> = {}
 
-  shuffled.forEach((artist: any) => {
+  shuffled.forEach((artist) => {
     const stateCode = artist.state
 
     if (!stateCode) return
@@ -620,7 +745,7 @@ export async function getRelatedArtists(
   }
 
   // Transform to expected format
-  return (relatedArtists || []).map((artist: any) => ({
+  return ((relatedArtists || []) as RelatedArtistRow[]).map((artist) => ({
     id: artist.artist_id,
     name: artist.artist_name,
     slug: artist.artist_slug,
@@ -656,14 +781,14 @@ export async function getStateWithCities(state: string) {
   }
 
   // Transform to expected format
-  const cities = (data || []).map((row: any) => ({
+  const cities = ((data || []) as StateCityRow[]).map((row) => ({
     name: row.city,
     slug: row.city.toLowerCase().replace(/\s+/g, '-'),
     artistCount: row.artist_count,
   }))
 
   // Calculate total
-  const total = cities.reduce((sum: number, city: any) => sum + city.artistCount, 0)
+  const total = cities.reduce((sum, city) => sum + city.artistCount, 0)
 
   return { cities, total }
 }
@@ -690,9 +815,23 @@ export async function getCityArtists(
 
   const supabase = await createClient()
 
+  // Define processed city artist type
+  interface ProcessedCityArtist {
+    id: string
+    name: string
+    slug: string
+    shop_name: string | null | undefined
+    verification_status: string | undefined
+    profile_image_url: string | null | undefined
+    instagram_handle: string | null | undefined
+    follower_count: number | null | undefined
+    portfolio_images: Array<{ id: string; url: string; instagram_url: string | null | undefined; likes_count: number | null | undefined }>
+  }
+
   // ✅ OPTIMIZED: Single query with JOIN (artist_locations + artists + portfolio_images)
   // Eliminates 1+1 pattern, ~2x faster
   // Use escaped pattern to prevent ILIKE injection
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types don't support dynamic table joins
   const { data, error, count } = await (supabase as any)
     .from('artist_locations')
     .select(
@@ -729,9 +868,9 @@ export async function getCityArtists(
   }
 
   // Transform data to group by unique artists and aggregate portfolio images
-  const artistsMap = new Map()
+  const artistsMap = new Map<string, ProcessedCityArtist>()
 
-  data.forEach((row: any) => {
+  ;(data as ArtistLocationRow[]).forEach((row) => {
     const artist = row.artists
     if (!artist) return
 
@@ -749,11 +888,11 @@ export async function getCityArtists(
       })
     }
 
-    const artistData = artistsMap.get(artist.id)
+    const artistData = artistsMap.get(artist.id)!
 
     // portfolio_images is an array from the INNER JOIN
     if (Array.isArray(artist.portfolio_images)) {
-      artist.portfolio_images.forEach((image: any) => {
+      artist.portfolio_images.forEach((image) => {
         if (image?.id) {
           const publicUrl = getImageUrl(image.storage_thumb_640)
           artistData.portfolio_images.push({
@@ -769,8 +908,138 @@ export async function getCityArtists(
 
   // Convert to array, filter, and sort
   const artists = Array.from(artistsMap.values())
-    .filter((artist: any) => artist.portfolio_images.length >= 1)
-    .sort((a: any, b: any) => {
+    .filter((artist) => artist.portfolio_images.length >= 1)
+    .sort((a, b) => {
+      // Sort by verification status desc, then name asc
+      if (a.verification_status !== b.verification_status) {
+        return b.verification_status === 'verified' ? 1 : -1
+      }
+      return (a.name || '').localeCompare(b.name || '')
+    })
+    .slice(offset, offset + limit)
+
+  return {
+    artists,
+    total: count ?? 0,
+  }
+}
+
+/**
+ * Get artists by location (country, region, city)
+ * Used for international location-based browse pages
+ */
+export async function getLocationArtists(
+  country: string,
+  region: string,
+  city: string,
+  limit: number = 50,
+  offset: number = 0
+) {
+  // Validate inputs
+  if (!/^[A-Z]{2}$/.test(country)) {
+    throw new Error('Invalid country code: must be 2 uppercase letters')
+  }
+  validateString(region, 'region', 50)
+  validateString(city, 'city', 100)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+
+  const supabase = await createClient()
+
+  // Define processed location artist type
+  interface ProcessedLocationArtist {
+    id: string
+    name: string
+    slug: string
+    shop_name: string | null | undefined
+    verification_status: string | undefined
+    profile_image_url: string | null | undefined
+    instagram_handle: string | null | undefined
+    follower_count: number | null | undefined
+    portfolio_images: Array<{ id: string; url: string; instagram_url: string | null | undefined; likes_count: number | null | undefined }>
+  }
+
+  // Query artist_locations with country, region, and city
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types don't support dynamic table joins
+  const { data, error, count } = await (supabase as any)
+    .from('artist_locations')
+    .select(
+      `
+      artist_id,
+      artists!inner (
+        id,
+        name,
+        slug,
+        shop_name,
+        verification_status,
+        profile_image_url,
+        instagram_handle,
+        follower_count,
+        portfolio_images!inner (
+          id,
+          storage_thumb_640,
+          instagram_url,
+          likes_count,
+          status
+        )
+      )
+    `,
+      { count: 'exact' }
+    )
+    .eq('country_code', country)
+    .ilike('region', escapeLikePattern(region))
+    .ilike('city', escapeLikePattern(city))
+    .eq('artists.portfolio_images.status', 'active')
+    .not('artists.portfolio_images.storage_thumb_640', 'is', null)
+
+  if (error) {
+    console.error('Error fetching location artists:', error)
+    return { artists: [], total: 0 }
+  }
+
+  // Transform data to group by unique artists and aggregate portfolio images
+  const artistsMap = new Map<string, ProcessedLocationArtist>()
+
+  ;(data as ArtistLocationRow[]).forEach((row) => {
+    const artist = row.artists
+    if (!artist) return
+
+    if (!artistsMap.has(artist.id)) {
+      artistsMap.set(artist.id, {
+        id: artist.id,
+        name: artist.name,
+        slug: artist.slug,
+        shop_name: artist.shop_name,
+        verification_status: artist.verification_status,
+        profile_image_url: artist.profile_image_url,
+        instagram_handle: artist.instagram_handle,
+        follower_count: artist.follower_count,
+        portfolio_images: [],
+      })
+    }
+
+    const artistData = artistsMap.get(artist.id)!
+
+    // portfolio_images is an array from the INNER JOIN
+    if (Array.isArray(artist.portfolio_images)) {
+      artist.portfolio_images.forEach((image) => {
+        if (image?.id) {
+          const publicUrl = getImageUrl(image.storage_thumb_640)
+          artistData.portfolio_images.push({
+            id: image.id,
+            url: publicUrl,
+            instagram_url: image.instagram_url,
+            likes_count: image.likes_count,
+          })
+        }
+      })
+    }
+  })
+
+  // Convert to array, filter, and sort
+  const artists = Array.from(artistsMap.values())
+    .filter((artist) => artist.portfolio_images.length >= 1)
+    .sort((a, b) => {
       // Sort by verification status desc, then name asc
       if (a.verification_status !== b.verification_status) {
         return b.verification_status === 'verified' ? 1 : -1
@@ -872,7 +1141,7 @@ export async function getArtistsByStyle(
   }
 
   // Transform to match SearchResult interface
-  const artists = (data || []).map((result: any) => ({
+  const artists = ((data || []) as SearchArtistRpcResult[]).map((result) => ({
     artist_id: result.artist_id,
     artist_name: result.artist_name,
     artist_slug: result.artist_slug,
@@ -882,7 +1151,7 @@ export async function getArtistsByStyle(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
-    matching_images: (result.matching_images || []).map((img: any) => ({
+    matching_images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
       similarity: img.similarity,
@@ -907,7 +1176,7 @@ export async function getArtistsByStyle(
  * @param offset - Pagination offset (default 0)
  */
 export async function getArtistsByStyleSeed(
-  styleSeed: { embedding: any },
+  styleSeed: { embedding: string | number[] | null },
   city: string | null = null,
   limit: number = 20,
   offset: number = 0
@@ -965,7 +1234,7 @@ export async function getArtistsByStyleSeed(
     return { artists: [], total: 0 }
   }
 
-  const artists = (data || []).map((result: any) => ({
+  const artists = ((data || []) as SearchArtistRpcResult[]).map((result) => ({
     artist_id: result.artist_id,
     artist_name: result.artist_name,
     artist_slug: result.artist_slug,
@@ -975,7 +1244,7 @@ export async function getArtistsByStyleSeed(
     shop_name: result.shop_name,
     instagram_url: result.instagram_url,
     is_verified: result.is_verified,
-    matching_images: (result.matching_images || []).map((img: any) => ({
+    matching_images: (result.matching_images || []).map((img) => ({
       url: img.thumbnail_url,
       instagramUrl: img.image_url,
       similarity: img.similarity,
@@ -1050,20 +1319,71 @@ export async function getArtistByInstagramHandle(handle: string) {
 /**
  * Get cities with artist counts (for dynamic city filter dropdown)
  * @param minCount - Minimum number of artists per city (default 5)
+ * @param country - ISO country code filter (e.g., 'US', 'UK')
+ * @param region - Region/state filter (e.g., 'TX', 'Ontario')
  * @returns Cities with at least minCount artists
  */
-export async function getCitiesWithCounts(minCount: number = 5) {
+export async function getCitiesWithCounts(
+  minCount: number = 5,
+  country: string | null = null,
+  region: string | null = null
+): Promise<Array<{ city: string; region: string; country_code: string; artist_count: number }>> {
   // Validate input
   validateInteger(minCount, 'minCount', 1, 100)
+  if (country !== null) validateString(country, 'country', 10)
+  if (region !== null) validateString(region, 'region', 100)
 
   const supabase = await createClient()
 
   const { data, error } = await supabase.rpc('get_cities_with_counts', {
-    min_count: minCount
+    min_count: minCount,
+    p_country_code: country,
+    p_region: region,
   })
 
   if (error) {
     console.error('Error fetching cities with counts:', error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * Get regions/states with artist counts (for cascading dropdown)
+ * @param country - ISO country code (e.g., 'US', 'UK')
+ * @returns Regions in the country with artist counts
+ */
+export async function getRegionsWithCounts(
+  country: string = 'US'
+): Promise<Array<{ region: string; region_name: string; artist_count: number }>> {
+  validateString(country, 'country', 10)
+
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('get_regions_with_counts', {
+    p_country_code: country,
+  })
+
+  if (error) {
+    console.error('Error fetching regions with counts:', error)
+    return []
+  }
+
+  return data || []
+}
+
+/**
+ * Get countries with artist counts (for country dropdown)
+ * @returns Countries with artist counts
+ */
+export async function getCountriesWithCounts(): Promise<Array<{ country_code: string; artist_count: number }>> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('get_countries_with_counts')
+
+  if (error) {
+    console.error('Error fetching countries with counts:', error)
     return []
   }
 
@@ -1084,12 +1404,13 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
   let supabase
   try {
     supabase = await createClient()
-  } catch (error) {
+  } catch (_error) {
     // If cookies() fails (build time), use service client
     const { createServiceClient } = await import('@/lib/supabase/service')
     supabase = createServiceClient()
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC function not in generated types
   const { data, error } = await supabase.rpc('get_all_cities_with_min_artists' as any, {
     min_artist_count: minArtistCount
   })

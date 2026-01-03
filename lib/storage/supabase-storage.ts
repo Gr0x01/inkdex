@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase Storage client types are dynamic */
 /**
  * Supabase Storage Utilities
  * Handles image uploads, downloads, and management for portfolio images

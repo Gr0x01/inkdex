@@ -32,7 +32,7 @@ export async function updateSession(request: NextRequest) {
   ]
 
   // Allow public access to city and artist pages (they're SEO pages)
-  const isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/')) ||
+  const _isPublicPath = publicPaths.some(path => pathname === path || pathname.startsWith(path + '/')) ||
     pathname.match(/^\/(austin|los-angeles|new-york|chicago|portland|seattle|miami|atlanta)/) ||
     pathname.startsWith('/artist/')
 

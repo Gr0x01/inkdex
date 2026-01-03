@@ -115,9 +115,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const profileUpdates = session.profile_updates as any;
-    const fetchedImages = (session.fetched_images as any[]) || [];
-    const profileData = (session.profile_data as any) || {};
+    // Define types for session data
+    interface ProfileUpdates {
+      name: string
+      bio?: string
+      locations?: Array<{
+        city?: string
+        region?: string
+        countryCode?: string
+        locationType?: string
+        isPrimary?: boolean
+      }>
+      city?: string
+      state?: string
+    }
+    interface FetchedImage {
+      classified?: boolean
+      instagram_post_id?: string
+      url?: string
+      caption?: string
+    }
+    interface ProfileData {
+      bio?: string
+      follower_count?: number
+    }
+
+    const profileUpdates = session.profile_updates as ProfileUpdates;
+    const fetchedImages = (session.fetched_images as FetchedImage[]) || [];
+    const profileData = (session.profile_data as ProfileData) || {};
 
     // Extract locations (new format) or fallback to legacy city/state
     const locations = profileUpdates.locations || [];
@@ -259,7 +284,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Insert new locations
-      const locationInserts = locations.map((loc: any, index: number) => ({
+      const locationInserts = locations.map((loc, index) => ({
         artist_id: artistId,
         city: loc.city || null,
         region: loc.region || null,
@@ -281,7 +306,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 8. Insert ALL classified portfolio images (auto-import)
-    const classifiedImages = fetchedImages.filter((img: any) =>
+    const classifiedImages = fetchedImages.filter((img) =>
       img.classified === true
     );
 
@@ -290,7 +315,7 @@ export async function POST(request: NextRequest) {
       console.log('[Onboarding] No classified images found, creating artist without portfolio');
     }
 
-    const portfolioImages = classifiedImages.map((img: any, _index: number) => ({
+    const portfolioImages = classifiedImages.map((img) => ({
       id: randomUUID(),
       artist_id: artistId,
       instagram_post_id: img.instagram_post_id,

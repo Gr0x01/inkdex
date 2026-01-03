@@ -59,11 +59,11 @@ export default function ProfileEditor({
   const [locationError, setLocationError] = useState<string | null>(null);
 
   // UI state
-  const [isSaving, setIsSaving] = useState(false);
+  const [_isSaving, setIsSaving] = useState(false);
   const [saveInProgress, setSaveInProgress] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [_saveSuccess, setSaveSuccess] = useState(false);
+  const [_hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Track changes - generic function for type-safe handling
   function handleStringChange(setter: React.Dispatch<React.SetStateAction<string>>) {
@@ -81,7 +81,7 @@ export default function ProfileEditor({
   }
 
   // Handle save
-  const handleSave = async () => {
+  const _handleSave = async () => {
     if (saveInProgress) return;
 
     setSaveInProgress(true);
@@ -129,7 +129,7 @@ export default function ProfileEditor({
   };
 
   // Handle cancel
-  const handleCancel = () => {
+  const _handleCancel = () => {
     setName(initialData.name);
     setLocations(initialData.locations);
     setBioOverride(initialData.bioOverride);

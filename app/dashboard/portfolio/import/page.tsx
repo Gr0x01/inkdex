@@ -66,9 +66,9 @@ function PortfolioImportContent() {
       setImages(tattooImages);
       setProfileData(data.profileData);
       setStep('selecting');
-    } catch (err: any) {
+    } catch (err) {
       console.error('[Portfolio Import] Fetch failed:', err);
-      setError(err.message || 'Failed to fetch images');
+      setError(err instanceof Error ? err.message : 'Failed to fetch images');
       setStep('error');
     }
   }
@@ -114,9 +114,9 @@ function PortfolioImportContent() {
 
       // Success - redirect to portfolio page
       router.push('/dashboard/portfolio');
-    } catch (err: any) {
+    } catch (err) {
       console.error('[Portfolio Import] Import failed:', err);
-      setError(err.message || 'Failed to import portfolio');
+      setError(err instanceof Error ? err.message : 'Failed to import portfolio');
       setStep('selecting'); // Return to selection on error
     }
   }

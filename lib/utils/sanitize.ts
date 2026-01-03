@@ -169,7 +169,7 @@ export function sanitizeURL(url: string | null | undefined): string {
     }
 
     return parsed.toString();
-  } catch (error) {
+  } catch (_error) {
     console.warn(`Invalid URL format: "${url}"`);
     return '';
   }

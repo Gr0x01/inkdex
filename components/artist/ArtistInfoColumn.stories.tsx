@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Storybook args require flexible types */
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import ArtistInfoColumn from './ArtistInfoColumn';
 import { getTestArtistSafe, TEST_USERS, FALLBACK_ARTIST } from '@/.storybook/test-data';

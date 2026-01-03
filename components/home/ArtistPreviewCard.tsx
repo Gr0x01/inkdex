@@ -10,7 +10,7 @@ interface ArtistPreviewCardProps {
 }
 
 export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
-  const isFeatured = isArtistFeatured(artist.follower_count)
+  const _isFeatured = isArtistFeatured(artist.follower_count)
 
   // Get first 4 portfolio images
   const portfolioImages = artist.portfolio_images.slice(0, 4)

@@ -181,10 +181,10 @@ export async function POST(_request: NextRequest) {
         tattooImages: tattooCount,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Portfolio] Fetch Instagram error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch Instagram images' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch Instagram images' },
       { status: 500 }
     );
   }

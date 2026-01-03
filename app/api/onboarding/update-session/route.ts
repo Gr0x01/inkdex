@@ -95,15 +95,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Define session update data type
+    interface SessionUpdateData {
+      profile_updates?: Record<string, unknown>
+      booking_link?: string | null
+      current_step?: number
+      selected_image_ids?: string[]
+    }
+
     // 6. Update session based on step
-    let updateData: any = {};
+    let updateData: SessionUpdateData = {};
     let newStep: number = session.current_step;
 
     switch (step) {
       case 'info':
         // NEW: Step 1 - Combined profile info + booking (streamlined flow)
         {
-          const infoData = data as any; // Union type - safe to cast
+          const infoData = data as {
+            name?: string
+            bio?: string
+            locations?: Array<{ city?: string; region?: string }>
+            city?: string
+            state?: string
+            bookingLink?: string
+          };
           updateData = {
             profile_updates: {
               name: infoData.name,
@@ -123,7 +138,7 @@ export async function POST(request: NextRequest) {
       case 'preview':
         // Step 2: Profile data
         updateData = {
-          profile_updates: data,
+          profile_updates: data as Record<string, unknown>,
           current_step: 2,
         };
         newStep = 2;
@@ -132,7 +147,7 @@ export async function POST(request: NextRequest) {
       case 'portfolio':
         // Step 3: Portfolio selection (legacy)
         {
-          const portfolioData = data as any;
+          const portfolioData = data as { selectedImageIds?: string[] };
           if ('selectedImageIds' in portfolioData) {
             updateData = {
               selected_image_ids: portfolioData.selectedImageIds,
@@ -151,7 +166,7 @@ export async function POST(request: NextRequest) {
       case 'booking':
         // Step 4: Booking link (legacy)
         {
-          const bookingData = data as any;
+          const bookingData = data as { bookingLink?: string };
           if ('bookingLink' in bookingData) {
             updateData = {
               booking_link: bookingData.bookingLink || null,

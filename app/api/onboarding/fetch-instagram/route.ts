@@ -136,16 +136,17 @@ export async function POST(_request: NextRequest) {
     let profileData;
     try {
       profileData = await fetchInstagramProfileImages(instagramUsername, 50);
-    } catch (error: any) {
+    } catch (error) {
       console.error('[Onboarding] Instagram fetch failed:', error);
 
       // Handle specific Instagram errors
-      if (error.code === 'PRIVATE_ACCOUNT') {
+      const instagramError = error as { code?: string };
+      if (instagramError.code === 'PRIVATE_ACCOUNT') {
         return NextResponse.json(
           { error: 'Your Instagram account is private. Please make it public to continue onboarding.' },
           { status: 403 }
         );
-      } else if (error.code === 'RATE_LIMITED') {
+      } else if (instagramError.code === 'RATE_LIMITED') {
         return NextResponse.json(
           { error: 'Instagram rate limit reached. Please try again in a few minutes.' },
           { status: 429 }

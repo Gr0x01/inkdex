@@ -11,7 +11,7 @@
  * - Drop-in replacement for modal-client.ts
  */
 
-interface EmbeddingResult {
+interface _EmbeddingResult {
   embedding: number[];
   source: 'local' | 'modal';
   latency: number;

@@ -37,7 +37,7 @@ export default function DowngradeWarningEmail({
   endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
   portfolioImageCount = 50,
   billingPortalUrl = 'https://inkdex.io/billing',
-  dashboardUrl = 'https://inkdex.io/dashboard',
+  dashboardUrl: _dashboardUrl = 'https://inkdex.io/dashboard',
   to = 'artist@example.com',
 }: DowngradeWarningEmailProps) {
   const previewText = `Your Pro subscription ends ${endDate}—here's what changes`;

@@ -10,7 +10,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, X, MapPin, Globe, Crown, Edit2, Check } from 'lucide-react';
+import { Plus, X, MapPin, Crown, Check } from 'lucide-react';
+import Link from 'next/link';
 import Select from '@/components/ui/Select';
 import CitySelect from '@/components/ui/CitySelect';
 import { US_STATE_OPTIONS, getStateName } from '@/lib/constants/states';
@@ -40,7 +41,7 @@ const MAX_FREE_LOCATIONS = 1;
 const MAX_PRO_LOCATIONS = 20;
 
 export default function LocationManager({
-  artistId,
+  artistId: _artistId,
   isPro,
   locations,
   onSave,
@@ -177,9 +178,9 @@ export default function LocationManager({
               <Crown className="w-3.5 h-3.5 text-amber-500" />
               <span className="font-body text-sm text-[var(--gray-600)]">
                 Want to list multiple locations?{' '}
-                <a href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
+                <Link href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
                   Upgrade to Pro
-                </a>
+                </Link>
               </span>
             </div>
           </>

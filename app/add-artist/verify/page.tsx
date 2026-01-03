@@ -68,7 +68,7 @@ export default async function VerifyPage() {
     .rpc('get_artist_by_handle', {
       p_instagram_handle: instagram_username,
     })
-    .maybeSingle() as { data: any };
+    .maybeSingle() as { data: { slug: string; claimed_by_user_id: string | null } | null };
 
   if (existingByHandle) {
     // Artist exists - check claim status

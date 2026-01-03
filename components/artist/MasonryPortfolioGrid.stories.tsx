@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import MasonryPortfolioGrid from './MasonryPortfolioGrid';
-import { getTestArtistSafe, TEST_USERS, FALLBACK_ARTIST } from '@/.storybook/test-data';
+import { getTestArtistSafe, TEST_USERS } from '@/.storybook/test-data';
 
 const meta = {
   title: 'Components/Artist/MasonryPortfolioGrid',

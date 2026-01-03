@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Dev page, types less strict */
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';

@@ -55,6 +55,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
 
   // Multi-location support (locations would be added to SearchResult interface)
   // For now, we assume it might be available in the future
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Future interface extension
   const locations = (artist as any).locations || []
   const locationCount = locations.length || 1
   const hasMultipleLocations = locationCount > 1

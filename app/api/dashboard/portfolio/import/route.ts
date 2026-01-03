@@ -44,7 +44,14 @@ function validateInstagramUrl(url: string): boolean {
  * Deletes images from Supabase Storage in background
  * Validates paths to prevent path traversal attacks
  */
-async function cleanupStorage(images: any[]) {
+interface ImageWithStoragePaths {
+  storage_original_path?: string | null
+  storage_thumb_320?: string | null
+  storage_thumb_640?: string | null
+  storage_thumb_1280?: string | null
+}
+
+async function cleanupStorage(images: ImageWithStoragePaths[]) {
   try {
     const { deleteImages } = await import('@/lib/storage/supabase-storage');
 
@@ -233,10 +240,10 @@ export async function POST(request: NextRequest) {
       success: true,
       imported: newImages.length,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Portfolio] Import error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to import portfolio' },
+      { error: error instanceof Error ? error.message : 'Failed to import portfolio' },
       { status: 500 }
     );
   }

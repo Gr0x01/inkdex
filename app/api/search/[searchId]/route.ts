@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { searchArtistsByEmbedding } from '@/lib/supabase/queries'
-import { CITIES, STATES } from '@/lib/constants/cities'
 import { getImageUrl } from '@/lib/utils/images'
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-// Valid city and state slugs for validation
-const VALID_CITY_SLUGS = CITIES.map(c => c.slug)
-const VALID_STATE_SLUGS = STATES.map(s => s.slug)
+// Validation patterns
+const COUNTRY_CODE_REGEX = /^[A-Za-z]{2}$/
+const REGION_REGEX = /^[A-Za-z0-9][A-Za-z0-9\s-]*[A-Za-z0-9]$|^[A-Za-z0-9]$/  // Must start/end with alphanumeric
+const CITY_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/  // No consecutive/leading/trailing hyphens
 
 // Database result interface (matches what search_artists_by_embedding returns)
 interface DbSearchResult {
@@ -17,6 +17,8 @@ interface DbSearchResult {
   name: string
   slug: string
   city: string
+  region: string
+  country_code: string
   profile_image_url: string | null
   follower_count: number | null
   instagram_url: string | null
@@ -34,6 +36,13 @@ interface DbSearchResult {
  *
  * Fetches search from database, runs vector similarity search,
  * returns ranked artist results
+ *
+ * Query params:
+ * - country: ISO 3166-1 alpha-2 country code (e.g., 'us', 'uk')
+ * - region: State/province code (e.g., 'tx', 'ontario')
+ * - city: City name slug (e.g., 'austin', 'los-angeles')
+ * - page: Page number (default: 1)
+ * - limit: Results per page (default: 20, max: 100)
  */
 export async function GET(
   request: NextRequest,
@@ -52,40 +61,51 @@ export async function GET(
 
     const { searchParams } = new URL(request.url)
 
-    // Parse query parameters
-    const locationParam = searchParams.get('city') || null
+    // Parse location filter parameters
+    const countryParam = searchParams.get('country')
+    const regionParam = searchParams.get('region')
+    const cityParam = searchParams.get('city')
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
-    // Parse location filter (supports city slugs or "state:slug" format)
-    let cities: string[] | null = null
-    if (locationParam) {
-      if (locationParam.startsWith('state:')) {
-        // State filter: convert to list of cities in that state
-        const stateSlug = locationParam.replace('state:', '')
-
-        // Validate state slug against whitelist
-        if (!VALID_STATE_SLUGS.includes(stateSlug as any)) {
-          return NextResponse.json(
-            { error: 'Invalid state parameter' },
-            { status: 400 }
-          )
-        }
-
-        const state = STATES.find(s => s.slug === stateSlug)
-        cities = state ? (state.cities as unknown as string[]) : null
-      } else {
-        // Validate city slug against whitelist
-        if (!VALID_CITY_SLUGS.includes(locationParam as any)) {
-          return NextResponse.json(
-            { error: 'Invalid city parameter' },
-            { status: 400 }
-          )
-        }
-
-        // City filter: single city
-        cities = [locationParam]
+    // Validate country code if provided
+    let countryFilter: string | null = null
+    if (countryParam) {
+      if (!COUNTRY_CODE_REGEX.test(countryParam)) {
+        return NextResponse.json(
+          { error: 'Invalid country code format' },
+          { status: 400 }
+        )
       }
+      countryFilter = countryParam.toUpperCase()
+    }
+
+    // Validate region if provided
+    let regionFilter: string | null = null
+    if (regionParam) {
+      if (!REGION_REGEX.test(regionParam) || regionParam.length > 50) {
+        return NextResponse.json(
+          { error: 'Invalid region format' },
+          { status: 400 }
+        )
+      }
+      regionFilter = regionParam.toUpperCase()
+    }
+
+    // Validate city slug if provided and convert to name
+    let cityFilter: string | null = null
+    if (cityParam) {
+      if (!CITY_SLUG_REGEX.test(cityParam) || cityParam.length > 50) {
+        return NextResponse.json(
+          { error: 'Invalid city parameter format' },
+          { status: 400 }
+        )
+      }
+      // Convert slug to name (e.g., 'los-angeles' -> 'Los Angeles')
+      cityFilter = cityParam
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
     }
 
     // Validate pagination
@@ -134,14 +154,11 @@ export async function GET(
       )
     }
 
-    // Search artists by embedding
-    // Note: Database function currently supports single city only
-    // For multi-city state filters, we pass the first city as a workaround
-    // TODO: Update DB function to support array of cities for better state filtering
-    const cityFilter = cities && cities.length > 0 ? cities[0] : null
-
+    // Search artists by embedding with location filters
     const startTime = Date.now()
     const results = await searchArtistsByEmbedding(embedding, {
+      country: countryFilter,
+      region: regionFilter,
       city: cityFilter,
       limit,
       offset,
@@ -153,8 +170,6 @@ export async function GET(
     const rawResults = Array.isArray(results) ? results : []
 
     // Map database response to match TypeScript types
-    // Database returns: id, name, slug, images, max_similarity
-    // Frontend expects: artist_id, artist_name, artist_slug, matching_images, similarity
     const artists = (rawResults as DbSearchResult[])
       .map((result) => {
         // Validate required fields
@@ -168,16 +183,18 @@ export async function GET(
           artist_name: result.name,
           artist_slug: result.slug,
           city: result.city,
+          region: result.region,
+          country_code: result.country_code,
           profile_image_url: result.profile_image_url,
           follower_count: result.follower_count,
           instagram_url: result.instagram_url,
           is_verified: result.is_verified,
-          matching_images: (result.images || []).map((img: any) => ({
-            url: getImageUrl(img.url), // Convert relative path to absolute URL
+          matching_images: (result.images || []).map((img: { url: string; instagramUrl?: string; similarity?: number }) => ({
+            url: getImageUrl(img.url),
             instagramUrl: img.instagramUrl,
             similarity: img.similarity,
           })),
-          similarity: result.max_similarity || 0, // max_similarity from DB → similarity
+          similarity: result.max_similarity || 0,
         }
       })
       .filter((artist): artist is NonNullable<typeof artist> => artist !== null)
@@ -186,13 +203,16 @@ export async function GET(
     return NextResponse.json(
       {
         artists,
-        total: artists.length, // Note: This is approximate, would need COUNT query for exact
+        total: artists.length,
         page,
         limit,
         queryTime,
         queryType: search.query_type,
         queryText: search.query_text,
-        city: locationParam, // Return original filter parameter
+        // Location filter echoed back
+        country: countryParam || undefined,
+        region: regionParam || undefined,
+        city: cityParam || undefined,
         // Instagram attribution (if applicable)
         instagramUsername: search.instagram_username || undefined,
         instagramPostUrl: search.instagram_post_id

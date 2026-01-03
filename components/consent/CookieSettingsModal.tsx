@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Vercel Analytics window property not typed */
 'use client'
 
 /**

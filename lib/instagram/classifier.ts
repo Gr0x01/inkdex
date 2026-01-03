@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- OpenAI API responses vary */
 /**
  * Tattoo Artist Classifier
  *

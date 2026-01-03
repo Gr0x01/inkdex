@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     const totalMetrics = calculateTotalMetrics(metricsMap)
 
     // Convert Map to plain object for JSON serialization
-    const metricsByPattern: Record<string, any> = {}
+    const metricsByPattern: Record<string, { hits: number; misses: number; hitRate: number }> = {}
     for (const [pattern, metrics] of metricsMap.entries()) {
       metricsByPattern[pattern] = metrics
     }

@@ -20,10 +20,10 @@ interface AnalyticsDashboardProps {
 
 export default function AnalyticsDashboard({
   artistId,
-  artistName,
+  artistName: _artistName,
 }: AnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(30)
-  const [data, setData] = useState<any>(null)
+  const [data, setData] = useState<{ totalViews?: number; totalSearchAppearances?: number; viewsByDate?: Array<{ date: string; views: number }>; searchesByDate?: Array<{ date: string; searches: number }> } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

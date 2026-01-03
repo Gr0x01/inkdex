@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase RPC response types vary */
 /**
  * Analytics Query Helpers
  * Functions to fetch analytics data for Pro artist dashboards

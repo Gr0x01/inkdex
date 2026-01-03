@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Apify API responses vary */
 /**
  * Instagram Profile Image Fetcher
  *

@@ -68,7 +68,9 @@ export function CookieBanner() {
     announceToScreenReader('Cookie preferences saved: All cookies accepted')
 
     // Track consent decision with Vercel Analytics
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Vercel Analytics window property not typed
     if (typeof window !== 'undefined' && (window as any).va) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Vercel Analytics window property not typed
       ;(window as any).va('event', 'Consent Decision', { analytics_enabled: true })
     }
 

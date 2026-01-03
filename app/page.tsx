@@ -8,9 +8,16 @@ import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 // ISR: Revalidate homepage every hour (featured artists are stable)
 export const revalidate = 3600 // 1 hour
 
+interface FeaturedArtist {
+  id: string
+  name: string
+  slug: string
+  portfolio_images: Array<{ id: string; url: string; likes_count?: number | null }>
+}
+
 export default async function Home() {
   // Fetch featured artists grouped by state (with fallback to empty object)
-  let featuredArtistsByState: Record<string, any[]> = {}
+  let featuredArtistsByState: Record<string, FeaturedArtist[]> = {}
 
   try {
     // Fetch 5 randomized featured artists per state (100k+ followers)

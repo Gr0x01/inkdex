@@ -172,10 +172,10 @@ export async function POST(request: NextRequest) {
       success: true,
       updated: allUpdates.length,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Reorder] Error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to reorder portfolio' },
+      { error: error instanceof Error ? error.message : 'Failed to reorder portfolio' },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
-import { sanitizeText, sanitizeCaption } from '@/lib/utils/sanitize'
+import { sanitizeCaption } from '@/lib/utils/sanitize'
 
 interface PortfolioImage {
   id: string

@@ -22,7 +22,14 @@ const deleteSchema = z.object({
  * Deletes image files from Supabase Storage in background
  * Validates paths to prevent path traversal attacks
  */
-async function cleanupStorage(image: any) {
+interface ImageWithStorage {
+  storage_original_path?: string | null
+  storage_thumb_320?: string | null
+  storage_thumb_640?: string | null
+  storage_thumb_1280?: string | null
+}
+
+async function cleanupStorage(image: ImageWithStorage) {
   try {
     const { deleteImages } = await import('@/lib/storage/supabase-storage');
 
@@ -121,10 +128,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('[Portfolio] Delete error:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to delete image' },
+      { error: error instanceof Error ? error.message : 'Failed to delete image' },
       { status: 500 }
     );
   }

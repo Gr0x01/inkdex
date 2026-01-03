@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Sharp library types require flexible handling */
 /**
  * Image Processing Utilities
  * Handles image resizing, format conversion, and thumbnail generation using Sharp
