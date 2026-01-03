@@ -10,6 +10,13 @@ const meta = {
     backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div style={{ width: 272 }}>
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     artist: {
       description: 'Search result data including artist info and matching images',
@@ -217,6 +224,7 @@ export const SearchResultsGrid: Story = {
     artist: createMockSearchResult(),
     displayMode: 'search',
   },
+  decorators: [], // Override default decorator for grid layout
   render: () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6 max-w-6xl">
       <ArtistCard
@@ -299,6 +307,11 @@ export const MultiLocationArtist: Story = {
         city: 'Austin',
         similarity: 0.32,
       }),
+      locations: [
+        { city: 'Austin', state: 'TX', country: 'US' },
+        { city: 'Los Angeles', state: 'CA', country: 'US' },
+        { city: 'New York', state: 'NY', country: 'US' },
+      ],
     },
     displayMode: 'search',
   },

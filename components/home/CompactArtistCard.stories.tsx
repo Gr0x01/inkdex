@@ -11,6 +11,13 @@ const meta = {
     backgrounds: { default: 'paper' },
   },
   tags: ['autodocs'],
+  decorators: [
+    (Story) => (
+      <div style={{ width: 272 }}>
+        <Story />
+      </div>
+    ),
+  ],
   argTypes: {
     artist: {
       description: 'Artist data including name, portfolio images, and verification status',
@@ -86,6 +93,7 @@ export const HorizontalScroll: Story = {
   args: {
     artist: FALLBACK_ARTIST, // Placeholder, replaced by loader
   },
+  decorators: [], // Override default decorator for horizontal layout
   loaders: [
     async () => {
       const [freeTier, proTier, unclaimed] = await Promise.all([
@@ -98,10 +106,18 @@ export const HorizontalScroll: Story = {
   ],
   render: (args, { loaded }) => (
     <div className="flex gap-4 p-4 overflow-x-auto max-w-4xl">
-      <CompactArtistCard artist={loaded.freeTier} />
-      <CompactArtistCard artist={loaded.proTier} />
-      <CompactArtistCard artist={loaded.unclaimed} />
-      <CompactArtistCard artist={loaded.freeTier} />
+      <div style={{ width: 272, flexShrink: 0 }}>
+        <CompactArtistCard artist={loaded.freeTier} />
+      </div>
+      <div style={{ width: 272, flexShrink: 0 }}>
+        <CompactArtistCard artist={loaded.proTier} />
+      </div>
+      <div style={{ width: 272, flexShrink: 0 }}>
+        <CompactArtistCard artist={loaded.unclaimed} />
+      </div>
+      <div style={{ width: 272, flexShrink: 0 }}>
+        <CompactArtistCard artist={loaded.freeTier} />
+      </div>
     </div>
   ),
   parameters: {
