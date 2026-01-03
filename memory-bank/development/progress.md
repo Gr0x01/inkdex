@@ -11,12 +11,40 @@ Status: Production Ready
 | Metric | Value |
 |--------|-------|
 | Cities | 8 |
-| Artists | 1,503 |
+| Artists | 3,553 |
 | Images | 9,803 (100% with embeddings) |
 | Static Pages | ~1,600 |
 | SEO Content | ~65,000 words |
 
 ## Recent Completions
+
+### Jan 3, 2026 (Session 5)
+- **Admin Pipeline Control complete** - Full UI for managing content pipeline
+  - **Pipeline Dashboard** (`/admin/pipeline`):
+    - Stats overview: total artists, need scraping, total images, failed jobs
+    - 3-column stage cards: Need Images, Need Embeddings, Searchable
+    - Trigger buttons for each pipeline stage (Scrape, Generate Embeddings, Rebuild Index)
+    - Scraping jobs summary with retry failed button
+    - Recent pipeline runs table with expandable details
+  - **Security hardening:**
+    - Zod validation schemas for all API endpoints
+    - CSRF protection via origin header checking
+    - Rate limiting: 10 triggers/hour, 5 retries/hour per admin
+    - Audit logging for pipeline.trigger and pipeline.retry actions
+    - Environment variable filtering for child processes
+    - Process timeout (2 hour max with SIGTERM→SIGKILL)
+  - **Race condition prevention:**
+    - Partial unique index on `(job_type) WHERE status IN ('pending', 'running')`
+    - Atomic `create_pipeline_run` RPC function
+    - Proper error handling for duplicate job attempts
+  - **UX improvements:**
+    - Confirmation dialogs before expensive operations (ConfirmDialog component)
+    - Progress tracking in pipeline_runs table
+    - Embedding coverage bar on main dashboard
+    - "Manage" link from dashboard to pipeline page
+  - **Database:** `pipeline_runs` table + unique constraint migration
+  - **Files created:** 6 API routes, 3 components, 2 lib files, 2 migrations
+  - **Design aligned:** Matches MiningDashboard patterns (icons, spacing, tables)
 
 ### Jan 3, 2026 (Session 4)
 - **Phase 10 improvements complete** - Email system hardening + compliance

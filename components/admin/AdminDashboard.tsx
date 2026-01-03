@@ -272,9 +272,17 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Content Pipeline */}
         <div className="bg-paper border-2 border-ink/10 p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Image className="w-3.5 h-3.5 text-gray-500" />
-            <h3 className="font-heading text-[13px] font-semibold text-ink">Content Pipeline</h3>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-1.5">
+              <Image className="w-3.5 h-3.5 text-gray-500" />
+              <h3 className="font-heading text-[13px] font-semibold text-ink">Content Pipeline</h3>
+            </div>
+            <Link
+              href="/admin/pipeline"
+              className="text-[11px] text-gray-500 hover:text-ink flex items-center gap-0.5 transition-colors"
+            >
+              Manage <ArrowRight className="w-2.5 h-2.5" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -291,6 +299,24 @@ export default function AdminDashboard() {
               variant={data.scraping.failed > 0 ? 'error' : 'default'}
             />
           </div>
+
+          {/* Embedding Coverage Bar */}
+          {data.content.totalImages > 0 && (
+            <div className="pt-2 mt-2 border-t border-ink/5">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-gray-500 text-[11px]">Embedding Coverage</span>
+                <span className="font-mono text-ink text-[11px]">
+                  {((data.content.imagesWithEmbeddings / data.content.totalImages) * 100).toFixed(1)}%
+                </span>
+              </div>
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-status-success rounded-full transition-all"
+                  style={{ width: `${(data.content.imagesWithEmbeddings / data.content.totalImages) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Recent Claims */}

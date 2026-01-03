@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03 (Session 4 - Phase 10 Improvements Complete)
+Last-Updated: 2026-01-03 (Session 5 - Admin Pipeline Control Complete)
 Maintainer: RB
 Status: Production Ready - 12/14 Phases Complete (86%) - Stripe & Analytics Remaining
 ---
@@ -22,7 +22,7 @@ Status: Production Ready - 12/14 Phases Complete (86%) - Stripe & Analytics Rema
 - **Multi-location support** (Free: 1 location, Pro: up to 20)
 - International artist support (195+ countries)
 - Storybook component development
-- **Admin panel** (magic link auth, mining dashboard, featured artist management, **pipeline control**)
+- **Admin panel** (magic link auth, mining dashboard, featured artist management, **full pipeline control**)
 
 ## Completed Phases
 
@@ -71,6 +71,10 @@ npx tsx scripts/embeddings/create-vector-index.ts     # Rebuild vector index
 - Trigger jobs from UI (Scrape, Generate Embeddings, Rebuild Index)
 - Retry failed scraping jobs
 - View job history with progress tracking
+- Confirmation dialogs for expensive operations
+- Audit logging for all pipeline actions
+- Rate limiting (10 triggers/hour, 5 retries/hour per admin)
+- Race condition prevention via database unique constraint
 
 **New City Setup:**
 1. Add to `lib/constants/cities.ts`

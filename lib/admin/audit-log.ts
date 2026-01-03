@@ -12,9 +12,12 @@ export type AuditAction =
   | 'artist.bulk_feature'
   | 'artist.bulk_unfeature'
   | 'admin.login'
-  | 'admin.logout';
+  | 'admin.logout'
+  | 'pipeline.trigger'
+  | 'pipeline.retry'
+  | 'pipeline.cancel';
 
-export type AuditResourceType = 'artist' | 'admin_session';
+export type AuditResourceType = 'artist' | 'admin_session' | 'pipeline_run';
 
 interface AuditLogEntry {
   adminEmail: string;
