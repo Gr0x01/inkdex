@@ -2,15 +2,24 @@
  * Apify Billing API Integration
  *
  * Fetches current billing usage from the Apify API.
+ * Uses GET /users/me/usage/monthly endpoint for accurate billing data.
  */
-
-import { ApifyClient } from 'apify-client';
 
 interface ApifyUsageResult {
   usage: number;
   currency: string;
   error?: string;
   lastUpdated: string;
+}
+
+interface ApifyMonthlyUsageResponse {
+  data: {
+    totalUsageCreditsUsd: number;
+    dailyUsageCreditsUsd: Array<{
+      date: string;
+      usageCreditsUsd: number;
+    }>;
+  };
 }
 
 // Cache for Apify usage (5 minute TTL)
@@ -20,15 +29,25 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const REQUEST_TIMEOUT_MS = 10000; // 10 seconds
 
 /**
- * Promise with timeout wrapper
+ * Fetch with timeout support
  */
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out')), timeoutMs)
-    ),
-  ]);
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 /**
@@ -54,14 +73,24 @@ export async function getApifyUsage(): Promise<ApifyUsageResult> {
   }
 
   try {
-    const client = new ApifyClient({ token });
-    const user = await withTimeout(client.user().get(), REQUEST_TIMEOUT_MS);
+    // Use the monthly usage endpoint for accurate billing data
+    const response = await fetchWithTimeout(
+      'https://api.apify.com/v2/users/me/usage/monthly',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+      REQUEST_TIMEOUT_MS
+    );
 
-    // The Apify API returns usage in the plan object
-    // Type assertion needed as ApifyClient types may not include all properties
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const plan = user?.plan as Record<string, unknown> | undefined;
-    const usage = (plan?.monthlyUsage as number) ?? (plan?.usageCredits as number) ?? 0;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Apify API error: ${response.status} - ${errorText}`);
+    }
+
+    const data: ApifyMonthlyUsageResponse = await response.json();
+    const usage = data.data?.totalUsageCreditsUsd ?? 0;
 
     cachedUsage = {
       usage: typeof usage === 'number' ? usage : 0,
@@ -72,6 +101,16 @@ export async function getApifyUsage(): Promise<ApifyUsageResult> {
 
     return cachedUsage;
   } catch (error) {
+    // Handle timeout specifically
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[Apify Billing] Request timed out');
+      return {
+        usage: 0,
+        currency: 'USD',
+        error: 'Request timed out',
+        lastUpdated: new Date().toISOString(),
+      };
+    }
     console.error('[Apify Billing] Failed to fetch usage:', error);
     return {
       usage: 0,
