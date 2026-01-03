@@ -1,14 +1,20 @@
 'use client';
 
 /**
- * SyncSettingsCard
+ * SyncSettingsCard - Editorial Minimal Design
  *
- * Pro-only card for managing Instagram auto-sync settings.
- * Shows sync status, toggle, and manual sync button.
+ * Pro-only compact horizontal section for Instagram auto-sync settings.
+ * Matches the editorial design system with clean typography and minimal styling.
+ *
+ * Design Philosophy:
+ * - Horizontal layout matching "Pinned Images" section pattern
+ * - Editorial typography (Libre Baskerville + JetBrains Mono)
+ * - Border separator instead of card background
+ * - Compact spacing and clean information hierarchy
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, ToggleLeft, ToggleRight, AlertCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { RefreshCw, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { ProBadge } from '@/components/badges/ProBadge';
 
@@ -140,14 +146,16 @@ export function SyncSettingsCard() {
   // Loading state
   if (loading) {
     return (
-      <section className="border border-gray-200 bg-white p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="font-heading text-xl">Instagram Sync</h2>
-          <ProBadge variant="badge" size="sm" />
+      <section className="mb-12">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-200 mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading text-lg">Instagram Sync</h2>
+            <ProBadge variant="badge" size="sm" />
+          </div>
         </div>
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-gray-100 rounded w-1/2" />
-          <div className="h-10 bg-gray-100 rounded" />
+        <div className="animate-pulse space-y-2">
+          <div className="h-3 bg-gray-100 rounded w-1/3" />
+          <div className="h-3 bg-gray-100 rounded w-1/4" />
         </div>
       </section>
     );
@@ -156,17 +164,19 @@ export function SyncSettingsCard() {
   // Not Pro state
   if (status && !status.isPro) {
     return (
-      <section className="border border-gray-200 bg-white p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <h2 className="font-heading text-xl">Instagram Sync</h2>
-          <ProBadge variant="badge" size="sm" />
+      <section className="mb-12">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-200 mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="font-heading text-lg">Instagram Sync</h2>
+            <ProBadge variant="badge" size="sm" />
+          </div>
         </div>
-        <p className="font-body text-sm text-gray-600 mb-4">
+        <p className="font-body text-sm text-gray-600 mb-3">
           Automatically sync new tattoo posts from Instagram daily.
         </p>
         <a
           href="/dashboard/upgrade"
-          className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-amber-700 hover:text-amber-800 transition-colors"
+          className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-purple-600 hover:text-purple-700 transition-colors"
         >
           Upgrade to Pro
           <span className="text-xs">→</span>
@@ -176,155 +186,74 @@ export function SyncSettingsCard() {
   }
 
   return (
-    <section className="border border-gray-200 bg-white p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <h2 className="font-heading text-xl">Instagram Sync</h2>
-          <ProBadge variant="badge" size="sm" />
-        </div>
-        <SyncStatusBadge status={getSyncStatus()} lastSyncAt={status?.lastSyncAt} />
-      </div>
+    <>
+      {/* Sync Status Badge */}
+      <SyncStatusBadge status={getSyncStatus()} lastSyncAt={status?.lastSyncAt} />
 
-      {/* Error message */}
-      {error && (
-        <div className="flex items-start gap-2 mb-4 p-3 bg-red-50 border border-red-200">
-          <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-          <p className="font-body text-sm text-red-700">{error}</p>
-        </div>
-      )}
+      {/* Auto-sync Toggle - Editorial Split-Button Design */}
+      <button
+        onClick={handleToggle}
+        disabled={toggling}
+        className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20 sm:w-24"
+        role="switch"
+        aria-checked={status?.autoSyncEnabled}
+        aria-label="Toggle auto-sync"
+      >
+        {/* Sliding Background - covers exactly half */}
+        <div
+          className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
+          style={{
+            width: '50%',
+            left: status?.autoSyncEnabled ? '50%' : '0'
+          }}
+        />
 
-      {/* Disabled reason warning */}
-      {status?.syncDisabledReason && (
-        <div className="flex items-start gap-2 mb-4 p-3 bg-amber-50 border border-amber-200">
-          <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-body text-sm text-amber-800">
-              Auto-sync was disabled due to repeated failures.
-            </p>
-            <p className="font-mono text-[10px] text-amber-600 mt-1">
-              Re-enable below to try again.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Auto-sync toggle */}
-      <div className="flex items-center justify-between py-3 border-b border-gray-100">
-        <div>
-          <p className="font-body text-sm font-medium text-ink">Auto-sync</p>
-          <p className="font-body text-xs text-gray-500 mt-0.5">
-            Sync new posts daily at 2am UTC
-          </p>
-        </div>
-        <button
-          onClick={handleToggle}
-          disabled={toggling}
-          className="text-ink hover:text-gray-600 transition-colors disabled:opacity-50"
-          aria-label={status?.autoSyncEnabled ? 'Disable auto-sync' : 'Enable auto-sync'}
+        {/* OFF Label - exactly 50% width */}
+        <span
+          className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+            !status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+          }`}
         >
-          {status?.autoSyncEnabled ? (
-            <ToggleRight className="w-10 h-6 text-emerald-600" />
-          ) : (
-            <ToggleLeft className="w-10 h-6 text-gray-400" />
-          )}
-        </button>
-      </div>
+          OFF
+        </span>
 
-      {/* Manual sync button */}
-      <div className="flex items-center justify-between py-3 border-b border-gray-100">
-        <div>
-          <p className="font-body text-sm font-medium text-ink">Manual sync</p>
-          <p className="font-body text-xs text-gray-500 mt-0.5">
-            Sync now (1 per hour)
-          </p>
-        </div>
+        {/* Divider - absolutely centered */}
+        <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+
+        {/* ON Label - exactly 50% width */}
+        <span
+          className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+            status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+          }`}
+        >
+          ON
+        </span>
+      </button>
+
+      {/* Manual Sync Button */}
+      <div
+        className="group relative inline-block transition-all duration-200"
+        style={{
+          background: syncing ? 'transparent' : 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+          padding: '2px'
+        }}
+      >
         <button
           onClick={handleManualSync}
           disabled={syncing}
-          className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 bg-white hover:border-gray-400 hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative inline-flex items-center justify-center h-7 w-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 sm:gap-1.5
+                     bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
+                     group-hover:bg-paper
+                     text-white font-mono text-[10px] uppercase tracking-wider
+                     transition-all duration-200
+                     disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gradient-to-r disabled:from-[#f09433] disabled:via-[#dc2743] disabled:to-[#bc1888]"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-          <span className="font-mono text-[10px] uppercase tracking-wider">
+          <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
+          <span className="hidden sm:inline group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
             {syncing ? 'Syncing...' : 'Sync Now'}
           </span>
         </button>
       </div>
-
-      {/* Last sync info */}
-      {status?.lastSyncAt && (
-        <div className="flex items-center gap-2 py-3 text-gray-500">
-          <Clock className="w-3.5 h-3.5" />
-          <span className="font-mono text-[10px] uppercase tracking-wider">
-            Last synced: {formatDate(status.lastSyncAt)}
-          </span>
-        </div>
-      )}
-
-      {/* Sync history toggle */}
-      {status?.recentLogs && status.recentLogs.length > 0 && (
-        <div className="mt-2">
-          <button
-            onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-gray-500 hover:text-ink transition-colors"
-          >
-            {showHistory ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            {showHistory ? 'Hide' : 'Show'} sync history
-          </button>
-
-          {/* History table */}
-          {showHistory && (
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-gray-100">
-                    <th className="font-mono text-[9px] uppercase tracking-wider text-gray-500 py-2">
-                      Date
-                    </th>
-                    <th className="font-mono text-[9px] uppercase tracking-wider text-gray-500 py-2">
-                      Type
-                    </th>
-                    <th className="font-mono text-[9px] uppercase tracking-wider text-gray-500 py-2 text-right">
-                      Added
-                    </th>
-                    <th className="font-mono text-[9px] uppercase tracking-wider text-gray-500 py-2 text-right">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {status.recentLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-gray-50">
-                      <td className="font-mono text-[10px] text-gray-700 py-2">
-                        {formatDate(log.startedAt)}
-                      </td>
-                      <td className="font-mono text-[10px] text-gray-700 py-2 capitalize">
-                        {log.syncType}
-                      </td>
-                      <td className="font-mono text-[10px] text-gray-700 py-2 text-right">
-                        {log.imagesAdded}
-                      </td>
-                      <td className="font-mono text-[10px] py-2 text-right">
-                        <span
-                          className={
-                            log.status === 'success'
-                              ? 'text-emerald-600'
-                              : log.status === 'failed'
-                                ? 'text-red-600'
-                                : 'text-amber-600'
-                          }
-                        >
-                          {log.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-    </section>
+    </>
   );
 }

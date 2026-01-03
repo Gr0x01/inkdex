@@ -26,7 +26,11 @@ interface AnalyticsData {
   }
   timeSeries: Array<{
     date: string
-    views: number
+    profileViews: number
+    imageViews: number
+    instagramClicks: number
+    bookingClicks: number
+    searchAppearances: number
   }>
 }
 

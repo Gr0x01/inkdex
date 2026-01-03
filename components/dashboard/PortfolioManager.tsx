@@ -20,6 +20,8 @@ import SortableImageCard from './SortableImageCard';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { Crown, CloudDownload, AlertCircle } from 'lucide-react';
 import { MAX_PINNED_IMAGES } from '@/lib/constants/portfolio';
+import { SyncSettingsCard } from './SyncSettingsCard';
+import { ProBadge } from '@/components/badges/ProBadge';
 
 interface PortfolioImage {
   id: string;
@@ -262,13 +264,24 @@ export default function PortfolioManager({
             {/* Pinned Images Section - visible for all users */}
             {pinnedImages.length > 0 && (
               <section className="mb-12">
-                <div className="flex items-center gap-2 mb-5 pb-3 border-b border-gray-200">
-                  <h2 className="font-heading text-lg">
-                    Pinned Images
-                  </h2>
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                    {pinnedImages.length}/{MAX_PINNED_IMAGES}
-                  </span>
+                <div className="flex items-center justify-between gap-2 mb-5 pb-3 border-b border-gray-200">
+                  {/* Left: Heading + Count */}
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-heading text-lg">
+                      <span className="hidden sm:inline">Pinned Images</span>
+                      <span className="sm:hidden">Pinned</span>
+                    </h2>
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                      {pinnedImages.length}/{MAX_PINNED_IMAGES}
+                    </span>
+                  </div>
+
+                  {/* Right: Sync Controls (Pro only) */}
+                  {isPro && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <SyncSettingsCard />
+                    </div>
+                  )}
                 </div>
 
                 {/* Pro users can drag to reorder, free users just see pinned images */}

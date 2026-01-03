@@ -27,7 +27,7 @@ export default async function AccountPage() {
   // Fetch artist data
   const { data: artist } = await supabase
     .from('artists')
-    .select('instagram_handle, is_pro, name')
+    .select('id, instagram_handle, is_pro, name')
     .eq('claimed_by_user_id', user.id)
     .single()
 
@@ -45,6 +45,8 @@ export default async function AccountPage() {
       accountType={isPro ? 'Pro Artist' : userData?.account_type || 'Fan'}
       memberSince={memberSince}
       email={user.email}
+      artistId={artist?.id}
+      artistName={artist?.name}
     />
   )
 }

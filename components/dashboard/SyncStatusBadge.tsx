@@ -44,7 +44,7 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
       return (
         <span className={`${baseClasses} text-emerald-600 ${className}`}>
           <span className="inline-block w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-          Synced {lastSyncAt ? formatRelativeTime(lastSyncAt) : ''}
+          <span className="hidden sm:inline">Synced {lastSyncAt ? formatRelativeTime(lastSyncAt) : ''}</span>
         </span>
       );
 
@@ -52,7 +52,7 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
       return (
         <span className={`${baseClasses} text-amber-600 ${className}`}>
           <span className="inline-block w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse" />
-          Syncing...
+          <span className="hidden sm:inline">Syncing...</span>
         </span>
       );
 
@@ -60,7 +60,7 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
       return (
         <span className={`${baseClasses} text-red-600 ${className}`}>
           <span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full" />
-          Last sync failed
+          <span className="hidden sm:inline">Last sync failed</span>
         </span>
       );
 
@@ -68,7 +68,7 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
       return (
         <span className={`${baseClasses} text-[var(--gray-500)] ${className}`}>
           <span className="inline-block w-1.5 h-1.5 bg-[var(--gray-400)] rounded-full" />
-          Auto-sync off
+          <span className="hidden sm:inline">Auto-sync off</span>
         </span>
       );
 
@@ -76,7 +76,7 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
       return (
         <span className={`${baseClasses} text-[var(--gray-500)] ${className}`}>
           <span className="inline-block w-1.5 h-1.5 bg-[var(--gray-400)] rounded-full" />
-          Never synced
+          <span className="hidden sm:inline">Never synced</span>
         </span>
       );
 

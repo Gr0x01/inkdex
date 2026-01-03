@@ -163,9 +163,9 @@ export default function LocationManager({
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
+              className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
             >
-              <Edit2 className="w-3 h-3" /> Edit
+              Edit
             </button>
           )}
         </div>
@@ -173,7 +173,7 @@ export default function LocationManager({
         {!isEditing ? (
           <>
             <div className="flex items-center gap-3 p-3 border-2 border-[var(--border-subtle)] bg-[var(--gray-50)]">
-              <MapPin className="w-4 h-4 text-[var(--gray-500)]" />
+              <MapPin className="w-3.5 h-3.5 text-[var(--gray-500)]" />
               <span className="font-body text-[var(--text-primary)]">
                 {currentLocation ? formatLocation(currentLocation) : 'No location set'}
               </span>
@@ -181,7 +181,7 @@ export default function LocationManager({
 
             {/* Upgrade CTA */}
             <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[var(--gray-200)] bg-[var(--gray-50)]">
-              <Crown className="w-4 h-4 text-amber-500" />
+              <Crown className="w-3.5 h-3.5 text-amber-500" />
               <span className="font-body text-sm text-[var(--gray-600)]">
                 Want to list multiple locations?{' '}
                 <a href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
@@ -213,7 +213,6 @@ export default function LocationManager({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
-            <Globe className="inline w-4 h-4 mr-1 -mt-0.5" />
             Locations ({locations.length}/{maxLocations})
           </label>
           <ProBadge variant="icon-only" size="sm" />
@@ -222,9 +221,9 @@ export default function LocationManager({
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
+            className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
           >
-            <Edit2 className="w-3 h-3" /> Edit
+            Edit
           </button>
         ) : (
           <div className="flex items-center gap-2">
@@ -242,7 +241,7 @@ export default function LocationManager({
               disabled={isSaving || editingLocations.length === 0}
               className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider bg-[var(--ink-black)] text-[var(--paper-white)] px-3 py-1.5 hover:bg-[var(--gray-800)] disabled:opacity-50 transition-colors"
             >
-              {isSaving ? '...' : <><Check className="w-3 h-3" /> Save</>}
+              {isSaving ? '...' : <><Check className="!w-2.5 !h-2.5" /> Save</>}
             </button>
           </div>
         )}
@@ -260,7 +259,7 @@ export default function LocationManager({
             }`}
           >
             <div className="flex items-center gap-3">
-              <MapPin className={`w-4 h-4 ${loc.isPrimary ? 'text-[var(--ink-black)]' : 'text-[var(--gray-400)]'}`} />
+              <MapPin className={`w-3.5 h-3.5 ${loc.isPrimary ? 'text-[var(--ink-black)]' : 'text-[var(--gray-400)]'}`} />
               <span className="font-body text-[var(--text-primary)]">
                 {formatLocation(loc)}
               </span>
@@ -288,7 +287,7 @@ export default function LocationManager({
                     className="p-1 text-[var(--gray-400)] hover:text-[var(--error)] transition-colors"
                     aria-label="Remove location"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -304,7 +303,7 @@ export default function LocationManager({
           onClick={() => setIsAdding(true)}
           className="w-full p-3 border-2 border-dashed border-[var(--gray-300)] text-center hover:border-[var(--gray-400)] transition-colors"
         >
-          <Plus className="w-4 h-4 inline mr-1" />
+          <Plus className="w-3.5 h-3.5 inline mr-1" />
           <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
             Add location
           </span>
@@ -323,7 +322,7 @@ export default function LocationManager({
               onClick={() => setIsAdding(false)}
               className="text-[var(--gray-400)] hover:text-[var(--gray-600)]"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 

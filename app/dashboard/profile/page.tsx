@@ -4,7 +4,6 @@
  * Server component that fetches artist profile data and renders ProfileEditor
  * Allows editing: name, location, bio, booking link
  * Pro-only: pricing_info, availability_status
- * Includes delete page functionality with multi-step confirmation
  */
 
 import { redirect } from 'next/navigation';
