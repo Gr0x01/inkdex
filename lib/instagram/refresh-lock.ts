@@ -46,10 +46,10 @@ export async function refreshWithLock(userId: string): Promise<boolean> {
 
   // Create new refresh promise
   const refreshPromise = refreshInstagramToken(userId).finally(() => {
-    // Clean up lock after completion (with 60-second grace period to handle burst requests)
-    setTimeout(() => {
-      refreshLocks.delete(userId)
-    }, 60000)
+    // Clean up lock immediately after completion
+    // The promise itself acts as the lock during execution
+    // Burst requests within milliseconds will see isRefreshInProgress() correctly
+    refreshLocks.delete(userId)
   })
 
   refreshLocks.set(userId, refreshPromise)

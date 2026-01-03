@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
+import { sanitizeText, sanitizeCaption } from '@/lib/utils/sanitize'
 
 interface PortfolioImage {
   id: string
@@ -62,9 +63,10 @@ export default function MasonryPortfolioGrid({
               {/* Hover Overlay with Caption */}
               {image.post_caption && (
                 <div className="absolute inset-0 bg-ink/90 opacity-0 group-hover:opacity-100 transition-opacity duration-medium p-6 flex items-end">
-                  <p className="font-body text-[0.9375rem] text-paper leading-relaxed line-clamp-6">
-                    {image.post_caption}
-                  </p>
+                  <p
+                    className="font-body text-[0.9375rem] text-paper leading-relaxed line-clamp-6"
+                    dangerouslySetInnerHTML={{ __html: sanitizeCaption(image.post_caption) }}
+                  />
                 </div>
               )}
 

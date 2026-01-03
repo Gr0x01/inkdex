@@ -23,9 +23,14 @@ const BATCH_SIZE = 5;
 function verifyCronAuth(request: NextRequest): boolean {
   const cronSecret = process.env.CRON_SECRET;
 
-  // CRON_SECRET is required in all environments
+  // CRON_SECRET is required and must be at least 32 characters for security
   if (!cronSecret) {
     console.error('[Cron] CRON_SECRET not configured - cron endpoint disabled');
+    return false;
+  }
+
+  if (cronSecret.length < 32) {
+    console.error('[Cron] CRON_SECRET must be at least 32 characters - cron endpoint disabled');
     return false;
   }
 
