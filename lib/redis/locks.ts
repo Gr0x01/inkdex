@@ -14,6 +14,9 @@ import { getRedisClient } from './client'
  */
 export async function acquireLock(key: string, ttlSeconds: number = 30): Promise<string | null> {
   const redis = getRedisClient()
+  if (!redis) {
+    return null
+  }
   const lockToken = `${Date.now()}-${Math.random().toString(36).substring(2)}`
 
   try {
@@ -42,6 +45,9 @@ export async function acquireLock(key: string, ttlSeconds: number = 30): Promise
  */
 export async function releaseLock(key: string, lockToken: string): Promise<boolean> {
   const redis = getRedisClient()
+  if (!redis) {
+    return false
+  }
 
   try {
     // Lua script to atomically check token and delete if it matches
@@ -69,6 +75,9 @@ export async function releaseLock(key: string, lockToken: string): Promise<boole
  */
 export async function isLockHeld(key: string): Promise<boolean> {
   const redis = getRedisClient()
+  if (!redis) {
+    return false
+  }
 
   try {
     const exists = await redis.exists(key)

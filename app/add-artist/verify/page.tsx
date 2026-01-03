@@ -10,6 +10,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { classifyTattooArtist } from '@/lib/instagram/classifier';
 
@@ -106,13 +107,13 @@ export default async function VerifyPage() {
                 </>
               )}
             </p>
-            <a
+            <Link
               href="/add-artist"
               className="inline-block mt-4 px-6 py-2 bg-ether text-ink font-body font-medium rounded-lg
                        hover:bg-ether-light transition-colors"
             >
               Back to Add Artist
-            </a>
+            </Link>
           </div>
         </div>
       </main>

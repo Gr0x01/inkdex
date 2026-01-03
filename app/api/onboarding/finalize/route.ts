@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
       console.log('[Onboarding] No classified images found, creating artist without portfolio');
     }
 
-    const portfolioImages = classifiedImages.map((img: any, index: number) => ({
+    const portfolioImages = classifiedImages.map((img: any, _index: number) => ({
       id: randomUUID(),
       artist_id: artistId,
       instagram_post_id: img.instagram_post_id,

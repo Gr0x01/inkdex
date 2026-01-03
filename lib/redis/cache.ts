@@ -122,6 +122,9 @@ export async function setCached(
 ): Promise<void> {
   try {
     const redis = getRedisClient()
+    if (!redis) {
+      return // Redis not available, skip caching
+    }
     const serialized = JSON.stringify(value)
 
     // Set with expiration (EX = seconds)
@@ -157,6 +160,9 @@ export async function setCached(
 export async function invalidateCache(pattern: string): Promise<number> {
   try {
     const redis = getRedisClient()
+    if (!redis) {
+      return 0 // Redis not available
+    }
     const keys: string[] = []
     let cursor = '0'
 
@@ -173,7 +179,7 @@ export async function invalidateCache(pattern: string): Promise<number> {
       keys.push(...matchedKeys)
     } while (cursor !== '0')
 
-    if (keys.length > 0) {
+    if (keys.length > 0 && redis) {
       // Batch delete using pipeline for performance
       const pipeline = redis.pipeline()
       keys.forEach((key) => pipeline.del(key))

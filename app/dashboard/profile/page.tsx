@@ -7,6 +7,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import ProfileEditor from '@/components/dashboard/ProfileEditor';
 
@@ -91,12 +92,12 @@ export default async function ProfilePage() {
             <div className="w-16 h-px bg-[var(--gray-300)] mx-auto" />
 
             {/* Action Button */}
-            <a
+            <Link
               href="/dashboard"
               className="btn btn-primary inline-block"
             >
               Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>

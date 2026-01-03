@@ -85,7 +85,7 @@ Answer only 'yes' or 'no'.`,
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // 1. Authenticate user
     const supabase = await createClient();

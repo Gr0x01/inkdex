@@ -84,6 +84,9 @@ export async function closeRedisClient(): Promise<void> {
 export async function checkRedisHealth(): Promise<boolean> {
   try {
     const client = getRedisClient()
+    if (!client) {
+      return false
+    }
     const result = await client.ping()
     return result === 'PONG'
   } catch (error) {

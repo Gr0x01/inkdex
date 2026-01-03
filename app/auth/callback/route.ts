@@ -323,12 +323,12 @@ export async function GET(request: NextRequest) {
       u => u.user_metadata?.instagram_id === instagramUserId
     )
 
-    let authUserId: string
+    let _authUserId: string
 
     if (existingAuthUser) {
       // User exists - sign them in
       console.log('[OAuth] Existing auth user found:', existingAuthUser.id)
-      authUserId = existingAuthUser.id
+      _authUserId = existingAuthUser.id
 
       // Generate one-time link token for automatic sign-in
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -375,7 +375,7 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      authUserId = newAuthUser.user.id
+      const _authUserId = newAuthUser.user.id
 
       // Generate one-time link token for automatic sign-in
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({

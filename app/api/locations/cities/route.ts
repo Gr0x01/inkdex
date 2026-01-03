@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
     // Format results with labels
     const cities: CityResult[] = [];
 
-    cityGroups.forEach((locations, cityName) => {
+    cityGroups.forEach((locations, _cityName) => {
       if (locations.length === 1) {
         // Unique city name - use city only
         const loc = locations[0];

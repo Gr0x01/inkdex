@@ -46,6 +46,10 @@ export async function shouldTrackEvent(key: string, ttlSeconds: number = 300): P
 export async function isDuplicateEvent(key: string): Promise<boolean> {
   const redis = getRedisClient()
 
+  if (!redis) {
+    return false // Fail open
+  }
+
   try {
     const exists = await redis.exists(key)
     return exists === 1
@@ -60,5 +64,8 @@ export async function isDuplicateEvent(key: string): Promise<boolean> {
  */
 export async function resetDeduplication(key: string): Promise<void> {
   const redis = getRedisClient()
+  if (!redis) {
+    return
+  }
   await redis.del(key)
 }

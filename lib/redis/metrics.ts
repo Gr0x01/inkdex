@@ -256,7 +256,7 @@ export async function getCacheMetrics(
     for (const p of patterns) {
       // Get from Redis (persistent storage)
       const key = `cache:metrics:${p}`
-      const redisMetrics = await redis.hgetall(key)
+      const redisMetrics = redis ? await redis.hgetall(key) : {}
 
       // Merge with in-memory metrics (recent updates)
       const inMemory = metricsStore.get(p)
@@ -352,6 +352,16 @@ export function calculateTotalMetrics(
 export async function getRedisHealth(): Promise<CacheHealth> {
   try {
     const redis = getRedisClient()
+    if (!redis) {
+      return {
+        connected: false,
+        latency: 0,
+        memoryUsed: 0,
+        memoryMax: 0,
+        hitRate: 0,
+        uptime: 0,
+      }
+    }
 
     // Ping for latency check
     const startTime = Date.now()
@@ -432,6 +442,10 @@ export async function resetAllMetrics(): Promise<void> {
     metricsStore.clear()
 
     const redis = getRedisClient()
+    if (!redis) {
+      console.log('[Redis Metrics] Redis not available, cleared in-memory metrics only')
+      return
+    }
     const keys = await redis.keys('cache:metrics:*')
 
     if (keys.length > 0) {

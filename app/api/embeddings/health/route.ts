@@ -4,7 +4,7 @@ interface HealthCheckResult {
   url: string;
   status: 'healthy' | 'unhealthy';
   response_time_ms?: number;
-  details?: any;
+  details?: Record<string, unknown>;
   error?: string;
 }
 
@@ -43,7 +43,7 @@ async function checkHealth(url: string | undefined, apiKey: string | undefined, 
         error: 'Invalid URL: domain not in allowlist or invalid protocol'
       };
     }
-  } catch (e) {
+  } catch (_e) {
     return {
       url,
       status: 'unhealthy',

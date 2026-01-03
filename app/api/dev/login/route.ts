@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { TEST_USERS, getAllTestUsers } from '@/lib/dev/test-users';
+import { getAllTestUsers } from '@/lib/dev/test-users';
 
 export async function POST(request: NextRequest) {
   // Security check: Only allow in development

@@ -38,6 +38,7 @@ export default function LoginPage() {
                 }}
               >
                 <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                  {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API route requires full page redirect for OAuth */}
                   <a
                     href="/api/auth/instagram?redirect=/dashboard"
                     className="block w-full py-3 px-5 text-white text-center

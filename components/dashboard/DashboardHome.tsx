@@ -4,6 +4,7 @@
  * Dashboard Home - Overview content for main dashboard page
  */
 
+import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { SyncSettingsCard } from './SyncSettingsCard';
 
@@ -17,7 +18,7 @@ interface DashboardHomeProps {
 }
 
 export default function DashboardHome({
-  handle,
+  handle: _handle,
   isPro,
   name,
   instagramUsername,
@@ -80,7 +81,7 @@ export default function DashboardHome({
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <a
+            <Link
               href="/dashboard/portfolio"
               className="group border border-gray-200 bg-white p-5 hover:border-gray-400 hover:shadow-sm transition-all"
             >
@@ -93,9 +94,9 @@ export default function DashboardHome({
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-ink group-hover:translate-x-1 transition-all" />
               </div>
-            </a>
+            </Link>
 
-            <a
+            <Link
               href="/dashboard/profile"
               className="group border border-gray-200 bg-white p-5 hover:border-gray-400 hover:shadow-sm transition-all"
             >
@@ -108,10 +109,10 @@ export default function DashboardHome({
                 </div>
                 <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-ink group-hover:translate-x-1 transition-all" />
               </div>
-            </a>
+            </Link>
 
             {isPro && (
-              <a
+              <Link
                 href="/dashboard/analytics"
                 className="group border border-gray-200 bg-white p-5 hover:border-gray-400 hover:shadow-sm transition-all"
               >
@@ -124,7 +125,7 @@ export default function DashboardHome({
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-ink group-hover:translate-x-1 transition-all" />
                 </div>
-              </a>
+              </Link>
             )}
           </div>
         </section>

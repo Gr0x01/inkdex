@@ -6,6 +6,7 @@
  */
 
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import PortfolioManager from '@/components/dashboard/PortfolioManager';
 
@@ -38,12 +39,12 @@ export default async function PortfolioPage() {
             <p className="text-neutral-400">
               You need to claim an artist profile before managing a portfolio.
             </p>
-            <a
+            <Link
               href="/dashboard"
               className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black transition-colors hover:bg-neutral-200"
             >
               Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>

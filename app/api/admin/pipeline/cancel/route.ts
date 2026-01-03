@@ -40,14 +40,14 @@ export async function POST(request: Request) {
       try {
         process.kill(run.process_pid, 'SIGTERM');
         console.log(`Killed process ${run.process_pid} for run ${runId}`);
-      } catch (killError) {
+      } catch (_killError) {
         // Process might already be dead, that's okay
         console.log(`Process ${run.process_pid} already terminated or not found`);
       }
     }
 
     // Update the pipeline run to cancelled status
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('pipeline_runs')
       .update({
         status: 'cancelled',

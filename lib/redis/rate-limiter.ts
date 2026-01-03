@@ -32,6 +32,16 @@ export async function checkRateLimit(
   const windowStart = now - windowMs
   const resetAt = now + windowMs
 
+  // If Redis is not available, fail open
+  if (!redis) {
+    return {
+      success: true,
+      limit,
+      remaining: limit,
+      reset: resetAt,
+    }
+  }
+
   try {
     // Step 1: Clean expired entries and count current requests
     // Use pipeline to make these operations atomic
@@ -94,6 +104,9 @@ export async function checkRateLimit(
  */
 export async function resetRateLimit(key: string): Promise<void> {
   const redis = getRedisClient()
+  if (!redis) {
+    return
+  }
   await redis.del(key)
 }
 
@@ -102,6 +115,9 @@ export async function resetRateLimit(key: string): Promise<void> {
  */
 export async function getRateLimitCount(key: string, windowMs: number): Promise<number> {
   const redis = getRedisClient()
+  if (!redis) {
+    return 0
+  }
   const now = Date.now()
   const windowStart = now - windowMs
 
