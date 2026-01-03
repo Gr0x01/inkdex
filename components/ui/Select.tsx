@@ -193,7 +193,7 @@ export default function Select({
                   setHighlightedIndex(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="w-full px-2 py-1 font-body text-[13px] border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)]"
+                className="w-full h-7 px-2 py-1 font-body text-[13px] leading-tight bg-white border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)] placeholder:text-gray-400 placeholder:italic"
               />
             </div>
           )}
