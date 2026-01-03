@@ -16,6 +16,7 @@ interface NavbarUser {
 interface NavbarProps {
   user?: NavbarUser | null
   isPro?: boolean
+  artistSlug?: string | null
 }
 
 /**
@@ -51,7 +52,7 @@ function CityLink({
  * Design: "Inkdex v2.0" - Refined editorial aesthetic
  * Features: Magazine-style masthead + sophisticated dropdown + global search + user menu
  */
-export default function Navbar({ user = null, isPro = false }: NavbarProps) {
+export default function Navbar({ user = null, isPro = false, artistSlug = null }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownButtonRef = useRef<HTMLButtonElement>(null)
@@ -187,7 +188,7 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
             </Link>
 
             {/* User Menu / Login */}
-            <NavbarUserMenu user={user} isPro={isPro} />
+            <NavbarUserMenu user={user} isPro={isPro} artistSlug={artistSlug} />
           </nav>
 
           {/* Mobile Actions (Menu Toggle Only) */}
@@ -268,7 +269,7 @@ export default function Navbar({ user = null, isPro = false }: NavbarProps) {
 
           {/* User Menu - At Bottom */}
           <div className="relative z-10 pt-3 border-t border-gray-200">
-            <NavbarUserMenuMobile user={user} isPro={isPro} onNavigate={closeMobileMenu} />
+            <NavbarUserMenuMobile user={user} isPro={isPro} artistSlug={artistSlug} onNavigate={closeMobileMenu} />
           </div>
         </div>
       </nav>

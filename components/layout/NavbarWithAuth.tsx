@@ -13,6 +13,7 @@ export default async function NavbarWithAuth() {
 
   let userData = null
   let isPro = false
+  let artistSlug = null
 
   if (authUser) {
     // Fetch user data and artist data in parallel for better performance
@@ -24,7 +25,7 @@ export default async function NavbarWithAuth() {
         .single(),
       supabase
         .from('artists')
-        .select('is_pro')
+        .select('is_pro, slug')
         .eq('claimed_by_user_id', authUser.id)
         .maybeSingle() // Use maybeSingle since not all users have claimed artists
     ])
@@ -36,8 +37,9 @@ export default async function NavbarWithAuth() {
     if (userResult.data) {
       userData = userResult.data
       isPro = artistResult.data?.is_pro ?? false
+      artistSlug = artistResult.data?.slug ?? null
     }
   }
 
-  return <Navbar user={userData} isPro={isPro} />
+  return <Navbar user={userData} isPro={isPro} artistSlug={artistSlug} />
 }

@@ -12,6 +12,7 @@ interface NavbarUserMenuProps {
     instagram_username: string | null
   } | null
   isPro?: boolean
+  artistSlug?: string | null
 }
 
 /**
@@ -41,7 +42,7 @@ function isValidAvatarUrl(url: string | null): url is string {
  * Pro users: Shows crown badge next to avatar
  * Logged out: Shows "Log In" button
  */
-export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
+export function NavbarUserMenu({ user, isPro = false, artistSlug = null }: NavbarUserMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -160,14 +161,16 @@ export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
           >
             Dashboard
           </Link>
-          <Link
-            href="/dashboard/portfolio"
-            className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
-            role="menuitem"
-            onClick={() => setIsOpen(false)}
-          >
-            Portfolio
-          </Link>
+          {artistSlug && (
+            <Link
+              href={`/artist/${artistSlug}`}
+              className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+            >
+              Portfolio
+            </Link>
+          )}
           <form action="/api/auth/logout" method="POST" className="w-full">
             <button
               type="submit"
@@ -187,7 +190,7 @@ export function NavbarUserMenu({ user, isPro = false }: NavbarUserMenuProps) {
 /**
  * Mobile version - simplified for mobile menu
  */
-export function NavbarUserMenuMobile({ user, isPro = false, onNavigate }: NavbarUserMenuProps & { onNavigate?: () => void }) {
+export function NavbarUserMenuMobile({ user, isPro = false, artistSlug = null, onNavigate }: NavbarUserMenuProps & { onNavigate?: () => void }) {
   // Logged out state
   if (!user) {
     return (
@@ -238,13 +241,15 @@ export function NavbarUserMenuMobile({ user, isPro = false, onNavigate }: Navbar
         >
           Dashboard
         </Link>
-        <Link
-          href="/dashboard/portfolio"
-          className="block editorial-mobile-link text-ink/70 hover:text-ink transition-colors"
-          onClick={onNavigate}
-        >
-          Portfolio
-        </Link>
+        {artistSlug && (
+          <Link
+            href={`/artist/${artistSlug}`}
+            className="block editorial-mobile-link text-ink/70 hover:text-ink transition-colors"
+            onClick={onNavigate}
+          >
+            Portfolio
+          </Link>
+        )}
         <form action="/api/auth/logout" method="POST" className="w-full">
           <button
             type="submit"
