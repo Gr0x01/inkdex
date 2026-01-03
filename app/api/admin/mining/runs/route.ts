@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 
 /**
@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Use admin client for data queries (bypasses RLS)
+    const adminClient = createAdminClient();
+
     // Parse query params
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'hashtag' | 'follower' | null (both)
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch hashtag runs
     if (!type || type === 'hashtag') {
-      const { data: hashtagRuns, error: hashtagError } = await supabase
+      const { data: hashtagRuns, error: hashtagError } = await adminClient
         .from('hashtag_mining_runs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -101,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch follower runs
     if (!type || type === 'follower') {
-      const { data: followerRuns, error: followerError } = await supabase
+      const { data: followerRuns, error: followerError } = await adminClient
         .from('follower_mining_runs')
         .select('*')
         .order('created_at', { ascending: false })

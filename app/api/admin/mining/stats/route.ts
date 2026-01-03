@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 
 /**
@@ -68,8 +68,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Use admin client for data queries (bypasses RLS)
+    const adminClient = createAdminClient();
+
     // Fetch hashtag mining stats
-    const { data: hashtagRuns, error: hashtagError } = await supabase
+    const { data: hashtagRuns, error: hashtagError } = await adminClient
       .from('hashtag_mining_runs')
       .select('*');
 
@@ -82,7 +85,7 @@ export async function GET() {
     }
 
     // Fetch follower mining stats
-    const { data: followerRuns, error: followerError } = await supabase
+    const { data: followerRuns, error: followerError } = await adminClient
       .from('follower_mining_runs')
       .select('*');
 
