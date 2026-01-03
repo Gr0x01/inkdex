@@ -36,6 +36,7 @@
     "seeds:populate": "tsx scripts/style-seeds/populate-style-seeds.ts",
     "seeds:all": "npm run seeds:download && npm run seeds:prepare-embeddings && npm run seeds:generate-embeddings && npm run seeds:populate",
     "test-emails": "tsx scripts/email/test-emails.ts",
+    "backfill:analytics": "tsx scripts/analytics/backfill-test-user-analytics.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
