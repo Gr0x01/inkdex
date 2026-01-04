@@ -121,8 +121,8 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     }
   }, [hoverTimeout])
 
-  // Pro cards span 2 columns and use horizontal layout on desktop
-  const isProLayout = is_pro && displayMode === 'search'
+  // Pro and Featured cards span 2 columns and use horizontal layout on desktop
+  const isProLayout = (is_pro || is_featured) && displayMode === 'search'
 
   return (
     <Link
@@ -150,8 +150,8 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
               className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
             />
 
-            {/* Featured badge on image - only for non-Pro (Pro shows in details) */}
-            {is_featured && !is_pro && (
+            {/* Featured badge on image - only for non-Pro/non-enhanced-layout (enhanced layout shows in details) */}
+            {is_featured && !isProLayout && (
               <div className="absolute top-3 left-3">
                 <FeaturedBadge variant="badge" />
               </div>
@@ -174,11 +174,20 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           {isProLayout ? (
             <>
               <div className="flex flex-col space-y-3 sm:space-y-5">
-                {/* Pro badge and percentage row */}
+                {/* Pro or Featured badge and percentage row */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-shrink-0">
-                    <ProBadge variant="badge" size="sm" className="sm:hidden" />
-                    <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
+                    {is_pro ? (
+                      <>
+                        <ProBadge variant="badge" size="sm" className="sm:hidden" />
+                        <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
+                      </>
+                    ) : is_featured ? (
+                      <>
+                        <FeaturedBadge variant="badge" className="sm:hidden text-xs" />
+                        <FeaturedBadge variant="badge" className="hidden sm:inline-flex text-sm" />
+                      </>
+                    ) : null}
                   </div>
 
                   {/* Match percentage - top right */}
@@ -255,7 +264,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
               )}
             </>
           ) : (
-            // Standard layout (non-Pro cards)
+            // Standard layout (non-enhanced cards)
             <div className="space-y-1">
               {instagramHandle && (
                 <div className="flex items-center gap-1.5">
@@ -263,6 +272,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
                     @{instagramHandle}
                   </h3>
                   {is_pro && <ProBadge variant="icon-only" size="sm" />}
+                  {is_featured && !is_pro && <FeaturedBadge variant="icon-only" size="sm" />}
                 </div>
               )}
               <div className="flex items-center justify-between">
