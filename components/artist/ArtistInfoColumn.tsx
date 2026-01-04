@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { isArtistFeatured } from '@/lib/utils/featured'
 import ClaimProfileButton from './ClaimProfileButton'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { trackClick } from '@/lib/analytics/client'
@@ -36,6 +35,7 @@ interface ArtistInfoColumnProps {
     follower_count: number | null
     verification_status: string
     is_pro: boolean | null
+    is_featured: boolean | null
     last_instagram_sync_at: string | null
     locations?: ArtistLocation[]
   }
@@ -46,7 +46,7 @@ export default function ArtistInfoColumn({
   artist,
   portfolioImages = [],
 }: ArtistInfoColumnProps) {
-  const isFeatured = isArtistFeatured(artist.follower_count)
+  const isFeatured = artist.is_featured === true
   const displayBio = sanitizeText(artist.bio_override || artist.bio)
 
   // Calculate portfolio stats

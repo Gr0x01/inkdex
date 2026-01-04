@@ -188,7 +188,7 @@ export default function NavbarSearch({ forceLoading = false }: NavbarSearchProps
 
   return (
     <form onSubmit={handleSubmit} className="relative w-full">
-      <div className="flex items-stretch gap-0.5">
+      <div className="flex items-stretch">
         {/* Input Field Container */}
         <div
           className={`

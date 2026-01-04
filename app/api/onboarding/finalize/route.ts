@@ -327,7 +327,51 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 8. Insert ALL classified portfolio images (auto-import)
+    // 10. Check for marketing outreach - auto-grant 3-month Pro if contacted
+    const { data: outreach } = await supabase
+      .from('marketing_outreach')
+      .select('id, campaign_name')
+      .eq('artist_id', artistId)
+      .is('claimed_at', null)
+      .single();
+
+    if (outreach) {
+      console.log(`[Onboarding] Artist ${artistId} has pending outreach - granting 3-month Pro`);
+
+      const proExpiresAt = new Date();
+      proExpiresAt.setMonth(proExpiresAt.getMonth() + 3);
+
+      // Update artist to Pro
+      await supabase
+        .from('artists')
+        .update({ is_pro: true })
+        .eq('id', artistId);
+
+      // Create subscription record
+      await supabase.from('artist_subscriptions').insert({
+        user_id: user.id,
+        artist_id: artistId,
+        subscription_type: 'pro',
+        status: 'active',
+        current_period_start: new Date().toISOString(),
+        current_period_end: proExpiresAt.toISOString(),
+        promo_code: 'OUTREACH_3MO_FREE',
+      });
+
+      // Update outreach record
+      await supabase
+        .from('marketing_outreach')
+        .update({
+          claimed_at: new Date().toISOString(),
+          pro_granted_at: new Date().toISOString(),
+          pro_expires_at: proExpiresAt.toISOString(),
+        })
+        .eq('id', outreach.id);
+
+      console.log(`[Onboarding] Granted Pro until ${proExpiresAt.toISOString()}`);
+    }
+
+    // 11. Insert ALL classified portfolio images (auto-import)
     const classifiedImages = fetchedImages.filter((img) =>
       img.classified === true
     );

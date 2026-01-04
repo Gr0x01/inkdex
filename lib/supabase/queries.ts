@@ -497,11 +497,11 @@ export async function getFeaturedImages(limit: number = 30) {
 }
 
 /**
- * Get featured artists (50k+ followers) with portfolios for homepage grid
+ * Get featured artists (admin-curated is_featured=true) with portfolios for homepage grid
  * Supports multi-location artists via artist_locations table
  * @param city - City to filter by
  * @param limit - Number of artists to fetch (default 12)
- * @returns Artists with 50k+ followers and at least 4 portfolio images
+ * @returns Admin-curated featured artists with at least 4 portfolio images
  */
 export async function getFeaturedArtists(city: string, limit: number = 12) {
   // Validate inputs
@@ -541,7 +541,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
       )
     `)
     .ilike('city', escapeLikePattern(city))
-    .gte('artists.follower_count', 50000)
+    .eq('artists.is_featured', true)
     .eq('artists.portfolio_images.status', 'active')
     .not('artists.portfolio_images.storage_thumb_640', 'is', null)
 
@@ -603,6 +603,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
 
 /**
  * Get featured artists grouped by state for homepage (randomized)
+ * Uses admin-curated is_featured=true flag
  * @param limitPerState - Number of artists to fetch per state (default 4)
  * @returns Object with state codes as keys and arrays of artists as values
  */
@@ -616,7 +617,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
   const { createServiceClient } = await import('@/lib/supabase/service')
   const supabase = createServiceClient()
 
-  // Get all featured artists (100k+ followers) across all cities
+  // Get all admin-curated featured artists across all cities
   // Using a larger limit and randomizing in JS for better distribution per state
   const { data, error } = await supabase
     .from('artists')
@@ -637,7 +638,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
         likes_count
       )
     `)
-    .gte('follower_count', 100000)
+    .eq('is_featured', true)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
 

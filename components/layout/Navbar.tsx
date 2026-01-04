@@ -109,18 +109,13 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-3 md:gap-6 h-20 md:h-24 relative">
           {/* Logo - Editorial Magazine Masthead */}
-          <Link href="/" className="flex items-center gap-3 group relative z-10 flex-shrink-0">
-            <div className="relative">
-              {/* Main logo */}
-              <div className="font-display text-3xl md:text-4xl font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-medium">
-                INKDEX
-              </div>
-
-              {/* Subtle tagline */}
-              <div className="hidden md:block font-mono text-xs font-light tracking-[0.2em] text-gray-500 uppercase mt-1 text-center">
-                Artist Discovery
-              </div>
+          <Link href="/" className="flex items-center gap-2 group relative z-10 flex-shrink-0">
+            <div className="font-display text-3xl md:text-4xl font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-medium">
+              INKDEX
             </div>
+            <span className="font-mono text-[0.5rem] md:text-[0.6rem] font-bold text-ink uppercase tracking-[0.15em] border border-ink px-1.5 py-0.5 leading-none">
+              Beta
+            </span>
           </Link>
 
           {/* Search Bar - Desktop Only */}

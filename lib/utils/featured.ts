@@ -1,18 +1,24 @@
 /**
  * Featured artist utilities
  *
- * An artist is considered "featured" if they have 50,000+ Instagram followers.
- * This highlights established artists with significant reach and credibility.
+ * Featured status is now admin-curated via the is_featured column.
+ * This file contains legacy utilities for follower-based thresholds.
  */
 
+/**
+ * @deprecated Featured status is now controlled by admin via is_featured column.
+ * Use artist.is_featured instead of this function.
+ * Keeping for reference on what constitutes a "notable" follower count.
+ */
 const FEATURED_FOLLOWER_THRESHOLD = 50000;
 
 /**
- * Check if an artist should be marked as "featured" based on their follower count
- * @param followerCount - Artist's Instagram follower count
- * @returns true if artist has 50k+ followers
+ * @deprecated Use artist.is_featured column instead.
+ * Featured status is now admin-curated, not computed from follower count.
+ * This function is preserved for backwards compatibility but should not be used.
  */
 export function isArtistFeatured(followerCount: number | null | undefined): boolean {
+  console.warn('isArtistFeatured() is deprecated. Use artist.is_featured column instead.');
   if (followerCount === null || followerCount === undefined) {
     return false;
   }

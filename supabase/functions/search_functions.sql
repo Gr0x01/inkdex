@@ -745,6 +745,117 @@ COMMENT ON FUNCTION get_state_cities_with_counts IS
 
 
 -- ============================================
+-- get_top_artists_by_style
+-- Get top artists ranked by style similarity
+-- Used for marketing curation (admin panel)
+-- ============================================
+DROP FUNCTION IF EXISTS get_top_artists_by_style(text, int);
+
+CREATE OR REPLACE FUNCTION get_top_artists_by_style(
+  p_style_slug text,
+  p_limit int DEFAULT 25
+)
+RETURNS TABLE (
+  artist_id uuid,
+  artist_name text,
+  instagram_handle text,
+  city text,
+  state text,
+  similarity_score float,
+  best_image_url text,
+  is_pro boolean,
+  is_featured boolean
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY INVOKER
+AS $$
+DECLARE
+  style_embedding vector(768);
+BEGIN
+  -- Validate style_slug format (alphanumeric, hyphens only)
+  IF p_style_slug IS NULL OR p_style_slug !~ '^[a-z0-9\-]+$' THEN
+    RAISE EXCEPTION 'Invalid style_slug format. Use lowercase with hyphens.';
+  END IF;
+
+  -- Validate limit
+  IF p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'Limit must be between 1 and 100.';
+  END IF;
+
+  -- Get the style seed embedding
+  SELECT ss.embedding INTO style_embedding
+  FROM style_seeds ss
+  WHERE ss.style_name = p_style_slug;
+
+  -- If style not found, return empty
+  IF style_embedding IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  -- Step 1: Vector search (uses index)
+  WITH ranked_images AS (
+    SELECT
+      pi.artist_id as ri_artist_id,
+      pi.id as ri_image_id,
+      pi.storage_thumb_640 as ri_thumbnail_url,
+      1 - (pi.embedding <=> style_embedding) as ri_similarity
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.hidden, FALSE) = FALSE
+    ORDER BY pi.embedding <=> style_embedding
+    LIMIT 500  -- Top 500 matching images
+  ),
+  -- Step 2: Get best image per artist
+  best_per_artist AS (
+    SELECT DISTINCT ON (ri.ri_artist_id)
+      ri.ri_artist_id as ba_artist_id,
+      ri.ri_similarity as ba_similarity,
+      ri.ri_thumbnail_url as ba_image_url
+    FROM ranked_images ri
+    ORDER BY ri.ri_artist_id, ri.ri_similarity DESC
+  ),
+  -- Step 3: Join with artist data, filter GDPR/deleted
+  filtered_artists AS (
+    SELECT
+      bpa.ba_artist_id as fa_artist_id,
+      a.name as fa_name,
+      a.instagram_handle as fa_handle,
+      a.city as fa_city,
+      a.state as fa_state,
+      bpa.ba_similarity as fa_similarity,
+      bpa.ba_image_url as fa_image_url,
+      COALESCE(a.is_pro, FALSE) as fa_is_pro,
+      COALESCE(a.is_featured, FALSE) as fa_is_featured
+    FROM best_per_artist bpa
+    INNER JOIN artists a ON a.id = bpa.ba_artist_id
+    WHERE a.deleted_at IS NULL
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+  )
+  -- Final output: ranked by similarity
+  SELECT
+    fa.fa_artist_id,
+    fa.fa_name,
+    fa.fa_handle,
+    fa.fa_city,
+    fa.fa_state,
+    fa.fa_similarity,
+    fa.fa_image_url,
+    fa.fa_is_pro,
+    fa.fa_is_featured
+  FROM filtered_artists fa
+  ORDER BY fa.fa_similarity DESC
+  LIMIT p_limit;
+END;
+$$;
+
+COMMENT ON FUNCTION get_top_artists_by_style IS
+  'Returns top N artists ranked by similarity to a style seed. Used for marketing curation. Excludes GDPR/deleted artists.';
+
+
+-- ============================================
 -- GDPR Performance Index (on artists table)
 -- ============================================
 -- Note: The is_gdpr_blocked column and index are created by gdpr_setup.sql

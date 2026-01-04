@@ -15,6 +15,7 @@ export type CacheKeyPattern =
   | 'search' // Search results by embedding hash
   | 'admin:dashboard' // Admin dashboard statistics
   | 'admin:mining' // Mining pipeline statistics
+  | 'admin:styles' // Style leaderboard rankings
   | 'analytics:summary' // Artist analytics summary metrics
   | 'analytics:top-images' // Top performing images by artist
   | 'analytics:timeseries' // Daily analytics time series data

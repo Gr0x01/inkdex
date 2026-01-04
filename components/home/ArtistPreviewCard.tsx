@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { FeaturedArtist } from '@/lib/mock/featured-data'
-import { isArtistFeatured } from '@/lib/utils/featured'
 import { sanitizeText } from '@/lib/utils/sanitize'
 
 interface ArtistPreviewCardProps {
@@ -10,7 +9,8 @@ interface ArtistPreviewCardProps {
 }
 
 export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
-  const _isFeatured = isArtistFeatured(artist.follower_count)
+  // Note: is_featured now comes from database column, not computed from follower count
+  const _isFeatured = artist.is_featured === true
 
   // Get first 4 portfolio images
   const portfolioImages = artist.portfolio_images.slice(0, 4)
