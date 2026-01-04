@@ -368,11 +368,16 @@ export async function getArtistBySlug(slug: string) {
         location_type,
         is_primary,
         display_order
+      ),
+      style_profiles:artist_style_profiles (
+        style_name,
+        percentage
       )
     `)
     .eq('slug', slug)
     .order('is_primary', { referencedTable: 'artist_locations', ascending: false })
     .order('display_order', { referencedTable: 'artist_locations', ascending: true })
+    .order('percentage', { referencedTable: 'artist_style_profiles', ascending: false })
     .single()
 
   if (error) {

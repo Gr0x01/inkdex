@@ -17,6 +17,34 @@ interface PortfolioImage {
   likes_count: number | null
 }
 
+interface StyleProfile {
+  style_name: string
+  percentage: number
+}
+
+const STYLE_DISPLAY_NAMES: Record<string, string> = {
+  'traditional': 'Traditional',
+  'neo-traditional': 'Neo-Traditional',
+  'fine-line': 'Fine Line',
+  'blackwork': 'Blackwork',
+  'geometric': 'Geometric',
+  'realism': 'Realism',
+  'japanese': 'Japanese',
+  'watercolor': 'Watercolor',
+  'dotwork': 'Dotwork',
+  'tribal': 'Tribal',
+  'illustrative': 'Illustrative',
+  'surrealism': 'Surrealism',
+  'minimalist': 'Minimalist',
+  'lettering': 'Lettering',
+  'new-school': 'New School',
+  'trash-polka': 'Trash Polka',
+  'chicano': 'Chicano',
+  'biomechanical': 'Biomechanical',
+  'ornamental': 'Ornamental',
+  'sketch': 'Sketch',
+}
+
 interface ArtistInfoColumnProps {
   artist: {
     id: string
@@ -38,6 +66,7 @@ interface ArtistInfoColumnProps {
     is_featured: boolean | null
     last_instagram_sync_at: string | null
     locations?: ArtistLocation[]
+    style_profiles?: StyleProfile[]
   }
   portfolioImages?: PortfolioImage[]
 }
@@ -121,9 +150,9 @@ export default function ArtistInfoColumn({
               />
             </div>
 
-            {/* Pro Badge - Hanging Tag (top when both Pro and Featured) */}
+            {/* Pro Badge - Hanging Tag (0.5rem above Featured when both exist) */}
             {artist.is_pro && (
-              <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[4.5rem]' : 'bottom-2'}`}>
+              <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[3.25rem]' : 'bottom-2'}`}>
                 <ProBadge variant="badge" size="md" className="py-3" />
               </div>
             )}
@@ -157,7 +186,7 @@ export default function ArtistInfoColumn({
               @{artist.instagram_handle}
             </h1>
 
-            {/* Location - horizontal with [P] primary indicator */}
+            {/* Location + Shop (inline) */}
             <div className="flex items-center justify-center gap-1.5 flex-wrap">
               {hasMultipleLocations && (
                 <span className="relative group inline-flex items-center justify-center bg-ink text-paper w-[14px] h-[14px] text-[10px] font-bold font-sans leading-none p-0.5">
@@ -169,6 +198,9 @@ export default function ArtistInfoColumn({
               )}
               <p className="font-body text-base font-normal text-gray-600">
                 {formatLocation(primaryLocation)}
+                {artist.shop_name && (
+                  <span className="text-gray-400"> — {artist.shop_name}</span>
+                )}
               </p>
               {otherLocations.map((loc) => (
                 <p key={loc.id} className="font-body text-base font-normal text-gray-600">
@@ -176,46 +208,56 @@ export default function ArtistInfoColumn({
                 </p>
               ))}
             </div>
-
-            {/* Shop name if present */}
-            {artist.shop_name && (
-              <p className="font-mono text-xs font-normal text-gray-400 leading-tight">
-                {artist.shop_name}
-              </p>
-            )}
           </div>
         )}
 
-        {/* Stats - Inline, No Box, Typographic Only */}
-        {(artist.follower_count || portfolioCount > 0) && (
-          <div className="pt-1 space-y-1">
-            <div className="flex items-center justify-center gap-2.5 text-xs">
-              {artist.follower_count && artist.follower_count > 0 && (
-                <div>
-                  <span className="font-heading font-black text-ink">
-                    {artist.follower_count >= 1000
-                      ? `${(artist.follower_count / 1000).toFixed(1)}K`
-                      : artist.follower_count.toLocaleString()}
+        {/* Stats + Styles - Grouped together */}
+        {(artist.follower_count || portfolioCount > 0 || (artist.style_profiles && artist.style_profiles.length > 0)) && (
+          <div className="pt-1 space-y-2">
+            {/* Stats row */}
+            {(artist.follower_count || portfolioCount > 0) && (
+              <div className="flex items-center justify-center gap-2.5 text-xs">
+                {artist.follower_count && artist.follower_count > 0 && (
+                  <div>
+                    <span className="font-heading font-black text-ink">
+                      {artist.follower_count >= 1000
+                        ? `${(artist.follower_count / 1000).toFixed(1)}K`
+                        : artist.follower_count.toLocaleString()}
+                    </span>
+                    <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
+                      followers
+                    </span>
+                  </div>
+                )}
+                {artist.follower_count && portfolioCount > 0 && (
+                  <span className="text-gray-300 font-light">•</span>
+                )}
+                {portfolioCount > 0 && (
+                  <div>
+                    <span className="font-heading font-black text-ink">
+                      {portfolioCount}
+                    </span>
+                    <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
+                      pieces
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Style Badges - ink-stamped look */}
+            {artist.style_profiles && artist.style_profiles.length > 0 && (
+              <div className="flex items-center justify-center gap-2.5 flex-wrap">
+                {artist.style_profiles.slice(0, 3).map((style) => (
+                  <span
+                    key={style.style_name}
+                    className="font-mono text-[11px] uppercase tracking-[0.15em] font-semibold text-ink border border-ink px-2.5 py-1"
+                  >
+                    {STYLE_DISPLAY_NAMES[style.style_name] || style.style_name}
                   </span>
-                  <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
-                    followers
-                  </span>
-                </div>
-              )}
-              {artist.follower_count && portfolioCount > 0 && (
-                <span className="text-gray-300 font-light">•</span>
-              )}
-              {portfolioCount > 0 && (
-                <div>
-                  <span className="font-heading font-black text-ink">
-                    {portfolioCount}
-                  </span>
-                  <span className="font-mono font-normal text-gray-500 ml-1 text-xs uppercase tracking-wide">
-                    pieces
-                  </span>
-                </div>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Sync status for Pro users */}
             {artist.is_pro && artist.last_instagram_sync_at && (
