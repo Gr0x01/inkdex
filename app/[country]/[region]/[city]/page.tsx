@@ -157,7 +157,7 @@ export default async function CityPage({
       />
 
       <main className="min-h-screen bg-bg-primary relative noise-overlay">
-        <div className="container mx-auto px-4 py-6 md:py-8">
+        <div className="container mx-auto px-4 pt-4 md:pt-8 lg:pt-16 pb-6 md:pb-12">
           {/* Breadcrumbs */}
           <nav className="font-body text-small text-text-secondary mb-4" aria-label="Breadcrumb">
             <ol className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default async function CityPage({
           {/* Artists Grid */}
           {artists.length > 0 ? (
             <>
-              <div className="grid gap-3 sm:gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-2 md:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {searchResults.map((artist) => (
                   <ArtistCard
                     key={artist.artist_id}
@@ -258,7 +258,7 @@ export default async function CityPage({
                   Explore tattoo artists specializing in different styles
                 </p>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-4">
                 {styleSeeds.map((style) => (
                   <Link
                     key={style.style_name}

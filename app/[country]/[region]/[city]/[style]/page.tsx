@@ -188,7 +188,7 @@ export default async function StylePage({
 
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="mx-auto max-w-7xl px-4 pt-4 md:pt-8 lg:pt-16 pb-12 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
             {/* Text Content */}
             <div className="flex flex-col justify-center">
