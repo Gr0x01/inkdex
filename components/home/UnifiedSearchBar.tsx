@@ -238,7 +238,7 @@ export default function UnifiedSearchBar() {
           {/* Input Field Container */}
           <div
             className={`
-              flex-1 flex items-center gap-2 h-8 px-2 bg-white/95 border-2
+              flex-1 flex items-center gap-4 h-16 px-4 bg-white/95 border-2
               transition-all duration-150
               ${isSubmitting ? 'border-purple-500/50' : error ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
               ${isSubmitting ? '' : 'focus-within:border-white/60'}
@@ -261,7 +261,7 @@ export default function UnifiedSearchBar() {
               <>
                 {/* Left: Search Icon OR Image Thumbnail */}
                 {imagePreview ? (
-                  <div className="relative w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 group">
+                  <div className="relative w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imagePreview}
@@ -279,7 +279,7 @@ export default function UnifiedSearchBar() {
                   </div>
                 ) : (
                   <svg
-                    className="w-4 h-4 text-ink/40 flex-shrink-0"
+                    className="w-5 h-5 text-ink/40 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -323,11 +323,11 @@ export default function UnifiedSearchBar() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-shrink-0 p-2 hover:bg-ink/5 transition-colors"
+                  className="flex-shrink-0 p-2.5 hover:bg-ink/5 transition-colors"
                   aria-label="Upload reference image"
                 >
                   <svg
-                    className="w-4 h-4 text-ink/40 hover:text-ink transition-colors"
+                    className="w-5 h-5 text-ink/40 hover:text-ink transition-colors"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -359,7 +359,7 @@ export default function UnifiedSearchBar() {
             type="submit"
             disabled={!canSubmit}
             className={`
-              h-8 px-2 border-2
+              h-16 px-4 border-2
               font-mono text-sm sm:text-base font-bold uppercase tracking-widest
               transition-all duration-150
               ${

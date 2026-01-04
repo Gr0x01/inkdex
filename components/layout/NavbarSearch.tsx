@@ -172,7 +172,7 @@ export default function NavbarSearch() {
         {/* Input Field Container */}
         <div
           className={`
-            flex-1 flex items-center gap-2 h-10 md:h-11 px-2 bg-white/80 border-2
+            flex-1 flex items-center gap-4 h-10 md:h-11 px-4 bg-white/80 border-2
             transition-all duration-150
             ${error ? 'border-red-500/60' : 'border-ink/20'}
             focus-within:border-ink focus-within:bg-white
@@ -180,7 +180,7 @@ export default function NavbarSearch() {
         >
           {/* Left: Search Icon OR Image Thumbnail */}
           {imagePreview ? (
-            <div className="relative w-6 h-6 md:w-7 md:h-7 flex-shrink-0 group">
+            <div className="relative w-7 h-7 md:w-8 md:h-8 flex-shrink-0 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imagePreview}
@@ -241,7 +241,7 @@ export default function NavbarSearch() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex-shrink-0 p-1.5 -mr-1 hover:bg-ink/5 transition-colors"
+            className="flex-shrink-0 p-2 hover:bg-ink/5 transition-colors"
             aria-label="Upload reference image"
           >
             <svg
@@ -275,9 +275,9 @@ export default function NavbarSearch() {
           type="submit"
           disabled={!canSubmit}
           className={`
-            flex-shrink-0 h-10 md:h-11 px-2 md:px-3 border-2
+            flex-shrink-0 h-10 md:h-11 px-4 md:px-6 border-2 min-w-[80px] md:min-w-[90px]
             font-mono text-xs md:text-sm font-bold uppercase tracking-widest
-            transition-all duration-150
+            transition-all duration-150 flex items-center justify-center
             ${
               isSubmitting
                 ? 'bg-ink text-paper border-ink cursor-wait'
@@ -288,7 +288,7 @@ export default function NavbarSearch() {
           `}
         >
           {isSubmitting ? (
-            <div className="w-3 h-3 border-[1.5px] border-paper/30 border-t-paper rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
           ) : (
             'Search'
           )}
