@@ -66,7 +66,7 @@ export default function DashboardToolbar() {
                 `}
               >
                 <Icon className="w-3.5 h-3.5" strokeWidth={2.5} />
-                <span className="hidden xl:inline">{item.label}</span>
+                <span>{item.label}</span>
 
                 {/* Bottom accent line for active state */}
                 {active && (

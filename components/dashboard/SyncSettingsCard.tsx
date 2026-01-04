@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Ellipsis } from 'lucide-react';
 import Link from 'next/link';
 import { SyncStatusBadge } from './SyncStatusBadge';
 import { ProBadge } from '@/components/badges/ProBadge';
@@ -62,6 +62,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
   const [togglingFilter, setTogglingFilter] = useState(false);
   const [_error, setError] = useState<string | null>(null);
   const [_showHistory, _setShowHistory] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Fetch status on mount
   const fetchStatus = useCallback(async () => {
@@ -244,14 +245,130 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
 
   return (
     <>
-      {/* Sync Status Badge */}
-      <SyncStatusBadge status={getSyncStatus()} lastSyncAt={status?.lastSyncAt} />
+      {/* Mobile: Menu Button */}
+      <div className="relative sm:hidden">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="inline-flex items-center justify-center h-7 w-7 border-2 border-ink hover:bg-gray-50 transition-colors"
+          aria-label="Sync settings menu"
+        >
+          <Ellipsis className="w-4 h-4" />
+        </button>
 
-      {/* Two-column grid for toggles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        {/* Mobile Dropdown */}
+        {mobileMenuOpen && (
+          <div className="absolute right-0 top-full mt-2 bg-white border-2 border-ink shadow-lg p-4 w-64 z-50">
+            <div className="space-y-4">
+              {/* Auto-sync Toggle */}
+              <div className="flex items-center justify-between">
+                <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600 leading-none">
+                  Auto-Sync
+                </label>
+                <button
+                  onClick={handleToggle}
+                  disabled={toggling}
+                  className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20"
+                  role="switch"
+                  aria-checked={status?.autoSyncEnabled}
+                  aria-label="Toggle auto-sync"
+                >
+                  <div
+                    className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
+                    style={{
+                      width: '50%',
+                      left: status?.autoSyncEnabled ? '50%' : '0'
+                    }}
+                  />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      !status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+                    }`}
+                  >
+                    OFF
+                  </span>
+                  <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
+                    }`}
+                  >
+                    ON
+                  </span>
+                </button>
+              </div>
+
+              {/* Filter Toggle */}
+              <div className="flex items-center justify-between">
+                <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600 leading-none">
+                  Filter non-tattoos
+                </label>
+                <button
+                  onClick={handleFilterToggle}
+                  disabled={togglingFilter}
+                  className="relative inline-flex border-2 border-ink overflow-hidden h-7 w-20"
+                  role="switch"
+                  aria-checked={status?.filterNonTattoo}
+                  aria-label="Toggle filter non-tattoo content"
+                >
+                  <div
+                    className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
+                    style={{
+                      width: '50%',
+                      left: status?.filterNonTattoo ? '50%' : '0'
+                    }}
+                  />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      !status?.filterNonTattoo ? 'text-paper' : 'text-ink'
+                    }`}
+                  >
+                    OFF
+                  </span>
+                  <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      status?.filterNonTattoo ? 'text-paper' : 'text-ink'
+                    }`}
+                  >
+                    ON
+                  </span>
+                </button>
+              </div>
+
+              {/* Manual Sync Button */}
+              <div
+                className="group relative inline-block transition-all duration-200"
+                style={{
+                  background: syncing ? 'transparent' : 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                  padding: '2px'
+                }}
+              >
+                <button
+                  onClick={handleManualSync}
+                  disabled={syncing}
+                  className="relative inline-flex items-center justify-center w-full px-3 py-1.5 gap-1.5
+                             bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
+                             group-hover:bg-paper
+                             text-white font-mono text-[10px] uppercase tracking-wider
+                             transition-all duration-200
+                             disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
+                  <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Inline Row */}
+      <div className="hidden sm:flex flex-wrap items-center gap-4">
         {/* Auto-sync Toggle */}
         <div className="flex items-center gap-2">
-          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
+          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600 leading-none">
             Auto-Sync
           </label>
           <button
@@ -262,7 +379,6 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             aria-checked={status?.autoSyncEnabled}
             aria-label="Toggle auto-sync"
           >
-            {/* Sliding Background */}
             <div
               className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
               style={{
@@ -270,8 +386,6 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
                 left: status?.autoSyncEnabled ? '50%' : '0'
               }}
             />
-
-            {/* OFF Label */}
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 !status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
@@ -279,11 +393,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             >
               OFF
             </span>
-
-            {/* Divider */}
             <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
-
-            {/* ON Label */}
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
@@ -296,8 +406,8 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
 
         {/* Filter Toggle */}
         <div className="flex items-center gap-2">
-          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
-            Filter Content
+          <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600 leading-none">
+            Filter non-tattoos
           </label>
           <button
             onClick={handleFilterToggle}
@@ -307,7 +417,6 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             aria-checked={status?.filterNonTattoo}
             aria-label="Toggle filter non-tattoo content"
           >
-            {/* Sliding Background */}
             <div
               className="absolute top-0 bottom-0 bg-ink transition-all duration-300 ease-out"
               style={{
@@ -315,8 +424,6 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
                 left: status?.filterNonTattoo ? '50%' : '0'
               }}
             />
-
-            {/* OFF Label */}
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 !status?.filterNonTattoo ? 'text-paper' : 'text-ink'
@@ -324,11 +431,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             >
               OFF
             </span>
-
-            {/* Divider */}
             <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
-
-            {/* ON Label */}
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 status?.filterNonTattoo ? 'text-paper' : 'text-ink'
@@ -338,31 +441,31 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             </span>
           </button>
         </div>
-      </div>
 
-      {/* Manual Sync Button */}
-      <div
-        className="group relative inline-block transition-all duration-200"
-        style={{
-          background: syncing ? 'transparent' : 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-          padding: '2px'
-        }}
-      >
-        <button
-          onClick={handleManualSync}
-          disabled={syncing}
-          className="relative inline-flex items-center justify-center h-7 w-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 sm:gap-1.5
-                     bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
-                     group-hover:bg-paper
-                     text-white font-mono text-[10px] uppercase tracking-wider
-                     transition-all duration-200
-                     disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gradient-to-r disabled:from-[#f09433] disabled:via-[#dc2743] disabled:to-[#bc1888]"
+        {/* Manual Sync Button */}
+        <div
+          className="group relative inline-block transition-all duration-200"
+          style={{
+            background: syncing ? 'transparent' : 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            padding: '2px'
+          }}
         >
-          <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
-          <span className="hidden sm:inline group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
-            {syncing ? 'Syncing...' : 'Sync Now'}
-          </span>
-        </button>
+          <button
+            onClick={handleManualSync}
+            disabled={syncing}
+            className="relative inline-flex items-center justify-center px-3 py-1.5 gap-1.5
+                       bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
+                       group-hover:bg-paper
+                       text-white font-mono text-[10px] uppercase tracking-wider
+                       transition-all duration-200
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
+            <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+              {syncing ? 'Syncing...' : 'Sync Now'}
+            </span>
+          </button>
+        </div>
       </div>
     </>
   );

@@ -84,9 +84,9 @@ export default function SortableImageCard({
       {/* Unified FAB - Top Right */}
       {!deleting && (
         <div
-          className={`absolute right-2 top-2 flex h-6 items-center overflow-hidden rounded-full shadow-lg transition-all duration-200 ease-out ${
+          className={`absolute right-2 top-2 flex h-8 items-center overflow-hidden rounded-full shadow-lg transition-all duration-200 ease-out ${
             isPinned
-              ? 'w-6 bg-ink/90 group-hover:w-auto group-hover:bg-ink'
+              ? 'w-8 bg-ink/90 group-hover:w-auto group-hover:bg-ink'
               : 'opacity-0 group-hover:opacity-100 bg-ink/90'
           }`}
           role="toolbar"
@@ -95,7 +95,7 @@ export default function SortableImageCard({
           {/* Position Number (pinned only) */}
           {isPinned && position !== null && (
             <span
-              className="flex h-6 w-6 items-center justify-center font-mono text-[14px] font-bold text-paper"
+              className="flex h-8 w-8 items-center justify-center font-mono text-[14px] font-bold text-paper"
               aria-label={`Position ${position}`}
             >
               {position}
@@ -104,10 +104,10 @@ export default function SortableImageCard({
 
           {/* Divider + Actions (visible on hover) */}
           <div
-            className={`flex items-center gap-1 transition-all duration-200 ease-out ${
+            className={`flex items-center gap-2 transition-all duration-200 ease-out ${
               isPinned
                 ? 'max-w-0 overflow-hidden opacity-0 group-hover:max-w-[150px] group-hover:opacity-100'
-                : 'gap-1'
+                : ''
             }`}
           >
             {/* Divider (pinned only) */}
@@ -123,7 +123,7 @@ export default function SortableImageCard({
                 role="button"
                 aria-label={`Drag to reorder image${position ? ` at position ${position}` : ''}`}
                 tabIndex={0}
-                className="flex h-6 w-6 cursor-grab items-center justify-center text-paper transition-colors hover:bg-white/10 active:cursor-grabbing"
+                className="flex h-8 w-8 cursor-grab items-center justify-center text-paper transition-colors hover:bg-white/10 active:cursor-grabbing"
               >
                 <GripVertical className="h-3.5 w-3.5" aria-hidden="true" />
               </div>
@@ -134,7 +134,7 @@ export default function SortableImageCard({
               <button
                 onClick={() => onTogglePin(image.id)}
                 disabled={pinning}
-                className="flex h-6 w-6 items-center justify-center text-paper transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center text-paper transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label={isPinned ? 'Unpin image' : 'Pin image'}
               >
                 {pinning ? (
@@ -152,7 +152,7 @@ export default function SortableImageCard({
             {/* Delete Button */}
             <button
               onClick={() => onDelete(image.id)}
-              className="flex h-6 w-6 items-center justify-center text-paper transition-colors hover:bg-error/80 hover:text-white"
+              className="flex h-8 w-8 items-center justify-center text-paper transition-colors hover:bg-error/80 hover:text-white"
               aria-label="Delete image"
             >
               <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
