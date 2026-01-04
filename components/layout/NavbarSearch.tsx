@@ -149,7 +149,18 @@ export default function NavbarSearch() {
         URL.revokeObjectURL(imagePreview)
       }
 
+      // Navigate to results
       router.push(`/search?id=${data.searchId}`)
+
+      // Reset form state after successful search (prevents stuck spinner + clears input)
+      setIsSubmitting(false)
+      setImageFile(null)
+      setImagePreview('')
+      setTextQuery('')
+      setError(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     } catch (err) {
       console.error('Search error:', err)
       setError(

@@ -290,7 +290,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="hidden md:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
 
             {/* City Filter - Mobile Optimized */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 ml-auto">
               <ErrorBoundary>
                 <LocationFilter />
               </ErrorBoundary>
@@ -300,7 +300,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       </div>
 
       {/* RESULTS GRID - Mobile Optimized */}
-      <div className="w-full px-4 md:container md:mx-auto md:px-6 pt-4 pb-6 md:pb-12">
+      <div className="w-full px-4 md:container md:mx-auto md:px-6 pt-4 md:pt-8 lg:pt-16 pb-6 md:pb-12">
         {hasResults ? (
           <>
             {/* Artist Grid - Unified, sorted by match percentage */}
