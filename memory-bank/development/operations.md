@@ -336,6 +336,36 @@ npx supabase link           # Link to production project
 npx supabase db push --remote  # Push migrations to production
 ```
 
+### Search Functions - SINGLE SOURCE OF TRUTH
+
+**CRITICAL**: All search functions are consolidated in one file:
+```
+supabase/functions/search_functions.sql
+```
+
+**DO NOT create new migrations that rewrite search functions.** This has caused repeated breakages.
+
+**To modify search functions:**
+1. Edit `supabase/functions/search_functions.sql`
+2. Run `npx supabase db push`
+
+**Functions included:**
+- `search_artists_by_embedding` - Main vector search
+- `search_artists_with_count` - Vector search with pagination count
+- `find_related_artists` - Similar artist recommendations
+- `get_regions_with_counts` - Region listing
+- `get_countries_with_counts` - Country listing
+- `get_cities_with_counts` - City listing
+- `get_state_cities_with_counts` - Cities within a state
+
+**Features baked in:**
+- Multi-location support (`artist_locations` table)
+- Pro/Featured ranking boosts (+0.05 / +0.02)
+- Boosted score display (transparency)
+- Location count for UI badges
+- GDPR compliance (EU/EEA/UK/CH filtering)
+- CTE column aliasing (`ri_`, `aa_`, `ba_` prefixes)
+
 ### SQL Naming Conventions (Prevent Ambiguous Column Errors)
 
 **CRITICAL**: PL/pgSQL functions have THREE namespaces that can conflict:

@@ -121,6 +121,7 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
 - Document significant subagent feedback in commit messages or memory bank when relevant
 - **SQL migrations**: Always run `npm run db:push` (lints with sqlfluff first) instead of raw `npx supabase db push`
 - **SQL naming**: Follow CTE column prefixes (`ri_`, `aa_`, `fa_`, `ba_`) - see `operations.md` for details
+- **Search functions**: NEVER create new migrations that rewrite search functions. Edit `supabase/functions/search_functions.sql` instead (single source of truth)
 
 ### Performance Guidelines
 - Follow established performance patterns

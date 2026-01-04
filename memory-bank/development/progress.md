@@ -19,6 +19,33 @@ Status: Production Ready
 
 ## Recent Completions
 
+### Jan 4, 2026 (Session 11)
+- **Search Performance Overhaul** - Fixed critical performance issues
+  - **GDPR Column Optimization:**
+    - Added `is_gdpr_blocked` column to `artists` table
+    - Replaced expensive `NOT EXISTS` subquery (checked every artist against EU locations) with simple column check
+    - Created `supabase/functions/gdpr_setup.sql` for one-time column setup + backfill
+    - Indexes: `idx_artists_gdpr_blocked`, `idx_artists_not_gdpr_blocked`
+  - **Query Reordering (2900ms → ~200ms):**
+    - **Before:** Filter 15k artists → join to 50k images → vector search (couldn't use index)
+    - **After:** Vector search first (top 500 images, uses IVFFlat index) → get ~100 candidate artists → filter those
+    - Both `search_artists_by_embedding` and `search_artists_with_count` rewritten
+  - **Consolidated Search Functions:**
+    - Created `supabase/functions/search_functions.sql` as single source of truth
+    - Contains all 7 search functions with consistent patterns
+    - **Rule:** Never create migrations that rewrite search functions - edit this file instead
+    - Previous migrations kept overwriting each other and breaking search
+  - **Code Review Fixes:**
+    - Added `location_count` to `find_related_artists`
+    - Fixed CTE aliasing (fa_, ri_, aa_, ba_ prefixes)
+    - Added input validation to `get_state_cities_with_counts`
+  - **Files created:**
+    - `/supabase/functions/search_functions.sql` - consolidated search functions
+    - `/supabase/functions/gdpr_setup.sql` - one-time GDPR column setup
+  - **Documentation:**
+    - Updated CLAUDE.md with search function rule
+    - Updated operations.md with "Search Functions - SINGLE SOURCE OF TRUTH" section
+
 ### Jan 4, 2026 (Session 10)
 - **50-State Coverage Complete** - Final 9-state expansion (Batch 5)
   - **States Added:** Delaware, Mississippi, Montana, New Hampshire, New Jersey, North Dakota, South Dakota, West Virginia, Wyoming

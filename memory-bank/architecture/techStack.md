@@ -248,24 +248,29 @@ WITH (lists = GREATEST(FLOOR(SQRT(COUNT(*))), 10));
 ```
 
 **Search Function:**
-- `search_artists_by_embedding()`: ✅ Optimized Postgres function (see migration 007)
+- **Single Source of Truth:** `supabase/functions/search_functions.sql`
+  - Contains ALL 7 search functions - NEVER create migrations that rewrite these
+  - To modify: Edit file → Run in SQL Editor (or `npx supabase db push`)
+- `search_artists_by_embedding()`: ✅ Optimized Postgres function
+- `search_artists_with_count()`: Same with pagination total
 - Returns: Top 20 artists with top 3 matching images each
-- Filters: City, similarity threshold (0.15)
+- Filters: City, region, country, similarity threshold (0.15)
+- **Performance (Jan 4, 2026 rewrite):**
+  - **Vector search FIRST** - Uses IVFFlat index, gets top 500 images (~150ms)
+  - **Then filter artists** - Only ~100 candidates, not 15k
+  - **Result:** 2900ms → ~200ms (15x faster)
+- **GDPR Compliance:**
+  - `artists.is_gdpr_blocked` column (set via `gdpr_setup.sql`)
+  - Simple `WHERE is_gdpr_blocked = FALSE` check (fast)
+  - Replaces expensive `NOT EXISTS` subquery
 - **Similarity Score Display & Ranking Boosts:**
   - **Pro/Featured Boosts:** Pro (+0.05), Featured (+0.02) applied to ranking
   - **Display:** Returns `boosted_score` (raw similarity + boosts) for UI transparency
   - **Rescaling:** Boosted scores [0.15, 0.47] → [60%, 95%] user-friendly percentages
-  - **Migration:** `20260111_005_return_boosted_score_for_display.sql` (Jan 4, 2026)
-  - **Rationale:** Ensures displayed % matches ranking order (Pro at 76% ranks above regular at 73%)
   - **Example:**
     - Pro artist: 0.28 raw + 0.05 boost = 0.33 → rescale = 76% (ranks #1, displays 76%) ✅
     - Regular artist: 0.29 raw + 0.00 = 0.29 → rescale = 73% (ranks #2, displays 73%) ✅
   - **Component:** `/components/search/ArtistCard.tsx` (MAX_CLIP = 0.47)
-- Performance Optimizations:
-  - Early city filtering (reduces dataset before vector ops)
-  - CTE-based query planning
-  - Efficient limiting and pagination
-  - Partitioned by artist_id, ranked by similarity
 
 ### API Design
 

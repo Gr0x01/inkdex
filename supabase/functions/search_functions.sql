@@ -1,25 +1,33 @@
 -- ============================================================================
--- GDPR Compliance: Filter EU Artists from Search Results
--- Created: 2026-01-11
--- Migration: 20260111_007_filter_eu_artists_gdpr.sql
+-- SEARCH FUNCTIONS - SINGLE SOURCE OF TRUTH
 -- ============================================================================
--- This migration updates search functions to exclude artists from EU/EEA/UK/CH
--- countries to comply with GDPR requirements. Artists with known EU locations
--- (via artist_locations.country_code) are filtered out. Artists with unknown
--- locations (NULL country_code) are NOT filtered.
+-- This file contains ALL search-related SQL functions for the Inkdex platform.
+--
+-- IMPORTANT: When modifying search functions, ALWAYS edit this file.
+-- DO NOT create new migration files that rewrite these functions.
+--
+-- To apply changes:
+--   1. Edit this file
+--   2. Run: npx supabase db push
+--   OR run this file directly in Supabase SQL Editor
+--
+-- Last Updated: 2026-01-04
+-- Features included:
+--   - Multi-location support (artist_locations table)
+--   - Pro/Featured ranking boosts (+0.05 / +0.02)
+--   - Boosted score display (transparency)
+--   - Location count for UI badges
+--   - GDPR compliance via artists.is_gdpr_blocked column (fast!)
+--   - CTE column aliasing (ri_, aa_, ba_ prefixes)
+--
+-- GDPR SETUP (run once in SQL Editor before using these functions):
+--   See: supabase/functions/gdpr_setup.sql
 -- ============================================================================
-
--- GDPR countries list (32 total):
--- EU 27: AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE
--- EEA 3: IS, LI, NO
--- UK GDPR: GB
--- Swiss DPA: CH
-
--- Define a constant array for GDPR country codes (for easier maintenance)
--- Used inline in WHERE clauses below
 
 -- ============================================
--- Update search_artists_by_embedding
+-- search_artists_by_embedding
+-- Main vector similarity search function
+-- OPTIMIZED: Vector search FIRST, then filter artists
 -- ============================================
 DROP FUNCTION IF EXISTS search_artists_by_embedding(vector, float, int, text, text, text, int);
 
@@ -52,36 +60,52 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
-  WITH filtered_artists AS (
-    -- Apply location filters using artist_locations table
-    -- GDPR: Exclude artists with known EU/EEA/UK/CH locations
+  -- Step 1: Vector search FIRST (uses index, fast)
+  WITH ranked_images AS (
+    SELECT
+      pi.artist_id as ri_artist_id,
+      pi.id as ri_image_id,
+      pi.instagram_url as ri_image_url,
+      pi.storage_thumb_640 as ri_thumbnail_url,
+      pi.likes_count as ri_likes_count,
+      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.hidden, FALSE) = FALSE
+    ORDER BY pi.embedding <=> query_embedding
+    LIMIT 500  -- Get top 500 matching images, then filter artists
+  ),
+  -- Step 2: Filter to images above threshold
+  threshold_images AS (
+    SELECT * FROM ranked_images
+    WHERE ri_similarity_score >= match_threshold
+  ),
+  -- Step 3: Get unique artists from matching images
+  candidate_artists AS (
+    SELECT DISTINCT ri_artist_id FROM threshold_images
+  ),
+  -- Step 4: Filter artists (GDPR, deleted, location) - now only checking ~100 artists, not 15k
+  filtered_artists AS (
     SELECT DISTINCT ON (a.id)
-           a.id, a.name, a.slug,
-           COALESCE(al.city, a.city) as artist_city,
-           COALESCE(al.region, a.state) as artist_region,
-           COALESCE(al.country_code, 'US') as artist_country_code,
-           a.profile_image_url,
-           a.instagram_url,
-           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as artist_is_verified,
-           COALESCE(a.is_pro, FALSE) as artist_is_pro,
-           COALESCE(a.is_featured, FALSE) as artist_is_featured
+           a.id as fa_id,
+           a.name as fa_name,
+           a.slug as fa_slug,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
+           a.profile_image_url as fa_profile_image_url,
+           a.instagram_url as fa_instagram_url,
+           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified,
+           COALESCE(a.is_pro, FALSE) as fa_is_pro,
+           COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
+    INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id
     WHERE a.deleted_at IS NULL
-      -- GDPR: Exclude artists with known EU/EEA/UK/CH locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al_gdpr
-        WHERE al_gdpr.artist_id = a.id
-          AND al_gdpr.country_code IN (
-            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-            'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-            'IS', 'LI', 'NO',
-            'GB', 'CH'
-          )
-      )
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
-        -- No filters: return all artists
+        -- No location filters: return all
         (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
         OR
         -- Country-only filter
@@ -93,108 +117,100 @@ BEGIN
          AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
          AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
         OR
-        -- Country + Region + City filter (or just city for backward compat)
+        -- City filter
         (city_filter IS NOT NULL
          AND (
-           -- Check artist_locations
            (LOWER(al.city) = LOWER(city_filter)
             AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
             AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
            OR
-           -- Fallback to artists table for backward compatibility
            (LOWER(a.city) = LOWER(city_filter)
             AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
             AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
          ))
       )
   ),
-  ranked_images AS (
+  -- Step 5: Rank images within each filtered artist
+  artist_ranked_images AS (
     SELECT
-      pi.artist_id as ri_artist_id,
-      pi.id as image_id,
-      pi.instagram_url as image_url,
-      pi.storage_thumb_640 as thumbnail_url,
-      pi.likes_count,
-      1 - (pi.embedding <=> query_embedding) as similarity_score,
+      ti.*,
       ROW_NUMBER() OVER (
-        PARTITION BY pi.artist_id
-        ORDER BY pi.embedding <=> query_embedding
+        PARTITION BY ti.ri_artist_id
+        ORDER BY ti.ri_similarity_score DESC
       ) as rank_in_artist
-    FROM portfolio_images pi
-    INNER JOIN filtered_artists fa ON pi.artist_id = fa.id
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-      AND COALESCE(pi.hidden, FALSE) = FALSE
-      AND (1 - (pi.embedding <=> query_embedding)) >= match_threshold
-    ORDER BY pi.embedding <=> query_embedding
-    LIMIT (match_count * 10)
+    FROM threshold_images ti
+    INNER JOIN filtered_artists fa ON ti.ri_artist_id = fa.fa_id
   ),
+  -- Step 6: Aggregate top 3 images per artist
   aggregated_artists AS (
     SELECT
-      ri.ri_artist_id as aa_artist_id,
-      MAX(ri.similarity_score) as best_similarity,
+      ari.ri_artist_id as aa_artist_id,
+      MAX(ari.ri_similarity_score) as aa_best_similarity,
       jsonb_agg(
         jsonb_build_object(
-          'image_id', ri.image_id,
-          'image_url', ri.image_url,
-          'thumbnail_url', ri.thumbnail_url,
-          'likes_count', ri.likes_count,
-          'similarity', ROUND(ri.similarity_score::numeric, 3)
+          'image_id', ari.ri_image_id,
+          'image_url', ari.ri_image_url,
+          'thumbnail_url', ari.ri_thumbnail_url,
+          'likes_count', ari.ri_likes_count,
+          'similarity', ROUND(ari.ri_similarity_score::numeric, 3)
         )
-        ORDER BY ri.similarity_score DESC
-      ) FILTER (WHERE ri.rank_in_artist <= 3) as matching_images_json
-    FROM ranked_images ri
-    GROUP BY ri.ri_artist_id
+        ORDER BY ari.ri_similarity_score DESC
+      ) FILTER (WHERE ari.rank_in_artist <= 3) as aa_matching_images
+    FROM artist_ranked_images ari
+    GROUP BY ari.ri_artist_id
   ),
+  -- Step 7: Apply Pro/Featured boosts
   boosted_artists AS (
     SELECT
       aa.aa_artist_id as ba_artist_id,
-      aa.best_similarity,
-      aa.matching_images_json,
-      fa.artist_is_pro,
-      fa.artist_is_featured,
-      aa.best_similarity
-        + CASE WHEN fa.artist_is_pro THEN 0.05 ELSE 0 END
-        + CASE WHEN fa.artist_is_featured THEN 0.02 ELSE 0 END as boosted_score
+      aa.aa_best_similarity,
+      aa.aa_matching_images,
+      aa.aa_best_similarity
+        + CASE WHEN fa.fa_is_pro THEN 0.05 ELSE 0 END
+        + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END as ba_boosted_score
     FROM aggregated_artists aa
-    INNER JOIN filtered_artists fa ON fa.id = aa.aa_artist_id
+    INNER JOIN filtered_artists fa ON fa.fa_id = aa.aa_artist_id
   ),
+  -- Step 8: Get location counts (only for final results)
   artist_location_counts AS (
-    SELECT
-      al.artist_id,
-      COUNT(*) as loc_count
+    SELECT al.artist_id, COUNT(*) as loc_count
     FROM artist_locations al
+    INNER JOIN boosted_artists ba ON al.artist_id = ba.ba_artist_id
     GROUP BY al.artist_id
   )
+  -- Final output
   SELECT
-    fa.id,
-    fa.name,
-    fa.slug,
-    fa.artist_city,
-    fa.artist_region,
-    fa.artist_country_code,
-    fa.profile_image_url,
-    fa.instagram_url,
-    fa.artist_is_verified,
-    fa.artist_is_pro,
-    fa.artist_is_featured,
-    ba.boosted_score,
-    ba.matching_images_json,
-    COALESCE(alc.loc_count, 1) as location_count
+    fa.fa_id,
+    fa.fa_name,
+    fa.fa_slug,
+    fa.fa_city,
+    fa.fa_region,
+    fa.fa_country_code,
+    fa.fa_profile_image_url,
+    fa.fa_instagram_url,
+    fa.fa_is_verified,
+    fa.fa_is_pro,
+    fa.fa_is_featured,
+    ba.ba_boosted_score,
+    ba.aa_matching_images,
+    COALESCE(alc.loc_count, 1)::bigint as location_count
   FROM boosted_artists ba
-  INNER JOIN filtered_artists fa ON fa.id = ba.ba_artist_id
-  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.id
-  ORDER BY ba.boosted_score DESC
+  INNER JOIN filtered_artists fa ON fa.fa_id = ba.ba_artist_id
+  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
+  ORDER BY ba.ba_boosted_score DESC
   LIMIT match_count
   OFFSET offset_param;
 END;
 $$;
 
 COMMENT ON FUNCTION search_artists_by_embedding IS
-  'Vector similarity search with international location filtering. Excludes EU/GDPR artists for compliance.';
+  'Vector similarity search - OPTIMIZED to do vector search first, then filter. Returns boosted_score and location_count.';
+
 
 -- ============================================
--- Update search_artists_with_count
+-- search_artists_with_count
+-- Vector search with total count for pagination
+-- OPTIMIZED: Vector search FIRST, then filter artists
 -- ============================================
 DROP FUNCTION IF EXISTS search_artists_with_count(vector, float, int, text, text, text, int);
 
@@ -231,32 +247,52 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
-  WITH filtered_artists AS (
+  -- Step 1: Vector search FIRST (uses index, fast)
+  WITH ranked_images AS (
+    SELECT
+      pi.artist_id as ri_artist_id,
+      pi.id as ri_image_id,
+      pi.instagram_url as ri_image_url,
+      pi.storage_thumb_640 as ri_thumbnail_url,
+      pi.likes_count as ri_likes_count,
+      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.hidden, FALSE) = FALSE
+    ORDER BY pi.embedding <=> query_embedding
+    LIMIT 500
+  ),
+  -- Step 2: Filter to images above threshold
+  threshold_images AS (
+    SELECT * FROM ranked_images
+    WHERE ri_similarity_score >= match_threshold
+  ),
+  -- Step 3: Get unique artists from matching images
+  candidate_artists AS (
+    SELECT DISTINCT ri_artist_id FROM threshold_images
+  ),
+  -- Step 4: Filter artists (GDPR, deleted, location)
+  filtered_artists AS (
     SELECT DISTINCT ON (a.id)
-           a.id, a.name, a.slug,
-           COALESCE(al.city, a.city) as artist_city,
-           COALESCE(al.region, a.state) as artist_region,
-           COALESCE(al.country_code, 'US') as artist_country_code,
-           a.profile_image_url,
-           a.follower_count, a.shop_name, a.instagram_url,
-           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as artist_is_verified,
-           COALESCE(a.is_pro, FALSE) as artist_is_pro,
-           COALESCE(a.is_featured, FALSE) as artist_is_featured
+           a.id as fa_id,
+           a.name as fa_name,
+           a.slug as fa_slug,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
+           a.profile_image_url as fa_profile_image_url,
+           a.follower_count as fa_follower_count,
+           a.shop_name as fa_shop_name,
+           a.instagram_url as fa_instagram_url,
+           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified,
+           COALESCE(a.is_pro, FALSE) as fa_is_pro,
+           COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
+    INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id
     WHERE a.deleted_at IS NULL
-      -- GDPR: Exclude artists with known EU/EEA/UK/CH locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al_gdpr
-        WHERE al_gdpr.artist_id = a.id
-          AND al_gdpr.country_code IN (
-            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-            'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-            'IS', 'LI', 'NO',
-            'GB', 'CH'
-          )
-      )
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
         (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
         OR
@@ -279,102 +315,96 @@ BEGIN
          ))
       )
   ),
-  ranked_images AS (
+  -- Step 5: Rank images within each filtered artist
+  artist_ranked_images AS (
     SELECT
-      pi.artist_id as ri_artist_id,
-      pi.id as image_id,
-      pi.instagram_url as image_url,
-      pi.storage_thumb_640 as thumbnail_url,
-      pi.likes_count,
-      1 - (pi.embedding <=> query_embedding) as similarity_score,
+      ti.*,
       ROW_NUMBER() OVER (
-        PARTITION BY pi.artist_id
-        ORDER BY pi.embedding <=> query_embedding
+        PARTITION BY ti.ri_artist_id
+        ORDER BY ti.ri_similarity_score DESC
       ) as rank_in_artist
-    FROM portfolio_images pi
-    INNER JOIN filtered_artists fa ON pi.artist_id = fa.id
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-      AND COALESCE(pi.hidden, FALSE) = FALSE
-      AND (1 - (pi.embedding <=> query_embedding)) >= match_threshold
-    ORDER BY pi.embedding <=> query_embedding
-    LIMIT (match_count * 10)
+    FROM threshold_images ti
+    INNER JOIN filtered_artists fa ON ti.ri_artist_id = fa.fa_id
   ),
+  -- Step 6: Aggregate top 3 images per artist
   aggregated_artists AS (
     SELECT
-      ri.ri_artist_id as aa_artist_id,
-      MAX(ri.similarity_score) as best_similarity,
-      MAX(COALESCE(ri.likes_count, 0))::bigint as aa_max_likes,
+      ari.ri_artist_id as aa_artist_id,
+      MAX(ari.ri_similarity_score) as aa_best_similarity,
+      MAX(COALESCE(ari.ri_likes_count, 0))::bigint as aa_max_likes,
       jsonb_agg(
         jsonb_build_object(
-          'image_id', ri.image_id,
-          'image_url', ri.image_url,
-          'thumbnail_url', ri.thumbnail_url,
-          'likes_count', ri.likes_count,
-          'similarity', ROUND(ri.similarity_score::numeric, 3)
+          'image_id', ari.ri_image_id,
+          'image_url', ari.ri_image_url,
+          'thumbnail_url', ari.ri_thumbnail_url,
+          'likes_count', ari.ri_likes_count,
+          'similarity', ROUND(ari.ri_similarity_score::numeric, 3)
         )
-        ORDER BY ri.similarity_score DESC
-      ) FILTER (WHERE ri.rank_in_artist <= 3) as matching_images_json
-    FROM ranked_images ri
-    GROUP BY ri.ri_artist_id
+        ORDER BY ari.ri_similarity_score DESC
+      ) FILTER (WHERE ari.rank_in_artist <= 3) as aa_matching_images
+    FROM artist_ranked_images ari
+    GROUP BY ari.ri_artist_id
   ),
+  -- Step 7: Apply Pro/Featured boosts
   boosted_artists AS (
     SELECT
       aa.aa_artist_id as ba_artist_id,
-      aa.best_similarity,
+      aa.aa_best_similarity,
       aa.aa_max_likes,
-      aa.matching_images_json,
-      fa.artist_is_pro,
-      fa.artist_is_featured,
-      aa.best_similarity
-        + CASE WHEN fa.artist_is_pro THEN 0.05 ELSE 0 END
-        + CASE WHEN fa.artist_is_featured THEN 0.02 ELSE 0 END as boosted_score
+      aa.aa_matching_images,
+      aa.aa_best_similarity
+        + CASE WHEN fa.fa_is_pro THEN 0.05 ELSE 0 END
+        + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END as ba_boosted_score
     FROM aggregated_artists aa
-    INNER JOIN filtered_artists fa ON fa.id = aa.aa_artist_id
+    INNER JOIN filtered_artists fa ON fa.fa_id = aa.aa_artist_id
   ),
+  -- Step 8: Total count
   total AS (
-    SELECT COUNT(DISTINCT aa.aa_artist_id) as cnt FROM aggregated_artists aa
+    SELECT COUNT(*) as cnt FROM aggregated_artists
   ),
+  -- Step 9: Get location counts (only for final results)
   artist_location_counts AS (
-    SELECT
-      al.artist_id,
-      COUNT(*) as loc_count
+    SELECT al.artist_id, COUNT(*) as loc_count
     FROM artist_locations al
+    INNER JOIN boosted_artists ba ON al.artist_id = ba.ba_artist_id
     GROUP BY al.artist_id
   )
+  -- Final output
   SELECT
-    fa.id,
-    fa.name,
-    fa.slug,
-    fa.artist_city,
-    fa.artist_region,
-    fa.artist_country_code,
-    fa.profile_image_url,
-    fa.follower_count,
-    fa.shop_name,
-    fa.instagram_url,
-    fa.artist_is_verified,
-    fa.artist_is_pro,
-    fa.artist_is_featured,
-    ba.boosted_score,
+    fa.fa_id,
+    fa.fa_name,
+    fa.fa_slug,
+    fa.fa_city,
+    fa.fa_region,
+    fa.fa_country_code,
+    fa.fa_profile_image_url,
+    fa.fa_follower_count,
+    fa.fa_shop_name,
+    fa.fa_instagram_url,
+    fa.fa_is_verified,
+    fa.fa_is_pro,
+    fa.fa_is_featured,
+    ba.ba_boosted_score,
     ba.aa_max_likes,
-    ba.matching_images_json,
+    ba.aa_matching_images,
     (SELECT cnt FROM total),
-    COALESCE(alc.loc_count, 1) as location_count
+    COALESCE(alc.loc_count, 1)::bigint as location_count
   FROM boosted_artists ba
-  INNER JOIN filtered_artists fa ON fa.id = ba.ba_artist_id
-  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.id
-  ORDER BY ba.boosted_score DESC
+  INNER JOIN filtered_artists fa ON fa.fa_id = ba.ba_artist_id
+  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
+  ORDER BY ba.ba_boosted_score DESC
   LIMIT match_count
   OFFSET offset_param;
 END;
 $$;
 
 COMMENT ON FUNCTION search_artists_with_count IS
-  'Vector similarity search with count and international location filtering. Excludes EU/GDPR artists for compliance. Returns boosted_score and location_count.';
+  'Vector similarity search with count - OPTIMIZED to do vector search first, then filter. Returns boosted_score and location_count.';
+
 
 -- ============================================
--- Update find_related_artists
+-- find_related_artists
+-- Find similar artists based on portfolio style
 -- ============================================
 DROP FUNCTION IF EXISTS find_related_artists(uuid, text, text, text, int);
 
@@ -397,49 +427,41 @@ RETURNS TABLE (
   shop_name text,
   is_verified boolean,
   follower_count int,
-  similarity float
+  similarity float,
+  location_count bigint
 )
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  avg_embedding vector(768);
+  source_avg_embedding vector(768);
 BEGIN
-  SELECT avg(embedding)::vector(768) INTO avg_embedding
+  SELECT avg(embedding)::vector(768) INTO source_avg_embedding
   FROM portfolio_images
   WHERE portfolio_images.artist_id = source_artist_id
     AND status = 'active'
     AND embedding IS NOT NULL;
 
-  IF avg_embedding IS NULL THEN
+  IF source_avg_embedding IS NULL THEN
     RETURN;
   END IF;
 
   RETURN QUERY
   WITH filtered_artists AS (
     SELECT DISTINCT ON (a.id)
-           a.id, a.name, a.slug,
-           COALESCE(al.city, a.city) as city,
-           COALESCE(al.region, a.state) as region,
-           COALESCE(al.country_code, 'US') as country_code,
-           a.profile_image_url,
-           a.instagram_url, a.shop_name, a.follower_count,
-           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as is_verified
+           a.id as fa_id, a.name as fa_name, a.slug as fa_slug,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
+           a.profile_image_url as fa_profile_image_url,
+           a.instagram_url as fa_instagram_url,
+           a.shop_name as fa_shop_name,
+           a.follower_count as fa_follower_count,
+           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
     FROM artists a
     LEFT JOIN artist_locations al ON al.artist_id = a.id
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
-      -- GDPR: Exclude artists with known EU/EEA/UK/CH locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al_gdpr
-        WHERE al_gdpr.artist_id = a.id
-          AND al_gdpr.country_code IN (
-            'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-            'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-            'IS', 'LI', 'NO',
-            'GB', 'CH'
-          )
-      )
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
         (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
         OR
@@ -464,39 +486,50 @@ BEGIN
   ),
   artist_embeddings AS (
     SELECT
-      fa.id as artist_id,
-      avg(pi.embedding)::vector(768) as avg_embedding
+      fa.fa_id as ae_artist_id,
+      avg(pi.embedding)::vector(768) as ae_avg_embedding
     FROM filtered_artists fa
-    INNER JOIN portfolio_images pi ON pi.artist_id = fa.id
+    INNER JOIN portfolio_images pi ON pi.artist_id = fa.fa_id
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
-    GROUP BY fa.id
+    GROUP BY fa.fa_id
+  ),
+  artist_location_counts AS (
+    SELECT
+      al.artist_id,
+      COUNT(*) as loc_count
+    FROM artist_locations al
+    GROUP BY al.artist_id
   )
   SELECT
-    fa.id,
-    fa.name,
-    fa.slug,
-    fa.city,
-    fa.region,
-    fa.country_code,
-    fa.profile_image_url,
-    fa.instagram_url,
-    fa.shop_name,
-    fa.is_verified,
-    fa.follower_count,
-    (1 - (ae.avg_embedding <=> avg_embedding))::float as similarity
+    fa.fa_id,
+    fa.fa_name,
+    fa.fa_slug,
+    fa.fa_city,
+    fa.fa_region,
+    fa.fa_country_code,
+    fa.fa_profile_image_url,
+    fa.fa_instagram_url,
+    fa.fa_shop_name,
+    fa.fa_is_verified,
+    fa.fa_follower_count,
+    (1 - (ae.ae_avg_embedding <=> source_avg_embedding))::float as similarity,
+    COALESCE(alc.loc_count, 1) as location_count
   FROM filtered_artists fa
-  INNER JOIN artist_embeddings ae ON ae.artist_id = fa.id
-  ORDER BY ae.avg_embedding <=> avg_embedding
+  INNER JOIN artist_embeddings ae ON ae.ae_artist_id = fa.fa_id
+  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
+  ORDER BY ae.ae_avg_embedding <=> source_avg_embedding
   LIMIT match_count;
 END;
 $$;
 
 COMMENT ON FUNCTION find_related_artists IS
-  'Find artists with similar style. Excludes EU/GDPR artists for compliance.';
+  'Find artists with similar style based on average portfolio embedding. Excludes EU/GDPR artists for compliance.';
+
 
 -- ============================================
--- Update get_regions_with_counts to exclude GDPR countries
+-- get_regions_with_counts
+-- Get regions/states with artist counts
 -- ============================================
 CREATE OR REPLACE FUNCTION get_regions_with_counts(p_country_code text DEFAULT 'US')
 RETURNS TABLE (
@@ -544,8 +577,10 @@ $$;
 COMMENT ON FUNCTION get_regions_with_counts IS
   'Returns regions/states within a country with artist counts. Excludes GDPR countries.';
 
+
 -- ============================================
--- Update get_countries_with_counts to exclude GDPR countries
+-- get_countries_with_counts
+-- Get countries with artist counts
 -- ============================================
 DROP FUNCTION IF EXISTS get_countries_with_counts();
 
@@ -590,8 +625,10 @@ $$;
 COMMENT ON FUNCTION get_countries_with_counts IS
   'Returns countries with artist counts. Excludes GDPR countries for compliance.';
 
+
 -- ============================================
--- Update get_cities_with_counts to exclude GDPR countries
+-- get_cities_with_counts
+-- Get cities with artist counts
 -- ============================================
 DROP FUNCTION IF EXISTS get_cities_with_counts(integer, text, text);
 
@@ -666,8 +703,10 @@ $$;
 COMMENT ON FUNCTION get_cities_with_counts IS
   'Returns cities with artist counts. Excludes GDPR countries for compliance.';
 
+
 -- ============================================
--- Update get_state_cities_with_counts
+-- get_state_cities_with_counts
+-- Get cities within a state with artist counts
 -- ============================================
 DROP FUNCTION IF EXISTS get_state_cities_with_counts(text);
 
@@ -676,9 +715,17 @@ RETURNS TABLE (
   city text,
   artist_count bigint
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
+SECURITY INVOKER
 AS $$
+BEGIN
+  -- Validate state_code format (alphanumeric, spaces, hyphens only)
+  IF state_code IS NULL OR state_code !~ '^[A-Za-z0-9\s\-]+$' THEN
+    RAISE EXCEPTION 'Invalid state_code format.';
+  END IF;
+
+  RETURN QUERY
   SELECT
     al.city,
     COUNT(DISTINCT al.artist_id) as artist_count
@@ -687,37 +734,20 @@ AS $$
   WHERE al.region = state_code
     AND al.city IS NOT NULL
     AND a.deleted_at IS NULL
-    -- GDPR: Exclude artists with known EU/EEA/UK/CH locations
-    AND NOT EXISTS (
-      SELECT 1 FROM artist_locations al2
-      WHERE al2.artist_id = al.artist_id
-        AND al2.country_code IN (
-          'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-          'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-          'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-          'IS', 'LI', 'NO',
-          'GB', 'CH'
-        )
-    )
+    AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
   GROUP BY al.city
   ORDER BY artist_count DESC, al.city ASC;
+END;
 $$;
 
 COMMENT ON FUNCTION get_state_cities_with_counts IS
   'Get cities within a state/region with artist counts. Excludes GDPR artists for compliance.';
 
--- ============================================
--- Add index on country_code for GDPR filtering performance
--- ============================================
-CREATE INDEX IF NOT EXISTS idx_artist_locations_country_code_gdpr
-ON artist_locations(country_code)
-WHERE country_code IN (
-  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-  'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-  'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-  'IS', 'LI', 'NO',
-  'GB', 'CH'
-);
 
-COMMENT ON INDEX idx_artist_locations_country_code_gdpr IS
-  'Partial index for efficient GDPR country filtering in search queries.';
+-- ============================================
+-- GDPR Performance Index (on artists table)
+-- ============================================
+-- Note: The is_gdpr_blocked column and index are created by gdpr_setup.sql
+-- This index makes the COALESCE(a.is_gdpr_blocked, FALSE) = FALSE check fast
+CREATE INDEX IF NOT EXISTS idx_artists_not_gdpr_blocked
+ON artists(id) WHERE is_gdpr_blocked = FALSE OR is_gdpr_blocked IS NULL;
