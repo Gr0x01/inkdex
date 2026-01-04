@@ -16,7 +16,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Ellipsis } from 'lucide-react';
 import Link from 'next/link';
-import { SyncStatusBadge } from './SyncStatusBadge';
+import { SyncStatusBadge as _SyncStatusBadge } from './SyncStatusBadge';
 import { ProBadge } from '@/components/badges/ProBadge';
 
 interface SyncLog {
@@ -191,8 +191,8 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
     });
   };
 
-  // Determine current sync status
-  const getSyncStatus = (): 'synced' | 'syncing' | 'failed' | 'disabled' | 'never' => {
+  // Determine current sync status (kept for future use)
+  const _getSyncStatus = (): 'synced' | 'syncing' | 'failed' | 'disabled' | 'never' => {
     if (syncing) return 'syncing';
     if (!status) return 'never';
     if (!status.autoSyncEnabled) return 'disabled';

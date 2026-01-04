@@ -10,7 +10,7 @@
  */
 
 import { CITIES, STATES } from '@/lib/constants/cities';
-import { isGDPRCountry, getCountryCode } from '@/lib/constants/countries';
+import { isGDPRCountry, getCountryCode as _getCountryCode } from '@/lib/constants/countries';
 
 // Enable debug logging via environment variable
 const DEBUG = process.env.DEBUG_LOCATION_EXTRACTOR === 'true';

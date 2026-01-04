@@ -451,7 +451,7 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
     try:
         # Validate handle
         if not validate_instagram_handle(instagram_handle):
-            return 0, f"Invalid Instagram handle format: {instagram_handle}"
+            return 0, f"Invalid Instagram handle format: {instagram_handle}", None, None
 
         # Normalize to lowercase
         instagram_handle = instagram_handle.lower().strip()
@@ -483,7 +483,7 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
             results.append(item)
 
         if not results:
-            return 0, "No posts found (private or invalid profile)"
+            return 0, "No posts found (private or invalid profile)", None, None
 
         # Extract profile data and latestPosts
         profile = results[0]
@@ -553,7 +553,7 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
                 continue
 
         if not downloaded_images:
-            return 0, "No images downloaded"
+            return 0, "No images downloaded", None, None
 
         print(f"   ✅ Downloaded {len(downloaded_images)} images")
 
