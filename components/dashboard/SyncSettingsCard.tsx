@@ -248,9 +248,9 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
       <SyncStatusBadge status={getSyncStatus()} lastSyncAt={status?.lastSyncAt} />
 
       {/* Two-column grid for toggles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         {/* Auto-sync Toggle */}
-        <div className="space-y-1">
+        <div className="flex items-center gap-2">
           <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
             Auto-Sync
           </label>
@@ -292,13 +292,10 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
               ON
             </span>
           </button>
-          <p className="font-body text-[11px] text-gray-500">
-            Daily Instagram sync at 2am UTC
-          </p>
         </div>
 
         {/* Filter Toggle */}
-        <div className="space-y-1">
+        <div className="flex items-center gap-2">
           <label className="font-mono text-[10px] uppercase tracking-wider text-gray-600">
             Filter Content
           </label>
@@ -340,9 +337,6 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
               ON
             </span>
           </button>
-          <p className="font-body text-[11px] text-gray-500">
-            AI filters non-tattoo posts
-          </p>
         </div>
       </div>
 
