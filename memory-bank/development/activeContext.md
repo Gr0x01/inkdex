@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03 (Session 8 - Dual-GPU Embedding Setup)
+Last-Updated: 2026-01-04 (Session 9 - 96-City Expansion Complete)
 Maintainer: RB
 Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 ---
@@ -8,41 +8,40 @@ Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 
 ## Current State
 
-**Platform:** Production - 8 cities, 3,553 artists, 9,803 images (100% searchable)
+**Platform:** Production - 96 cities, 14,307 artists, ~25,000 images
 
-**Live Cities:** Austin, Atlanta, Los Angeles, New York, Chicago, Portland, Seattle, Miami
+**Live Cities:** 96 cities across 44 states (see quickstart.md for full list)
 
-**Pending Pipeline:** 2,178 artists need image scraping
+**Pending Pipeline:** ~10,000+ artists need image scraping and embeddings
 
-## Expansion Plan (Next 13 Cities)
+## Recent Expansion (Jan 4, 2026)
 
-**Market Research Complete:** DataForSEO analysis on Jan 3, 2026 identified 13 mid-tier cities with high opportunity scores (77-84/100).
+**88-City Expansion Complete** - 4 batches via DataForSEO + Tavily:
+- **Batch 1**: 13 cities, 1,941 artists discovered
+- **Batch 2**: 25 cities, 2,800 artists discovered
+- **Batch 3**: 25 cities, 2,556 artists discovered
+- **Batch 4**: 25 cities, 2,343 artists discovered
+- **Total**: 88 cities, 9,640 new artists, ~$240 discovery cost
 
-**Recommended Rollout Strategy:**
+**SEO Content Generation** - GPT-4.1 editorial content:
+- Generated 800-1000 word city guides for 88 cities
+- City-specific neighborhoods, culture, artist insights
+- Cost: ~$1.74 (batch processing at 50 cities/parallel)
+- 97 total cities now have full SEO editorial content
 
-**Phase A - Quick Wins (Tier 1: Lowest Competition)**
-1. Richmond, VA (84/100, 13% comp, 254k searches)
-2. Asheville, NC (84/100, 11% comp, 250k searches)
-3. Charlotte, NC (84/100, 14% comp, 256k searches)
-
-**Phase B - Volume Play (Tier 2: Strong Mid-Market)**
-4. Philadelphia, PA (82/100, 27% comp, 255k searches)
-5. Columbus, OH (81/100, 25% comp, 252k searches)
-6. Salt Lake City, UT (81/100, 22% comp, 251k searches)
-7. Nashville, TN (80/100, 38% comp, 266k searches)
-8. San Francisco, CA (80/100, 42% comp, 254k searches)
-
-**Phase C - Scale (Tier 3: Highest Volume)**
-9. Phoenix, AZ (79/100, 45% comp, **317k searches** - highest demand)
-10. Las Vegas, NV (80/100, 42% comp, 297k searches)
-11. San Diego, CA (77/100, 55% comp, 266k searches)
-12. San Antonio, TX (79/100, 36% comp, 259k searches)
-13. Tampa, FL (78/100, 41% comp, 258k searches)
+**New States Added** (Batch 4):
+- Vermont (Burlington)
+- Connecticut (New Haven)
+- Alabama (Birmingham)
+- Maine (Portland)
+- Alaska (Anchorage)
+- District of Columbia (Washington)
 
 **Next Actions:**
-- Add cities to `lib/constants/cities.ts`
-- Run discovery pipeline for Tier 1 cities first
-- Batch scraping + embeddings via admin panel
+- Run image scraping pipeline for new artists (via admin panel)
+- Generate embeddings for new portfolio images
+- Monitor search performance across new cities
+- Consider additional expansion based on success metrics
 
 **Core Features Working:**
 - Multi-modal search (image, text, Instagram post/profile links)

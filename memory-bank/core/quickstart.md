@@ -1,21 +1,22 @@
 ---
-Last-Updated: 2026-01-03 (Session 6 - 13-City Expansion Planned)
+Last-Updated: 2026-01-04 (Session 9 - 96-City Expansion Complete)
 Maintainer: RB
-Status: Production Ready - 8 Cities Live + 13 Cities Planned
+Status: Production Ready - 96 Cities Live Across 44 States
 ---
 
 # Quickstart: Inkdex
 
 ## Current Status
 - **Phase**: Production - Platform Fully Operational
-- **Version**: 0.1.0 (MVP Complete)
+- **Version**: 0.2.0 (Major Expansion Complete)
 - **Environment**: Production Ready
-- **Scale**: 8 cities, 1,474 artists, 11,167 portfolio images
+- **Scale**: 96 cities, 14,307 artists, ~25,000 portfolio images (est.)
 
 ## Project Summary
 Inkdex - AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) using multi-modal CLIP embeddings. Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
 
-## Live Cities (8 Total)
+## Live Cities (96 Total Across 44 States)
+
 **Initial Launch (Dec 29-31, 2025):**
 1. **Austin, TX** - 188 artists, 1,257 images
 2. **Atlanta, GA** - 171 artists, 1,073 images
@@ -28,32 +29,32 @@ Inkdex - AI-powered tattoo artist discovery platform where users search in *thei
 7. **Seattle, WA** - 172 artists, 1,507 images
 8. **Miami, FL** - 145 artists, 1,075 images
 
-## Planned Expansion (Next 13 Cities)
-**DataForSEO Analysis Complete (Jan 3, 2026)** - All scored 77-84/100 (HIGH priority)
+**88-City Expansion (Jan 4, 2026) - 4 Batches via DataForSEO + Tavily:**
 
-**Tier 1 - Lowest Competition (11-14%):**
-1. **Asheville, NC** - 250k searches/month, 11% competition, Score: 84/100
-2. **Richmond, VA** - 254k searches/month, 13% competition, Score: 84/100
-3. **Charlotte, NC** - 256k searches/month, 14% competition, Score: 84/100
+**Batch 1 (13 cities, Jan 4):** Richmond, Asheville, Charlotte, Philadelphia, Columbus, Salt Lake City, Nashville, San Francisco, Phoenix, Las Vegas, San Diego, San Antonio, Tampa
+- Discovery: 1,941 artists via Tavily API
+- All cities scored 77-84/100 opportunity score
 
-**Tier 2 - Strong Mid-Market (22-42%):**
-4. **Columbus, OH** - 252k searches/month, 25% competition, Score: 81/100
-5. **Salt Lake City, UT** - 251k searches/month, 22% competition, Score: 81/100
-6. **Philadelphia, PA** - 255k searches/month, 27% competition, Score: 82/100
-7. **Nashville, TN** - 266k searches/month, 38% competition, Score: 80/100
-8. **San Francisco, CA** - 254k searches/month, 42% competition, Score: 80/100
+**Batch 2 (25 cities, Jan 4):** Kansas City, New Orleans, Detroit, Providence, Charleston, Albuquerque, El Paso, Baltimore, Buffalo, Minneapolis, Tucson, Savannah, Pittsburgh, Boulder, Cincinnati, Cambridge, Raleigh, St. Louis, Cleveland, Milwaukee, Eugene, Memphis, Louisville, Madison, Ann Arbor
+- Discovery: 2,800 artists via Tavily API
+- All cities scored 79-85/100 opportunity score
 
-**Tier 3 - High Volume Markets (317k+ searches):**
-9. **Phoenix, AZ** - 317k searches/month, 45% competition, Score: 79/100
-10. **Las Vegas, NV** - 297k searches/month, 42% competition, Score: 80/100
-11. **San Diego, CA** - 266k searches/month, 55% competition, Score: 77/100
-12. **San Antonio, TX** - 259k searches/month, 36% competition, Score: 79/100
-13. **Tampa, FL** - 258k searches/month, 41% competition, Score: 78/100
+**Batch 3 (25 cities, Jan 4):** Athens, Chapel Hill, Fayetteville, Spokane, Tacoma, Durham, Rochester, Omaha, Santa Fe, Jacksonville, Indianapolis, Oklahoma City, Sacramento, Honolulu, Fresno, Mesa, Oakland, Wichita, Knoxville, Boise, Fort Collins, Des Moines, Syracuse, Greenville, Olympia
+- Discovery: 2,556 artists via Tavily API
+- All cities scored 74-84/100 opportunity score
 
-**Key Insights:**
-- All cities: 250k-317k monthly searches, 0 keyword difficulty
-- Visual search gap exists in all markets (low competition on inspiration/portfolio queries)
-- Recommended rollout: Start with Tier 1 (easiest wins), then Tier 2 (volume + ease), then Tier 3 (scale)
+**Batch 4 (25 cities, Jan 4):** Virginia Beach, Tulsa, Reno, Springfield, Iowa City, Bloomington, New Haven, Baton Rouge, Columbia, Bend, Ithaca, Lexington, Lincoln, Anchorage, Burlington, Charlottesville, Birmingham, Washington DC, Wilmington, Boston, Fort Worth, Houston, Colorado Springs, Dallas, Portland ME
+- Discovery: 2,343 artists via Tavily API
+- All cities scored 77-84/100 opportunity score
+- Added 6 new states: Vermont, Connecticut, Alabama, Maine, Alaska, District of Columbia
+
+**Total Expansion Results:**
+- **Cities**: 8 → 96 (12x growth)
+- **Artists**: 3,553 → 14,307 (4x growth)
+- **States**: 38 → 44 (includes DC)
+- **SEO Content**: 97 cities with full editorial content (GPT-4.1 generated)
+- **Discovery Cost**: ~$238.50 (Tavily API)
+- **SEO Generation Cost**: ~$1.74 (GPT-4.1)
 
 ## Key Commands
 ```bash
@@ -74,7 +75,9 @@ npm run mine:status                # View mining statistics and costs
 
 # Data Pipeline
 npm run analyze-cities   # DataForSEO city analysis
-npm run discover-artists # Google Maps artist discovery
+npm run discover-artists # Google Maps artist discovery (legacy)
+npx tsx scripts/discovery/tavily-artist-discovery-v2.ts  # Tavily web discovery (new)
+npx tsx scripts/seo/generate-city-content.ts              # GPT-4.1 SEO content generation
 npm run scrape-instagram # Apify Instagram portfolio scraping
 npm run generate-embeddings # Modal.com CLIP embedding generation
 
@@ -167,9 +170,9 @@ NEXT_PUBLIC_APP_URL=
 - ✅ Incremental pipeline (process while scraping continues)
 
 ## Estimated Costs
-- **One-time per city**: $30-55 (discovery + scraping)
-- **Monthly (2 cities)**: $6-11 (storage + re-scraping)
-- **Scaling (10 cities)**: ~$98/month
+- **One-time per city (Tavily method)**: ~$3 discovery + $0.02 SEO content
+- **One-time per city (legacy Google Maps)**: $30-55 (discovery + scraping)
+- **Monthly (96 cities)**: ~$12-20 (storage + re-scraping + Redis)
 
 ## Next Immediate Steps
 1. Create Supabase project with pgvector extension

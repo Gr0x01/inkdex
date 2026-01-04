@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-04
+Last-Updated: 2026-01-04 (Session 9 - 96-City Expansion)
 Maintainer: RB
-Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
+Status: Production Ready - 96 Cities + Mining Pipeline + Admin Panel ✅
 ---
 
 # Technology Stack: Inkdex
@@ -100,9 +100,12 @@ Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
   - **Apify**: Managed Instagram scraping (legal, managed IPs)
     - `apify/instagram-hashtag-scraper` - Hashtag post mining ($2.60/1K posts)
     - `apify/instagram-scraper` - Follower mining ($0.10/1K followers)
+  - **Tavily API**: Web search for artist discovery ($0.05/query, ~59 queries/city)
   - **Modal.com**: Serverless GPU for CLIP embeddings
   - **Instagram Graph API**: OAuth verification (post-MVP)
-  - **OpenAI**: GPT-5-mini for image classification (~$0.02/profile)
+  - **OpenAI**:
+    - GPT-5-mini for image classification (~$0.02/profile)
+    - GPT-4.1 Turbo for SEO content generation (~$0.02/city, 800-1000 words)
 
 ### Architecture Pattern
 - **Server Components**: Default for data fetching (faster, less JS)

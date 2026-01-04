@@ -10,13 +10,72 @@ Status: Production Ready
 
 | Metric | Value |
 |--------|-------|
-| Cities | 8 |
-| Artists | 3,553 |
-| Images | 9,803 (100% with embeddings) |
-| Static Pages | ~1,600 |
-| SEO Content | ~65,000 words |
+| Cities | 96 |
+| States | 44 (43 states + DC) |
+| Artists | 14,307 |
+| Images | ~25,000 (est.) |
+| Static Pages | ~3,000+ |
+| SEO Content | ~135,000 words |
 
 ## Recent Completions
+
+### Jan 4, 2026 (Session 9)
+- **96-City Expansion Complete** - Scaled from 8 to 96 cities (12x growth)
+  - **Batch 1 (13 cities):**
+    - Cities: Richmond, Asheville, Charlotte, Philadelphia, Columbus, Salt Lake City, Nashville, San Francisco, Phoenix, Las Vegas, San Diego, San Antonio, Tampa
+    - Discovery: 1,941 artists via Tavily API (~59 queries/city)
+    - Opportunity scores: 77-84/100
+    - Cost: ~$38.35
+  - **Batch 2 (25 cities):**
+    - Cities: Kansas City, New Orleans, Detroit, Providence, Charleston, Albuquerque, El Paso, Baltimore, Buffalo, Minneapolis, Tucson, Savannah, Pittsburgh, Boulder, Cincinnati, Cambridge, Raleigh, St. Louis, Cleveland, Milwaukee, Eugene, Memphis, Louisville, Madison, Ann Arbor
+    - Discovery: 2,800 artists via Tavily API
+    - Opportunity scores: 79-85/100
+    - Cost: ~$73.75
+  - **Batch 3 (25 cities):**
+    - Cities: Athens, Chapel Hill, Fayetteville, Spokane, Tacoma, Durham, Rochester, Omaha, Santa Fe, Jacksonville, Indianapolis, Oklahoma City, Sacramento, Honolulu, Fresno, Mesa, Oakland, Wichita, Knoxville, Boise, Fort Collins, Des Moines, Syracuse, Greenville, Olympia
+    - Discovery: 2,556 artists via Tavily API
+    - Opportunity scores: 74-84/100
+    - Cost: ~$73.75
+  - **Batch 4 (25 cities):**
+    - Cities: Virginia Beach, Tulsa, Reno, Springfield, Iowa City, Bloomington, New Haven, Baton Rouge, Columbia, Bend, Ithaca, Lexington, Lincoln, Anchorage, Burlington, Charlottesville, Birmingham, Washington DC, Wilmington, Boston, Fort Worth, Houston, Colorado Springs, Dallas, Portland ME
+    - Discovery: 2,343 artists via Tavily API
+    - Opportunity scores: 77-84/100
+    - Cost: ~$73.75
+    - Added 6 new states: Vermont, Connecticut, Alabama, Maine, Alaska, DC
+  - **Total Results:**
+    - 88 new cities, 9,640 new artists discovered
+    - Total discovery cost: ~$238.50
+    - Platform grew from 3,553 → 14,307 artists (4x growth)
+- **SEO Editorial Content Generation** - GPT-4.1 city guides
+  - **Implementation:**
+    - Created `/scripts/seo/generate-city-content.ts` - automated SEO generation
+    - Uses GPT-4.1 Turbo (`gpt-4-turbo-2024-04-09`) with JSON output mode
+    - Parallel batch processing: 50 cities at once (Tier 5 OpenAI rate limits)
+    - Query caching to prevent duplicate API calls
+  - **Content Generated:**
+    - 88 cities × 800-1000 words each = ~70,000+ words
+    - Hero paragraphs (local scene overview)
+    - Scene descriptions (neighborhoods, geography, culture)
+    - Community insights (artist dynamics, pricing, booking)
+    - Popular styles (city-specific trends)
+    - SEO keywords for each city
+  - **Quality:**
+    - City-specific neighborhoods (e.g., Boston: Allston, South Boston, Cambridge)
+    - Cultural context (e.g., Dallas: Deep Ellum, Bishop Arts, economic boom)
+    - Realistic artist insights (pricing tiers, booking windows)
+  - **Performance:**
+    - First attempt: 5-10 minutes (5 cities/batch) → wasted ~$3
+    - Fixed approach: <2 minutes (50 cities/batch)
+    - Error handling: Promise.allSettled for graceful failures
+    - File write regex bug fixed after 2 failed runs
+  - **Cost:** ~$1.74 (87 cities × $0.02/city, 1 test city already done)
+  - **Result:** 97 cities now have full editorial content (8 original + 89 generated including Richmond test)
+  - **Files:**
+    - `/scripts/seo/generate-city-content.ts` - 292 lines
+    - `/lib/content/editorial/cities.ts` - expanded from 330 → 3,676 lines
+- **Commits:**
+  - `92d7e94` - feat(seo): generate editorial content for 88 cities using GPT-4.1
+  - `9d2d19c` - feat: expand platform to 96 cities across 44 states (Batches 1-4)
 
 ### Jan 4, 2026 (Session 8)
 - **Pro artist boosting display fix** - Transparency improvement for ranking boosts
