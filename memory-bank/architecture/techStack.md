@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-04 (Session 9 - 96-City Expansion)
+Last-Updated: 2026-01-04 (Session 12 - Stripe Integration)
 Maintainer: RB
-Status: Production Ready - 96 Cities + Mining Pipeline + Admin Panel ✅
+Status: Production Ready - 14/14 Phases Complete ✅
 ---
 
 # Technology Stack: Inkdex
@@ -106,6 +106,10 @@ Status: Production Ready - 96 Cities + Mining Pipeline + Admin Panel ✅
   - **OpenAI**:
     - GPT-5-mini for image classification (~$0.02/profile)
     - GPT-4.1 Turbo for SEO content generation (~$0.02/city, 800-1000 words)
+  - **Stripe**: Subscription billing for Pro tier
+    - Checkout Sessions for payment flow
+    - Customer Portal for billing management
+    - Webhooks for subscription lifecycle
 
 ### Architecture Pattern
 - **Server Components**: Default for data fetching (faster, less JS)
@@ -628,5 +632,73 @@ Scripts (Node.js + Python)
 
 ---
 
-**Last Review:** 2026-01-03 (Admin panel complete)
-**Next Review:** After Phase 9 (Stripe subscription integration)
+### Stripe Integration (Jan 4, 2026)
+
+**Packages:**
+- `stripe` (v20.1.0) - Server-side SDK
+- `@stripe/stripe-js` - Client-side loader
+
+**API Endpoints:**
+- `POST /api/stripe/create-checkout` - Creates Stripe Checkout session
+- `POST /api/stripe/webhook` - Handles subscription events
+- `POST /api/stripe/portal` - Redirects to Customer Portal
+
+**Webhook Events:**
+- `checkout.session.completed` → Creates subscription, sets `is_pro=true`
+- `customer.subscription.updated` → Syncs status changes
+- `customer.subscription.deleted` → Downgrades artist
+- `invoice.payment_failed` → Sets status to `past_due`
+
+**Files:**
+```
+lib/stripe/
+├── server.ts          # Stripe client + price IDs
+└── client.ts          # Client-side loader
+
+app/api/stripe/
+├── create-checkout/route.ts
+├── webhook/route.ts
+└── portal/route.ts
+
+app/dashboard/subscription/page.tsx
+components/dashboard/SubscriptionManager.tsx
+```
+
+**Production Setup:**
+1. Add env vars to Vercel:
+   - `STRIPE_SECRET_KEY` (use `sk_live_` for production)
+   - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (use `pk_live_`)
+   - `STRIPE_PRICE_MONTHLY` (price ID from Stripe Dashboard)
+   - `STRIPE_PRICE_YEARLY` (price ID from Stripe Dashboard)
+   - `STRIPE_WEBHOOK_SECRET` (from webhook setup below)
+
+2. Create webhook in Stripe Dashboard → Developers → Webhooks:
+   - Endpoint URL: `https://inkdex.io/api/stripe/webhook`
+   - Events to listen for:
+     - `checkout.session.completed`
+     - `customer.subscription.updated`
+     - `customer.subscription.deleted`
+     - `invoice.payment_failed`
+   - Copy the signing secret to `STRIPE_WEBHOOK_SECRET`
+
+3. Enable Customer Portal in Stripe Dashboard → Settings → Customer Portal
+
+**Local Testing:**
+```bash
+# Install Stripe CLI
+brew install stripe/stripe-cli/stripe
+
+# Login and forward webhooks
+stripe login
+stripe listen --forward-to localhost:3000/api/stripe/webhook
+# Copy the whsec_... secret to .env.local
+```
+
+**Pricing:**
+- Monthly: $15/month
+- Yearly: $150/year (save $30)
+
+---
+
+**Last Review:** 2026-01-04 (Stripe integration complete)
+**Next Review:** As needed

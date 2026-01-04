@@ -15,7 +15,7 @@ const PRO_BENEFITS = [
     description: '100 images vs 20 on free',
   },
   {
-    title: 'Priority search placement',
+    title: 'Priority placement',
     description: 'Appear higher in results',
   },
   {
