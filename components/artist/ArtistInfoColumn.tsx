@@ -124,14 +124,14 @@ export default function ArtistInfoColumn({
             {/* Pro Badge - Hanging Tag (top when both Pro and Featured) */}
             {artist.is_pro && (
               <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[4.5rem]' : 'bottom-2'}`}>
-                <ProBadge variant="badge" size="md" className="py-[0.75rem]" />
+                <ProBadge variant="badge" size="md" className="py-3" />
               </div>
             )}
 
             {/* Featured Badge - Hanging Tag (below Pro if both exist) */}
             {isFeatured && (
               <div className="absolute bottom-2 -right-1 z-10">
-                <div className="bg-featured px-2 py-[0.75rem] flex items-center justify-center">
+                <div className="bg-featured px-2 py-3 flex items-center justify-center">
                   <span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider leading-none">
                     Featured
                   </span>

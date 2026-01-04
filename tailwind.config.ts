@@ -92,18 +92,9 @@ const config: Config = {
         // 'tiny' removed - deprecated in favor of text-xs (12px)
       },
 
-      // Spacing (8px grid, with 4px half-step)
-      spacing: {
-        '0.5': '0.25rem', // 4px (half-step)
-        '1': '0.5rem',   // 8px
-        '2': '1rem',     // 16px
-        '3': '1.5rem',   // 24px
-        '4': '2rem',     // 32px
-        '6': '3rem',     // 48px
-        '8': '4rem',     // 64px
-        '12': '6rem',    // 96px
-        '16': '8rem',    // 128px
-      },
+      // Spacing: Using Tailwind defaults (4px grid)
+      // No custom spacing - use Tailwind's default scale to avoid conflicts
+      // Common values: p-1=4px, p-2=8px, p-4=16px, p-6=24px, p-8=32px, p-12=48px, p-16=64px, p-24=96px
 
       // Border Radius
       borderRadius: {

@@ -233,29 +233,51 @@ Labels (12px):       500 weight required (compensates for size)
 
 ## 🔲 SPACING SYSTEM
 
-8px base grid system:
+**Using Tailwind's Default 4px Grid** (No Custom Spacing)
 
-```css
---space-xs:  4px   (0.25rem)
---space-sm:  8px   (0.5rem)
---space-md:  16px  (1rem)
---space-lg:  24px  (1.5rem)
---space-xl:  32px  (2rem)
---space-2xl: 48px  (3rem)
---space-3xl: 64px  (4rem)
---space-4xl: 96px  (6rem)
---space-5xl: 128px (8rem)
+We use Tailwind's default spacing scale to avoid conflicts and maintain consistency:
+
+```
+Tailwind Scale (4px base):
+p-1  = 4px    p-2  = 8px     p-3  = 12px    p-4  = 16px
+p-5  = 20px   p-6  = 24px    p-8  = 32px    p-10 = 40px
+p-12 = 48px   p-16 = 64px    p-20 = 80px    p-24 = 96px
+p-32 = 128px  p-40 = 160px   p-48 = 192px   p-64 = 256px
 ```
 
 **Recommended Usage** (Density-First Philosophy):
-- Section spacing: `2xl` (48px) - Between major sections
-- Component padding: `md` (16px) - Card/component internal padding
-- Grid gaps: `md` (16px) desktop, `sm-md` (8-12px) mobile
-- Element spacing: `sm-md` (8-12px) - Between related elements
-- Tight grouping: `xs-sm` (4-8px) - Tightly coupled elements
-- Hero sections: `3xl-4xl` (64-96px) - Only for dramatic hero areas
+- Section spacing: `p-12` (48px) - Between major sections
+- Component padding: `p-4` (16px) - Card/component internal padding
+- Grid gaps: `gap-4` (16px) desktop, `gap-2` to `gap-3` (8-12px) mobile
+- Element spacing: `mb-2` to `mb-3` (8-12px) - Between related elements
+- Tight grouping: `gap-1` to `gap-2` (4-8px) - Tightly coupled elements
+- Hero sections: `py-16` to `py-24` (64-96px) - Only for dramatic hero areas
 
 **CRITICAL PRINCIPLE**: We are an app with editorial style, not a magazine spread. Prioritize information density - show 8-12 artist cards per viewport, not 3-4. Use refined typography and proper line-height for breathing room, not excessive margins.
+
+**Why No Custom Spacing?** (2026-01-04)
+Previously we had custom 8px-grid spacing that conflicted with Tailwind defaults (e.g., `m-4` meant 32px custom vs 16px Tailwind). This caused "15-minute arguments" about spacing values. Solution: Use only Tailwind defaults everywhere. The 4px grid is flexible enough (it includes 8px, 16px, 24px, 32px, 48px, 64px, 96px).
+
+### ⚠️ DO NOT ADD CUSTOM SPACING
+
+**Common Mistake:** Adding custom spacing to `tailwind.config.ts` to match an 8px grid.
+
+**Why This Fails:**
+- Overrides Tailwind defaults (m-4 becomes 32px instead of 16px)
+- Breaks AI agent expectations (they assume standard Tailwind values)
+- Causes developer confusion and "15-minute arguments" about spacing values
+- Makes the codebase harder to maintain
+
+**Solution:** Use Tailwind's default 4px grid. It includes all 8px multiples you need:
+- 8px = `p-2`
+- 16px = `p-4`
+- 24px = `p-6`
+- 32px = `p-8`
+- 48px = `p-12`
+- 64px = `p-16`
+- 96px = `p-24`
+
+If you absolutely need a value not in Tailwind's scale, use arbitrary values: `p-[17px]`
 
 ---
 
