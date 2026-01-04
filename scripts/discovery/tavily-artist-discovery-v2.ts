@@ -66,36 +66,46 @@ interface CityConfig {
 // ============================================================================
 
 const CITIES: CityConfig[] = [
-  // Batch 4 Expansion - Top Tier (84/100) - Jan 2026
-  { name: 'Virginia Beach', state: 'VA', slug: 'virginia-beach' },
-  { name: 'Tulsa', state: 'OK', slug: 'tulsa' },
-  { name: 'Reno', state: 'NV', slug: 'reno' },
-  { name: 'Springfield', state: 'MO', slug: 'springfield' },
-  { name: 'Iowa City', state: 'IA', slug: 'iowa-city' },
-  { name: 'Bloomington', state: 'IN', slug: 'bloomington' },
-  { name: 'New Haven', state: 'CT', slug: 'new-haven' },
-  { name: 'Baton Rouge', state: 'LA', slug: 'baton-rouge' },
-  { name: 'Columbia', state: 'SC', slug: 'columbia' },
-  { name: 'Bend', state: 'OR', slug: 'bend' },
-  { name: 'Ithaca', state: 'NY', slug: 'ithaca' },
-  // Batch 4 Expansion - Strong Second Tier (83/100)
-  { name: 'Lexington', state: 'KY', slug: 'lexington' },
-  { name: 'Lincoln', state: 'NE', slug: 'lincoln' },
-  { name: 'Anchorage', state: 'AK', slug: 'anchorage' },
-  { name: 'Burlington', state: 'VT', slug: 'burlington' },
-  { name: 'Charlottesville', state: 'VA', slug: 'charlottesville' },
-  { name: 'Birmingham', state: 'AL', slug: 'birmingham' },
-  // Batch 4 Expansion - Solid Third Tier (82/100)
-  { name: 'Washington', state: 'DC', slug: 'washington' },
-  { name: 'Wilmington', state: 'NC', slug: 'wilmington' },
-  // Batch 4 Expansion - Fourth Tier (80-81/100)
-  { name: 'Boston', state: 'MA', slug: 'boston' },
-  { name: 'Fort Worth', state: 'TX', slug: 'fort-worth' },
-  { name: 'Houston', state: 'TX', slug: 'houston' },
-  { name: 'Colorado Springs', state: 'CO', slug: 'colorado-springs' },
-  // Batch 4 Expansion - Fifth Tier (77-79/100)
-  { name: 'Dallas', state: 'TX', slug: 'dallas' },
-  { name: 'Portland', state: 'ME', slug: 'portland-me' },
+  // Batch 5 Expansion - Final 9 States (Jan 2026)
+  // All cities scored 82-84/100 in DataForSEO analysis
+
+  // Delaware (DE) - 82/100
+  { name: 'Wilmington', state: 'DE', slug: 'wilmington-de' },
+
+  // Mississippi (MS) - 84/100
+  { name: 'Jackson', state: 'MS', slug: 'jackson-ms' },
+  { name: 'Biloxi', state: 'MS', slug: 'biloxi' },
+
+  // Montana (MT) - 83-84/100
+  { name: 'Missoula', state: 'MT', slug: 'missoula' },
+  { name: 'Bozeman', state: 'MT', slug: 'bozeman' },
+  { name: 'Billings', state: 'MT', slug: 'billings' },
+
+  // New Hampshire (NH) - 82-84/100
+  { name: 'Portsmouth', state: 'NH', slug: 'portsmouth' },
+  { name: 'Manchester', state: 'NH', slug: 'manchester' },
+
+  // New Jersey (NJ) - 83-84/100
+  { name: 'Jersey City', state: 'NJ', slug: 'jersey-city' },
+  { name: 'Hoboken', state: 'NJ', slug: 'hoboken' },
+  { name: 'Asbury Park', state: 'NJ', slug: 'asbury-park' },
+  { name: 'Atlantic City', state: 'NJ', slug: 'atlantic-city' },
+
+  // North Dakota (ND) - 84/100
+  { name: 'Fargo', state: 'ND', slug: 'fargo' },
+  { name: 'Bismarck', state: 'ND', slug: 'bismarck' },
+
+  // South Dakota (SD) - 84/100
+  { name: 'Sioux Falls', state: 'SD', slug: 'sioux-falls' },
+  { name: 'Rapid City', state: 'SD', slug: 'rapid-city' },
+
+  // West Virginia (WV) - 84/100
+  { name: 'Charleston', state: 'WV', slug: 'charleston-wv' },
+  { name: 'Morgantown', state: 'WV', slug: 'morgantown' },
+
+  // Wyoming (WY) - 83-84/100
+  { name: 'Jackson', state: 'WY', slug: 'jackson-wy' },
+  { name: 'Cheyenne', state: 'WY', slug: 'cheyenne' },
 ];
 
 // ============================================================================

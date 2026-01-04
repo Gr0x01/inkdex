@@ -23,8 +23,23 @@ const openai = new OpenAI({
 
 // Cities that already have content (skip these)
 const EXISTING_CITIES = new Set([
-  'austin', 'atlanta', 'los-angeles', 'new-york',
-  'chicago', 'portland', 'seattle', 'miami', 'richmond'
+  'albuquerque', 'anchorage', 'ann-arbor', 'asheville', 'athens', 'atlanta',
+  'austin', 'baltimore', 'baton-rouge', 'bend', 'birmingham', 'bloomington',
+  'boise', 'boston', 'boulder', 'buffalo', 'burlington', 'cambridge',
+  'chapel-hill', 'charleston', 'charlotte', 'charlottesville', 'chattanooga',
+  'chicago', 'cincinnati', 'cleveland', 'colorado-springs', 'columbia',
+  'columbus', 'dallas', 'denver', 'des-moines', 'detroit', 'durham', 'el-paso',
+  'eugene', 'fort-lauderdale', 'fort-worth', 'fresno', 'gainesville', 'greenville',
+  'honolulu', 'houston', 'indianapolis', 'iowa-city', 'ithaca', 'jacksonville',
+  'kansas-city', 'knoxville', 'las-vegas', 'lexington', 'lincoln', 'little-rock',
+  'long-beach', 'los-angeles', 'louisville', 'madison', 'memphis', 'miami',
+  'milwaukee', 'minneapolis', 'nashville', 'new-haven', 'new-orleans', 'new-york',
+  'oklahoma-city', 'omaha', 'philadelphia', 'phoenix', 'pittsburgh', 'portland',
+  'portland-me', 'providence', 'raleigh', 'reno', 'richmond', 'rochester',
+  'sacramento', 'salt-lake-city', 'san-antonio', 'san-diego', 'san-francisco',
+  'savannah', 'seattle', 'spokane', 'springfield', 'st-louis', 'tacoma',
+  'tallahassee', 'tampa', 'tucson', 'tulsa', 'virginia-beach', 'washington',
+  'wichita', 'wilmington',
 ]);
 
 // Prioritize major metros and high-opportunity cities

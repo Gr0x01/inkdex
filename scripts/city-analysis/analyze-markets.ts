@@ -30,42 +30,53 @@ const DATAFORSEO_API_URL = 'https://api.dataforseo.com/v3';
 const authHeader = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
 
 // Candidate cities for analysis (using US country code 2840)
-// BATCH 4 - EXPANSION CANDIDATES (Jan 2026)
+// BATCH 5 - FINAL 9 STATES EXPANSION (Jan 2026)
+// Missing states: DE, MS, MT, NH, NJ, ND, SD, WV, WY
 const CANDIDATE_CITIES = [
-  // Major Metros (Top 20 US markets not yet covered)
-  { name: 'Boston', state: 'MA', location_code: 2840 },
-  { name: 'Dallas', state: 'TX', location_code: 2840 },
-  { name: 'Houston', state: 'TX', location_code: 2840 },
-  { name: 'Washington', state: 'DC', location_code: 2840 },
-  { name: 'Virginia Beach', state: 'VA', location_code: 2840 },
-  { name: 'Fort Worth', state: 'TX', location_code: 2840 },
+  // Delaware (DE) - Small state, 1 major city
+  { name: 'Wilmington', state: 'DE', location_code: 2840 },
+  { name: 'Dover', state: 'DE', location_code: 2840 },
+  { name: 'Newark', state: 'DE', location_code: 2840 },
 
-  // Growing Second-Tier Metros
-  { name: 'Tulsa', state: 'OK', location_code: 2840 },
-  { name: 'Reno', state: 'NV', location_code: 2840 },
-  { name: 'Colorado Springs', state: 'CO', location_code: 2840 },
-  { name: 'Lexington', state: 'KY', location_code: 2840 },
-  { name: 'Springfield', state: 'MO', location_code: 2840 },
-  { name: 'Lincoln', state: 'NE', location_code: 2840 },
-  { name: 'Anchorage', state: 'AK', location_code: 2840 },
+  // Mississippi (MS) - Southern market
+  { name: 'Jackson', state: 'MS', location_code: 2840 },
+  { name: 'Biloxi', state: 'MS', location_code: 2840 },
+  { name: 'Hattiesburg', state: 'MS', location_code: 2840 },
 
-  // College Towns / Young Demographics
-  { name: 'Iowa City', state: 'IA', location_code: 2840 },
-  { name: 'Bloomington', state: 'IN', location_code: 2840 },
-  { name: 'Burlington', state: 'VT', location_code: 2840 },
-  { name: 'Charlottesville', state: 'VA', location_code: 2840 },
-  { name: 'New Haven', state: 'CT', location_code: 2840 },
+  // Montana (MT) - Mountain West, artsy towns
+  { name: 'Missoula', state: 'MT', location_code: 2840 },
+  { name: 'Bozeman', state: 'MT', location_code: 2840 },
+  { name: 'Billings', state: 'MT', location_code: 2840 },
 
-  // Southern / Southeast Growth Markets
-  { name: 'Birmingham', state: 'AL', location_code: 2840 },
-  { name: 'Baton Rouge', state: 'LA', location_code: 2840 },
-  { name: 'Wilmington', state: 'NC', location_code: 2840 },
-  { name: 'Columbia', state: 'SC', location_code: 2840 },
+  // New Hampshire (NH) - New England
+  { name: 'Manchester', state: 'NH', location_code: 2840 },
+  { name: 'Portsmouth', state: 'NH', location_code: 2840 },
+  { name: 'Nashua', state: 'NH', location_code: 2840 },
 
-  // Pacific Northwest / New England
-  { name: 'Bend', state: 'OR', location_code: 2840 },
-  { name: 'Portland', state: 'ME', location_code: 2840 },
-  { name: 'Ithaca', state: 'NY', location_code: 2840 },
+  // New Jersey (NJ) - Dense metro area
+  { name: 'Newark', state: 'NJ', location_code: 2840 },
+  { name: 'Jersey City', state: 'NJ', location_code: 2840 },
+  { name: 'Hoboken', state: 'NJ', location_code: 2840 },
+  { name: 'Atlantic City', state: 'NJ', location_code: 2840 },
+  { name: 'Asbury Park', state: 'NJ', location_code: 2840 },
+
+  // North Dakota (ND) - Small market
+  { name: 'Fargo', state: 'ND', location_code: 2840 },
+  { name: 'Bismarck', state: 'ND', location_code: 2840 },
+
+  // South Dakota (SD) - Small market
+  { name: 'Sioux Falls', state: 'SD', location_code: 2840 },
+  { name: 'Rapid City', state: 'SD', location_code: 2840 },
+
+  // West Virginia (WV) - Appalachian region
+  { name: 'Charleston', state: 'WV', location_code: 2840 },
+  { name: 'Morgantown', state: 'WV', location_code: 2840 },
+  { name: 'Huntington', state: 'WV', location_code: 2840 },
+
+  // Wyoming (WY) - Mountain West, tourism
+  { name: 'Cheyenne', state: 'WY', location_code: 2840 },
+  { name: 'Jackson', state: 'WY', location_code: 2840 },
+  { name: 'Casper', state: 'WY', location_code: 2840 },
 ];
 
 // Keyword categories to analyze
