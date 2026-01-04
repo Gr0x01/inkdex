@@ -1,5 +1,6 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
 import StyleExplorer from '@/components/home/StyleExplorer'
+import FreeClaimShowcase from '@/components/home/FreeClaimShowcase'
 import ProShowcase from '@/components/home/ProShowcase'
 import { getStyleSeeds } from '@/lib/supabase/queries'
 import { serializeJsonLd } from '@/lib/utils/seo'
@@ -104,7 +105,7 @@ export default async function Home() {
                   textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
                 }}
               >
-                Upload a reference image or describe what you're looking for. We'll scan millions of tattoo posts to find artists whose portfolios match your style.
+                Upload a reference image or describe what you're looking for. We'll scan tattoo portfolios to find artists whose work match your style.
               </p>
             </div>
 
@@ -157,7 +158,12 @@ export default async function Home() {
       <StyleExplorer styles={styleSeeds} />
 
       {/* ═══════════════════════════════════════════════════════════════
-          PRO SHOWCASE - Artist Claiming & Pro Features
+          FREE CLAIM - Artists Claim Their Profile
+          ═══════════════════════════════════════════════════════════════ */}
+      <FreeClaimShowcase />
+
+      {/* ═══════════════════════════════════════════════════════════════
+          PRO SHOWCASE - Paid Features & Upgrade
           ═══════════════════════════════════════════════════════════════ */}
       <ProShowcase />
 
@@ -190,7 +196,7 @@ export default async function Home() {
 
             {/* Refined Body Text */}
             <p className="font-body text-base md:text-xl mb-6 md:mb-8 leading-relaxed px-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Search Instagram's tattoo artists the way you actually think—by vibe, by style, by the Pinterest board you've been building.
+              Search Instagram's tattoo artists the way you actually think; by style or by the Pinterest board you've been building.
             </p>
 
             {/* Primary CTA */}

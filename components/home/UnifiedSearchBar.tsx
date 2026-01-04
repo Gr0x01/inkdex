@@ -219,9 +219,6 @@ export default function UnifiedSearchBar({ forceLoading = false }: UnifiedSearch
         URL.revokeObjectURL(imagePreview)
       }
 
-      // 10s delay to show loading state while search processes
-      await new Promise((resolve) => setTimeout(resolve, 10000))
-
       router.push(`/search?id=${data.searchId}`)
     } catch (err) {
       console.error('Search error:', err)
