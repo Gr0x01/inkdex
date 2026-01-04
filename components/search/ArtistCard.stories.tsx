@@ -315,3 +315,162 @@ export const MultiLocationArtist: Story = {
     displayMode: 'search',
   },
 };
+
+/**
+ * Pro Card Horizontal Layout (Desktop)
+ * Shows the 2-column spanning horizontal layout with editorial stats block
+ * Pro badge, Featured label, and follower count with dividers
+ */
+export const ProCardHorizontal: Story = {
+  args: {
+    artist: createMockSearchResult({
+      artist_name: 'Test Pro Artist',
+      artist_slug: 'test-pro-artist',
+      instagram_url: 'https://instagram.com/test_pro_artist',
+      follower_count: 10000,
+      city: 'New York',
+      similarity: 0.36,
+      is_pro: true,
+      is_featured: true,
+      location_count: 3,
+    }),
+    displayMode: 'search',
+  },
+  decorators: [], // Remove width constraint to show full horizontal layout
+  render: (args) => (
+    <div style={{ width: 600, maxWidth: '100%' }}>
+      <ArtistCard {...args} />
+    </div>
+  ),
+  parameters: {
+    layout: 'centered',
+  },
+};
+
+/**
+ * Pro Card Mobile Layout
+ * Shows how Pro card adapts on mobile (vertical layout)
+ */
+export const ProCardMobile: Story = {
+  args: {
+    artist: createMockSearchResult({
+      artist_name: 'Mobile Pro',
+      artist_slug: 'mobile-pro',
+      instagram_url: 'https://instagram.com/mobile_pro',
+      follower_count: 50000,
+      city: 'Los Angeles',
+      similarity: 0.33,
+      is_pro: true,
+      is_featured: true,
+    }),
+    displayMode: 'search',
+  },
+  parameters: {
+    viewport: { defaultViewport: 'mobile1' },
+  },
+};
+
+/**
+ * Pro Cards in Grid (2-Column Span)
+ * Shows how Pro cards span 2 columns in search results grid
+ */
+export const ProCardsGrid = {
+  decorators: [],
+  render: () => (
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 p-6 max-w-7xl auto-rows-auto" style={{ gridAutoFlow: 'dense' }}>
+      {/* Regular cards */}
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.28,
+          artist_name: 'Regular Artist 1',
+          artist_slug: 'regular-1',
+          city: 'Austin',
+        })}
+        displayMode="search"
+      />
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.26,
+          artist_name: 'Regular Artist 2',
+          artist_slug: 'regular-2',
+          city: 'Portland',
+        })}
+        displayMode="search"
+      />
+
+      {/* Pro card - spans 2 columns */}
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.36,
+          artist_name: 'Pro Artist',
+          artist_slug: 'pro-artist',
+          instagram_url: 'https://instagram.com/pro_artist',
+          city: 'New York',
+          follower_count: 85000,
+          is_pro: true,
+          is_featured: true,
+          location_count: 2,
+        })}
+        displayMode="search"
+      />
+
+      {/* More regular cards */}
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.24,
+          artist_name: 'Regular Artist 3',
+          artist_slug: 'regular-3',
+          city: 'Seattle',
+        })}
+        displayMode="search"
+      />
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.22,
+          artist_name: 'Regular Artist 4',
+          artist_slug: 'regular-4',
+          city: 'Chicago',
+        })}
+        displayMode="search"
+      />
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.30,
+          artist_name: 'Featured Artist',
+          artist_slug: 'featured-artist',
+          city: 'Miami',
+          follower_count: 125000,
+          is_featured: true,
+        })}
+        displayMode="search"
+      />
+
+      {/* Another Pro card */}
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.34,
+          artist_name: 'Another Pro',
+          artist_slug: 'another-pro',
+          instagram_url: 'https://instagram.com/another_pro',
+          city: 'LA',
+          follower_count: 60000,
+          is_pro: true,
+        })}
+        displayMode="search"
+      />
+
+      <ArtistCard
+        artist={createMockSearchResult({
+          similarity: 0.20,
+          artist_name: 'Regular Artist 5',
+          artist_slug: 'regular-5',
+          city: 'Denver',
+        })}
+        displayMode="search"
+      />
+    </div>
+  ),
+  parameters: {
+    layout: 'fullscreen',
+  },
+};

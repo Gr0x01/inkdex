@@ -131,7 +131,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
         isProLayout ? 'col-span-2' : ''
       }`}
     >
-      <div className={isProLayout ? 'flex flex-row h-full gap-2 md:gap-4' : ''}>
+      <div className={isProLayout ? 'flex flex-row h-full gap-2 md:gap-4 min-h-[200px]' : ''}>
         {/* Hero Image (tap to rotate) - Editorial */}
         {currentImage && (
           <div
@@ -169,15 +169,17 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
         )}
 
         {/* Artist Info - Editorial Typography */}
-        <div className={`${isProLayout ? 'flex-1 flex flex-col justify-between p-0 py-4 sm:py-6 px-1' : 'p-3 sm:p-4 space-y-1'}`}>
+        <div className={`${isProLayout ? 'flex-1 flex flex-col justify-between p-0 py-2 sm:py-6 px-1' : 'p-3 sm:p-4 space-y-1'}`}>
           {/* Pro layout - Editorial stats block */}
           {isProLayout ? (
             <>
               <div className="flex flex-col space-y-3 sm:space-y-5">
                 {/* Pro badge and percentage row */}
-                <div className="flex items-start gap-1 sm:gap-2 sm:justify-between">
-                  <ProBadge variant="badge" size="sm" className="sm:hidden" />
-                  <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-shrink-0">
+                    <ProBadge variant="badge" size="sm" className="sm:hidden" />
+                    <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
+                  </div>
 
                   {/* Match percentage - top right */}
                   {displayMode === 'search' && (

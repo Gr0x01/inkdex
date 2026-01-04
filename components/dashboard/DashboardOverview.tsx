@@ -6,12 +6,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Loader2, ExternalLink } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import MetricsCards from '@/components/analytics/MetricsCards'
 import ViewsChart from '@/components/analytics/ViewsChart'
 import RecentSearchesTable from '@/components/analytics/RecentSearchesTable'
 import ProUpgradeCTA from './ProUpgradeCTA'
+import CompactUpgradeOverlay from './CompactUpgradeOverlay'
 
 type TimeRange = 7 | 30 | 90
 
@@ -48,6 +48,27 @@ interface DashboardOverviewProps {
   isPro: boolean
   firstName?: string
   artistId?: string
+}
+
+// Generate demo analytics data for free user preview
+function generateDemoData(): AnalyticsData['timeSeries'] {
+  const data = []
+  const baseDate = new Date()
+  baseDate.setDate(baseDate.getDate() - 30)
+
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(baseDate)
+    date.setDate(date.getDate() + i)
+    data.push({
+      date: date.toISOString().split('T')[0],
+      profileViews: Math.floor(Math.random() * 50) + 20,
+      imageViews: Math.floor(Math.random() * 100) + 50,
+      instagramClicks: Math.floor(Math.random() * 30) + 10,
+      bookingClicks: Math.floor(Math.random() * 15) + 5,
+      searchAppearances: Math.floor(Math.random() * 40) + 15,
+    })
+  }
+  return data
 }
 
 export default function DashboardOverview({
@@ -137,36 +158,25 @@ export default function DashboardOverview({
         </div>
       )}
 
-      {/* Free User: Upgrade CTA + Quick Actions */}
+      {/* Free User: Blurred Analytics Preview */}
       {!isPro && (
-        <div className="space-y-6">
-          {/* Upgrade CTA */}
-          <ProUpgradeCTA />
+        <div className="relative">
+          {/* Demo Chart (sharp border, content will be blurred by overlay) */}
+          <div className="pointer-events-none select-none" aria-hidden="true">
+            <ViewsChart
+              timeSeries={generateDemoData()}
+              timeRange={30}
+              onTimeRangeChange={() => {}}
+            />
+          </div>
 
-          {/* Quick Actions */}
-          <section className="border border-gray-200 bg-white p-6">
-            <h2 className="font-heading text-xl mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Link
-                href="/dashboard/portfolio"
-                className="flex items-center justify-between p-3 border border-gray-200 hover:border-gray-400 transition-colors group"
-              >
-                <span className="font-mono text-xs uppercase tracking-wider text-gray-700">
-                  Add Portfolio Images
-                </span>
-                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-ink" />
-              </Link>
-              <Link
-                href="/dashboard/profile"
-                className="flex items-center justify-between p-3 border border-gray-200 hover:border-gray-400 transition-colors group"
-              >
-                <span className="font-mono text-xs uppercase tracking-wider text-gray-700">
-                  Edit Profile
-                </span>
-                <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-ink" />
-              </Link>
-            </div>
-          </section>
+          {/* Blur Overlay (blurs the content behind it) */}
+          <div className="absolute inset-0 backdrop-blur-sm bg-white/40" />
+
+          {/* Upgrade CTA */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <CompactUpgradeOverlay />
+          </div>
         </div>
       )}
     </div>
