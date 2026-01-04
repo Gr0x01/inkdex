@@ -23,9 +23,15 @@ export function ProBadge({
   className = ''
 }: ProBadgeProps) {
   const sizeMap = {
-    sm: 'w-3.5 h-3.5',  // 14px - matches verification badge size
-    md: 'w-4 h-4',      // 16px - dashboard and overlays
-    lg: 'w-5 h-5',      // 20px - large headers
+    sm: 'w-[0.75rem] h-[0.75rem]', // 12px (0.75rem)
+    md: 'w-[1rem] h-[1rem]',       // 16px (1rem) - dashboard and overlays
+    lg: 'w-[1.5rem] h-[1.5rem]',   // 24px (1.5rem) - large headers
+  }
+
+  const textSizeMap = {
+    sm: 'text-[0.5rem]',   // 8px (0.5rem)
+    md: 'text-[0.75rem]',  // 12px (0.75rem)
+    lg: 'text-[1rem]',     // 16px (1rem)
   }
 
   // Icon only variant - inline next to handles/names
@@ -46,7 +52,7 @@ export function ProBadge({
           className={`${sizeMap[size]} text-white`}
           aria-hidden="true"
         />
-        <span className="font-mono text-xs font-bold text-white uppercase tracking-wider leading-none">
+        <span className={`font-mono ${textSizeMap[size]} font-bold text-white uppercase tracking-wider leading-none`}>
           Pro
         </span>
       </div>
@@ -60,7 +66,7 @@ export function ProBadge({
         className={`${sizeMap[size]} text-purple-500`}
         aria-hidden="true"
       />
-      <span className="font-mono text-xs font-semibold text-purple-400 uppercase tracking-wider leading-none">
+      <span className={`font-mono ${textSizeMap[size]} font-semibold text-purple-400 uppercase tracking-wider leading-none`}>
         Pro
       </span>
     </div>
