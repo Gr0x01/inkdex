@@ -41,6 +41,8 @@ interface PipelineRun {
   completedAt: string | null;
   createdAt: string;
   errorMessage: string | null;
+  lastHeartbeatAt: string | null;
+  isStale: boolean;
 }
 
 type JobType = 'scraping' | 'processing' | 'embeddings' | 'index_rebuild';

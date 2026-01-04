@@ -1,7 +1,10 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
-import { getCached } from '@/lib/redis/cache';
+import { getCached, invalidateCache } from '@/lib/redis/cache';
+
+// Stale job threshold: 5 minutes without heartbeat
+const STALE_THRESHOLD_MS = 5 * 60 * 1000;
 
 export interface PipelineStatus {
   artists: {
@@ -35,6 +38,8 @@ export interface PipelineStatus {
     completedAt: string | null;
     createdAt: string;
     errorMessage: string | null;
+    lastHeartbeatAt: string | null;
+    isStale: boolean;
   }[];
 }
 
@@ -159,20 +164,42 @@ export async function GET() {
 
     const artistsWithImages = totalArtists - artistsWithoutImages;
 
-    // Format recent runs
-    const recentRuns = (recentRunsResult.data || []).map((run) => ({
-      id: run.id,
-      jobType: run.job_type,
-      status: run.status,
-      totalItems: run.total_items || 0,
-      processedItems: run.processed_items || 0,
-      failedItems: run.failed_items || 0,
-      triggeredBy: run.triggered_by,
-      startedAt: run.started_at,
-      completedAt: run.completed_at,
-      createdAt: run.created_at,
-      errorMessage: run.error_message,
-    }));
+    // Format recent runs with heartbeat status
+    const now = Date.now();
+    const recentRuns = (recentRunsResult.data || []).map((run) => {
+      const lastHeartbeatAt = run.last_heartbeat_at;
+      const isRunning = run.status === 'running';
+      const heartbeatAge = lastHeartbeatAt
+        ? now - new Date(lastHeartbeatAt).getTime()
+        : null;
+
+      // A job is stale if it's running and either:
+      // 1. Has a heartbeat older than threshold, or
+      // 2. Has been running for >5 min with no heartbeat at all
+      const startedAge = run.started_at
+        ? now - new Date(run.started_at).getTime()
+        : 0;
+      const isStale =
+        isRunning &&
+        ((heartbeatAge !== null && heartbeatAge > STALE_THRESHOLD_MS) ||
+          (heartbeatAge === null && startedAge > STALE_THRESHOLD_MS));
+
+      return {
+        id: run.id,
+        jobType: run.job_type,
+        status: run.status,
+        totalItems: run.total_items || 0,
+        processedItems: run.processed_items || 0,
+        failedItems: run.failed_items || 0,
+        triggeredBy: run.triggered_by,
+        startedAt: run.started_at,
+        completedAt: run.completed_at,
+        createdAt: run.created_at,
+        errorMessage: run.error_message,
+        lastHeartbeatAt,
+        isStale,
+      };
+    });
 
         return {
           artists: {
@@ -192,6 +219,87 @@ export async function GET() {
         } as PipelineStatus;
       }
     );
+
+    // Auto-cancel stale jobs with FRESH data (not cached)
+    // Query fresh heartbeat data to avoid race condition with cached timestamps
+    const runningJobIds = response.recentRuns
+      .filter((run) => run.status === 'running')
+      .map((run) => run.id);
+
+    if (runningJobIds.length > 0) {
+      const { data: freshRunningJobs } = await adminClient
+        .from('pipeline_runs')
+        .select('id, job_type, status, last_heartbeat_at, started_at')
+        .in('id', runningJobIds)
+        .eq('status', 'running');
+
+      const now = Date.now();
+      const staleJobs = (freshRunningJobs || []).filter((job) => {
+        const heartbeatAge = job.last_heartbeat_at
+          ? now - new Date(job.last_heartbeat_at).getTime()
+          : null;
+        const startedAge = job.started_at
+          ? now - new Date(job.started_at).getTime()
+          : 0;
+        return (
+          (heartbeatAge !== null && heartbeatAge > STALE_THRESHOLD_MS) ||
+          (heartbeatAge === null && startedAge > STALE_THRESHOLD_MS)
+        );
+      });
+
+      // Process stale jobs in parallel
+      const cancelPromises = staleJobs.map(async (staleJob) => {
+        const staleDuration = staleJob.last_heartbeat_at
+          ? now - new Date(staleJob.last_heartbeat_at).getTime()
+          : staleJob.started_at
+            ? now - new Date(staleJob.started_at).getTime()
+            : 0;
+        const staleMinutes = Math.floor(staleDuration / 60000);
+
+        console.log(
+          `Auto-cancelling stale job ${staleJob.id} (${staleJob.job_type}) - no heartbeat for ${staleMinutes} minutes`
+        );
+
+        // Mark pipeline run as failed with optimistic concurrency check
+        // Only update if heartbeat hasn't changed (job didn't recover)
+        const { count } = await adminClient
+          .from('pipeline_runs')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: `Job stale: no heartbeat for ${staleMinutes} minutes. Auto-cancelled.`,
+          })
+          .eq('id', staleJob.id)
+          .eq('status', 'running')
+          .eq('last_heartbeat_at', staleJob.last_heartbeat_at); // Optimistic concurrency
+
+        if (count === 0) {
+          console.log(`Job ${staleJob.id} recovered or already cancelled, skipping`);
+          return;
+        }
+
+        // Reset stuck scraping_jobs for THIS run only (not all running jobs)
+        if (staleJob.job_type === 'scraping') {
+          await adminClient
+            .from('scraping_jobs')
+            .update({
+              status: 'pending',
+              started_at: null,
+            })
+            .eq('status', 'running')
+            .eq('pipeline_run_id', staleJob.id); // Only reset jobs from THIS run
+        }
+      });
+
+      await Promise.allSettled(cancelPromises);
+
+      // Invalidate cache if any jobs were cancelled so next request shows fresh data
+      if (staleJobs.length > 0) {
+        await invalidateCache('admin:dashboard').catch((err) => {
+          console.error('Failed to invalidate cache after stale job cancellation:', err);
+        });
+      }
+    }
 
     return NextResponse.json(response);
   } catch (error) {

@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
@@ -14,6 +15,7 @@ import {
   Database,
   Cog,
   X,
+  Heart,
 } from 'lucide-react';
 
 interface PipelineRun {
@@ -28,6 +30,8 @@ interface PipelineRun {
   completedAt: string | null;
   createdAt: string;
   errorMessage: string | null;
+  lastHeartbeatAt: string | null;
+  isStale: boolean;
 }
 
 interface PipelineRunsTableProps {
@@ -36,7 +40,7 @@ interface PipelineRunsTableProps {
   onCancel?: (runId: string) => void;
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, isStale }: { status: string; isStale?: boolean }) {
   const config = {
     completed: {
       bg: 'bg-status-success/10',
@@ -71,12 +75,23 @@ function StatusBadge({ status }: { status: string }) {
   const animate = 'animate' in statusConfig && statusConfig.animate;
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${statusConfig.bg} ${statusConfig.text}`}
-    >
-      <Icon className={`w-2.5 h-2.5 ${animate ? 'animate-spin' : ''}`} />
-      {status}
-    </span>
+    <div className="flex items-center gap-1">
+      <span
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${statusConfig.bg} ${statusConfig.text}`}
+      >
+        <Icon className={`w-2.5 h-2.5 ${animate ? 'animate-spin' : ''}`} />
+        {status}
+      </span>
+      {isStale && (
+        <span
+          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide bg-status-error/10 text-status-error"
+          title="No heartbeat - job may be stuck"
+        >
+          <AlertTriangle className="w-2.5 h-2.5" />
+          Stale
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -195,7 +210,7 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
                   </div>
                 </td>
                 <td className="px-2 py-1.5 text-center">
-                  <StatusBadge status={run.status} />
+                  <StatusBadge status={run.status} isStale={run.isStale} />
                 </td>
                 <td className="px-2 py-1.5 text-right font-mono text-ink tabular-nums">
                   {run.processedItems > 0 || run.totalItems > 0
@@ -223,11 +238,26 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
               {expandedId === run.id && (
                 <tr className="bg-gray-50/30">
                   <td colSpan={6} className="px-2 py-3">
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 items-end">
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
                       <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
                       <DetailItem label="Total Items" value={run.totalItems} />
                       <DetailItem label="Processed" value={run.processedItems} />
                       <DetailItem label="Failed" value={run.failedItems} />
+
+                      {/* Heartbeat indicator for running jobs */}
+                      {run.status === 'running' && (
+                        <div>
+                          <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                            <Heart className={`w-2 h-2 ${run.isStale ? 'text-status-error' : 'text-status-success animate-pulse'}`} />
+                            Heartbeat
+                          </p>
+                          <p className={`text-[13px] font-heading font-semibold tabular-nums ${run.isStale ? 'text-status-error' : 'text-ink'}`}>
+                            {run.lastHeartbeatAt
+                              ? formatDate(run.lastHeartbeatAt)
+                              : 'No heartbeat yet'}
+                          </p>
+                        </div>
+                      )}
 
                       {/* Cancel button */}
                       <div className="flex justify-end">

@@ -12,6 +12,9 @@ import { invalidatePipelineCache } from '@/lib/redis/invalidation';
 // Maximum job runtime: 2 hours
 const MAX_JOB_RUNTIME_MS = 2 * 60 * 60 * 1000;
 
+// Heartbeat interval: 30 seconds
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
+
 // Whitelist of environment variables to pass to child processes
 const ENV_WHITELIST = [
   'NODE_ENV',
@@ -168,6 +171,28 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
     let stderr = '';
     let timedOut = false;
 
+    // Heartbeat mechanism - update last_heartbeat_at every 30 seconds
+    // Note: Python scraper (apify-scraper.py) has its own heartbeat thread,
+    // but we also send heartbeats from Node.js as a fallback for all job types
+    const sendHeartbeat = async () => {
+      try {
+        await adminClient
+          .from('pipeline_runs')
+          .update({ last_heartbeat_at: new Date().toISOString() })
+          .eq('id', runId);
+      } catch (err) {
+        console.error(`Heartbeat failed for run ${runId}:`, err);
+      }
+    };
+
+    // Send initial heartbeat immediately
+    void sendHeartbeat();
+
+    // Start heartbeat interval
+    const heartbeatHandle = setInterval(() => {
+      void sendHeartbeat();
+    }, HEARTBEAT_INTERVAL_MS);
+
     // Timeout mechanism - kill process if it runs too long
     const timeoutHandle = setTimeout(async () => {
       timedOut = true;
@@ -192,6 +217,7 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
 
     childProcess.on('close', async (code) => {
       clearTimeout(timeoutHandle);
+      clearInterval(heartbeatHandle);
 
       const isSuccess = code === 0 && !timedOut;
       const errorMessage = timedOut
@@ -228,6 +254,7 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
 
     childProcess.on('error', async (err) => {
       clearTimeout(timeoutHandle);
+      clearInterval(heartbeatHandle);
 
       await adminClient
         .from('pipeline_runs')

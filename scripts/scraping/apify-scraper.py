@@ -12,8 +12,9 @@ import json
 import re
 import asyncio
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
+import threading
 from dotenv import load_dotenv
 from apify_client import ApifyClient
 from openai import AsyncOpenAI
@@ -174,6 +175,71 @@ def update_pipeline_progress(
         }).eq("id", pipeline_run_id).execute()
     except Exception as e:
         print(f"⚠️  Warning: Failed to update pipeline progress: {e}")
+
+
+class HeartbeatThread:
+    """Background thread that sends heartbeat every 30 seconds to detect stale jobs"""
+
+    # Exit after this many consecutive failures (5 failures = 2.5 min of no heartbeats)
+    MAX_CONSECUTIVE_FAILURES = 5
+
+    def __init__(self, supabase_client: Client, pipeline_run_id: str, interval: int = 30):
+        self.supabase_client = supabase_client
+        self.pipeline_run_id = pipeline_run_id
+        self.interval = interval
+        self.stop_event = threading.Event()
+        self.thread = None
+        self.failure_count = 0
+        self.success_count = 0
+
+    def _heartbeat_loop(self):
+        """Send heartbeat every interval seconds until stopped"""
+        while not self.stop_event.wait(self.interval):
+            try:
+                self.supabase_client.table("pipeline_runs").update({
+                    "last_heartbeat_at": datetime.now(timezone.utc).isoformat()
+                }).eq("id", self.pipeline_run_id).execute()
+                self.failure_count = 0  # Reset on success
+                self.success_count += 1
+            except Exception as e:
+                self.failure_count += 1
+                print(f"⚠️  Heartbeat failed ({self.failure_count}/{self.MAX_CONSECUTIVE_FAILURES}): {e}")
+
+                if self.failure_count >= self.MAX_CONSECUTIVE_FAILURES:
+                    print(f"❌ Too many consecutive heartbeat failures - job will be marked stale")
+                    print(f"   Total successful heartbeats: {self.success_count}")
+                    # Don't force exit - let the job continue and be auto-cancelled
+                    # This is safer than os._exit() which could corrupt state
+                    self.stop_event.set()
+                    return
+
+    def start(self):
+        """Start the heartbeat thread"""
+        if not self.pipeline_run_id:
+            return
+
+        # Send initial heartbeat immediately
+        try:
+            self.supabase_client.table("pipeline_runs").update({
+                "last_heartbeat_at": datetime.now(timezone.utc).isoformat()
+            }).eq("id", self.pipeline_run_id).execute()
+            print("💓 Heartbeat thread started (30s interval)")
+        except Exception as e:
+            print(f"⚠️  Initial heartbeat failed: {e}")
+            return
+
+        self.thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        """Stop the heartbeat thread"""
+        if self.thread:
+            self.stop_event.set()
+            self.thread.join(timeout=30)  # Increased timeout for graceful shutdown
+            if self.thread.is_alive():
+                print("⚠️  Heartbeat thread didn't stop cleanly")
+            else:
+                print(f"💓 Heartbeat thread stopped (sent {self.success_count} heartbeats)")
 
 
 def validate_instagram_handle(handle: str) -> bool:
@@ -584,6 +650,7 @@ def main():
     # Connect to database
     print("🔌 Connecting to database...")
     conn = None
+    heartbeat = None  # Initialize here so it's accessible in finally block
     try:
         conn = connect_db()
         print("✅ Connected\n")
@@ -648,6 +715,12 @@ def main():
 
             # Initialize progress counters
             update_pipeline_progress(supabase_client, pipeline_run_id, len(artists), 0, 0)
+
+        # Start heartbeat thread (sends heartbeat every 30s for stale job detection)
+        heartbeat = None
+        if supabase_client and pipeline_run_id:
+            heartbeat = HeartbeatThread(supabase_client, pipeline_run_id, interval=30)
+            heartbeat.start()
 
         print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
         print(f"📦 Incremental processing:")
@@ -783,6 +856,9 @@ def main():
         import traceback
         traceback.print_exc()
     finally:
+        # Stop heartbeat thread
+        if heartbeat:
+            heartbeat.stop()
         if conn:
             conn.close()
             print("✅ Database connection closed")
