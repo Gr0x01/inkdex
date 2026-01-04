@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import styles from './ShimmerSearch.module.css'
 
-export default function UnifiedSearchBar() {
+interface UnifiedSearchBarProps {
+  /** Force loading state - for Storybook only */
+  forceLoading?: boolean
+}
+
+export default function UnifiedSearchBar({ forceLoading = false }: UnifiedSearchBarProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -26,6 +31,9 @@ export default function UnifiedSearchBar() {
   const [error, setError] = useState<string | null>(null)
   const [loadingMessage, setLoadingMessage] = useState('')
   const [messageIndex, setMessageIndex] = useState(0)
+
+  // Combined loading state (for Storybook testing)
+  const isLoading = forceLoading || isSubmitting
 
   // Loading messages by search type
   const loadingMessages = {
@@ -72,7 +80,7 @@ export default function UnifiedSearchBar() {
 
   // Loading message rotation
   useEffect(() => {
-    if (!isSubmitting) {
+    if (!isLoading) {
       setMessageIndex(0)
       return
     }
@@ -93,7 +101,7 @@ export default function UnifiedSearchBar() {
     }, 2500)
 
     return () => clearInterval(interval)
-  }, [isSubmitting, imageFile, detectedInstagramUrl])
+  }, [isLoading, imageFile, detectedInstagramUrl])
 
   const handleImageSelect = (file: File) => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
@@ -211,6 +219,9 @@ export default function UnifiedSearchBar() {
         URL.revokeObjectURL(imagePreview)
       }
 
+      // 10s delay to show loading state while search processes
+      await new Promise((resolve) => setTimeout(resolve, 10000))
+
       router.push(`/search?id=${data.searchId}`)
     } catch (err) {
       console.error('Search error:', err)
@@ -226,28 +237,29 @@ export default function UnifiedSearchBar() {
     textQuery.trim().length >= 3 ||
     detectedInstagramUrl?.type === 'post' ||
     detectedInstagramUrl?.type === 'profile'
-  ) && !isSubmitting
+  ) && !isLoading
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4" id="search">
       <form onSubmit={handleSubmit} className="relative">
-        {/* Loading Glow Effect */}
-        {isSubmitting && <div className={styles.loadingGlow} style={{ borderRadius: 0 }} />}
-
         <div className="flex flex-col sm:flex-row items-stretch gap-0.5">
           {/* Input Field Container */}
           <div
             className={`
-              flex-1 flex items-center gap-4 h-16 px-4 bg-white/95 border-2
+              relative flex-1 flex items-center gap-4 h-16 px-4 bg-white/95
               transition-all duration-150
-              ${isSubmitting ? 'border-purple-500/50' : error ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
-              ${isSubmitting ? '' : 'focus-within:border-white/60'}
+              ${isLoading ? '' : 'border-2'}
+              ${isLoading ? '' : error ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
+              ${isLoading ? '' : 'focus-within:border-white/60'}
             `}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
-            {isSubmitting ? (
+            {/* Loading Glow Effect - only on input container */}
+            {isLoading && <div className={styles.loadingGlow} style={{ borderRadius: 0 }} />}
+
+            {isLoading ? (
               /* Loading State Content */
               <div className="flex-1 flex items-center justify-center">
                 <p
@@ -374,14 +386,14 @@ export default function UnifiedSearchBar() {
         </div>
 
         {/* Error Message */}
-        {error && !isSubmitting && (
+        {error && !isLoading && (
           <div className="mt-3 text-center">
             <p className="text-sm text-red-400 font-body">{error}</p>
           </div>
         )}
 
         {/* Drag Hint */}
-        {isDragging && !isSubmitting && (
+        {isDragging && !isLoading && (
           <div className="mt-3 text-center">
             <p className="text-sm text-white/80 font-medium animate-pulse">Drop your image here</p>
           </div>

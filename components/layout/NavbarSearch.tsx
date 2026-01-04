@@ -3,13 +3,19 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
+import styles from '@/components/home/ShimmerSearch.module.css'
+
+interface NavbarSearchProps {
+  /** Force loading state - for Storybook only */
+  forceLoading?: boolean
+}
 
 /**
  * Compact navbar search component
  * Design: Purpose-built for navbar with editorial aesthetic
  * Features: All 4 input methods (image, text, IG post, IG profile) in compact form
  */
-export default function NavbarSearch() {
+export default function NavbarSearch({ forceLoading = false }: NavbarSearchProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -26,6 +32,9 @@ export default function NavbarSearch() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Combined loading state (for Storybook testing)
+  const isLoading = forceLoading || isSubmitting
 
   // Cleanup blob URL on unmount
   useEffect(() => {
@@ -183,12 +192,15 @@ export default function NavbarSearch() {
         {/* Input Field Container */}
         <div
           className={`
-            flex-1 flex items-center gap-4 h-10 md:h-11 px-4 bg-white/80 border-2
+            relative flex-1 flex items-center gap-4 h-10 md:h-11 px-4 bg-white/80
             transition-all duration-150
-            ${error ? 'border-red-500/60' : 'border-ink/20'}
-            focus-within:border-ink focus-within:bg-white
+            ${isLoading ? '' : 'border-2'}
+            ${isLoading ? '' : error ? 'border-red-500/60' : 'border-ink/20'}
+            ${isLoading ? '' : 'focus-within:border-ink focus-within:bg-white'}
           `}
         >
+          {/* Loading Glow Effect - only on input container */}
+          {isLoading && <div className={styles.loadingGlow} style={{ borderRadius: 0 }} />}
           {/* Left: Search Icon OR Image Thumbnail */}
           {imagePreview ? (
             <div className="relative w-7 h-7 md:w-8 md:h-8 flex-shrink-0 group">
@@ -290,19 +302,13 @@ export default function NavbarSearch() {
             font-mono text-xs md:text-sm font-bold uppercase tracking-widest
             transition-all duration-150 flex items-center justify-center
             ${
-              isSubmitting
-                ? 'bg-ink text-paper border-ink cursor-wait'
-                : canSubmit
-                  ? 'bg-ink text-paper border-ink hover:bg-ink/90 active:bg-ink/80'
-                  : 'bg-ink/5 text-ink/25 border-transparent cursor-not-allowed'
+              canSubmit
+                ? 'bg-ink text-paper border-ink hover:bg-ink/90 active:bg-ink/80'
+                : 'bg-ink/5 text-ink/25 border-transparent cursor-not-allowed'
             }
           `}
         >
-          {isSubmitting ? (
-            <div className="w-4 h-4 border-2 border-paper/30 border-t-paper rounded-full animate-spin" />
-          ) : (
-            'Search'
-          )}
+          Search
         </button>
       </div>
 

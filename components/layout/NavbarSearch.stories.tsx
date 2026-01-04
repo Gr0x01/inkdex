@@ -150,6 +150,20 @@ export const SizeComparison: Story = {
 };
 
 /**
+ * Loading state - shows the animated shimmer border effect
+ */
+export const LoadingState: Story = {
+  args: {
+    forceLoading: true,
+  },
+  render: (args) => (
+    <div className="max-w-2xl">
+      <NavbarSearch {...args} />
+    </div>
+  ),
+};
+
+/**
  * On dark background - less common but possible
  */
 export const OnDarkBackground: Story = {
