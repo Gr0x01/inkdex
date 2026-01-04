@@ -23,6 +23,7 @@ const ENV_WHITELIST = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
+  'DATABASE_URL',
   'LOCAL_CLIP_URL',
   'CLIP_API_KEY',
   'APIFY_API_TOKEN',
@@ -172,8 +173,6 @@ async function executeJob(runId: string, jobType: JobType): Promise<void> {
     let timedOut = false;
 
     // Heartbeat mechanism - update last_heartbeat_at every 30 seconds
-    // Note: Python scraper (apify-scraper.py) has its own heartbeat thread,
-    // but we also send heartbeats from Node.js as a fallback for all job types
     const sendHeartbeat = async () => {
       try {
         await adminClient
