@@ -47,7 +47,7 @@ export function ProBadge({
   // Badge variant - overlay on images/cards
   if (variant === 'badge') {
     return (
-      <div className={`px-2.5 py-1.5 bg-purple-500 flex items-center gap-1.5 ${className}`}>
+      <div className={`px-2.5 py-1.5 bg-purple-500 inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${className}`}>
         <Crown
           className={`${sizeMap[size]} text-white`}
           aria-hidden="true"
@@ -61,7 +61,7 @@ export function ProBadge({
 
   // Inline variant - subtle background for headers/sections
   return (
-    <div className={`flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500 ${className}`}>
+    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500 whitespace-nowrap flex-shrink-0 ${className}`}>
       <Crown
         className={`${sizeMap[size]} text-purple-500`}
         aria-hidden="true"

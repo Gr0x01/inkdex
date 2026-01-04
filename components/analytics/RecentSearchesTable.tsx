@@ -24,9 +24,9 @@ interface RecentSearchesTableProps {
 export default function RecentSearchesTable({ searches, totalCount }: RecentSearchesTableProps) {
   if (searches.length === 0) {
     return (
-      <div className="border border-gray-200 bg-white p-6">
-        <h2 className="font-heading text-xl mb-4">Recent Search Appearances</h2>
-        <p className="font-body text-sm text-gray-500">
+      <div className="border border-gray-300 bg-white p-4 sm:p-6">
+        <h2 className="font-heading text-base sm:text-lg mb-4">Recent Search Appearances</h2>
+        <p className="font-body text-xs text-gray-500">
           No search appearances recorded yet. Check back after users search for artists.
         </p>
       </div>
@@ -34,10 +34,10 @@ export default function RecentSearchesTable({ searches, totalCount }: RecentSear
   }
 
   return (
-    <div className="border border-gray-200 bg-white p-6">
+    <div className="border border-gray-300 bg-white p-4 sm:p-6">
       <div className="flex items-baseline justify-between mb-4">
-        <h2 className="font-heading text-xl">Recent Search Appearances</h2>
-        <p className="font-mono text-xs uppercase tracking-wider text-gray-500">
+        <h2 className="font-heading text-base sm:text-lg">Recent Search Appearances</h2>
+        <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
           {totalCount.toLocaleString()} Total
         </p>
       </div>
@@ -63,16 +63,16 @@ export default function RecentSearchesTable({ searches, totalCount }: RecentSear
           <tbody>
             {searches.map((search) => (
               <tr key={search.searchId} className="border-b border-gray-100 last:border-0">
-                <td className="py-3 pr-4 font-body text-sm">
+                <td className="py-2.5 pr-4 font-body text-xs">
                   {formatQueryText(search)}
                 </td>
-                <td className="py-3 pr-4 font-mono text-xs text-gray-500">
+                <td className="py-2.5 pr-4 font-mono text-[10px] text-gray-500">
                   {formatRelativeTime(search.timestamp)}
                 </td>
-                <td className="py-3 pr-4 font-mono text-sm text-right">
+                <td className="py-2.5 pr-4 font-mono text-xs text-right">
                   {formatSimilarityScore(search.boostedScore)}
                 </td>
-                <td className="py-3 font-mono text-sm text-right text-gray-500">
+                <td className="py-2.5 font-mono text-xs text-right text-gray-500">
                   #{search.rank}
                 </td>
               </tr>

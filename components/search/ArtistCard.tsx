@@ -175,9 +175,9 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             <>
               <div className="flex flex-col space-y-3 sm:space-y-5">
                 {/* Pro badge and percentage row */}
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-1 sm:gap-2 sm:justify-between">
                   <ProBadge variant="badge" size="sm" className="sm:hidden" />
-                  <ProBadge variant="badge" size="md" className="hidden sm:block" />
+                  <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
 
                   {/* Match percentage - top right */}
                   {displayMode === 'search' && (

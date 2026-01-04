@@ -52,10 +52,10 @@ export default function ViewsChart({
   return (
     <div className="border border-gray-300 bg-white">
       {/* Header with integrated time controls */}
-      <div className="border-b border-gray-200 p-6 pb-4">
+      <div className="border-b border-gray-200 p-4 sm:p-6 pb-3 sm:pb-4">
         <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3">
           <div>
-            <h2 className="font-heading text-lg mb-1">
+            <h2 className="font-heading text-base sm:text-lg mb-1">
               Activity Over Time
             </h2>
             <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
@@ -70,7 +70,7 @@ export default function ViewsChart({
                 key={days}
                 onClick={() => onTimeRangeChange(days as 7 | 30 | 90)}
                 className={`
-                  px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider
+                  px-2.5 sm:px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider
                   transition-all duration-200
                   ${days === timeRange
                     ? 'bg-ink text-paper'
@@ -86,8 +86,8 @@ export default function ViewsChart({
       </div>
 
       {/* Chart Body */}
-      <div className="p-6 pt-4">
-        <ResponsiveContainer width="100%" height={320}>
+      <div className="p-3 sm:p-6 pt-3 sm:pt-4">
+        <ResponsiveContainer width="100%" height={280}>
           <LineChart data={chartData}>
             <CartesianGrid
               strokeDasharray="3 3"
@@ -96,17 +96,20 @@ export default function ViewsChart({
             />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+              tick={{ fontSize: 10, fontFamily: 'IBM Plex Mono' }}
               stroke="#8B8985"
+              angle={-45}
+              textAnchor="end"
+              height={60}
             />
             <YAxis
-              tick={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+              tick={{ fontSize: 10, fontFamily: 'IBM Plex Mono' }}
               stroke="#8B8985"
             />
             <Tooltip
               contentStyle={{
                 fontFamily: 'IBM Plex Mono',
-                fontSize: 11,
+                fontSize: 10,
                 border: '1px solid #D8D6D2',
                 borderRadius: '4px',
               }}
@@ -114,7 +117,7 @@ export default function ViewsChart({
             <Legend
               wrapperStyle={{
                 fontFamily: 'IBM Plex Mono',
-                fontSize: 11,
+                fontSize: 10,
               }}
             />
             <Line
