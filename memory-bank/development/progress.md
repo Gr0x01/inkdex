@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-04
+Last-Updated: 2026-01-05
 Maintainer: RB
 Status: Production Ready
 ---
@@ -13,11 +13,66 @@ Status: Production Ready
 | Cities | 116 |
 | States | 51 (50 states + DC) |
 | Artists | 15,626 |
-| Images | ~25,000 (est.) |
+| Images | 68,440 (with embeddings) |
+| Styles | 20 |
 | Static Pages | ~3,500+ |
 | SEO Content | ~155,000 words |
 
 ## Recent Completions
+
+### Jan 5, 2026 (Session 13)
+- **Style System Expansion** - Added 3 new styles, total now 20
+  - **New Styles Added:**
+    - `anime` - Japanese animation characters (Naruto, Dragon Ball, etc.) - 7 seed images
+    - `horror` - Dark/macabre imagery, horror movie icons - 11 seed images
+    - `stick-and-poke` - Hand-poked DIY aesthetic - 6 seed images
+  - **Style Removed:**
+    - `ignorant` - Removed due to 45% overlap with stick-and-poke (too similar in CLIP embedding space)
+  - **Averaged Embeddings:**
+    - Each style now uses averaged CLIP embedding from multiple seed images
+    - Better represents style diversity vs single seed image
+    - L2-normalized centroid for cosine similarity
+  - **Tagging Results (68,440 images):**
+    - blackwork: 28,006 (40.9%)
+    - stick-and-poke: 18,139 (26.5%)
+    - illustrative: 17,871 (26.1%)
+    - horror: 12,976 (19.0%)
+    - anime: 5,222 (7.6%)
+  - **Artist Profiles:** 75,153 style profiles for 7,845 artists
+  - **Files Modified:**
+    - `scripts/styles/generate-averaged-seeds.ts` - Added new style definitions
+    - `scripts/styles/upload-seed-images.ts` - Added new style definitions
+    - `scripts/style-seeds/style-seeds-data.ts` - Added new style entries
+
+### Jan 4, 2026 (Session 12)
+- **Phase 9 Complete** - Stripe subscription integration
+  - **Packages:** stripe, @stripe/stripe-js (v20.1.0)
+  - **API Endpoints:**
+    - `POST /api/stripe/create-checkout` - Creates Stripe Checkout session with user/artist metadata
+    - `POST /api/stripe/webhook` - Handles subscription lifecycle events
+    - `POST /api/stripe/portal` - Redirects to Stripe Customer Portal for billing management
+  - **Webhook Events Handled:**
+    - `checkout.session.completed` → Sets `is_pro=true`, creates subscription record
+    - `customer.subscription.updated` → Syncs status changes
+    - `customer.subscription.deleted` → Downgrades artist (hides images >20, removes pins)
+    - `invoice.payment_failed` → Sets status to `past_due`
+  - **UI Components:**
+    - `/dashboard/subscription` page with plan selection (Monthly $15, Yearly $150)
+    - `SubscriptionManager` component (upgrade flow for free, billing management for Pro)
+    - `CompactUpgradeOverlay` updated to link to subscription page
+  - **Files Created:**
+    - `lib/stripe/server.ts` - Server-side Stripe client + price IDs
+    - `lib/stripe/client.ts` - Client-side Stripe loader
+    - `app/api/stripe/create-checkout/route.ts`
+    - `app/api/stripe/webhook/route.ts`
+    - `app/api/stripe/portal/route.ts`
+    - `app/dashboard/subscription/page.tsx`
+    - `components/dashboard/SubscriptionManager.tsx`
+  - **Testing:** Stripe CLI for local webhook forwarding (`stripe listen`)
+  - **Production Setup Required:**
+    - Add env vars to Vercel: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+    - Create webhook in Stripe Dashboard → `https://inkdex.io/api/stripe/webhook`
+    - Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
 
 ### Jan 4, 2026 (Session 11)
 - **Search Performance Overhaul** - Fixed critical performance issues
@@ -402,8 +457,7 @@ Status: Production Ready
 
 ## Next Priorities
 
-1. **Phase 9** - Stripe integration (legal pages ready for checkout)
-2. **Phase 13** - Analytics dashboard (Pro feature)
-3. Run mining pipeline for 10k+ artists (infrastructure ready)
-4. SEO optimization and content expansion
-5. Performance monitoring and optimization
+1. Run mining pipeline for 10k+ artists (infrastructure ready)
+2. SEO optimization and content expansion
+3. Performance monitoring and optimization
+4. Deploy Stripe to production (set up webhook in Stripe Dashboard)

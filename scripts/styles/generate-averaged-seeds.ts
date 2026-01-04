@@ -114,6 +114,18 @@ const STYLE_INFO: Record<string, { displayName: string; description: string }> =
     displayName: 'Fine Line',
     description: 'Delicate, thin lines with minimal shading. Often single-needle work.',
   },
+  'anime': {
+    displayName: 'Anime',
+    description: 'Japanese animation style featuring characters from anime and manga. Vibrant colors, expressive eyes, and dynamic compositions.',
+  },
+  'horror': {
+    displayName: 'Horror',
+    description: 'Dark and macabre imagery featuring horror movie icons, skulls, demons, and nightmarish scenes. Often in black and grey realism or blackwork.',
+  },
+  'stick-and-poke': {
+    displayName: 'Stick and Poke',
+    description: 'Hand-poked tattoos with a raw, DIY aesthetic. Simple designs, dotwork, and intentionally imperfect lines with punk and indie roots.',
+  },
 };
 
 interface ParsedArgs {

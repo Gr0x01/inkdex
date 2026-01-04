@@ -148,4 +148,31 @@ export const styleSeedsData: StyleSeedData[] = [
       'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/167980.jpg',
     ],
   },
+  {
+    styleName: 'anime',
+    displayName: 'Anime',
+    description:
+      'Japanese animation style featuring characters from anime and manga. Vibrant colors, expressive eyes, and dynamic compositions from popular series.',
+    imageUrls: [
+      // Local seed images in tmp/seeds/anime-*.{jpg,webp,avif}
+    ],
+  },
+  {
+    styleName: 'horror',
+    displayName: 'Horror',
+    description:
+      'Dark and macabre imagery featuring horror movie icons, skulls, demons, and nightmarish scenes. Often in black and grey realism or blackwork.',
+    imageUrls: [
+      // Local seed images in tmp/seeds/horror-*.{jpg,webp}
+    ],
+  },
+  {
+    styleName: 'stick-and-poke',
+    displayName: 'Stick and Poke',
+    description:
+      'Hand-poked tattoos with a raw, DIY aesthetic. Simple designs, dotwork, and intentionally imperfect lines with punk and indie roots.',
+    imageUrls: [
+      // Local seed images in tmp/seeds/stick-and-poke-*.{jpg,webp}
+    ],
+  },
 ];

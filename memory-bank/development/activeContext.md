@@ -1,16 +1,18 @@
 ---
-Last-Updated: 2026-01-04 (Session 10 - GDPR Compliance + 50-State Coverage)
+Last-Updated: 2026-01-05 (Session 13 - Style Expansion)
 Maintainer: RB
-Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
+Status: Production Ready - 14/14 Phases Complete (100%)
 ---
 
 # Active Context: Inkdex
 
 ## Current State
 
-**Platform:** Production - 96 cities, 14,307 artists, ~25,000 images
+**Platform:** Production - 116 cities, 15,626 artists, 68,440 images with embeddings
 
-**Live Cities:** 96 cities across 44 states (see quickstart.md for full list)
+**Live Cities:** 116 cities across all 50 states + DC (see quickstart.md for full list)
+
+**Style System:** 20 styles with averaged CLIP embeddings from multiple seed images
 
 **Pending Pipeline:** ~10,000+ artists need image scraping and embeddings
 
@@ -65,6 +67,7 @@ Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 | 6 | ✅ | Portfolio management (free 20, pro 100, pinning) |
 | 7 | ✅ | Profile editor + delete flow |
 | 8 | ✅ | Legal pages (terms, privacy, about, contact - Stripe-ready) |
+| 9 | ✅ | Stripe subscriptions (checkout, webhooks, customer portal) |
 | 10 | ✅ | Email notifications (Resend - welcome, sync failures, rate limiting, unsubscribe) |
 | 11 | ✅ | Instagram auto-sync for Pro (daily cron) |
 | 12 | ✅ | Search ranking boosts + Pro/Featured badges |
@@ -74,9 +77,12 @@ Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 
 ## Pending Phases
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 9 | Stripe subscription + webhooks | Not started (legal pages ready) |
+All 14 phases complete!
+
+**Production Stripe Setup Required:**
+- Add env vars to Vercel: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- Create webhook in Stripe Dashboard → `https://inkdex.io/api/stripe/webhook`
+- Switch from test keys (`sk_test_`, `pk_test_`) to live keys (`sk_live_`, `pk_live_`) when ready
 
 ## Ready-to-Run Pipelines
 
@@ -132,6 +138,33 @@ Access via `/dev/login` (development only):
 | Jamie Chen | Unclaimed | Test claim flow |
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
+
+## Style System
+
+**20 Styles** with averaged CLIP embeddings (multiple seed images per style):
+
+| Category | Styles |
+|----------|--------|
+| Classic | traditional, neo-traditional, japanese, tribal, chicano |
+| Modern | blackwork, illustrative, realism, watercolor, minimalist |
+| Specialty | anime, horror, stick-and-poke, new-school, surrealism |
+| Technique | dotwork/ornamental, sketch, lettering, biomechanical, trash-polka |
+
+**Top Styles by Coverage:**
+- blackwork: 40.9% of images, 6,825 artists
+- stick-and-poke: 26.5% of images, 5,199 artists
+- illustrative: 26.1% of images, 6,172 artists
+
+**Style Pipeline:**
+```bash
+# Add new style:
+# 1. Add seed images to tmp/seeds/{style}-1.jpg, {style}-2.jpg, etc.
+# 2. Add style definition to scripts/styles/generate-averaged-seeds.ts
+# 3. Run pipeline:
+npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seeds
+npx tsx scripts/styles/tag-images.ts --clear
+npx tsx scripts/styles/compute-artist-profiles.ts --clear
+```
 
 ## Key Architecture
 
