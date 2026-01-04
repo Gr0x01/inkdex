@@ -18,6 +18,7 @@ export type CacheKeyPattern =
   | 'analytics:summary' // Artist analytics summary metrics
   | 'analytics:top-images' // Top performing images by artist
   | 'analytics:timeseries' // Daily analytics time series data
+  | 'analytics:searches' // Recent search appearances for artist
   | 'featured:artists' // Featured artists by state
   | 'cities:with-counts' // Cities with artist counts
   | 'artist:profile' // Individual artist profiles by slug

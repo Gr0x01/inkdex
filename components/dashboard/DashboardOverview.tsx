@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { Loader2, ExternalLink } from 'lucide-react'
 import MetricsCards from '@/components/analytics/MetricsCards'
 import ViewsChart from '@/components/analytics/ViewsChart'
-import PortfolioStatusCard from './PortfolioStatusCard'
+import RecentSearchesTable from '@/components/analytics/RecentSearchesTable'
 import ProUpgradeCTA from './ProUpgradeCTA'
 
 type TimeRange = 7 | 30 | 90
@@ -32,26 +32,28 @@ interface AnalyticsData {
     bookingClicks: number
     searchAppearances: number
   }>
+  recentSearches: Array<{
+    searchId: string
+    queryType: 'text' | 'image' | 'hybrid' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
+    queryText: string | null
+    instagramUsername: string | null
+    rank: number
+    similarityScore: number
+    boostedScore: number
+    timestamp: string
+  }>
 }
 
 interface DashboardOverviewProps {
   isPro: boolean
   firstName?: string
   artistId?: string
-  imageCount: number
-  maxImages: number
-  lastSyncedAt?: string
-  nextSyncAt?: string
 }
 
 export default function DashboardOverview({
   isPro,
   firstName,
   artistId,
-  imageCount,
-  maxImages,
-  lastSyncedAt,
-  nextSyncAt,
 }: DashboardOverviewProps) {
   const [timeRange, setTimeRange] = useState<TimeRange>(30)
   const [data, setData] = useState<AnalyticsData | null>(null)
@@ -76,7 +78,7 @@ export default function DashboardOverview({
   return (
     <div>
       {/* Welcome Header */}
-      <header className="mb-8">
+      <header className="pt-8 mb-8">
         <h1 className="font-heading text-3xl mb-1">
           Welcome back{firstName ? `, ${firstName}` : ''}
         </h1>
@@ -88,77 +90,56 @@ export default function DashboardOverview({
       {/* Pro User: Analytics Dashboard */}
       {isPro && artistId && (
         <div className="space-y-6">
-          {/* Time Range Selector */}
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { label: '7 Days', value: 7 },
-              { label: '30 Days', value: 30 },
-              { label: '90 Days', value: 90 },
-            ].map((option) => (
-              <button
-                key={option.label}
-                onClick={() => setTimeRange(option.value as TimeRange)}
-                className={`
-                  px-4 py-2 font-mono text-xs uppercase tracking-wider
-                  transition-all duration-200
-                  ${
-                    timeRange === option.value
-                      ? 'bg-ink text-paper'
-                      : 'bg-white border border-gray-300 text-gray-700 hover:border-ink'
-                  }
-                `}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
           {/* Loading State */}
           {loading && (
-            <div className="flex items-center justify-center py-12 border border-gray-200 bg-white">
-              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+            <div className="border border-gray-300 bg-white p-12">
+              <div className="flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+                <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+                  Loading Analytics
+                </p>
+              </div>
             </div>
           )}
 
           {/* Analytics Data */}
           {!loading && data && (
             <>
+              {/* 1. HERO: Chart with integrated time controls */}
+              {data.timeSeries.length > 0 && (
+                <ViewsChart
+                  timeSeries={data.timeSeries}
+                  timeRange={timeRange}
+                  onTimeRangeChange={setTimeRange}
+                />
+              )}
+
+              {/* 2. Stats Grid */}
               <MetricsCards summary={data.summary} />
-              {data.timeSeries.length > 0 && <ViewsChart timeSeries={data.timeSeries} />}
+
+              {/* 3. Recent Search Appearances */}
+              <RecentSearchesTable
+                searches={data.recentSearches || []}
+                totalCount={data.summary.searchAppearances}
+              />
             </>
           )}
 
           {/* No Data State */}
           {!loading && data && data.summary.totalEngagement === 0 && (
-            <div className="border border-gray-200 bg-white p-12 text-center">
-              <p className="font-heading text-xl text-gray-400 mb-2">No data yet</p>
+            <div className="border border-gray-300 bg-white p-12 text-center">
+              <p className="font-heading text-xl text-gray-500 mb-2">No data yet</p>
               <p className="font-body text-sm text-gray-500">
                 Your analytics will appear here once people start viewing your profile.
               </p>
             </div>
           )}
-
-          {/* Portfolio Status */}
-          <PortfolioStatusCard
-            imageCount={imageCount}
-            maxImages={maxImages}
-            isPro={isPro}
-            lastSyncedAt={lastSyncedAt}
-            nextSyncAt={nextSyncAt}
-          />
         </div>
       )}
 
-      {/* Free User: Upgrade CTA + Portfolio Status */}
+      {/* Free User: Upgrade CTA + Quick Actions */}
       {!isPro && (
         <div className="space-y-6">
-          {/* Portfolio Status */}
-          <PortfolioStatusCard
-            imageCount={imageCount}
-            maxImages={maxImages}
-            isPro={isPro}
-          />
-
           {/* Upgrade CTA */}
           <ProUpgradeCTA />
 

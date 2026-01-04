@@ -1,6 +1,6 @@
 /**
  * Views Chart Component
- * Line chart showing analytics trends over time
+ * Line chart showing analytics trends over time with integrated time controls
  */
 
 'use client'
@@ -25,9 +25,15 @@ interface ViewsChartProps {
     bookingClicks: number
     searchAppearances: number
   }>
+  timeRange: 7 | 30 | 90
+  onTimeRangeChange: (range: 7 | 30 | 90) => void
 }
 
-export default function ViewsChart({ timeSeries }: ViewsChartProps) {
+export default function ViewsChart({
+  timeSeries,
+  timeRange,
+  onTimeRangeChange
+}: ViewsChartProps) {
   // Format data for chart
   const chartData = timeSeries.map((item) => ({
     date: new Date(item.date).toLocaleDateString('en-US', {
@@ -44,57 +50,98 @@ export default function ViewsChart({ timeSeries }: ViewsChartProps) {
   }
 
   return (
-    <div className="border border-gray-200 bg-white p-6">
-      <h2 className="font-heading text-xl mb-4">Activity Over Time</h2>
+    <div className="border border-gray-300 bg-white">
+      {/* Header with integrated time controls */}
+      <div className="border-b border-gray-200 p-6 pb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-lg mb-1">
+              Activity Over Time
+            </h2>
+            <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
+              Last {timeRange} Days
+            </p>
+          </div>
 
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 12, fontFamily: 'IBM Plex Mono' }}
-            stroke="#9ca3af"
-          />
-          <YAxis
-            tick={{ fontSize: 12, fontFamily: 'IBM Plex Mono' }}
-            stroke="#9ca3af"
-          />
-          <Tooltip
-            contentStyle={{
-              fontFamily: 'IBM Plex Mono',
-              fontSize: 12,
-              border: '1px solid #e5e7eb',
-            }}
-          />
-          <Legend
-            wrapperStyle={{
-              fontFamily: 'IBM Plex Mono',
-              fontSize: 12,
-            }}
-          />
-          <Line
-            type="monotone"
-            dataKey="Profile Views"
-            stroke="#2563eb"
-            strokeWidth={2}
-            dot={{ r: 3 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="Image Views"
-            stroke="#9333ea"
-            strokeWidth={2}
-            dot={{ r: 3 }}
-          />
-          <Line
-            type="monotone"
-            dataKey="Instagram Clicks"
-            stroke="#ec4899"
-            strokeWidth={2}
-            dot={{ r: 3 }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+          {/* Segmented Time Control */}
+          <div className="flex border border-gray-300 divide-x divide-gray-300">
+            {[7, 30, 90].map((days) => (
+              <button
+                key={days}
+                onClick={() => onTimeRangeChange(days as 7 | 30 | 90)}
+                className={`
+                  px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider
+                  transition-all duration-200
+                  ${days === timeRange
+                    ? 'bg-ink text-paper'
+                    : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }
+                `}
+              >
+                {days}D
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Chart Body */}
+      <div className="p-6 pt-4">
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={chartData}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#D8D6D2"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+              stroke="#8B8985"
+            />
+            <YAxis
+              tick={{ fontSize: 11, fontFamily: 'IBM Plex Mono' }}
+              stroke="#8B8985"
+            />
+            <Tooltip
+              contentStyle={{
+                fontFamily: 'IBM Plex Mono',
+                fontSize: 11,
+                border: '1px solid #D8D6D2',
+                borderRadius: '4px',
+              }}
+            />
+            <Legend
+              wrapperStyle={{
+                fontFamily: 'IBM Plex Mono',
+                fontSize: 11,
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Profile Views"
+              stroke="#1A1A1A"
+              strokeWidth={2.5}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Image Views"
+              stroke="#8B7355"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="Instagram Clicks"
+              stroke="#8B8985"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

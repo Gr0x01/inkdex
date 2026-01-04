@@ -102,13 +102,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ? allResults.filter(artist => artist.artist_id !== excludeArtistId)
     : allResults
 
-  // Track search appearances (fire-and-forget)
-  const artistIds = artists.map(a => a.artist_id)
-  if (artistIds.length > 0) {
+  // Track search appearances with details (fire-and-forget)
+  if (artists.length > 0) {
     // Fire-and-forget with error logging
     void (async () => {
       try {
-        await supabase.rpc('increment_search_appearances', { p_artist_ids: artistIds })
+        const appearancesData = artists.map((artist, index) => {
+          // Calculate raw similarity by removing boosts
+          const boostedScore = artist.similarity
+          const rawSimilarity = boostedScore
+            - (artist.is_pro ? 0.05 : 0)
+            - (artist.is_featured ? 0.02 : 0)
+
+          return {
+            artist_id: artist.artist_id,
+            rank: index + 1,
+            similarity: rawSimilarity,
+            boosted_score: boostedScore,
+            image_count: artist.matching_images?.length || 3
+          }
+        })
+
+        await supabase.rpc('track_search_appearances_with_details', {
+          p_search_id: id,
+          p_appearances: appearancesData
+        })
       } catch (err) {
         console.error('[Search] Tracking failed:', err)
       }
@@ -304,7 +322,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {hasResults ? (
           <>
             {/* Artist Grid - Unified, sorted by match percentage */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 mb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 mb-12 auto-rows-auto" style={{ gridAutoFlow: 'dense' }}>
               {artists.map((artist) => (
                 <ArtistCard key={artist.artist_id} artist={artist} />
               ))}

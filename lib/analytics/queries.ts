@@ -32,6 +32,17 @@ export interface DailyMetric {
   searchAppearances: number
 }
 
+export interface SearchAppearance {
+  searchId: string
+  queryType: 'text' | 'image' | 'hybrid' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
+  queryText: string | null
+  instagramUsername: string | null
+  rank: number
+  similarityScore: number
+  boostedScore: number
+  timestamp: string
+}
+
 /**
  * Get aggregated analytics summary for time range
  * @param artistId - Artist UUID
@@ -192,5 +203,42 @@ export async function getAnalyticsTimeSeries(
     instagramClicks: row.instagram_clicks || 0,
     bookingClicks: row.booking_link_clicks || 0,
     searchAppearances: row.search_appearances || 0,
+  }))
+}
+
+/**
+ * Get recent search appearances for an artist
+ * @param artistId - Artist UUID
+ * @param days - Number of days to look back (or null for all time)
+ * @param limit - Max number of appearances to return
+ * @returns Array of search appearances with query details
+ */
+export async function getRecentSearchAppearances(
+  artistId: string,
+  days: number | null = 30,
+  limit: number = 20
+): Promise<SearchAppearance[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase.rpc('get_recent_search_appearances', {
+    p_artist_id: artistId,
+    p_days: days,
+    p_limit: limit
+  })
+
+  if (error) {
+    console.error('[Analytics] Error fetching search appearances:', error)
+    throw error
+  }
+
+  return (data || []).map((row: any) => ({
+    searchId: row.sa_search_id,
+    queryType: row.s_query_type,
+    queryText: row.s_query_text,
+    instagramUsername: row.s_instagram_username,
+    rank: row.sa_rank_position,
+    similarityScore: row.sa_similarity_score,
+    boostedScore: row.sa_boosted_score,
+    timestamp: row.sa_created_at,
   }))
 }

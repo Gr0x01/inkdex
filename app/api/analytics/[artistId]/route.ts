@@ -10,6 +10,7 @@ import {
   getArtistAnalytics,
   getTopPerformingImages,
   getAnalyticsTimeSeries,
+  getRecentSearchAppearances,
 } from '@/lib/analytics/queries'
 import { getCached, generateCacheKey } from '@/lib/redis/cache'
 
@@ -83,10 +84,14 @@ export async function GET(
       artistId,
       days: String(days || 90),
     })
+    const recentSearchesKey = generateCacheKey('analytics:searches', {
+      artistId,
+      days: String(days || 'all'),
+    })
 
     // Fetch analytics data in parallel with 30-minute cache
     // This ensures consistent data across dashboard refreshes
-    const [summary, topImages, timeSeries] = await Promise.all([
+    const [summary, topImages, timeSeries, recentSearches] = await Promise.all([
       getCached(
         summaryKey,
         { ttl: 1800, pattern: 'analytics:summary' }, // 30 minutes
@@ -102,12 +107,18 @@ export async function GET(
         { ttl: 1800, pattern: 'analytics:timeseries' }, // 30 minutes
         () => getAnalyticsTimeSeries(artistId, days || 90)
       ),
+      getCached(
+        recentSearchesKey,
+        { ttl: 1800, pattern: 'analytics:searches' }, // 30 minutes
+        () => getRecentSearchAppearances(artistId, days, 20)
+      ),
     ])
 
     return NextResponse.json({
       summary,
       topImages,
       timeSeries,
+      recentSearches,
       timeRange: days,
     })
   } catch (error) {

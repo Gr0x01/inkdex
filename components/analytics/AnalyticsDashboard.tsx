@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react'
 import MetricsCards from './MetricsCards'
 import ViewsChart from './ViewsChart'
 import TopImagesGrid from './TopImagesGrid'
+import RecentSearchesTable from './RecentSearchesTable'
 
 type TimeRange = 7 | 30 | 90 | null
 
@@ -46,6 +47,16 @@ export default function AnalyticsDashboard({
       instagramClicks: number
       bookingClicks: number
       searchAppearances: number
+    }>
+    recentSearches: Array<{
+      searchId: string
+      queryType: 'text' | 'image' | 'hybrid' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
+      queryText: string | null
+      instagramUsername: string | null
+      rank: number
+      similarityScore: number
+      boostedScore: number
+      timestamp: string
     }>
     timeRange: number | null
   } | null>(null)
@@ -112,8 +123,18 @@ export default function AnalyticsDashboard({
         {!loading && data && (
           <div className="space-y-6">
             <MetricsCards summary={data.summary} />
-            {data.timeSeries.length > 0 && <ViewsChart timeSeries={data.timeSeries} />}
+            {data.timeSeries.length > 0 && timeRange !== null && (
+              <ViewsChart
+                timeSeries={data.timeSeries}
+                timeRange={timeRange}
+                onTimeRangeChange={(range) => setTimeRange(range)}
+              />
+            )}
             <TopImagesGrid topImages={data.topImages} />
+            <RecentSearchesTable
+              searches={data.recentSearches || []}
+              totalCount={data.summary.searchAppearances}
+            />
           </div>
         )}
 
