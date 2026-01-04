@@ -30,26 +30,42 @@ const DATAFORSEO_API_URL = 'https://api.dataforseo.com/v3';
 const authHeader = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
 
 // Candidate cities for analysis (using US country code 2840)
-// MID-TIER CITIES - Good demand potential without major metro competition
+// BATCH 4 - EXPANSION CANDIDATES (Jan 2026)
 const CANDIDATE_CITIES = [
-  // Artsy/Cultural Cities
-  { name: 'Nashville', state: 'TN', location_code: 2840 },
-  { name: 'San Diego', state: 'CA', location_code: 2840 },
-  { name: 'San Francisco', state: 'CA', location_code: 2840 },
-  { name: 'Richmond', state: 'VA', location_code: 2840 },
-  { name: 'Asheville', state: 'NC', location_code: 2840 },
+  // Major Metros (Top 20 US markets not yet covered)
+  { name: 'Boston', state: 'MA', location_code: 2840 },
+  { name: 'Dallas', state: 'TX', location_code: 2840 },
+  { name: 'Houston', state: 'TX', location_code: 2840 },
+  { name: 'Washington', state: 'DC', location_code: 2840 },
+  { name: 'Virginia Beach', state: 'VA', location_code: 2840 },
+  { name: 'Fort Worth', state: 'TX', location_code: 2840 },
 
-  // Growing Metros
-  { name: 'Phoenix', state: 'AZ', location_code: 2840 },
-  { name: 'Philadelphia', state: 'PA', location_code: 2840 },
-  { name: 'Charlotte', state: 'NC', location_code: 2840 },
-  { name: 'Columbus', state: 'OH', location_code: 2840 },
+  // Growing Second-Tier Metros
+  { name: 'Tulsa', state: 'OK', location_code: 2840 },
+  { name: 'Reno', state: 'NV', location_code: 2840 },
+  { name: 'Colorado Springs', state: 'CO', location_code: 2840 },
+  { name: 'Lexington', state: 'KY', location_code: 2840 },
+  { name: 'Springfield', state: 'MO', location_code: 2840 },
+  { name: 'Lincoln', state: 'NE', location_code: 2840 },
+  { name: 'Anchorage', state: 'AK', location_code: 2840 },
 
-  // Tourism/Lifestyle Cities
-  { name: 'Las Vegas', state: 'NV', location_code: 2840 },
-  { name: 'Tampa', state: 'FL', location_code: 2840 },
-  { name: 'Salt Lake City', state: 'UT', location_code: 2840 },
-  { name: 'San Antonio', state: 'TX', location_code: 2840 },
+  // College Towns / Young Demographics
+  { name: 'Iowa City', state: 'IA', location_code: 2840 },
+  { name: 'Bloomington', state: 'IN', location_code: 2840 },
+  { name: 'Burlington', state: 'VT', location_code: 2840 },
+  { name: 'Charlottesville', state: 'VA', location_code: 2840 },
+  { name: 'New Haven', state: 'CT', location_code: 2840 },
+
+  // Southern / Southeast Growth Markets
+  { name: 'Birmingham', state: 'AL', location_code: 2840 },
+  { name: 'Baton Rouge', state: 'LA', location_code: 2840 },
+  { name: 'Wilmington', state: 'NC', location_code: 2840 },
+  { name: 'Columbia', state: 'SC', location_code: 2840 },
+
+  // Pacific Northwest / New England
+  { name: 'Bend', state: 'OR', location_code: 2840 },
+  { name: 'Portland', state: 'ME', location_code: 2840 },
+  { name: 'Ithaca', state: 'NY', location_code: 2840 },
 ];
 
 // Keyword categories to analyze

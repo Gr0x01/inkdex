@@ -66,11 +66,36 @@ interface CityConfig {
 // ============================================================================
 
 const CITIES: CityConfig[] = [
-  { name: 'Chicago', state: 'IL', slug: 'chicago' },
-  { name: 'New York', state: 'NY', slug: 'new-york' },
-  { name: 'Seattle', state: 'WA', slug: 'seattle' },
-  { name: 'Portland', state: 'OR', slug: 'portland' },
-  { name: 'Miami', state: 'FL', slug: 'miami' },
+  // Batch 4 Expansion - Top Tier (84/100) - Jan 2026
+  { name: 'Virginia Beach', state: 'VA', slug: 'virginia-beach' },
+  { name: 'Tulsa', state: 'OK', slug: 'tulsa' },
+  { name: 'Reno', state: 'NV', slug: 'reno' },
+  { name: 'Springfield', state: 'MO', slug: 'springfield' },
+  { name: 'Iowa City', state: 'IA', slug: 'iowa-city' },
+  { name: 'Bloomington', state: 'IN', slug: 'bloomington' },
+  { name: 'New Haven', state: 'CT', slug: 'new-haven' },
+  { name: 'Baton Rouge', state: 'LA', slug: 'baton-rouge' },
+  { name: 'Columbia', state: 'SC', slug: 'columbia' },
+  { name: 'Bend', state: 'OR', slug: 'bend' },
+  { name: 'Ithaca', state: 'NY', slug: 'ithaca' },
+  // Batch 4 Expansion - Strong Second Tier (83/100)
+  { name: 'Lexington', state: 'KY', slug: 'lexington' },
+  { name: 'Lincoln', state: 'NE', slug: 'lincoln' },
+  { name: 'Anchorage', state: 'AK', slug: 'anchorage' },
+  { name: 'Burlington', state: 'VT', slug: 'burlington' },
+  { name: 'Charlottesville', state: 'VA', slug: 'charlottesville' },
+  { name: 'Birmingham', state: 'AL', slug: 'birmingham' },
+  // Batch 4 Expansion - Solid Third Tier (82/100)
+  { name: 'Washington', state: 'DC', slug: 'washington' },
+  { name: 'Wilmington', state: 'NC', slug: 'wilmington' },
+  // Batch 4 Expansion - Fourth Tier (80-81/100)
+  { name: 'Boston', state: 'MA', slug: 'boston' },
+  { name: 'Fort Worth', state: 'TX', slug: 'fort-worth' },
+  { name: 'Houston', state: 'TX', slug: 'houston' },
+  { name: 'Colorado Springs', state: 'CO', slug: 'colorado-springs' },
+  // Batch 4 Expansion - Fifth Tier (77-79/100)
+  { name: 'Dallas', state: 'TX', slug: 'dallas' },
+  { name: 'Portland', state: 'ME', slug: 'portland-me' },
 ];
 
 // ============================================================================
