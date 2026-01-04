@@ -41,6 +41,7 @@ export interface SearchResult {
   max_likes?: number     // Maximum likes across all portfolio images
   matching_images?: MatchingImage[]
   similarity: number
+  location_count?: number // Number of locations this artist works in (for multi-location badge)
 }
 
 export interface SearchResultsResponse {

@@ -47,6 +47,7 @@ const createMockSearchResult = (
   is_pro: false,
   is_featured: false,
   similarity: 0.28,
+  location_count: 1,
   matching_images: [
     {
       url: 'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=800&h=800&fit=crop',
@@ -308,6 +309,7 @@ export const MultiLocationArtist: Story = {
         region: 'TX',
         country_code: 'US',
         similarity: 0.32,
+        location_count: 3,  // Works in 3 locations (Austin + 2 others)
       }),
     },
     displayMode: 'search',

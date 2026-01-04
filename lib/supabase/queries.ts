@@ -28,6 +28,7 @@ interface SearchArtistRpcResult {
   similarity: number
   max_likes: number | null
   total_count?: number
+  location_count?: number
 }
 
 interface ArtistLocationRow {
@@ -247,6 +248,7 @@ export async function searchArtistsByEmbedding(
     })),
     max_similarity: result.similarity,
     max_likes: result.max_likes,
+    location_count: result.location_count,
   }))
 }
 
@@ -329,6 +331,7 @@ export async function searchArtistsWithCount(
     })),
     max_similarity: result.similarity,
     max_likes: result.max_likes,
+    location_count: result.location_count,
   }))
 
   return { artists, totalCount }

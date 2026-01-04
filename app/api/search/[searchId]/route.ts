@@ -29,6 +29,7 @@ interface DbSearchResult {
     similarity: number
   }> | null
   max_similarity: number
+  location_count?: number
 }
 
 /**
@@ -195,6 +196,7 @@ export async function GET(
             similarity: img.similarity,
           })),
           similarity: result.max_similarity || 0,
+          location_count: result.location_count,
         }
       })
       .filter((artist): artist is NonNullable<typeof artist> => artist !== null)

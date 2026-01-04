@@ -94,6 +94,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       likes_count: img.likes_count || null,
     })),
     similarity: result.max_similarity || 0,
+    location_count: result.location_count,
   }))
 
   // Exclude source artist for similar_artist searches

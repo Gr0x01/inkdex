@@ -39,7 +39,7 @@
     "backfill:analytics": "tsx scripts/analytics/backfill-test-user-analytics.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "db:lint": "sqlfluff lint supabase/migrations/",
+    "db:lint": "/Users/rb/Library/Python/3.9/bin/sqlfluff lint supabase/migrations/",
     "db:push": "npm run db:lint && npx supabase db push",
     "db:benchmark": "tsx scripts/benchmark-queries.ts"
   },
