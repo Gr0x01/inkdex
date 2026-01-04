@@ -7,6 +7,7 @@ import { ProBadge } from '@/components/badges/ProBadge'
 import { trackClick } from '@/lib/analytics/client'
 import { sanitizeText } from '@/lib/utils/sanitize'
 import { ArtistLocation } from '@/types/search'
+import { US_STATES } from '@/lib/constants/states'
 
 interface PortfolioImage {
   id: string
@@ -82,9 +83,20 @@ export default function ArtistInfoColumn({
   // Format location string (US vs international)
   const formatLocation = (loc: ArtistLocation | typeof primaryLocation) => {
     if (loc.country_code === 'US') {
+      // Handle state-only (no city) - show full state name
+      if (!loc.city && loc.region) {
+        const state = US_STATES.find(s => s.code === loc.region)
+        return state ? state.name : loc.region
+      }
+      // Handle city + state
       return `${loc.city}${loc.region ? `, ${loc.region}` : ''}`
     } else {
-      return `${loc.city || ''}${loc.region ? `, ${loc.region}` : ''}${loc.country_code ? `, ${loc.country_code}` : ''}`
+      // International: handle missing city
+      const parts = []
+      if (loc.city) parts.push(loc.city)
+      if (loc.region) parts.push(loc.region)
+      if (loc.country_code) parts.push(loc.country_code)
+      return parts.join(', ')
     }
   }
 
@@ -146,18 +158,24 @@ export default function ArtistInfoColumn({
             </h1>
 
             {/* Location - horizontal with [P] primary indicator */}
-            <p className="font-mono text-xs font-medium text-gray-500 leading-tight tracking-wide uppercase">
-              {hasMultipleLocations ? (
-                <>
-                  [P] {formatLocation(primaryLocation)}
-                  {otherLocations.map((loc) => (
-                    <span key={loc.id}> • {formatLocation(loc)}</span>
-                  ))}
-                </>
-              ) : (
-                formatLocation(primaryLocation)
+            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+              {hasMultipleLocations && (
+                <span className="relative group inline-flex items-center justify-center bg-ink text-paper w-[14px] h-[14px] text-[10px] font-bold font-sans leading-none p-0.5">
+                  P
+                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-ink text-paper text-xs font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-1000 pointer-events-none">
+                    Primary location
+                  </span>
+                </span>
               )}
-            </p>
+              <p className="font-body text-base font-normal text-gray-600">
+                {formatLocation(primaryLocation)}
+              </p>
+              {otherLocations.map((loc) => (
+                <p key={loc.id} className="font-body text-base font-normal text-gray-600">
+                  • {formatLocation(loc)}
+                </p>
+              ))}
+            </div>
 
             {/* Shop name if present */}
             {artist.shop_name && (
@@ -210,15 +228,6 @@ export default function ArtistInfoColumn({
           </div>
         )}
 
-        {/* Bio - Prominent, supports paragraphs */}
-        {displayBio && (
-          <div className="pt-1">
-            <p className="font-body text-base font-normal text-gray-900 leading-relaxed whitespace-pre-wrap">
-              {displayBio}
-            </p>
-          </div>
-        )}
-
         {/* CTAs - Compact */}
         <div className="pt-2 space-y-1.5">
           {/* Primary CTAs: Instagram + Book side-by-side if both exist */}
@@ -254,7 +263,7 @@ export default function ArtistInfoColumn({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => trackClick('booking_click', artist.id)}
-                className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border-2 border-ink hover:border-ink"
               >
                 Book
               </a>
@@ -294,7 +303,7 @@ export default function ArtistInfoColumn({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackClick('booking_click', artist.id)}
-                  className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+                  className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border-2 border-ink hover:border-ink"
                 >
                   Book
                 </a>
@@ -308,21 +317,30 @@ export default function ArtistInfoColumn({
               href={artist.website_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border border-gray-400 hover:border-ink"
+              className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border-2 border-ink hover:border-ink"
             >
               Website
             </a>
           )}
+        </div>
 
-          {/* Claim Profile CTA */}
-          <div className="pt-2">
-            <ClaimProfileButton
-              artistId={artist.id}
-              artistName={artist.name}
-              instagramHandle={artist.instagram_handle || ''}
-              verificationStatus={artist.verification_status}
-            />
+        {/* Bio - Prominent, supports paragraphs */}
+        {displayBio && (
+          <div className="pt-3">
+            <p className="font-body text-base font-normal text-gray-900 leading-relaxed whitespace-pre-wrap">
+              {displayBio}
+            </p>
           </div>
+        )}
+
+        {/* Claim Profile CTA */}
+        <div className="pt-3">
+          <ClaimProfileButton
+            artistId={artist.id}
+            artistName={artist.name}
+            instagramHandle={artist.instagram_handle || ''}
+            verificationStatus={artist.verification_status}
+          />
         </div>
       </div>
     </div>
