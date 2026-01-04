@@ -1,10 +1,94 @@
 ---
 Last-Updated: 2026-01-04
 Maintainer: RB
-Status: Analysis
+Status: Active - Marketing Curation System
 ---
 
-# Style Tagging & Ranking Analysis
+# Style Tagging & Ranking System
+
+## Marketing Curation (Priority Focus)
+
+### Purpose
+Surface top 25 artists per style for marketing curation:
+- Homepage featured sections
+- Social media promotion
+- Artist outreach campaigns
+
+### Style Taxonomy (20 Styles)
+
+**Core 10:**
+| Slug | Display Name | Description |
+|------|--------------|-------------|
+| `traditional` | Traditional | Bold outlines, limited palette, iconic American imagery |
+| `neo-traditional` | Neo-Traditional | Evolved traditional with expanded colors and detail |
+| `fine-line` | Fine Line | Delicate thin lines, often single-needle work |
+| `blackwork` | Blackwork | Pure black ink, geometric patterns to heavy coverage |
+| `geometric` | Geometric | Mathematical precision, sacred geometry patterns |
+| `realism` | Realism | Photorealistic in black & grey or color |
+| `japanese` | Japanese | Traditional Irezumi: koi, dragons, waves |
+| `watercolor` | Watercolor | Splashes, drips, color bleeds, no outlines |
+| `dotwork` | Dotwork | Images from dots, often mandalas |
+| `tribal` | Tribal | Bold black patterns, Polynesian/Maori inspired |
+
+**Expanded 10:**
+| Slug | Display Name | Description |
+|------|--------------|-------------|
+| `illustrative` | Illustrative | Storybook/comic style artwork |
+| `surrealism` | Surrealism | Dreamlike, impossible imagery |
+| `minimalist` | Minimalist | Simple, understated, clean lines |
+| `lettering` | Lettering/Script | Typography from elegant to graffiti |
+| `new-school` | New School | Cartoonish, bright, 90s-influenced |
+| `trash-polka` | Trash Polka | Chaotic collage, red and black |
+| `chicano` | Chicano | Religious imagery, lowriders, black & grey |
+| `biomechanical` | Biomechanical | Organic meets mechanical |
+| `ornamental` | Ornamental | Decorative jewelry/lace patterns |
+| `sketch` | Sketch/Line Art | Intentionally raw, visible sketch lines |
+
+### Ranking: Pure Embedding Similarity
+
+```sql
+similarity_score = 1 - (portfolio_embedding <=> style_seed_embedding)
+artist_score = MAX(similarity_score) across portfolio
+```
+
+**Why pure similarity:**
+- Objective (no popularity bias)
+- Surfaces quality work from small accounts
+- Simple to understand and debug
+
+### Admin UI: `/admin/styles`
+
+**Features:**
+- Style dropdown (20 styles)
+- Top 25 artists per style
+- Artist cards with: image, name, handle, city, similarity %
+- "Mark Featured" toggle
+- "Copy Handle" button
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `/supabase/functions/search_functions.sql` | `get_top_artists_by_style()` |
+| `/app/api/admin/styles/leaderboard/route.ts` | API endpoint |
+| `/app/admin/(authenticated)/styles/page.tsx` | Admin page |
+| `/components/admin/StyleLeaderboard.tsx` | UI component |
+| `/scripts/styles/upload-seed-images.ts` | Seed upload |
+
+### Seed Image Requirements
+
+Good seeds should:
+1. Exemplify the style (iconic, not edge cases)
+2. High quality (sharp, well-lit)
+3. Single focus (one tattoo)
+4. Healed or fresh (no distortion)
+5. Neutral background
+
+**Naming:** `{style-slug}.jpg` (e.g., `traditional.jpg`)
+
+---
+
+# Style Tagging & Ranking Analysis (Full Reference)
 
 ## What We Already Have ✅
 
