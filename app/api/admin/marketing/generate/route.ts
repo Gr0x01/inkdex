@@ -70,22 +70,29 @@ async function generateCaption(artist: ArtistData): Promise<string> {
 
   const styles = getTopStyles(artist.portfolio_images);
 
-  const prompt = `Write a short Instagram caption (2-3 sentences max) for a tattoo art feature post.
+  console.log(`[Marketing Generate] Artist: @${artist.instagram_handle}`);
+  console.log(`[Marketing Generate] Styles found: ${styles.length ? styles.join(', ') : 'NONE'}`);
+  console.log(`[Marketing Generate] Bio: ${artist.bio?.slice(0, 100) || 'NONE'}`);
+
+  const prompt = `Write a short Instagram caption (2-3 sentences max) for a tattoo art feature post, followed by relevant hashtags.
 
 Artist context:
 - Handle: @${artist.instagram_handle}
 - Location: ${location || 'Unknown'}
-- Styles: ${styles.join(', ') || 'various styles'}
+- Styles: ${styles.join(', ') || 'various'}
 - Bio excerpt: ${artist.bio?.slice(0, 200) || 'N/A'}
 
 Requirements:
 - Showcase their work as a curator would
 - Include @${artist.instagram_handle} naturally to credit their work
 - Don't mention joining Inkdex or any platform
-- Keep it concise and natural (2-3 sentences)
-- No hashtags
+- Keep caption concise (2-3 sentences)
+- End with 5-8 relevant hashtags (tattoo-related, location, style)
 
-Example tone: "Stunning blackwork from @artist_name. The precision in these geometric pieces is remarkable."`;
+Format:
+[Caption text]
+
+#hashtag1 #hashtag2 #hashtag3...`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -162,7 +169,7 @@ export async function POST(request: NextRequest) {
         )
       `)
       .in('id', outreachIds)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'generated']);
 
     if (fetchError) {
       console.error('[Marketing Generate] Fetch error:', fetchError);

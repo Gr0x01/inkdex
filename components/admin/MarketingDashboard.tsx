@@ -179,16 +179,11 @@ export default function MarketingDashboard() {
     // CSV header
     const rows = ['"Text","Image URL","Tags","Posting Time"'];
 
-    // Add each post - one row per image for carousel effect
+    // One row per artist, using their best image (first one)
     for (const record of generatedRecords) {
       const text = (record.post_text || '').replace(/"/g, '""');
-      const images = record.post_images || [];
-
-      // First image gets the caption, rest are just images
-      images.forEach((imageUrl, i) => {
-        const rowText = i === 0 ? text : '';
-        rows.push(`"${rowText}","${imageUrl}",,`);
-      });
+      const bestImage = record.post_images?.[0] || '';
+      rows.push(`"${text}","${bestImage}",,`);
     }
 
     // Download CSV

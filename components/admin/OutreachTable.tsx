@@ -201,14 +201,25 @@ Let me know if you have any questions!`;
                 )}
 
                 {record.status === 'generated' && (
-                  <button
-                    onClick={() => onUpdateStatus(record.id, 'posted')}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-purple-600 text-white text-[12px] font-body
-                             hover:bg-purple-700 rounded"
-                  >
-                    <CheckCircle className="w-3 h-3" />
-                    Mark Posted
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleGenerate(record.id)}
+                      disabled={isGenerating}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-gray-200 text-gray-700 text-[12px] font-body
+                               hover:bg-gray-300 disabled:opacity-50 rounded"
+                    >
+                      <Sparkles className={`w-3 h-3 ${isGenerating ? 'animate-pulse' : ''}`} />
+                      {isGenerating ? 'Regenerating...' : 'Regenerate'}
+                    </button>
+                    <button
+                      onClick={() => onUpdateStatus(record.id, 'posted')}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-purple-600 text-white text-[12px] font-body
+                               hover:bg-purple-700 rounded"
+                    >
+                      <CheckCircle className="w-3 h-3" />
+                      Mark Posted
+                    </button>
+                  </>
                 )}
 
                 {record.status === 'posted' && (
