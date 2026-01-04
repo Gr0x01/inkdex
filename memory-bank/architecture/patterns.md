@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-04
 Maintainer: Claude
 Status: Design Reference
 Source: Inherited from /coding_projects/ddd architecture
@@ -913,6 +913,144 @@ SimpleMaps US Cities Database (free tier with attribution):
 - ❌ User-specific data → Use Redis caching
 - ❌ Real-time data → Use Redis or no caching
 - ❌ Frequently changing data → Use shorter TTLs or Redis
+
+---
+
+### 8. GDPR/Privacy Compliance Filtering
+
+**Purpose:** Filter artists from EU/EEA/UK/Switzerland regions to comply with GDPR requirements when scraping public data without consent.
+
+**Context:** GDPR applies to EU residents' data regardless of where the processor is based. Scraping public Instagram profiles of EU artists without consent creates legal risk.
+
+**Architecture: Two-Layer Defense**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Layer 1: Discovery Pipeline Prevention                    │
+│  - Bio location extractor detects EU cities/countries      │
+│  - Artists filtered BEFORE database insertion              │
+│  - Logged for audit purposes                               │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  Layer 2: Database Search Filtering                        │
+│  - SQL functions exclude artists with EU country_code      │
+│  - Browse pages exclude GDPR countries entirely            │
+│  - Safety net for any artists that slip through            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**GDPR Countries (32 total):**
+- **EU 27:** AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE
+- **EEA 3:** IS, LI, NO
+- **UK GDPR:** GB
+- **Swiss DPA:** CH
+
+**Implementation Files:**
+
+1. **Constants (`/lib/constants/countries.ts`):**
+```typescript
+export const GDPR_COUNTRY_CODES = new Set([
+  'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+  'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+  'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+  'IS', 'LI', 'NO',
+  'GB', 'CH'
+]);
+
+export function isGDPRCountry(code: string | null | undefined): boolean {
+  if (!code) return false;
+  return GDPR_COUNTRY_CODES.has(code.toUpperCase());
+}
+```
+
+2. **Bio Location Extractor (`/lib/instagram/bio-location-extractor.ts`):**
+```typescript
+// Major EU cities mapped to country codes
+const GDPR_CITY_TO_COUNTRY: Record<string, string> = {
+  'london': 'GB',
+  'berlin': 'DE',
+  'paris': 'FR',
+  'amsterdam': 'NL',
+  // ... 100+ cities
+};
+
+// Country names and abbreviations
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {
+  'united kingdom': 'GB',
+  'uk': 'GB',
+  'germany': 'DE',
+  // ... all GDPR countries
+};
+
+// Returns { isGDPR: boolean, countryCode: string | null }
+export function checkBioForGDPR(bio: string): { isGDPR: boolean; countryCode: string | null }
+```
+
+3. **Discovery Scripts (hashtag-mining.ts, follower-mining.ts):**
+```typescript
+const location = extractLocationFromBio(bio);
+
+// GDPR compliance: Skip EU artists
+if (location?.isGDPR) {
+  stats.skippedGDPR++;
+  console.log(`[Mining] 🇪🇺 Skipped EU artist: @${username} (${location.countryCode})`);
+  return;
+}
+
+// Continue with artist insertion...
+```
+
+4. **SQL Functions (search, browse, related artists):**
+```sql
+-- Added to WHERE clause in all search functions
+AND NOT EXISTS (
+  SELECT 1 FROM artist_locations al_gdpr
+  WHERE al_gdpr.artist_id = a.id
+    AND al_gdpr.country_code IN (
+      'AT', 'BE', 'BG', ... , 'GB', 'CH'
+    )
+)
+```
+
+**Edge Cases Handled:**
+
+| Scenario | Behavior | Rationale |
+|----------|----------|-----------|
+| Unknown location (no bio/location data) | NOT filtered | Can't determine if EU |
+| US artist with EU secondary location | Filtered | Conservative approach |
+| Artist relocates from EU to US | Still filtered until old location removed | Manual cleanup needed |
+| Claimed Pro artist sets EU location | Filtered | Consent given by claiming, but still filtered for safety |
+
+**Performance Optimization:**
+
+```sql
+-- Partial index for GDPR filtering
+CREATE INDEX idx_artist_locations_country_code_gdpr
+ON artist_locations(country_code)
+WHERE country_code IN ('AT', 'BE', ...);
+```
+
+**Monitoring:**
+
+- Discovery scripts log `EU/GDPR skipped: X` in summary
+- Mining candidates table stores skipped artists for audit
+- Console logs show real-time: `🇪🇺 Skipped EU artist: @handle (DE)`
+
+**When to Use This Pattern:**
+
+- ✅ Scraping public social media profiles
+- ✅ Processing personal data without explicit consent
+- ✅ Any data collection from EU residents
+- ❌ User-initiated data (they provided consent by signing up)
+- ❌ B2B data (different rules apply)
+
+**Future Improvements:**
+
+1. Add `is_gdpr_region` boolean flag to artists table (denormalized for performance)
+2. Centralize GDPR country list in database table (easier updates)
+3. Add non-English bio patterns (German: "Basierend in", French: "Situé à")
+4. Track `gdpr_filtered_at` timestamp for audit compliance
 
 ---
 

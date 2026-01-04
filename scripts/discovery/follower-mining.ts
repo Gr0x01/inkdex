@@ -28,7 +28,7 @@ import {
   getMatchingBioKeywords,
   classifyTattooArtist,
 } from '../../lib/instagram/classifier';
-import { extractLocationFromBio } from '../../lib/instagram/bio-location-extractor';
+import { extractLocationFromBio, checkBioForGDPR } from '../../lib/instagram/bio-location-extractor';
 
 // ============================================================================
 // Configuration
@@ -345,6 +345,7 @@ async function processSeed(
     imageFilterPassed: 0,
     artistsInserted: 0,
     skippedPrivate: 0,
+    skippedGDPR: 0,
     apifyCost: 0,
     openaiCost: 0,
   };
@@ -415,6 +416,25 @@ async function processSeed(
 
             const location = extractLocationFromBio(biography);
 
+            // GDPR compliance: Skip EU artists
+            if (location?.isGDPR) {
+              stats.skippedGDPR++;
+              console.log(`[Mining] 🇪🇺 Skipped EU artist: @${username} (${location.countryCode})`);
+
+              await saveMiningCandidate({
+                handle: username,
+                sourceType: 'follower',
+                sourceId: runId,
+                bio: biography,
+                followerCount,
+                bioFilterPassed: true,
+                extractedCity: location?.city ?? undefined,
+                extractedState: location?.stateCode ?? undefined,
+                locationConfidence: location?.confidence,
+              });
+              return;
+            }
+
             const inserted = await insertArtist({
               username,
               bio: biography,
@@ -456,6 +476,26 @@ async function processSeed(
               stats.imageFilterPassed++;
 
               const location = extractLocationFromBio(classResult.bio);
+
+              // GDPR compliance: Skip EU artists
+              if (location?.isGDPR) {
+                stats.skippedGDPR++;
+                console.log(`[Mining] 🇪🇺 Skipped EU artist: @${username} (${location.countryCode})`);
+
+                await saveMiningCandidate({
+                  handle: username,
+                  sourceType: 'follower',
+                  sourceId: runId,
+                  bio: classResult.bio,
+                  followerCount: classResult.follower_count,
+                  bioFilterPassed: false,
+                  imageFilterPassed: true,
+                  extractedCity: location?.city ?? undefined,
+                  extractedState: location?.stateCode ?? undefined,
+                  locationConfidence: location?.confidence,
+                });
+                return;
+              }
 
               const inserted = await insertArtist({
                 username,
@@ -613,6 +653,7 @@ async function main() {
     imageFilterPassed: 0,
     artistsInserted: 0,
     skippedPrivate: 0,
+    skippedGDPR: 0,
     apifyCost: 0,
     openaiCost: 0,
   };
@@ -633,6 +674,7 @@ async function main() {
     totalStats.imageFilterPassed += stats.imageFilterPassed;
     totalStats.artistsInserted += stats.artistsInserted;
     totalStats.skippedPrivate += stats.skippedPrivate;
+    totalStats.skippedGDPR += stats.skippedGDPR;
     totalStats.apifyCost += stats.apifyCost;
     totalStats.openaiCost += stats.openaiCost;
 
@@ -654,6 +696,9 @@ async function main() {
   console.log(`  Bio filter passed: ${totalStats.bioFilterPassed.toLocaleString()}`);
   console.log(`  Image filter passed: ${totalStats.imageFilterPassed.toLocaleString()}`);
   console.log(`  Artists inserted: ${totalStats.artistsInserted.toLocaleString()}`);
+  if (totalStats.skippedGDPR > 0) {
+    console.log(`  EU/GDPR skipped: ${totalStats.skippedGDPR.toLocaleString()}`);
+  }
   console.log(`\nCosts:`);
   console.log(`  Apify: $${totalStats.apifyCost.toFixed(4)}`);
   console.log(`  OpenAI: $${totalStats.openaiCost.toFixed(4)}`);

@@ -274,6 +274,14 @@ async function processCandidate(candidate: PendingCandidate): Promise<{
 
     // Passed! Extract location and insert artist
     const location = extractLocationFromBio(profileData.bio);
+
+    // GDPR compliance: Skip EU artists
+    if (location?.isGDPR) {
+      console.log(`[Classify] 🇪🇺 Skipped EU artist: @${candidate.instagram_handle} (${location.countryCode})`);
+      await updateCandidate(candidate.id, true, undefined);
+      return { passed: true, inserted: false };
+    }
+
     const artistId = await insertArtist(candidate, location);
 
     await updateCandidate(candidate.id, true, artistId || undefined);

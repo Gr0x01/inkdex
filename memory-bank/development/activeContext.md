@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-04 (Session 9 - 96-City Expansion Complete)
+Last-Updated: 2026-01-04 (Session 10 - GDPR Compliance + 50-State Coverage)
 Maintainer: RB
 Status: Production Ready - 13/14 Phases Complete (93%) - Only Stripe Remaining
 ---
@@ -141,6 +141,34 @@ Access via `/dev/login` (development only):
 - **Tokens:** Encrypted in Supabase Vault (no plaintext)
 - **Embeddings:** Dual-GPU setup (A2000 + RTX 4080) - local network only
 - **Caching:** Redis (Railway) - rate limiting + analytics caching (fail-open design)
+- **GDPR Compliance:** EU/EEA/UK/CH artists filtered from discovery + search (see below)
+
+## GDPR/Privacy Compliance
+
+**Status:** Implemented (pending migration deployment)
+
+**Two-Layer Defense:**
+1. **Discovery Pipeline:** Bio location extractor detects EU cities/countries → artists skipped before insertion
+2. **Search Filtering:** SQL functions exclude artists with EU `country_code` in `artist_locations`
+
+**Countries Filtered (32):**
+- EU 27 + EEA 3 (Iceland, Liechtenstein, Norway) + UK + Switzerland
+
+**Key Files:**
+- `/lib/constants/countries.ts` - `GDPR_COUNTRY_CODES` set + `isGDPRCountry()` helper
+- `/lib/instagram/bio-location-extractor.ts` - `checkBioForGDPR()`, EU city/country detection
+- `/scripts/discovery/*.ts` - GDPR filtering before artist insertion
+- `/supabase/migrations/20260111_007_filter_eu_artists_gdpr.sql` - SQL function updates
+
+**Behavior:**
+- Artists with unknown location: NOT filtered (can't determine if EU)
+- Artists with any EU location: Filtered (conservative approach)
+- Existing EU artists: Hidden from search results after migration
+
+**To Deploy:**
+```bash
+npm run db:push  # Apply GDPR migration
+```
 
 ## Embedding Infrastructure
 
