@@ -1,9 +1,7 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
-import FeaturedArtistsByState from '@/components/home/FeaturedArtistsByState'
 import StyleExplorer from '@/components/home/StyleExplorer'
 import ProShowcase from '@/components/home/ProShowcase'
-import { getFeaturedArtistsByStates, getStyleSeeds } from '@/lib/supabase/queries'
-import { STATES } from '@/lib/constants/cities'
+import { getStyleSeeds } from '@/lib/supabase/queries'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 
@@ -11,18 +9,11 @@ import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 export const revalidate = 3600 // 1 hour
 
 export default async function Home() {
-  // Fetch featured artists grouped by state (with fallback to empty object)
-  let featuredArtistsByState: Awaited<ReturnType<typeof getFeaturedArtistsByStates>> = {}
+  // Fetch style seeds for the Style Explorer
   let styleSeeds: Awaited<ReturnType<typeof getStyleSeeds>> = []
 
   try {
-    // Fetch data in parallel for performance
-    const [artistsResult, stylesResult] = await Promise.all([
-      getFeaturedArtistsByStates(5),
-      getStyleSeeds(),
-    ])
-    featuredArtistsByState = artistsResult
-    styleSeeds = stylesResult
+    styleSeeds = await getStyleSeeds()
   } catch (error) {
     console.error('Failed to fetch homepage data:', error)
   }
@@ -113,13 +104,40 @@ export default async function Home() {
                   textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
                 }}
               >
-                Upload a reference image or describe your vibe—we'll scan millions of tattoo posts to find artists whose portfolios match your style.
+                Upload a reference image or describe what you're looking for. We'll scan millions of tattoo posts to find artists whose portfolios match your style.
               </p>
             </div>
 
             {/* Search Bar */}
             <div className="animate-fade-up" style={{ animationDelay: '200ms' }}>
               <UnifiedSearchBar />
+            </div>
+
+            {/* Trust Strip - Credibility Stats */}
+            <div
+              className="mt-6 md:mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 animate-fade-up"
+              style={{ animationDelay: '300ms' }}
+            >
+              <span
+                className="font-mono text-sm uppercase tracking-[0.15em]"
+                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+              >
+                15,600+ Artists
+              </span>
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <span
+                className="font-mono text-sm uppercase tracking-[0.15em]"
+                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+              >
+                116 Cities
+              </span>
+              <span className="text-white/20 hidden sm:inline">•</span>
+              <span
+                className="font-mono text-sm uppercase tracking-[0.15em]"
+                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+              >
+                All 50 States + DC
+              </span>
             </div>
           </div>
         </div>
@@ -137,31 +155,6 @@ export default async function Home() {
           STYLE EXPLORER - Quick Search by Style
           ═══════════════════════════════════════════════════════════════ */}
       <StyleExplorer styles={styleSeeds} />
-
-      {/* ═══════════════════════════════════════════════════════════════
-          FEATURED ARTISTS BY STATE - Editorial Horizontal Sections
-          ═══════════════════════════════════════════════════════════════ */}
-      <section
-        className="relative py-8 md:py-16 bg-paper"
-      >
-        {/* Subtle Top Border */}
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-
-        <div className="container mx-auto px-4 space-y-8 md:space-y-12">
-          {STATES
-            .filter((state) => (featuredArtistsByState[state.code]?.length || 0) >= 5)
-            .map((state) => (
-              <FeaturedArtistsByState
-                key={state.code}
-                state={state}
-                artists={featuredArtistsByState[state.code] || []}
-              />
-            ))}
-        </div>
-
-        {/* Subtle Bottom Border */}
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-      </section>
 
       {/* ═══════════════════════════════════════════════════════════════
           PRO SHOWCASE - Artist Claiming & Pro Features
