@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-04
 Maintainer: RB
 Status: Production Ready
 ---
@@ -17,6 +17,18 @@ Status: Production Ready
 | SEO Content | ~65,000 words |
 
 ## Recent Completions
+
+### Jan 4, 2026 (Session 8)
+- **Pro artist boosting display fix** - Transparency improvement for ranking boosts
+  - **Problem:** Pro artists ranked higher but displayed lower percentages than regular artists
+    - SQL ranked by `boosted_score` (raw + boosts) but returned `best_similarity` (unboosted)
+    - Example: Pro at 0.28 raw (+0.05 boost = 0.33 ranking) showed 72%, regular at 0.29 showed 74%
+  - **Solution:** Return `boosted_score` for display, adjust UI rescaling to [0.15, 0.47] range
+  - **Files modified:**
+    - `/supabase/migrations/20260111_005_return_boosted_score_for_display.sql` - 2 line changes in search functions
+    - `/components/search/ArtistCard.tsx` - MAX_CLIP: 0.40 → 0.47
+  - **Impact:** Displayed percentages now match ranking order (Pro at 76% ranks above regular at 73%)
+  - **Documented in:** `/memory-bank/architecture/techStack.md` (Search Function section)
 
 ### Jan 3, 2026 (Session 7)
 - **Redis caching infrastructure** - Production-ready distributed caching

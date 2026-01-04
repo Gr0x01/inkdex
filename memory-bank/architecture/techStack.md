@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-04
 Maintainer: RB
 Status: Production Ready - 8 Cities + Mining Pipeline + Admin Panel ✅
 ---
@@ -248,9 +248,16 @@ WITH (lists = GREATEST(FLOOR(SQRT(COUNT(*))), 10));
 - `search_artists_by_embedding()`: ✅ Optimized Postgres function (see migration 007)
 - Returns: Top 20 artists with top 3 matching images each
 - Filters: City, similarity threshold (0.15)
-- **Similarity Score Display:** Raw CLIP scores (0.15-0.40) rescaled to 60-95% for UI
-  - See: `/memory-bank/architecture/decision-similarity-scoring.md`
-  - Ranking uses raw scores, display uses rescaled percentages
+- **Similarity Score Display & Ranking Boosts:**
+  - **Pro/Featured Boosts:** Pro (+0.05), Featured (+0.02) applied to ranking
+  - **Display:** Returns `boosted_score` (raw similarity + boosts) for UI transparency
+  - **Rescaling:** Boosted scores [0.15, 0.47] → [60%, 95%] user-friendly percentages
+  - **Migration:** `20260111_005_return_boosted_score_for_display.sql` (Jan 4, 2026)
+  - **Rationale:** Ensures displayed % matches ranking order (Pro at 76% ranks above regular at 73%)
+  - **Example:**
+    - Pro artist: 0.28 raw + 0.05 boost = 0.33 → rescale = 76% (ranks #1, displays 76%) ✅
+    - Regular artist: 0.29 raw + 0.00 = 0.29 → rescale = 73% (ranks #2, displays 73%) ✅
+  - **Component:** `/components/search/ArtistCard.tsx` (MAX_CLIP = 0.47)
 - Performance Optimizations:
   - Early city filtering (reduces dataset before vector ops)
   - CTE-based query planning

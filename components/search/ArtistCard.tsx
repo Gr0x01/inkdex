@@ -53,11 +53,8 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     is_featured = false,
   } = artist
 
-  // Multi-location support (locations would be added to SearchResult interface)
-  // For now, we assume it might be available in the future
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Future interface extension
-  const locations = (artist as any).locations || []
-  const locationCount = locations.length || 1
+  // Multi-location support using location_count from search results
+  const locationCount = artist.location_count || 1
   const hasMultipleLocations = locationCount > 1
 
   // All available images
@@ -74,19 +71,19 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     ? instagram_url.split('/').filter(Boolean).pop()
     : null
 
-  // Convert CLIP similarity to user-friendly percentage
-  // CLIP scores are conservative (0.15-0.40 is typical range for good matches)
-  // Rescale to 60-95% for better user perception
+  // Convert boosted similarity (with Pro/Featured ranking boosts) to user-friendly percentage
+  // Raw CLIP scores are 0.15-0.40, but Pro (+0.05) and Featured (+0.02) boost the display score
+  // Rescale boosted range [0.15, 0.47] to [60%, 95%] for better user perception
   const rescaleToUserFriendlyPercentage = (clipScore: number): number => {
     const MIN_CLIP = 0.15  // Minimum search threshold
-    const MAX_CLIP = 0.40  // Excellent match threshold
+    const MAX_CLIP = 0.47  // Excellent match + max boosts (0.40 + 0.05 Pro + 0.02 Featured)
     const MIN_DISPLAY = 60 // Display minimum
     const MAX_DISPLAY = 95 // Display maximum
 
     // Clamp to expected range
     const clamped = Math.max(MIN_CLIP, Math.min(MAX_CLIP, clipScore))
 
-    // Linear rescaling: map [0.15, 0.40] → [60, 95]
+    // Linear rescaling: map [0.15, 0.47] → [60, 95]
     const rescaled = MIN_DISPLAY + ((clamped - MIN_CLIP) / (MAX_CLIP - MIN_CLIP)) * (MAX_DISPLAY - MIN_DISPLAY)
 
     return Math.round(rescaled)
@@ -178,9 +175,6 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             {is_pro && <ProBadge variant="icon-only" size="sm" />}
           </div>
         )}
-        <p className="font-body text-sm text-gray-700 leading-relaxed">
-          {artist_name}
-        </p>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
