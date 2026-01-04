@@ -96,6 +96,69 @@ export default function ProArtistCardMock() {
           Boosted
         </span>
       </div>
+
+      {/* Style breakdown mini chart - bottom left */}
+      <div className="absolute -bottom-4 -left-4 bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+        <p className="font-mono text-[9px] text-gray-500 uppercase tracking-[0.2em] mb-2">
+          Your Style
+        </p>
+        <div className="flex items-center gap-3">
+          {/* Mini donut chart - circumference = 2 * PI * 15 ≈ 94.2 */}
+          <svg viewBox="0 0 42 42" className="w-14 h-14 flex-shrink-0">
+            {/* Japanese - 35% (black) - starts at top */}
+            <circle
+              cx="21" cy="21" r="15" fill="none"
+              stroke="#1a1a1a"
+              strokeWidth="6"
+              strokeDasharray="33 61.2"
+              strokeDashoffset="23.5"
+            />
+            {/* Realism - 25% (brown) */}
+            <circle
+              cx="21" cy="21" r="15" fill="none"
+              stroke="#8B7355"
+              strokeWidth="6"
+              strokeDasharray="23.5 70.7"
+              strokeDashoffset="-9.5"
+            />
+            {/* Traditional - 22% (green) */}
+            <circle
+              cx="21" cy="21" r="15" fill="none"
+              stroke="#5d7a5d"
+              strokeWidth="6"
+              strokeDasharray="20.7 73.5"
+              strokeDashoffset="-33"
+            />
+            {/* New School - 18% (blue) */}
+            <circle
+              cx="21" cy="21" r="15" fill="none"
+              stroke="#4a6fa5"
+              strokeWidth="6"
+              strokeDasharray="17 77.2"
+              strokeDashoffset="-53.7"
+            />
+          </svg>
+          {/* Legend */}
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#1a1a1a]" />
+              <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wide">Japanese</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#8B7355]" />
+              <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wide">Realism</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#5d7a5d]" />
+              <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wide">Traditional</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#4a6fa5]" />
+              <span className="font-mono text-[9px] text-gray-600 uppercase tracking-wide">New School</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

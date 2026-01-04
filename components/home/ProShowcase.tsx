@@ -110,12 +110,13 @@ export default function ProShowcase() {
             </div>
           </div>
 
-          {/* Right Column: Visual */}
-          <div className="relative lg:pl-8">
+          {/* Right Column: Visual - Desktop only */}
+          <div className="relative lg:pl-8 hidden lg:block">
             <ProArtistCardMock />
           </div>
         </div>
       </div>
+
     </section>
   )
 }

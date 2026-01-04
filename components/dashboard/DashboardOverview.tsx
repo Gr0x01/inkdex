@@ -7,10 +7,9 @@
 
 import { useState, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
-import MetricsCards from '@/components/analytics/MetricsCards'
 import ViewsChart from '@/components/analytics/ViewsChart'
 import RecentSearchesTable from '@/components/analytics/RecentSearchesTable'
-import ProUpgradeCTA from './ProUpgradeCTA'
+import StyleBreakdown from './StyleBreakdown'
 import CompactUpgradeOverlay from './CompactUpgradeOverlay'
 
 type TimeRange = 7 | 30 | 90
@@ -135,8 +134,63 @@ export default function DashboardOverview({
                 />
               )}
 
-              {/* 2. Stats Grid */}
-              <MetricsCards summary={data.summary} />
+              {/* 2. Stats + Style side-by-side */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: 3x2 Stats Grid */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Profile Views
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.profileViews.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Image Views
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.imageViews.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Search Appearances
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.searchAppearances.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Total Engagement
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.totalEngagement.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Instagram Clicks
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.instagramClicks.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="border border-gray-200 bg-white py-3 px-4">
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+                      Booking Clicks
+                    </p>
+                    <p className="font-heading text-2xl leading-tight">
+                      {data.summary.bookingClicks.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Style Breakdown */}
+                <StyleBreakdown artistId={artistId} />
+              </div>
 
               {/* 3. Recent Search Appearances */}
               <RecentSearchesTable
@@ -158,25 +212,31 @@ export default function DashboardOverview({
         </div>
       )}
 
-      {/* Free User: Blurred Analytics Preview */}
-      {!isPro && (
-        <div className="relative">
-          {/* Demo Chart (sharp border, content will be blurred by overlay) */}
-          <div className="pointer-events-none select-none" aria-hidden="true">
-            <ViewsChart
-              timeSeries={generateDemoData()}
-              timeRange={30}
-              onTimeRangeChange={() => {}}
-            />
+      {/* Free User: Blurred Analytics Preview + Style Breakdown */}
+      {!isPro && artistId && (
+        <div className="space-y-6">
+          {/* Analytics Preview (blurred) */}
+          <div className="relative">
+            {/* Demo Chart (sharp border, content will be blurred by overlay) */}
+            <div className="pointer-events-none select-none" aria-hidden="true">
+              <ViewsChart
+                timeSeries={generateDemoData()}
+                timeRange={30}
+                onTimeRangeChange={() => {}}
+              />
+            </div>
+
+            {/* Blur Overlay (blurs the content behind it) */}
+            <div className="absolute inset-0 backdrop-blur-sm bg-white/40" />
+
+            {/* Upgrade CTA */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <CompactUpgradeOverlay />
+            </div>
           </div>
 
-          {/* Blur Overlay (blurs the content behind it) */}
-          <div className="absolute inset-0 backdrop-blur-sm bg-white/40" />
-
-          {/* Upgrade CTA */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <CompactUpgradeOverlay />
-          </div>
+          {/* Style Breakdown (free for all users) */}
+          <StyleBreakdown artistId={artistId} />
         </div>
       )}
     </div>
