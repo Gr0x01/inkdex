@@ -39,10 +39,10 @@ export default function ProShowcase() {
         }}
       />
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           {/* Left Column: Text Content */}
-          <div className="max-w-lg">
+          <div className="max-w-2xl lg:max-w-lg">
             {/* Section Label */}
             <p className="font-mono text-xs font-semibold text-purple-600 tracking-[0.3em] uppercase mb-4">
               Pro Features
@@ -63,8 +63,8 @@ export default function ProShowcase() {
               Unlock tools that save time and help you book more appointments
             </p>
 
-            {/* Benefits Grid - 2 columns */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3 mb-6">
+            {/* Benefits Grid - 1 column on mobile, 2 on tablet+ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-6">
               {PRO_BENEFITS.map((benefit, index) => (
                 <div key={index} className="flex items-start gap-2">
                   {/* Checkmark */}

@@ -105,7 +105,7 @@ const FREE_BENEFITS = [
 export default function FreeClaimShowcase() {
   return (
     <section className="relative py-12 md:py-16 bg-paper overflow-hidden">
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
           {/* Left Column: ArtistInfoColumn-style Visual - Hidden on mobile */}
           <div className="relative order-2 lg:order-1 hidden lg:block">
@@ -115,7 +115,7 @@ export default function FreeClaimShowcase() {
           </div>
 
           {/* Right Column: Text Content */}
-          <div className="max-w-lg order-1 lg:order-2 relative z-10">
+          <div className="max-w-xl lg:max-w-lg order-1 lg:order-2 relative z-10">
             {/* Section Label */}
             <p className="font-mono text-xs font-semibold text-blue-600 tracking-[0.3em] uppercase mb-4">
               For Artists
@@ -156,12 +156,12 @@ export default function FreeClaimShowcase() {
                       />
                     </svg>
                   </div>
-                  <div>
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1">
                     <span className="font-mono text-sm font-semibold text-ink">
                       {benefit.title}
                     </span>
-                    <span className="font-body text-sm text-gray-500 ml-1">
-                      — {benefit.description}
+                    <span className="font-body text-sm text-gray-500">
+                      <span className="hidden sm:inline">— </span>{benefit.description}
                     </span>
                   </div>
                 </li>

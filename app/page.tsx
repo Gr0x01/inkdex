@@ -48,7 +48,7 @@ export default async function Home() {
       {/* Pre-warm Modal container for fast first search */}
       <ModalWarmup />
 
-      <main className="min-h-screen bg-ink overflow-x-hidden">
+      <main className="bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════
           HERO SECTION - Editorial Magazine Masthead
           ═══════════════════════════════════════════════════════════════ */}
@@ -164,8 +164,9 @@ export default async function Home() {
 
       {/* ═══════════════════════════════════════════════════════════════
           PRO SHOWCASE - Paid Features & Upgrade
+          Hidden until Stripe integration (NEXT_PUBLIC_SHOW_PRO_SECTION=true)
           ═══════════════════════════════════════════════════════════════ */}
-      <ProShowcase />
+      {process.env.NEXT_PUBLIC_SHOW_PRO_SECTION === 'true' && <ProShowcase />}
 
       {/* ═══════════════════════════════════════════════════════════════
           FOOTER CTA - Dramatic Editorial Statement
@@ -196,7 +197,7 @@ export default async function Home() {
 
             {/* Refined Body Text */}
             <p className="font-body text-base md:text-xl mb-6 md:mb-8 leading-relaxed px-4" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Search Instagram's tattoo artists the way you actually think; by style or by the Pinterest board you've been building.
+              Search Instagram's tattoo artists the way you actually think; by style or by the Pinterest board you've been&nbsp;building.
             </p>
 
             {/* Primary CTA */}
