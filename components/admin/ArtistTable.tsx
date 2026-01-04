@@ -8,7 +8,9 @@ import {
   Star,
   Crown,
   ExternalLink,
+  Pencil,
 } from 'lucide-react';
+import Link from 'next/link';
 import AdminSelect from './AdminSelect';
 import AdminLocationSelect from './AdminLocationSelect';
 
@@ -292,7 +294,7 @@ export default function ArtistTable() {
               <th className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500 w-16">
                 Feat
               </th>
-              <th className="px-2 py-2 w-8"></th>
+              <th className="px-2 py-2 w-16"></th>
             </tr>
           </thead>
           <tbody>
@@ -379,15 +381,24 @@ export default function ArtistTable() {
                     </button>
                   </td>
                   <td className="px-2 py-1.5">
-                    <a
-                      href={getProfileUrl(artist)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
-                      title="View profile"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/admin/artists/${artist.id}`}
+                        className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
+                        title="Edit artist"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Link>
+                      <a
+                        href={getProfileUrl(artist)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
+                        title="View profile"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </td>
                 </tr>
               ))

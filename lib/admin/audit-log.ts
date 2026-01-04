@@ -9,6 +9,9 @@ import { createClient } from '@supabase/supabase-js';
 export type AuditAction =
   | 'artist.feature'
   | 'artist.unfeature'
+  | 'artist.toggle_pro'
+  | 'artist.hard_delete'
+  | 'artist.images_deleted'
   | 'artist.bulk_feature'
   | 'artist.bulk_unfeature'
   | 'admin.login'
