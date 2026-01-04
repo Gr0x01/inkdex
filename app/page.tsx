@@ -1,6 +1,8 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
 import FeaturedArtistsByState from '@/components/home/FeaturedArtistsByState'
-import { getFeaturedArtistsByStates } from '@/lib/supabase/queries'
+import StyleExplorer from '@/components/home/StyleExplorer'
+import ProShowcase from '@/components/home/ProShowcase'
+import { getFeaturedArtistsByStates, getStyleSeeds } from '@/lib/supabase/queries'
 import { STATES } from '@/lib/constants/cities'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
@@ -11,12 +13,18 @@ export const revalidate = 3600 // 1 hour
 export default async function Home() {
   // Fetch featured artists grouped by state (with fallback to empty object)
   let featuredArtistsByState: Awaited<ReturnType<typeof getFeaturedArtistsByStates>> = {}
+  let styleSeeds: Awaited<ReturnType<typeof getStyleSeeds>> = []
 
   try {
-    // Fetch 5 randomized featured artists per state (100k+ followers)
-    featuredArtistsByState = await getFeaturedArtistsByStates(5)
+    // Fetch data in parallel for performance
+    const [artistsResult, stylesResult] = await Promise.all([
+      getFeaturedArtistsByStates(5),
+      getStyleSeeds(),
+    ])
+    featuredArtistsByState = artistsResult
+    styleSeeds = stylesResult
   } catch (error) {
-    console.error('Failed to fetch featured artists:', error)
+    console.error('Failed to fetch homepage data:', error)
   }
 
   // Organization schema for homepage
@@ -126,88 +134,9 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════
-          HOW IT WORKS - Explain the Instagram Search Flow
+          STYLE EXPLORER - Quick Search by Style
           ═══════════════════════════════════════════════════════════════ */}
-      <section className="bg-ink relative py-12 md:py-24 overflow-hidden">
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-5xl mx-auto">
-            {/* Section Title */}
-            <h2
-              className="font-display text-center mb-8 md:mb-16 tracking-tight"
-              style={{
-                fontSize: 'clamp(2rem, 6vw, 4rem)',
-                color: '#FFFFFF'
-              }}
-            >
-              HOW IT WORKS
-            </h2>
-
-            {/* 3-Step Flow */}
-            <div className="grid md:grid-cols-3 gap-6 md:gap-12">
-              {/* Step 1 */}
-              <div className="text-center">
-                <div
-                  className="font-display mb-4 opacity-40"
-                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
-                >
-                  01
-                </div>
-                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
-                  SEARCH YOUR VIBE
-                </h3>
-                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Upload a reference image, paste an Instagram post, or describe your style in plain English.
-                </p>
-              </div>
-
-              {/* Step 2 */}
-              <div className="text-center">
-                <div
-                  className="font-display mb-4 opacity-40"
-                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
-                >
-                  02
-                </div>
-                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
-                  DISCOVER ARTISTS
-                </h3>
-                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  We scan Instagram portfolios and show you artists whose work actually matches your aesthetic.
-                </p>
-              </div>
-
-              {/* Step 3 */}
-              <div className="text-center">
-                <div
-                  className="font-display mb-4 opacity-40"
-                  style={{ fontSize: 'clamp(3rem, 5vw, 5rem)', color: '#FFFFFF' }}
-                >
-                  03
-                </div>
-                <h3 className="font-display text-2xl md:text-3xl mb-4" style={{ color: '#FFFFFF' }}>
-                  CONNECT ON INSTAGRAM
-                </h3>
-                <p className="font-body text-base md:text-lg leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                  Click through to their Instagram profile to see more work, read reviews, and book your session.
-                </p>
-              </div>
-            </div>
-
-            {/* Supporting Copy */}
-            <p
-              className="font-body text-center text-lg md:text-xl mt-8 md:mt-12 leading-relaxed max-w-3xl mx-auto"
-              style={{ color: 'rgba(255, 255, 255, 0.5)' }}
-            >
-              We don't host portfolios or bookings—we just make Instagram searchable. Think of us as Google Images, but built specifically for finding tattoo artists.
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom Fade */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-800 to-transparent"
-        />
-      </section>
+      <StyleExplorer styles={styleSeeds} />
 
       {/* ═══════════════════════════════════════════════════════════════
           FEATURED ARTISTS BY STATE - Editorial Horizontal Sections
@@ -219,18 +148,25 @@ export default async function Home() {
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
 
         <div className="container mx-auto px-4 space-y-8 md:space-y-12">
-          {STATES.map((state) => (
-            <FeaturedArtistsByState
-              key={state.code}
-              state={state}
-              artists={featuredArtistsByState[state.code] || []}
-            />
-          ))}
+          {STATES
+            .filter((state) => (featuredArtistsByState[state.code]?.length || 0) >= 5)
+            .map((state) => (
+              <FeaturedArtistsByState
+                key={state.code}
+                state={state}
+                artists={featuredArtistsByState[state.code] || []}
+              />
+            ))}
         </div>
 
         {/* Subtle Bottom Border */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          PRO SHOWCASE - Artist Claiming & Pro Features
+          ═══════════════════════════════════════════════════════════════ */}
+      <ProShowcase />
 
       {/* ═══════════════════════════════════════════════════════════════
           FOOTER CTA - Dramatic Editorial Statement
