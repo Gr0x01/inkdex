@@ -248,17 +248,37 @@ Pending → Generated → Posted → DM Sent → Claimed → Converted
 
 ---
 
-# Buffer/Zapier Integration
+# Buffer/IFTTT Integration
+
+## Setup (IFTTT Pro - $4/mo)
+
+1. Create IFTTT account + upgrade to Pro
+2. Go to Create → If This Then That
+3. **If This:** Webhooks → "Receive a web request with JSON payload"
+   - Event name: `inkdex_buffer_post`
+4. **Then That:** Buffer → Add to Buffer
+   - Message: `{{caption}}`
+   - Photo URL: `{{imageUrls}}`
+5. Get webhook key from: https://ifttt.com/maker_webhooks/settings
+6. Add to `.env.local`:
+   ```
+   IFTTT_WEBHOOK_KEY=your-key-here
+   IFTTT_EVENT_NAME=inkdex_buffer_post
+   ```
 
 ## Flow
 
-1. Generate post in admin
-2. Webhook fires to Zapier (if configured)
-3. Zapier catches → adds to Buffer queue
+1. Generate post in admin dashboard
+2. Click "Send to Buffer" button
+3. IFTTT webhook fires → adds to Buffer queue
 4. Buffer posts at scheduled time
-5. Admin marks as posted, sends DM
+5. Mark as posted in admin, send DM manually
+6. Mark DM sent when done
 
 ## Manual Fallback
+
+If IFTTT not configured, use export scripts:
+- `npx tsx scripts/marketing/generate-outreach-post.ts --handle <handle> --export-dir ./outreach-posts`
 
 Export directory contains:
 - `caption.txt`
@@ -324,13 +344,13 @@ Tracks individual artist outreach records.
 
 # Implementation Status
 
-## Phase 1: Solo Features (Current)
+## Phase 1: Solo Features (Complete)
 - [x] Database schema (`marketing_outreach` table)
 - [x] Selection script (`select-outreach-candidates.ts`)
 - [x] Post generation script (`generate-outreach-post.ts`)
 - [x] Auto-Pro grant on claim (in onboarding finalize)
-- [ ] Admin dashboard
-- [ ] Zapier webhook integration
+- [x] Admin dashboard (`/admin/marketing`)
+- [x] IFTTT webhook integration (Pro tier, $4/mo - replaces Zapier)
 
 ## Phase 2: Design Twins (Next)
 - [ ] Twins finding algorithm
@@ -366,10 +386,30 @@ Tracks individual artist outreach records.
 
 # Related Files
 
-- `scripts/marketing/select-outreach-candidates.ts`
-- `scripts/marketing/generate-outreach-post.ts`
-- `supabase/migrations/20260104_002_marketing_outreach.sql`
-- `supabase/migrations/20260104_003_marketing_workflow.sql`
-- `app/api/onboarding/finalize/route.ts` (auto-Pro grant)
-- `app/admin/(authenticated)/marketing/page.tsx` (planned)
-- `lib/marketing/zapier-webhook.ts` (planned)
+**Scripts:**
+- `scripts/marketing/select-outreach-candidates.ts` - CLI candidate selection
+- `scripts/marketing/generate-outreach-post.ts` - CLI post generation
+
+**Database:**
+- `supabase/migrations/20260104_007_marketing_outreach.sql` - Table schema
+
+**API Routes:**
+- `app/api/admin/marketing/stats/route.ts` - GET funnel stats
+- `app/api/admin/marketing/outreach/route.ts` - GET/POST outreach records
+- `app/api/admin/marketing/outreach/[id]/route.ts` - PATCH/DELETE single record
+- `app/api/admin/marketing/generate/route.ts` - POST generate posts
+- `app/api/admin/marketing/ifttt/route.ts` - POST send to Buffer
+
+**Admin Dashboard:**
+- `app/admin/(authenticated)/marketing/page.tsx` - Dashboard page
+- `components/admin/MarketingDashboard.tsx` - Main component
+- `components/admin/OutreachFunnel.tsx` - Funnel visualization
+- `components/admin/OutreachTable.tsx` - Action queue table
+
+**Integration:**
+- `lib/marketing/ifttt-webhook.ts` - IFTTT webhook utility
+- `app/api/onboarding/finalize/route.ts` - Auto-Pro grant on claim
+
+**NPM Scripts:**
+- `npm run outreach:select` - Select candidates
+- `npm run outreach:generate` - Generate posts

@@ -20,8 +20,8 @@ export default function CompactUpgradeOverlay() {
           </p>
         </div>
         <Link
-          href="/pricing"
-          className="inline-block px-6 py-3 bg-ink text-paper font-mono text-xs uppercase tracking-wider hover:bg-ink/90 transition-colors w-full sm:w-auto text-center"
+          href="/dashboard/subscription"
+          className="inline-block px-6 py-3 bg-purple-600 text-white font-mono text-xs uppercase tracking-wider hover:bg-purple-700 transition-colors w-full sm:w-auto text-center"
         >
           Upgrade to Pro
         </Link>

@@ -31,6 +31,23 @@ export async function createClient() {
 }
 
 /**
+ * Get admin user securely by verifying with Supabase Auth server.
+ * Returns null if not authenticated or not admin.
+ */
+export async function getAdminUser() {
+  const supabase = await createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+
+  if (error || !user) return null
+
+  // Import dynamically to avoid circular deps
+  const { isAdminEmail } = await import('@/lib/admin/whitelist')
+  if (!isAdminEmail(user.email)) return null
+
+  return user
+}
+
+/**
  * Create a Supabase admin client with service role key.
  * Use this for admin operations that need to bypass RLS.
  * IMPORTANT: Only use in API routes that verify admin access first!

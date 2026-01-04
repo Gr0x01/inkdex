@@ -278,21 +278,21 @@ export default async function ArtistPage({
               artistName={artist.name}
             />
 
-            {/* Find Similar Artists - positioned after portfolio */}
-            <div className="mt-8 mb-12 max-w-md mx-auto">
-              <FindSimilarArtistsButton
-                artistId={artist.id}
-                artistName={artist.name}
-                city={artist.city}
-              />
-            </div>
-
             {/* Related Artists Section */}
             <RelatedArtists
               artistId={artist.id}
               artistSlug={artist.slug}
               city={artist.city}
             />
+
+            {/* Find Similar Artists - positioned after related artists */}
+            <div className="mt-4 mb-12 max-w-md mx-auto">
+              <FindSimilarArtistsButton
+                artistId={artist.id}
+                artistName={artist.name}
+                city={artist.city}
+              />
+            </div>
           </div>
         </div>
       </main>

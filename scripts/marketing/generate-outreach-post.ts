@@ -98,7 +98,7 @@ function generateCaption(artist: ArtistData): string {
 }
 
 function generateDmTemplate(artist: ArtistData): string {
-  const profileUrl = `https://inkdex.io/${artist.slug}`
+  const profileUrl = `https://inkdex.io/artist/${artist.slug}`
 
   return `Hey! We featured your work on Inkdex today. Check it out: ${profileUrl}
 
@@ -215,7 +215,7 @@ async function generatePost(artist: ArtistData): Promise<GeneratedPost> {
   const caption = generateCaption(artist)
   const dmTemplate = generateDmTemplate(artist)
   const imageUrls = selectBestImages(artist, 4)
-  const profileUrl = `https://inkdex.io/${artist.slug}`
+  const profileUrl = `https://inkdex.io/artist/${artist.slug}`
 
   return {
     artistId: artist.id,
@@ -234,8 +234,10 @@ async function savePostToOutreach(post: GeneratedPost): Promise<void> {
       {
         artist_id: post.artistId,
         campaign_name: 'featured_artist_launch',
+        status: 'generated',
         post_text: post.caption,
         post_images: post.imageUrls,
+        generated_at: new Date().toISOString(),
         notes: `Generated: ${new Date().toISOString()}`,
       },
       { onConflict: 'artist_id,campaign_name' }

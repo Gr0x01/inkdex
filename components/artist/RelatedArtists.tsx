@@ -50,7 +50,7 @@ export default async function RelatedArtists({
   }
 
   return (
-    <div className="my-12 py-12 border-y border-gray-300">
+    <div className="my-12 pt-12 border-t border-gray-300">
       <div className="mb-8">
         <h3 className="font-display text-[2rem] font-[900] text-ink mb-2 tracking-tight">
           Similar Artists in {city}

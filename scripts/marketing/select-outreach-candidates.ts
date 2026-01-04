@@ -166,7 +166,7 @@ async function selectCandidates(options: {
       follower_count: artist.follower_count || 0,
       image_count: imageCount,
       slug: artist.slug,
-      profile_url: `https://inkdex.io/${artist.slug}`,
+      profile_url: `https://inkdex.io/artist/${artist.slug}`,
     })
 
     if (candidates.length >= limit) break
