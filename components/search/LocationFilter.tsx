@@ -76,12 +76,12 @@ export default function LocationFilter() {
   const [countries, setCountries] = useState<CountryOption[]>([])
   const [regions, setRegions] = useState<RegionOption[]>([])
   const [cities, setCities] = useState<CityOption[]>([])
-  const [loadingCountries, setLoadingCountries] = useState(true)
-  const [loadingRegions, setLoadingRegions] = useState(false)
-  const [loadingCities, setLoadingCities] = useState(false)
-  const [countriesError, setCountriesError] = useState(false)
-  const [regionsError, setRegionsError] = useState(false)
-  const [citiesError, setCitiesError] = useState(false)
+  const [_loadingCountries, setLoadingCountries] = useState(true)
+  const [_loadingRegions, setLoadingRegions] = useState(false)
+  const [_loadingCities, setLoadingCities] = useState(false)
+  const [_countriesError, setCountriesError] = useState(false)
+  const [_regionsError, setRegionsError] = useState(false)
+  const [_citiesError, setCitiesError] = useState(false)
   const [flatLocations, setFlatLocations] = useState<FlatLocationOption[]>([])
   const [loadingFlatLocations, setLoadingFlatLocations] = useState(true)
 
@@ -216,7 +216,7 @@ export default function LocationFilter() {
 
       // Add cities
       citiesRes.forEach((c: CityOption) => {
-        const stateName = US_STATE_NAME_MAP.get(c.region) || c.region
+        const _stateName = US_STATE_NAME_MAP.get(c.region) || c.region
         flattened.push({
           value: `city-${c.city}`,
           label: `${c.city.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
@@ -347,7 +347,7 @@ export default function LocationFilter() {
   }
 
   // Helper: Get screen reader description
-  const getFilterDescription = (): string => {
+  const _getFilterDescription = (): string => {
     const parts: string[] = []
     if (currentCountry) parts.push(getCountryDisplayName(currentCountry))
     if (currentRegion) parts.push(getRegionDisplayName(currentRegion))
@@ -356,7 +356,7 @@ export default function LocationFilter() {
   }
 
   // Retry button component
-  const RetryButton = ({ onClick, label }: { onClick: () => void; label: string }) => (
+  const _RetryButton = ({ onClick, label }: { onClick: () => void; label: string }) => (
     <button
       onClick={onClick}
       className="inline-flex items-center gap-1.5 px-2 md:px-2.5 py-1.5 border border-red-300 rounded font-body text-xs text-red-600 hover:border-red-400 hover:bg-red-50 focus:outline-none transition-all duration-fast"
@@ -370,7 +370,7 @@ export default function LocationFilter() {
   )
 
   // Convert to Select options format
-  const countryOptions = [
+  const _countryOptions = [
     { value: '', label: 'All Countries' },
     ...countries.map(c => ({
       value: c.code,
@@ -378,7 +378,7 @@ export default function LocationFilter() {
     }))
   ]
 
-  const regionOptions = [
+  const _regionOptions = [
     { value: '', label: currentCountry === 'US' ? 'All States' : 'All Regions' },
     ...regions.map(r => ({
       value: r.region,
@@ -386,7 +386,7 @@ export default function LocationFilter() {
     }))
   ]
 
-  const cityOptions = [
+  const _cityOptions = [
     { value: '', label: 'All Cities' },
     ...cities.map(c => ({
       value: c.city.toLowerCase().replace(/\s+/g, '-'),
