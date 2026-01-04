@@ -1,5 +1,6 @@
 import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
 import StyleExplorer from '@/components/home/StyleExplorer'
+import VisualSearchPromo from '@/components/home/VisualSearchPromo'
 import FreeClaimShowcase from '@/components/home/FreeClaimShowcase'
 import ProShowcase from '@/components/home/ProShowcase'
 import { getStyleSeeds } from '@/lib/supabase/queries'
@@ -151,6 +152,11 @@ export default async function Home() {
           }}
         />
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          VISUAL SEARCH PROMO - Tags vs Actual Work
+          ═══════════════════════════════════════════════════════════════ */}
+      <VisualSearchPromo />
 
       {/* ═══════════════════════════════════════════════════════════════
           STYLE EXPLORER - Quick Search by Style
