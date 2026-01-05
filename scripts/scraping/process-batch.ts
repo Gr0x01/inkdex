@@ -8,11 +8,11 @@
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-import { readdirSync, readFileSync, unlinkSync, statSync, rmSync } from 'fs';
+import { readdirSync, readFileSync, unlinkSync, statSync, rmSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { processLocalImage } from '../../lib/processing/image-processor';
-import { uploadImage, generateImagePaths, deleteImages } from '../../lib/storage/supabase-storage';
+import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImages } from '../../lib/storage/supabase-storage';
 
 /**
  * Sleep utility for retry delays
@@ -92,6 +92,98 @@ async function imageExists(artistId: string, postId: string): Promise<boolean> {
 }
 
 /**
+ * Process and upload profile image for an artist
+ * Returns true if profile image was processed, false otherwise
+ */
+async function processProfileImage(artistId: string, artistDir: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const profileImagePath = join(artistDir, `${artistId}_profile.jpg`);
+
+  // Check if profile image exists in temp directory
+  if (!existsSync(profileImagePath)) {
+    return { success: false, error: 'No profile image found' };
+  }
+
+  // Validate file size before processing (match Python's 10MB limit)
+  const MAX_PROFILE_SIZE = 10 * 1024 * 1024; // 10MB
+  try {
+    const stats = statSync(profileImagePath);
+    if (stats.size === 0) {
+      return { success: false, error: 'Profile image is empty (0 bytes)' };
+    }
+    if (stats.size > MAX_PROFILE_SIZE) {
+      return { success: false, error: `Profile image too large: ${stats.size} bytes (max ${MAX_PROFILE_SIZE})` };
+    }
+  } catch (statError: any) {
+    return { success: false, error: `Failed to read file stats: ${statError.message}` };
+  }
+
+  // Check if already uploaded (idempotency)
+  const { data: artist } = await supabase
+    .from('artists')
+    .select('profile_storage_path')
+    .eq('id', artistId)
+    .single();
+
+  if (artist?.profile_storage_path) {
+    console.log(`   ⏭️  Profile image already uploaded`);
+    return { success: true };
+  }
+
+  try {
+    console.log(`   🖼️  Processing profile image...`);
+
+    // Process image (generates original + thumbnails)
+    const { success, buffers, error } = await processLocalImage(profileImagePath);
+
+    if (!success || !buffers) {
+      return { success: false, error: `Failed to process profile image: ${error}` };
+    }
+
+    // Generate storage paths for profile images
+    const paths = generateProfileImagePaths(artistId);
+
+    // Upload all images in parallel (only need 320 and 640 for profiles)
+    const uploadPromises = [
+      uploadWithRetry(paths.original, buffers.original, { contentType: 'image/jpeg', upsert: true }),
+      uploadWithRetry(paths.thumb320, buffers.thumb320, { contentType: 'image/webp', upsert: true }),
+      uploadWithRetry(paths.thumb640, buffers.thumb640, { contentType: 'image/webp', upsert: true }),
+    ];
+
+    const uploadResults = await Promise.all(uploadPromises);
+
+    // Check for upload failures
+    const uploadFailed = uploadResults.some(r => !r.success);
+    if (uploadFailed) {
+      const failedUploads = uploadResults.filter(r => !r.success);
+      return { success: false, error: `Upload failed: ${failedUploads.map(r => r.error).join(', ')}` };
+    }
+
+    // Update artist record with storage paths
+    const { error: dbError } = await supabase
+      .from('artists')
+      .update({
+        profile_storage_path: paths.original,
+        profile_storage_thumb_320: paths.thumb320,
+        profile_storage_thumb_640: paths.thumb640,
+      })
+      .eq('id', artistId);
+
+    if (dbError) {
+      return { success: false, error: `Database update failed: ${dbError.message}` };
+    }
+
+    console.log(`   ✅ Profile image uploaded`);
+    return { success: true };
+
+  } catch (error: any) {
+    return { success: false, error: `Error processing profile image: ${error.message}` };
+  }
+}
+
+/**
  * Process and upload images for a single artist
  */
 async function processArtistImages(artistId: string, artistDir: string): Promise<{
@@ -103,7 +195,13 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
   let imagesProcessed = 0;
 
   try {
-    // Read metadata file
+    // Process profile image first (if available)
+    const profileResult = await processProfileImage(artistId, artistDir);
+    if (!profileResult.success && profileResult.error !== 'No profile image found') {
+      errors.push(profileResult.error || 'Profile image processing failed');
+    }
+
+    // Read metadata file for portfolio images
     const metadataPath = join(artistDir, 'metadata.json');
     let metadata: ImageMetadata[] = [];
 
@@ -111,6 +209,10 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
       const metadataContent = readFileSync(metadataPath, 'utf-8');
       metadata = JSON.parse(metadataContent);
     } catch (error) {
+      // If no metadata file, we might only have a profile image (profile-only mode)
+      if (profileResult.success) {
+        return { success: true, imagesProcessed: 0, errors };
+      }
       errors.push(`Failed to read metadata: ${error}`);
       return { success: false, imagesProcessed: 0, errors };
     }
