@@ -87,14 +87,15 @@ BEGIN
     SELECT DISTINCT ri_artist_id FROM threshold_images
   ),
   -- Step 4: Filter artists (GDPR, deleted, location) - now only checking ~100 artists, not 15k
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id,
            a.name as fa_name,
            a.slug as fa_slug,
-           COALESCE(al.city, a.city) as fa_city,
-           COALESCE(al.region, a.state) as fa_region,
-           COALESCE(al.country_code, 'US') as fa_country_code,
+           al.city as fa_city,
+           al.region as fa_region,
+           al.country_code as fa_country_code,
            a.profile_image_url as fa_profile_image_url,
            a.instagram_url as fa_instagram_url,
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified,
@@ -102,7 +103,7 @@ BEGIN
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    LEFT JOIN artist_locations al ON al.artist_id = a.id
+    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
@@ -111,24 +112,18 @@ BEGIN
         OR
         -- Country-only filter
         (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+         AND al.country_code = UPPER(country_filter))
         OR
         -- Country + Region filter
         (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
-         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+         AND al.country_code = UPPER(country_filter)
+         AND LOWER(al.region) = LOWER(region_filter))
         OR
         -- City filter
         (city_filter IS NOT NULL
-         AND (
-           (LOWER(al.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-           OR
-           (LOWER(a.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
-            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
-         ))
+         AND LOWER(al.city) = LOWER(city_filter)
+         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
       )
   ),
   -- Step 5: Rank images within each filtered artist
@@ -274,14 +269,15 @@ BEGIN
     SELECT DISTINCT ri_artist_id FROM threshold_images
   ),
   -- Step 4: Filter artists (GDPR, deleted, location)
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id,
            a.name as fa_name,
            a.slug as fa_slug,
-           COALESCE(al.city, a.city) as fa_city,
-           COALESCE(al.region, a.state) as fa_region,
-           COALESCE(al.country_code, 'US') as fa_country_code,
+           al.city as fa_city,
+           al.region as fa_region,
+           al.country_code as fa_country_code,
            a.profile_image_url as fa_profile_image_url,
            a.follower_count as fa_follower_count,
            a.shop_name as fa_shop_name,
@@ -291,29 +287,27 @@ BEGIN
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    LEFT JOIN artist_locations al ON al.artist_id = a.id
+    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
+        -- No location filters: return all
         (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
         OR
+        -- Country-only filter
         (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+         AND al.country_code = UPPER(country_filter))
         OR
+        -- Country + Region filter
         (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
-         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+         AND al.country_code = UPPER(country_filter)
+         AND LOWER(al.region) = LOWER(region_filter))
         OR
+        -- City filter
         (city_filter IS NOT NULL
-         AND (
-           (LOWER(al.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-           OR
-           (LOWER(a.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
-            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
-         ))
+         AND LOWER(al.city) = LOWER(city_filter)
+         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
       )
   ),
   -- Step 5: Rank images within each filtered artist
@@ -447,42 +441,41 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   WITH filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id, a.name as fa_name, a.slug as fa_slug,
-           COALESCE(al.city, a.city) as fa_city,
-           COALESCE(al.region, a.state) as fa_region,
-           COALESCE(al.country_code, 'US') as fa_country_code,
+           al.city as fa_city,
+           al.region as fa_region,
+           al.country_code as fa_country_code,
            a.profile_image_url as fa_profile_image_url,
            a.instagram_url as fa_instagram_url,
            a.shop_name as fa_shop_name,
            a.follower_count as fa_follower_count,
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
     FROM artists a
-    LEFT JOIN artist_locations al ON al.artist_id = a.id
+    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND (
+        -- No location filters: return all
         (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
         OR
+        -- Country-only filter
         (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+         AND al.country_code = UPPER(country_filter))
         OR
+        -- Country + Region filter
         (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
-         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+         AND al.country_code = UPPER(country_filter)
+         AND LOWER(al.region) = LOWER(region_filter))
         OR
+        -- City filter
         (city_filter IS NOT NULL
-         AND (
-           (LOWER(al.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-           OR
-           (LOWER(a.city) = LOWER(city_filter)
-            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
-            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
-         ))
+         AND LOWER(al.city) = LOWER(city_filter)
+         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
       )
   ),
   artist_embeddings AS (
@@ -564,55 +557,32 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   -- First get artists with active portfolio images
   WITH artists_with_images AS (
     SELECT DISTINCT pi.artist_id
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
-  ),
-  all_artist_regions AS (
-    -- Source 1: artist_locations table
-    SELECT
-      al.artist_id as ar_artist_id,
-      al.region as ar_region
-    FROM artist_locations al
-    INNER JOIN artists a ON a.id = al.artist_id
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE al.region IS NOT NULL
-      AND al.country_code = UPPER(p_country_code)
-      AND a.deleted_at IS NULL
-
-    UNION
-
-    -- Source 2: legacy artists table (US only)
-    SELECT
-      a.id as ar_artist_id,
-      a.state as ar_region
-    FROM artists a
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE a.state IS NOT NULL
-      AND a.deleted_at IS NULL
-      AND UPPER(p_country_code) = 'US'
-      -- Only include if not already in artist_locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al
-        WHERE al.artist_id = a.id
-      )
   )
   SELECT
-    ar.ar_region as region,
-    ar.ar_region as region_name,
-    COUNT(DISTINCT ar.ar_artist_id)::bigint as artist_count
-  FROM all_artist_regions ar
-  GROUP BY ar.ar_region
-  HAVING COUNT(DISTINCT ar.ar_artist_id) >= 1
-  ORDER BY COUNT(DISTINCT ar.ar_artist_id) DESC, ar.ar_region ASC;
+    al.region as region,
+    al.region as region_name,
+    COUNT(DISTINCT al.artist_id)::bigint as artist_count
+  FROM artist_locations al
+  INNER JOIN artists a ON a.id = al.artist_id
+  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+  WHERE al.region IS NOT NULL
+    AND al.country_code = UPPER(p_country_code)
+    AND a.deleted_at IS NULL
+  GROUP BY al.region
+  HAVING COUNT(DISTINCT al.artist_id) >= 1
+  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.region ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_regions_with_counts IS
-  'Returns regions/states within a country with artist counts. Only includes artists with active portfolio images. Includes legacy artists table for US. Excludes GDPR countries.';
+  'Returns regions/states within a country with artist counts. Only includes artists with active portfolio images. Uses artist_locations as single source of truth. Excludes GDPR countries.';
 
 
 -- ============================================
@@ -714,70 +684,42 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   -- First get artists with active portfolio images
   WITH artists_with_images AS (
     SELECT DISTINCT pi.artist_id
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
-  ),
-  all_artist_cities AS (
-    -- Source 1: artist_locations table
-    SELECT
-      al.artist_id as ac_artist_id,
-      al.city as ac_city,
-      al.region as ac_region,
-      al.country_code as ac_country_code
-    FROM artist_locations al
-    INNER JOIN artists a ON a.id = al.artist_id
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE al.city IS NOT NULL
-      AND a.deleted_at IS NULL
-      AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
-      AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
-      -- Exclude GDPR countries
-      AND al.country_code NOT IN (
-        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-        'IS', 'LI', 'NO',
-        'GB', 'CH'
-      )
-
-    UNION
-
-    -- Source 2: legacy artists table (US only, when country is US or NULL)
-    SELECT
-      a.id as ac_artist_id,
-      a.city as ac_city,
-      a.state as ac_region,
-      'US'::text as ac_country_code
-    FROM artists a
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE a.city IS NOT NULL
-      AND a.deleted_at IS NULL
-      AND (p_country_code IS NULL OR UPPER(p_country_code) = 'US')
-      AND (p_region IS NULL OR LOWER(a.state) = LOWER(p_region))
-      -- Only include if not already in artist_locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al
-        WHERE al.artist_id = a.id
-      )
   )
   SELECT
-    ac.ac_city as city,
-    ac.ac_region as region,
-    ac.ac_country_code as country_code,
-    COUNT(DISTINCT ac.ac_artist_id)::bigint AS artist_count
-  FROM all_artist_cities ac
-  GROUP BY ac.ac_city, ac.ac_region, ac.ac_country_code
-  HAVING COUNT(DISTINCT ac.ac_artist_id) >= min_count
-  ORDER BY COUNT(DISTINCT ac.ac_artist_id) DESC, ac.ac_city ASC;
+    al.city as city,
+    al.region as region,
+    al.country_code as country_code,
+    COUNT(DISTINCT al.artist_id)::bigint AS artist_count
+  FROM artist_locations al
+  INNER JOIN artists a ON a.id = al.artist_id
+  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+  WHERE al.city IS NOT NULL
+    AND a.deleted_at IS NULL
+    AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
+    AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
+    -- Exclude GDPR countries
+    AND al.country_code NOT IN (
+      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+      'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+      'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+      'IS', 'LI', 'NO',
+      'GB', 'CH'
+    )
+  GROUP BY al.city, al.region, al.country_code
+  HAVING COUNT(DISTINCT al.artist_id) >= min_count
+  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_cities_with_counts IS
-  'Returns cities with artist counts. Only includes artists with active portfolio images. Includes legacy artists table for US. Excludes GDPR countries for compliance.';
+  'Returns cities with artist counts. Only includes artists with active portfolio images. Uses artist_locations as single source of truth. Excludes GDPR countries for compliance.';
 
 
 -- ============================================
@@ -804,55 +746,31 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   -- First get artists with active portfolio images
   WITH artists_with_images AS (
     SELECT DISTINCT pi.artist_id
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
-  ),
-  all_state_cities AS (
-    -- Source 1: artist_locations table
-    SELECT
-      al.artist_id as sc_artist_id,
-      al.city as sc_city
-    FROM artist_locations al
-    INNER JOIN artists a ON a.id = al.artist_id
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE LOWER(al.region) = LOWER(state_code)
-      AND al.city IS NOT NULL
-      AND a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-
-    UNION
-
-    -- Source 2: legacy artists table (US states)
-    SELECT
-      a.id as sc_artist_id,
-      a.city as sc_city
-    FROM artists a
-    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-    WHERE LOWER(a.state) = LOWER(state_code)
-      AND a.city IS NOT NULL
-      AND a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      -- Only include if not already in artist_locations
-      AND NOT EXISTS (
-        SELECT 1 FROM artist_locations al
-        WHERE al.artist_id = a.id
-      )
   )
   SELECT
-    sc.sc_city as city,
-    COUNT(DISTINCT sc.sc_artist_id)::bigint as artist_count
-  FROM all_state_cities sc
-  GROUP BY sc.sc_city
-  ORDER BY COUNT(DISTINCT sc.sc_artist_id) DESC, sc.sc_city ASC;
+    al.city as city,
+    COUNT(DISTINCT al.artist_id)::bigint as artist_count
+  FROM artist_locations al
+  INNER JOIN artists a ON a.id = al.artist_id
+  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+  WHERE LOWER(al.region) = LOWER(state_code)
+    AND al.city IS NOT NULL
+    AND a.deleted_at IS NULL
+    AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+  GROUP BY al.city
+  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_state_cities_with_counts IS
-  'Get cities within a state/region with artist counts. Only includes artists with active portfolio images. Includes legacy artists table. Excludes GDPR artists for compliance.';
+  'Get cities within a state/region with artist counts. Only includes artists with active portfolio images. Uses artist_locations as single source of truth. Excludes GDPR artists for compliance.';
 
 
 -- ============================================
@@ -928,20 +846,22 @@ BEGIN
     FROM ranked_images ri
     ORDER BY ri.ri_artist_id, ri.ri_similarity DESC
   ),
-  -- Step 3: Join with artist data, filter GDPR/deleted
+  -- Step 3: Join with artist data and locations, filter GDPR/deleted
+  -- NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   filtered_artists AS (
-    SELECT
+    SELECT DISTINCT ON (bpa.ba_artist_id)
       bpa.ba_artist_id as fa_artist_id,
       a.name as fa_name,
       a.instagram_handle as fa_handle,
-      a.city as fa_city,
-      a.state as fa_state,
+      al.city as fa_city,
+      al.region as fa_state,
       bpa.ba_similarity as fa_similarity,
       bpa.ba_image_url as fa_image_url,
       COALESCE(a.is_pro, FALSE) as fa_is_pro,
       COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM best_per_artist bpa
     INNER JOIN artists a ON a.id = bpa.ba_artist_id
+    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
   )
@@ -973,3 +893,65 @@ COMMENT ON FUNCTION get_top_artists_by_style IS
 -- This index makes the COALESCE(a.is_gdpr_blocked, FALSE) = FALSE check fast
 CREATE INDEX IF NOT EXISTS idx_artists_not_gdpr_blocked
 ON artists(id) WHERE is_gdpr_blocked = FALSE OR is_gdpr_blocked IS NULL;
+
+
+-- ============================================
+-- sync_artist_to_locations (Trigger Function)
+-- Auto-syncs artists to artist_locations on INSERT or UPDATE
+-- Fires when city or state columns change
+-- ============================================
+CREATE OR REPLACE FUNCTION sync_artist_to_locations()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only sync if artist has city
+  IF NEW.city IS NOT NULL AND NEW.city != '' THEN
+    -- For UPDATE: check if city/state actually changed
+    IF TG_OP = 'UPDATE' AND OLD.city = NEW.city AND COALESCE(OLD.state, '') = COALESCE(NEW.state, '') THEN
+      -- No location change, skip sync
+      RETURN NEW;
+    END IF;
+
+    -- Insert or update the primary location
+    INSERT INTO artist_locations (
+      artist_id,
+      city,
+      region,
+      country_code,
+      location_type,
+      is_primary,
+      display_order
+    ) VALUES (
+      NEW.id,
+      NEW.city,
+      NEW.state,
+      'US',  -- Default to US for now; discovery scripts only target US cities
+      'city',
+      TRUE,
+      0
+    )
+    ON CONFLICT (artist_id) WHERE is_primary = TRUE
+    DO UPDATE SET
+      city = EXCLUDED.city,
+      region = EXCLUDED.region;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION sync_artist_to_locations IS
+  'Trigger function: Auto-creates/updates artist_locations entry when artist city/state changes. Defaults to US country code.';
+
+-- Drop existing trigger if it only fires on INSERT
+DROP TRIGGER IF EXISTS sync_artist_location_on_insert ON artists;
+
+-- Create trigger that fires on both INSERT and UPDATE of city/state
+CREATE TRIGGER sync_artist_location_on_change
+AFTER INSERT OR UPDATE OF city, state ON artists
+FOR EACH ROW
+EXECUTE FUNCTION sync_artist_to_locations();
+
+-- ============================================
+-- Performance Index for artist_locations joins
+-- ============================================
+CREATE INDEX IF NOT EXISTS idx_artist_locations_artist_primary
+ON artist_locations(artist_id) WHERE is_primary = TRUE;

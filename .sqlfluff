@@ -2,6 +2,7 @@
 dialect = postgres
 templater = raw
 max_line_length = 120
+large_file_skip_byte_limit = 50000
 
 # Exclude rules that conflict with our style or are too noisy
 # L003: Indentation not multiple of 4 (we use 2)

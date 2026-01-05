@@ -5,6 +5,7 @@ import { SearchProvider } from '@/components/search/SearchProvider';
 import GlobalSearchModal from '@/components/search/GlobalSearchModal';
 import { CookieBanner } from '@/components/consent/CookieBanner';
 import { NavbarVisibilityProvider } from '@/components/layout/NavbarContext';
+import { createClient } from '@/lib/supabase/server';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -28,6 +29,12 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
     return <>{children}</>;
   }
 
+  // Fetch real state data for footer (only states with artists that have images)
+  const supabase = await createClient();
+  const { data: statesData } = await supabase.rpc('get_regions_with_counts', {
+    p_country_code: 'US'
+  });
+
   // All other pages get the full site layout
   return (
     <SearchProvider>
@@ -35,7 +42,7 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
         <NavbarWithAuth />
         <GlobalSearchModal />
         {children}
-        <Footer />
+        <Footer statesWithArtists={statesData || []} />
         <CookieBanner />
       </NavbarVisibilityProvider>
     </SearchProvider>

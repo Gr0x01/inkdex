@@ -14,31 +14,38 @@ const TOP_CITIES = [
   'las-vegas', 'san-diego', 'atlanta', 'dallas', 'san-francisco'
 ]
 
-export default function Footer() {
-  // Get featured cities and group remaining by state
-  const { featuredCities, statesWithCities } = useMemo(() => {
+interface StateWithArtists {
+  region: string
+  region_name: string
+  artist_count: number
+}
+
+interface FooterProps {
+  statesWithArtists?: StateWithArtists[]
+}
+
+export default function Footer({ statesWithArtists = [] }: FooterProps) {
+  // Get featured cities (only those in states with artists)
+  const { featuredCities, statesForFooter } = useMemo(() => {
+    // Create a set of states that have artists with images
+    const statesWithData = new Set(statesWithArtists.map(s => s.region))
+
+    // Filter featured cities to only those in states with data
     const featured = TOP_CITIES
       .map(slug => CITIES.find(c => c.slug === slug))
-      .filter((c): c is typeof CITIES[0] => c !== undefined)
+      .filter((c): c is typeof CITIES[0] => c !== undefined && statesWithData.has(c.state))
 
-    // Group all cities by state
-    const byState = CITIES.reduce((acc, city) => {
-      if (!acc[city.state]) acc[city.state] = []
-      acc[city.state].push(city)
-      return acc
-    }, {} as Record<string, typeof CITIES[number][]>)
-
-    // Sort states and get state names
-    const states = Object.keys(byState)
-      .sort()
-      .map(code => ({
-        code,
-        name: US_STATES.find(s => s.code === code)?.name || code,
-        count: byState[code].length
+    // Map state data to display format, sorted by artist count
+    const states = statesWithArtists
+      .map(s => ({
+        code: s.region,
+        name: US_STATES.find(st => st.code === s.region)?.name || s.region,
+        count: s.artist_count
       }))
+      .sort((a, b) => b.count - a.count) // Sort by artist count descending
 
-    return { featuredCities: featured, statesWithCities: states }
-  }, [])
+    return { featuredCities: featured, statesForFooter: states }
+  }, [statesWithArtists])
 
   return (
     <footer className="border-t border-stone-800 bg-black">
@@ -56,7 +63,7 @@ export default function Footer() {
               image or describe your vision.
             </p>
             <p className="mt-3 font-jetbrains-mono text-xs text-stone-500">
-              {CITIES.length} cities • {statesWithCities.length} states
+              {statesForFooter.length} states
             </p>
           </div>
 
@@ -85,24 +92,24 @@ export default function Footer() {
               Browse by State
             </h4>
             <ul className="mt-4 space-y-1.5">
-              {statesWithCities.slice(0, 8).map((state) => (
+              {statesForFooter.slice(0, 8).map((state) => (
                 <li key={state.code}>
                   <Link
                     href={`/us/${state.code.toLowerCase()}`}
                     className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent inline-flex items-baseline gap-1"
                   >
                     <span>{state.name}</span>
-                    <span className="text-xs text-stone-500">({state.count})</span>
+                    <span className="text-xs text-stone-500">({state.count.toLocaleString()})</span>
                   </Link>
                 </li>
               ))}
             </ul>
-            {statesWithCities.length > 8 && (
+            {statesForFooter.length > 8 && (
               <Link
                 href="/browse"
                 className="mt-3 inline-block font-jetbrains-mono text-xs text-stone-400 hover:text-accent transition-colors"
               >
-                View all {statesWithCities.length} states →
+                View all states →
               </Link>
             )}
           </div>

@@ -627,18 +627,23 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
 
   // Get all admin-curated featured artists across all cities
   // Using a larger limit and randomizing in JS for better distribution per state
+  // NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data
   const { data, error } = await supabase
     .from('artists')
     .select(`
       id,
       name,
       slug,
-      city,
-      state,
       shop_name,
       verification_status,
       follower_count,
       is_pro,
+      artist_locations!inner (
+        city,
+        region,
+        country_code,
+        is_primary
+      ),
       portfolio_images!inner (
         id,
         storage_thumb_640,
@@ -647,6 +652,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
       )
     `)
     .eq('is_featured', true)
+    .eq('artist_locations.is_primary', true)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
 
@@ -669,8 +675,21 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
     portfolio_images: Array<{ id: string; url: string; likes_count?: number | null }>
   }
 
-  // Process all artists first
-  const allArtists: ProcessedArtist[] = (data as ArtistRow[]).map((row) => {
+  // Define row type with artist_locations
+  interface FeaturedArtistRow {
+    id: string
+    name: string
+    slug: string
+    shop_name?: string | null
+    verification_status?: string
+    follower_count?: number | null
+    is_pro?: boolean
+    artist_locations: Array<{ city: string | null; region: string | null; country_code: string; is_primary: boolean }>
+    portfolio_images: Array<{ id: string; storage_thumb_640: string | null; status: string; likes_count?: number | null }>
+  }
+
+  // Process all artists first - extract location from artist_locations (single source of truth)
+  const allArtists: ProcessedArtist[] = (data as FeaturedArtistRow[]).map((row) => {
     const portfolioImages = Array.isArray(row.portfolio_images)
       ? row.portfolio_images.map((img) => ({
           id: img.id,
@@ -679,12 +698,17 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
         }))
       : []
 
+    // Get primary location from artist_locations
+    const primaryLocation = Array.isArray(row.artist_locations)
+      ? row.artist_locations.find((loc) => loc.is_primary) || row.artist_locations[0]
+      : null
+
     return {
       id: row.id,
       name: row.name,
       slug: row.slug,
-      city: row.city || 'Unknown',
-      state: row.state || 'Unknown',
+      city: primaryLocation?.city || 'Unknown',
+      state: primaryLocation?.region || 'Unknown',
       shop_name: row.shop_name,
       verification_status: row.verification_status,
       follower_count: row.follower_count,
@@ -940,8 +964,8 @@ export async function getCityArtists(
  * Get artists by location (country, region, city)
  * Used for international location-based browse pages
  *
- * NOTE: Queries BOTH artist_locations table AND falls back to artists table
- * for artists who don't have artist_locations entries yet.
+ * NOTE: artist_locations is the SINGLE SOURCE OF TRUTH for location data.
+ * Legacy fallback to artists table has been removed.
  */
 export async function getLocationArtists(
   country: string,
@@ -1049,79 +1073,8 @@ export async function getLocationArtists(
     })
   }
 
-  // Query 2: Get artists from main artists table (fallback for US artists without artist_locations)
-  // Only for US since legacy data uses state codes like 'CA', 'TX'
-  if (country === 'US') {
-    // Convert region slug to state code (e.g., 'california' -> 'CA')
-    const stateCode = region.length === 2 ? region.toUpperCase() :
-      REGION_TO_STATE_CODE[region.toLowerCase()] || region.toUpperCase()
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types
-    const { data: legacyData, error: legacyError } = await (supabase as any)
-      .from('artists')
-      .select(
-        `
-        id,
-        name,
-        slug,
-        shop_name,
-        verification_status,
-        profile_image_url,
-        instagram_handle,
-        follower_count,
-        portfolio_images!inner (
-          id,
-          storage_thumb_640,
-          instagram_url,
-          likes_count,
-          status
-        )
-      `
-      )
-      .ilike('city', escapeLikePattern(city))
-      .eq('state', stateCode)
-      .is('deleted_at', null)
-      .eq('portfolio_images.status', 'active')
-      .not('portfolio_images.storage_thumb_640', 'is', null)
-
-    if (legacyError) {
-      console.error('Error fetching legacy artists:', legacyError)
-    }
-
-    // Process legacy artists results
-    if (legacyData) {
-      legacyData.forEach((artist: ArtistRow) => {
-        if (!artist || artistsMap.has(artist.id)) return // Skip if already added from artist_locations
-
-        artistsMap.set(artist.id, {
-          id: artist.id,
-          name: artist.name,
-          slug: artist.slug,
-          shop_name: artist.shop_name,
-          verification_status: artist.verification_status,
-          profile_image_url: artist.profile_image_url,
-          instagram_handle: artist.instagram_handle,
-          follower_count: artist.follower_count,
-          portfolio_images: [],
-        })
-
-        const artistData = artistsMap.get(artist.id)!
-        if (Array.isArray(artist.portfolio_images)) {
-          artist.portfolio_images.forEach((image) => {
-            if (image?.id) {
-              const publicUrl = getImageUrl(image.storage_thumb_640)
-              artistData.portfolio_images.push({
-                id: image.id,
-                url: publicUrl,
-                instagram_url: image.instagram_url,
-                likes_count: image.likes_count,
-              })
-            }
-          })
-        }
-      })
-    }
-  }
+  // Legacy fallback to artists table has been removed.
+  // artist_locations is now the single source of truth.
 
   // Convert to array, filter, and sort
   const allArtists = Array.from(artistsMap.values())
@@ -1148,22 +1101,7 @@ export async function getLocationArtists(
   }
 }
 
-// Map region slugs to US state codes for legacy data compatibility
-const REGION_TO_STATE_CODE: Record<string, string> = {
-  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
-  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
-  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
-  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
-  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
-  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
-  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
-  'new-hampshire': 'NH', 'new-jersey': 'NJ', 'new-mexico': 'NM', 'new-york': 'NY',
-  'north-carolina': 'NC', 'north-dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
-  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode-island': 'RI', 'south-carolina': 'SC',
-  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
-  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west-virginia': 'WV',
-  'wisconsin': 'WI', 'wyoming': 'WY', 'district-of-columbia': 'DC',
-}
+// NOTE: REGION_TO_STATE_CODE was removed - artist_locations is now the single source of truth
 
 /**
  * Get style seed by slug for SEO landing pages
