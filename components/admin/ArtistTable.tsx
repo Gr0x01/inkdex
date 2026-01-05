@@ -309,9 +309,9 @@ export default function ArtistTable() {
       )}
 
       {/* Table */}
-      <div className="bg-paper border border-ink/10 overflow-hidden max-h-[70vh] overflow-y-auto">
+      <div className="bg-paper border border-ink/10 overflow-x-auto">
         <table className="w-full">
-          <thead className="sticky top-0 z-10">
+          <thead>
             <tr className="border-b border-ink/10 bg-gray-50">
               <th className="w-10 py-2 text-center bg-gray-50">
                 <input

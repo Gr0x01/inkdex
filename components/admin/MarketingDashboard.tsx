@@ -5,6 +5,7 @@ import { RefreshCw, FileText, Users, MessageSquare, Send, Download } from 'lucid
 import StatsCard from './StatsCard';
 import OutreachTable from './OutreachTable';
 import OutreachFunnel from './OutreachFunnel';
+import AdminSelect from './AdminSelect';
 
 interface OutreachStats {
   funnel: {
@@ -60,6 +61,17 @@ export default function MarketingDashboard() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [actionLoading, setActionLoading] = useState(false);
+  const [followerRange, setFollowerRange] = useState<string>('10k-50k');
+
+  // Follower range presets
+  const followerRanges: { value: string; label: string; min: number; max: number }[] = [
+    { value: '5k-10k', label: '5K–10K', min: 5000, max: 10000 },
+    { value: '10k-25k', label: '10K–25K', min: 10000, max: 25000 },
+    { value: '10k-50k', label: '10K–50K', min: 10000, max: 50000 },
+    { value: '25k-50k', label: '25K–50K', min: 25000, max: 50000 },
+    { value: '50k-100k', label: '50K–100K', min: 50000, max: 100000 },
+    { value: '100k+', label: '100K+', min: 100000, max: 10000000 },
+  ];
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -103,11 +115,16 @@ export default function MarketingDashboard() {
   // Select new candidates
   const selectCandidates = async (limit: number = 20) => {
     setActionLoading(true);
+    const range = followerRanges.find((r) => r.value === followerRange) || followerRanges[2];
     try {
       const res = await fetch('/api/admin/marketing/outreach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ limit }),
+        body: JSON.stringify({
+          limit,
+          minFollowers: range.min,
+          maxFollowers: range.max,
+        }),
       });
 
       if (!res.ok) {
@@ -160,6 +177,31 @@ export default function MarketingDashboard() {
       fetchData();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Error updating status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete outreach record
+  const deleteRecord = async (id: string) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/admin/marketing/outreach/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete record');
+      }
+
+      // Optimistically update UI
+      setRecords(prev => prev.filter(r => r.id !== id));
+
+      // Refresh stats
+      await fetchData();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error deleting record');
     } finally {
       setActionLoading(false);
     }
@@ -289,20 +331,27 @@ export default function MarketingDashboard() {
 
           {/* Actions */}
           <div className="flex items-center gap-2 flex-wrap">
+            <AdminSelect
+              value={followerRange}
+              onChange={setFollowerRange}
+              options={followerRanges.map((r) => ({ value: r.value, label: r.label }))}
+              className="w-32"
+            />
+
             <button
               onClick={() => selectCandidates(20)}
               disabled={actionLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-ink text-paper text-sm font-body
+              className="h-9 flex items-center gap-1.5 px-3 bg-ink text-paper text-sm font-body
                        hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <Users className="w-3.5 h-3.5" />
-              Select 20 Candidates
+              Select 20
             </button>
 
             <button
               onClick={exportBufferCSV}
               disabled={!records.some((r) => r.status === 'generated')}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-paper border-2 border-ink/20
+              className="h-9 flex items-center gap-1.5 px-3 bg-paper border-2 border-ink/20
                        text-ink text-sm font-body hover:border-ink/40 transition-colors disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
@@ -348,6 +397,7 @@ export default function MarketingDashboard() {
               records={filteredRecords}
               onUpdateStatus={updateStatus}
               onGenerate={generatePost}
+              onDelete={deleteRecord}
               loading={loading && records.length === 0}
             />
           </div>
