@@ -233,7 +233,7 @@ export default function PortfolioManager({
             <Crown className="w-10 h-10 text-amber-600 mx-auto mb-3" />
             <h3 className="font-heading text-xl mb-2 text-ink">Portfolio Limit Reached</h3>
             <p className="font-body text-sm text-gray-700 mb-4 max-w-md mx-auto">
-              You've hit the 20-image free tier limit. Upgrade to Pro for unlimited images and premium features.
+              You've hit the 20-image free tier limit. Upgrade to Pro for 100 images and premium features.
             </p>
             <button className="btn btn-primary">
               Upgrade to Pro — $15/month

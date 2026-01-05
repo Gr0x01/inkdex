@@ -90,11 +90,11 @@ export default function SubscriptionCreatedEmail({
             <Text style={sectionLabel}>Premium Features</Text>
 
             <div style={featureItem}>
-              <Text style={featureIcon}>∞</Text>
+              <Text style={featureIcon}>💯</Text>
               <div>
-                <Text style={featureTitle}>Unlimited Portfolio</Text>
+                <Text style={featureTitle}>100 Portfolio Images</Text>
                 <Text style={featureBody}>
-                  Showcase your entire body of work. No 20-image limit.
+                  Showcase your best work. 5x more than the free tier.
                 </Text>
               </div>
             </div>

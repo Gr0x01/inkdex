@@ -220,7 +220,7 @@ export default function AddArtistPage() {
                   Is it really free?
                 </h3>
                 <p className="font-body text-base text-gray-600 leading-relaxed">
-                  Yes! Basic features (profile, manual portfolio import, verified badge) are 100% free. Upgrade to Pro for auto-sync, unlimited portfolio, and analytics.
+                  Yes! Basic features (profile, manual portfolio import, verified badge) are 100% free. Upgrade to Pro for auto-sync, 100 portfolio images, and analytics.
                 </p>
               </div>
 

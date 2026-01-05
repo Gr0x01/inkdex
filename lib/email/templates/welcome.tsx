@@ -131,7 +131,7 @@ export default function WelcomeEmail({
               <div style={upgradeCallout}>
                 <Text style={upgradeTitle}>Consider Pro</Text>
                 <Text style={upgradeBody}>
-                  Unlimited images · Auto-sync · Priority ranking · $15/month
+                  100 images · Auto-sync · Priority ranking · $15/month
                 </Text>
               </div>
             )}

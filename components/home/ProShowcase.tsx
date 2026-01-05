@@ -98,7 +98,7 @@ export default function ProShowcase() {
             {/* CTA Buttons + Pricing */}
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/add-artist"
+                href="/pricing"
                 className="btn bg-purple-600 text-white border-2 border-transparent hover:bg-purple-700 hover:scale-105"
               >
                 Upgrade to Pro

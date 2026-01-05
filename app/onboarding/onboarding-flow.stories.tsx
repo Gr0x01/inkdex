@@ -391,7 +391,7 @@ function OnboardingFlowSimulator() {
                   <p>• Pin your favorite images to showcase your best work</p>
                   <p>• Manage your portfolio and locations</p>
                   <p>• View analytics and profile performance</p>
-                  <p>• Upgrade to Pro for unlimited portfolio and auto-sync</p>
+                  <p>• Upgrade to Pro for 100 portfolio images and auto-sync</p>
                 </div>
               </div>
 

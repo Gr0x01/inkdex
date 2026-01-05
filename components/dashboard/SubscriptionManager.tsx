@@ -18,13 +18,14 @@ interface SubscriptionManagerProps {
 }
 
 const PRO_FEATURES = [
-  'Unlimited portfolio images',
+  '100 portfolio images (vs 20 free)',
   'Auto-sync new Instagram posts',
+  'Auto style tagging',
   'Pin up to 6 images to top',
-  'Search ranking boost',
+  'Priority search placement',
   'Pro badge on profile',
-  'Detailed analytics dashboard',
-  'Priority support',
+  'Analytics dashboard',
+  'Up to 20 location listings',
 ]
 
 const FREE_FEATURES = [
