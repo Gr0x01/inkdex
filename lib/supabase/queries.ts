@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
 
@@ -339,8 +340,10 @@ export async function searchArtistsWithCount(
 
 /**
  * Get artist by slug
+ * Wrapped with React cache() for request-level deduplication
+ * (prevents duplicate queries when called in generateMetadata + page component)
  */
-export async function getArtistBySlug(slug: string) {
+export const getArtistBySlug = cache(async (slug: string) => {
   // Validate slug
   validateSlug(slug)
 
@@ -386,7 +389,7 @@ export async function getArtistBySlug(slug: string) {
   }
 
   return data
-}
+})
 
 /**
  * Get artists by city (supports multi-location artists)

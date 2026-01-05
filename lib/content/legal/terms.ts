@@ -10,7 +10,7 @@ interface LegalContent {
 export const termsContent: LegalContent = {
   title: 'Terms of Service',
   description: 'Please read these terms carefully before using Inkdex.',
-  lastUpdated: 'January 3, 2026',
+  lastUpdated: 'January 5, 2026',
   sections: [
     {
       heading: '1. Acceptance of Terms',
@@ -43,19 +43,35 @@ export const termsContent: LegalContent = {
         'Subscriptions automatically renew at the end of each billing period unless you cancel before the renewal date. You can cancel your subscription at any time through your dashboard or the Stripe Customer Portal. Cancellation takes effect at the end of the current billing period.',
         'Pro features include: unlimited portfolio syncing from Instagram, automatic import of new posts, analytics dashboard, search ranking boost, and Pro badge. Free accounts are limited to 20 manually imported images with no automatic syncing.',
         'We may change subscription pricing with 30 days notice to existing subscribers. Price changes will take effect at your next renewal date. If you do not accept the new pricing, you may cancel your subscription.',
+        '**Payment Failure and Grace Period:** If a subscription payment fails, we will attempt to process the payment again over a 7-day grace period. During this grace period: (a) you retain full access to all Pro features; (b) we will send email notifications on days 1, 3, and 5 informing you of the failed payment; and (c) you can update your payment method at any time through the Stripe Customer Portal.',
+        '**After Grace Period Expiration:** If payment is not successfully processed within 7 days, your subscription will be automatically downgraded to a Free account. This includes: (a) portfolio images beyond the first 20 will be hidden (not deleted); (b) automatic Instagram syncing will stop; (c) pinned images will return to chronological order; and (d) your Pro badge will be removed. You can resubscribe at any time to restore Pro features.',
       ],
     },
     {
-      heading: '5. No Refund Policy',
+      heading: '5. Refund Policy',
       paragraphs: [
-        '**All sales are final. We do not offer refunds for any reason.** This includes partial refunds for unused time in a billing period.',
-        'You may cancel your subscription at any time, and your account will remain active with Pro features until the end of the current billing period. After cancellation, your account will automatically downgrade to a Free account. No refunds or credits will be issued for the unused portion of your subscription.',
-        'Annual subscriptions are non-refundable. If you cancel an annual subscription, you will retain Pro access for the full 12-month period you paid for, but no refund will be provided.',
-        'By subscribing to Inkdex Pro, you acknowledge and agree to this no-refund policy. If you are unsure whether Pro features are right for you, we recommend starting with a monthly subscription.',
+        '**General Policy - All Sales Final:** As a general policy, we do not offer refunds for subscription payments. This includes partial refunds for unused time in a billing period.',
+        '**Cancellation:** You may cancel your subscription at any time, and your account will remain active with Pro features until the end of the current billing period. After cancellation, your account will automatically downgrade to a Free account. No refunds or credits will be issued for the unused portion of your subscription.',
+        '**Annual Subscriptions:** Annual subscriptions are non-refundable. If you cancel an annual subscription, you will retain Pro access for the full 12-month period you paid for.',
+        '**Limited Exceptions:** We may, at our sole discretion, issue refunds or credits in the following exceptional circumstances:',
+        '• **Billing Errors:** If you were charged an incorrect amount, charged multiple times for a single transaction, or charged after successfully canceling your subscription, we will issue a full refund for the erroneous charge(s) within 5-10 business days.',
+        '• **Extended Service Outages:** If the Service experiences a verified outage of 72 consecutive hours or more that prevents you from accessing core Pro features, you may request a prorated credit for the affected period. Outages must affect core functionality (profile management, portfolio syncing, analytics access) - not third-party services like Instagram API.',
+        '**Requesting Exception Review:** To request a refund exception, email support@inkdex.io with your account email, a description of the issue, and any supporting documentation. We will respond within 48 hours. Our decision on refund exception requests is final.',
+        'By subscribing to Inkdex Pro, you acknowledge and agree to this refund policy, including the general no-refund stance and the limited exceptions outlined above.',
       ],
     },
     {
-      heading: '6. Instagram OAuth and Data Access',
+      heading: '6. Payment Disputes and Chargebacks',
+      paragraphs: [
+        '**Contact Us First:** If you have a billing concern or believe you were charged in error, please contact us at support@inkdex.io before initiating a dispute with your bank or credit card company. We are committed to resolving billing issues promptly and fairly.',
+        '**Dispute Investigation:** When a chargeback or payment dispute is initiated, your account will be placed on hold pending investigation. During this period, you will retain access to your current subscription features, but you will not be able to modify your subscription or make additional purchases.',
+        '**Resolution Outcomes:** If the dispute is resolved in your favor, we will restore your account to normal status and address any billing errors. If the dispute is determined to be invalid or fraudulent, your account will be terminated, and you may be barred from creating new accounts.',
+        '**Fraudulent Disputes:** Filing a false or fraudulent chargeback is a violation of these Terms. We reserve the right to pursue all available legal remedies, including recovery of the disputed amount, chargeback fees incurred, and legal costs.',
+        '**Legitimate Billing Errors:** If we determine that a billing error occurred on our end (such as duplicate charges or incorrect amounts), we will process a refund within 5-10 business days and provide documentation of the correction.',
+      ],
+    },
+    {
+      heading: '7. Instagram OAuth and Data Access',
       paragraphs: [
         'Artist accounts require Instagram OAuth authentication. By connecting your Instagram account, you grant us permission to access your Instagram profile information, media, and username for the purposes of: (a) verifying artist identity; (b) importing portfolio images; (c) syncing new posts (Pro accounts); and (d) updating profile information.',
         'We store OAuth access tokens securely using Supabase Vault with authenticated encryption. Tokens are never stored in plaintext. We use these tokens only for the purposes described in our Privacy Policy and only while your account is active.',
@@ -64,16 +80,19 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '7. Content Ownership and License',
+      heading: '8. Content Ownership and License',
       paragraphs: [
         'You retain all ownership rights to content you post or import to Inkdex, including tattoo images, profile information, and other materials. By using the Service, you grant us a worldwide, non-exclusive, royalty-free license to display, reproduce, and distribute your content solely for the purpose of operating and promoting the Service.',
         'For unclaimed artist profiles created through automated scraping of public Instagram data, we rely on fair use principles for search indexing. Artists may claim their profiles at any time to gain full control over their content, including the ability to delete the profile entirely.',
-        'We respect intellectual property rights. If you believe content on Inkdex infringes your copyright, please submit a DMCA takedown notice to support@inkdex.io with: (a) identification of the copyrighted work; (b) identification of the infringing material and its location on our Service; (c) your contact information; (d) a statement of good faith belief; and (e) a statement of accuracy under penalty of perjury.',
-        'Upon receiving a valid DMCA notice, we will remove or disable access to the allegedly infringing content. We may terminate accounts of repeat infringers.',
+        '**DMCA Takedown Notices:** We respect intellectual property rights and comply with the Digital Millennium Copyright Act (DMCA). If you believe content on Inkdex infringes your copyright, submit a takedown notice to our designated DMCA agent at support@inkdex.io.',
+        '**Required Elements for Takedown Notice:** Your notice must include: (a) identification of the copyrighted work claimed to be infringed; (b) identification of the allegedly infringing material with specific URL(s) on our Service; (c) your contact information (name, address, telephone, email); (d) a statement that you have a good faith belief that use of the material is not authorized by the copyright owner; (e) a statement, under penalty of perjury, that the information is accurate and you are authorized to act on behalf of the copyright owner; and (f) your physical or electronic signature.',
+        '**Our Response:** Upon receiving a valid DMCA notice, we will: (a) acknowledge receipt within 2 business days; (b) remove or disable access to the allegedly infringing content promptly, typically within 3-5 business days; and (c) notify the user who posted the content of the takedown and provide them with a copy of the notice (excluding your personal contact information if requested).',
+        '**Counter-Notification Process:** If you believe your content was removed in error, you may submit a counter-notification including: (a) identification of the removed material and its former location; (b) a statement under penalty of perjury that you have a good faith belief the material was removed by mistake; (c) your name, address, telephone number, and email; (d) consent to jurisdiction in the federal court for your district (or appropriate US district if outside the US); and (e) your physical or electronic signature. We will forward valid counter-notifications to the original complainant and may restore the content after 10-14 business days if no court action is filed.',
+        '**Repeat Infringers:** We terminate accounts of users who are repeat copyright infringers. Two valid DMCA notices against the same account will result in permanent termination.',
       ],
     },
     {
-      heading: '8. Prohibited Uses',
+      heading: '9. Prohibited Uses',
       paragraphs: [
         'You may not use the Service to: (a) violate any applicable law or regulation; (b) infringe intellectual property rights; (c) transmit malicious code or interfere with the Service; (d) scrape, crawl, or harvest content without authorization; (e) impersonate another person or misrepresent your affiliation; (f) claim an artist profile you are not authorized to represent; or (g) upload content that is illegal, harmful, or violates these Terms.',
         'Artists must not: (a) upload images of tattoos they did not create without permission; (b) use the Service to compete with Inkdex or create a similar service; (c) manipulate search rankings through artificial means; or (d) abuse Pro features or attempt to circumvent account limitations.',
@@ -81,7 +100,7 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '9. Account Termination and Data Deletion',
+      heading: '10. Account Termination and Data Deletion',
       paragraphs: [
         'You may delete your artist account at any time through your dashboard settings. Deletion is permanent and irreversible. When you delete your account: (a) all imported portfolio images are removed from our Service; (b) your profile becomes inaccessible; (c) analytics data is deleted; and (d) we add your artist record to an exclusion list to prevent re-scraping.',
         'If you have an active Pro subscription when you delete your account, your subscription will be canceled immediately. No refunds will be provided for unused subscription time.',
@@ -90,7 +109,7 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '10. Disclaimers and Limitation of Liability',
+      heading: '11. Disclaimers and Limitation of Liability',
       paragraphs: [
         'THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. WE DISCLAIM ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.',
         'We do not guarantee that: (a) the Service will be uninterrupted or error-free; (b) search results will be accurate or complete; (c) imported Instagram content will always sync correctly; (d) Pro features will meet your specific business needs; or (e) the Service will be available at all times. Technical issues, Instagram API changes, or third-party service outages may cause disruptions.',
@@ -99,14 +118,14 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '11. Indemnification',
+      heading: '12. Indemnification',
       paragraphs: [
         'You agree to indemnify, defend, and hold harmless Inkdex, its affiliates, officers, directors, employees, and agents from any claims, damages, liabilities, costs, or expenses (including reasonable attorneys\' fees) arising out of: (a) your use of the Service; (b) your content; (c) your violation of these Terms; (d) your violation of any rights of another party; or (e) any fraudulent or illegal activity.',
         'We reserve the right to assume exclusive defense and control of any matter subject to indemnification by you, at your expense. You will cooperate with us in defending such claims.',
       ],
     },
     {
-      heading: '12. Changes to Terms',
+      heading: '13. Changes to Terms',
       paragraphs: [
         'We may update these Terms from time to time. When we make material changes, we will notify you by: (a) posting a notice on our homepage; (b) sending an email to your registered email address; or (c) displaying an in-app notification in your dashboard.',
         'Changes will take effect 30 days after notification. Your continued use of the Service after the effective date constitutes acceptance of the updated Terms. If you do not agree to the changes, you must stop using the Service and may delete your account.',
@@ -114,7 +133,7 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '13. Governing Law and Dispute Resolution',
+      heading: '14. Governing Law and Dispute Resolution',
       paragraphs: [
         'These Terms are governed by the laws of the United States, without regard to conflict of law principles. Any disputes arising out of or related to these Terms or the Service will be resolved through binding arbitration in accordance with the rules of the American Arbitration Association.',
         'You and Inkdex agree to waive the right to a jury trial and to participate in class action lawsuits. Arbitration will be conducted on an individual basis only. Each party will bear its own costs of arbitration unless the arbitrator awards costs to the prevailing party.',
@@ -122,7 +141,7 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '14. General Provisions',
+      heading: '15. General Provisions',
       paragraphs: [
         'These Terms constitute the entire agreement between you and Inkdex regarding the Service and supersede all prior agreements. If any provision of these Terms is found to be invalid or unenforceable, the remaining provisions will continue in full force and effect.',
         'Our failure to enforce any right or provision of these Terms will not be deemed a waiver of that right or provision. We may assign these Terms or any rights hereunder without your consent. You may not assign these Terms without our prior written consent.',
@@ -130,7 +149,7 @@ export const termsContent: LegalContent = {
       ],
     },
     {
-      heading: '15. Contact Information',
+      heading: '16. Contact Information',
       paragraphs: [
         'If you have questions about these Terms of Service, please contact us at support@inkdex.io. We aim to respond to all inquiries within 24-48 hours.',
       ],

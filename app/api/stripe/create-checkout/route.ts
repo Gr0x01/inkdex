@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
         }
       } catch {
         // Invalid promo code, continue without it
-        console.warn('Invalid promo code:', promoCode)
+        console.warn('Invalid promo code provided')
       }
     }
 

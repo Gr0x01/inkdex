@@ -76,21 +76,17 @@ export async function GET() {
         .limit(5),
     ]);
 
-    // Process artist counts using admin client
-    const [totalRes, unclaimedRes, claimedRes, proRes, featuredRes] = await Promise.all([
-      adminClient.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null),
-      adminClient.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'unclaimed'),
-      adminClient.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'claimed').eq('is_pro', false),
-      adminClient.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq('verification_status', 'claimed').eq('is_pro', true),
-      adminClient.from('artists').select('id', { count: 'exact', head: true }).is('deleted_at', null).eq('is_featured', true),
-    ]);
+    // Get artist tier counts in a single RPC call (replaces 5 separate queries)
+    const { data: tierCounts } = await adminClient.rpc('get_artist_tier_counts').single() as {
+      data: { total: number; unclaimed: number; claimed_free: number; pro: number; featured: number } | null
+    };
 
     const artistStats = {
-      total: totalRes.count || 0,
-      unclaimed: unclaimedRes.count || 0,
-      claimed: claimedRes.count || 0,
-      pro: proRes.count || 0,
-      featured: featuredRes.count || 0,
+      total: tierCounts?.total || 0,
+      unclaimed: tierCounts?.unclaimed || 0,
+      claimed: tierCounts?.claimed_free || 0,
+      pro: tierCounts?.pro || 0,
+      featured: tierCounts?.featured || 0,
     };
 
     // Process content stats

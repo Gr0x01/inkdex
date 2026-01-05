@@ -10,7 +10,7 @@ interface LegalContent {
 export const privacyContent: LegalContent = {
   title: 'Privacy Policy',
   description: 'How we collect, use, and protect your data.',
-  lastUpdated: 'January 4, 2026',
+  lastUpdated: 'January 5, 2026',
   sections: [
     {
       heading: '1. Introduction',
@@ -26,7 +26,7 @@ export const privacyContent: LegalContent = {
         '**Instagram OAuth Data (Artists Only):** When you claim an artist profile or create an account, we collect information from your Instagram account including: profile username, Instagram user ID, profile picture URL, bio, and URLs to your Instagram posts. We request permissions to access your media for portfolio import and syncing.',
         '**Profile Information:** Artists provide additional information such as: artist name, location, shop affiliation, booking links, bio text, pricing information, and availability status. Public users browse without providing any personal information.',
         '**Usage and Analytics (Pro Artists Only):** We collect analytics data for Pro accounts including: profile views, Instagram link clicks, booking link clicks, search appearances, and image view counts. This data is aggregated daily and used solely to provide analytics features to Pro subscribers.',
-        '**Payment Information:** We do not store your credit card or payment details. All payment information is processed and stored by Stripe, our PCI-DSS compliant payment processor. We only store subscription status, billing period, and anonymized Stripe customer ID.',
+        '**Payment Information:** We do not store your credit card or payment details. All payment information is processed and stored by Stripe, our PCI-DSS compliant payment processor. We store the following subscription-related data: (a) Stripe customer ID (anonymized identifier); (b) subscription status (active, past_due, canceled, etc.); (c) billing period (monthly or yearly); (d) subscription start and renewal dates; (e) payment failure timestamps for grace period tracking; and (f) downgrade/upgrade history. This data is necessary to manage your subscription, send payment failure notifications, and process account changes.',
         '**Technical Data:** We automatically collect certain information including: IP address (for rate limiting and fraud prevention), browser type, device type, operating system, referring URLs, and access times. This data is used for security, fraud prevention, and service improvement.',
         '**Analytics and Advertising Data:** We use Google Analytics and Google Ads to understand user behavior and serve relevant advertisements. This includes: pages visited, time on site, search queries, click behavior, demographic information (age range, gender, interests inferred by Google), and geographic location. This data is collected via cookies and may be used for personalized advertising and remarketing.',
       ],
@@ -43,7 +43,7 @@ export const privacyContent: LegalContent = {
     {
       heading: '4. Third-Party Services',
       paragraphs: [
-        '**Stripe (Payment Processing):** We use Stripe to process subscription payments. Stripe is PCI DSS Level 1 certified and handles all payment card data. We never see or store your full credit card information. Stripe\'s privacy policy is available at stripe.com/privacy.',
+        '**Stripe (Payment Processing):** We use Stripe to process subscription payments. Stripe is PCI DSS Level 1 certified and handles all payment card data. We never see or store your full credit card information. We receive webhook notifications from Stripe for subscription lifecycle events (successful payments, failed payments, subscription updates, cancellations). These webhooks contain only subscription metadata, not payment card details. We also provide access to Stripe\'s Customer Portal, which allows you to update payment methods and view billing history directly through Stripe\'s secure interface. Stripe\'s privacy policy is available at stripe.com/privacy.',
         '**Supabase (Database and Authentication):** We use Supabase for database hosting, file storage, and authentication services. Supabase is SOC 2 Type II certified and implements industry-standard security measures. Supabase\'s privacy policy is available at supabase.com/privacy.',
         '**Instagram Graph API:** When you connect your Instagram account via OAuth, we access Instagram\'s API to fetch your profile and media data. We only access data you explicitly authorize. Instagram\'s Data Policy is available at instagram.com/legal/privacy.',
         '**Vercel (Hosting):** Our web application is hosted on Vercel\'s global edge network. Vercel may collect technical data (IP addresses, request logs) for service delivery. Vercel\'s privacy policy is available at vercel.com/legal/privacy-policy.',
@@ -57,7 +57,7 @@ export const privacyContent: LegalContent = {
         '**To Provide the Service:** We use your data to: (a) create and maintain artist profiles; (b) import and sync portfolio images from Instagram; (c) process subscription payments; (d) provide search functionality; (e) display analytics to Pro accounts; and (f) respond to support requests.',
         '**For Search Indexing:** Public artist profiles (claimed or unclaimed) are indexed in our search system to help users discover tattoo artists. This includes portfolio images, artist names, locations, and styles. This constitutes fair use for search engine purposes.',
         '**For Service Improvement:** We use aggregated, anonymized data to: (a) improve search result relevance; (b) optimize our AI/ML models; (c) monitor service performance; and (d) identify and fix bugs. Individual user data is never used for training AI models without explicit consent.',
-        '**For Communication:** We send transactional emails related to: (a) account creation and verification; (b) subscription confirmations and renewals; (c) failed payments; (d) security alerts; and (e) responses to support inquiries. We do not send marketing emails without your explicit opt-in consent.',
+        '**For Communication:** We send transactional emails related to: (a) account creation and verification; (b) subscription confirmations and renewals; (c) failed payment notifications (sent on days 1, 3, and 5 of the 7-day grace period); (d) account downgrade notices when grace period expires; (e) security alerts; and (f) responses to support inquiries. We do not send marketing emails without your explicit opt-in consent.',
         '**For Advertising:** We use Google Analytics and Google Ads to serve personalized advertisements based on your browsing behavior, search queries, and inferred interests. This may include remarketing (showing ads to users who previously visited our site) and interest-based advertising across Google\'s ad network. You can opt out of personalized advertising via Google Ad Settings or browser settings.',
         'We do not sell, rent, or trade your personal information to third parties for their independent marketing purposes. However, we do share anonymized behavioral data with Google for advertising purposes as described above.',
       ],
