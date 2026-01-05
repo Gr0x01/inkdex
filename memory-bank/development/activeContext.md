@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-05 (Session 13 - Style Expansion)
+Last-Updated: 2026-01-05 (Session 15 - Launch Ready)
 Maintainer: RB
-Status: Production Ready - 14/14 Phases Complete (100%)
+Status: Launched - All 15 Phases Complete
 ---
 
 # Active Context: Inkdex
@@ -77,7 +77,7 @@ Status: Production Ready - 14/14 Phases Complete (100%)
 
 ## Pending Phases
 
-All 14 phases complete!
+All 15 phases complete!
 
 **Production Stripe Setup Required:**
 - Add env vars to Vercel: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
@@ -175,6 +175,7 @@ npx tsx scripts/styles/compute-artist-profiles.ts --clear
 - **Embeddings:** Dual-GPU setup (A2000 + RTX 4080) - local network only
 - **Caching:** Redis (Railway) - rate limiting + analytics caching (fail-open design)
 - **GDPR Compliance:** EU/EEA/UK/CH artists filtered from discovery + search (see below)
+- **Artist Location Sync:** Trigger auto-syncs `artists` → `artist_locations` on INSERT (see below)
 
 ## GDPR/Privacy Compliance
 
@@ -202,6 +203,24 @@ npx tsx scripts/styles/compute-artist-profiles.ts --clear
 ```bash
 npm run db:push  # Apply GDPR migration
 ```
+
+## Artist Location Auto-Sync
+
+**Status:** Deployed (Jan 5, 2026)
+
+**Problem Solved:** Cities like Houston, Dallas, Boston were returning 404 because artists discovered after the `artist_locations` migration had no entries in that table. City pages query `artist_locations`, not `artists`.
+
+**Solution:** Database trigger + backfill migration (`20260105_003_sync_artist_locations.sql`):
+1. **Trigger:** `sync_artist_location_on_insert` auto-creates `artist_locations` entry when artist is inserted
+2. **Backfill:** One-time INSERT synced all existing artists missing from `artist_locations`
+
+**Key Files:**
+- `/supabase/migrations/20260105_003_sync_artist_locations.sql` - Trigger + backfill
+
+**Behavior:**
+- New artists automatically get `artist_locations` entry (no script changes needed)
+- All discovery scripts (tavily, hashtag-mining, follower-mining, classify-pending) now work correctly
+- City pages query `artist_locations` via `getLocationArtists()` in `/lib/supabase/queries.ts`
 
 ## Embedding Infrastructure
 

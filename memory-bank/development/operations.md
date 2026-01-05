@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-03
+Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Active Guidelines
+Status: Active Guidelines - All 15 Phases Complete
 ---
 
 # Operations: Tattoo Artist Discovery Platform
@@ -784,3 +784,81 @@ export async function uploadImage(file: File) {
 ---
 
 **Stay focused, keep the memory bank tight, and maintain fast feedback loops.**
+
+---
+
+## GDPR Compliance (Phase 15)
+
+### Two-Layer Defense
+Inkdex implements GDPR compliance via two independent filtering layers:
+
+1. **Discovery Filter (Bio Location Extraction):**
+   - File: `lib/instagram/bio-location-extractor.ts`
+   - Extracts location from Instagram bios during artist discovery
+   - Rejects artists with EU/EEA/UK/CH country indicators
+   - Prevents GDPR-regulated artists from entering the database
+
+2. **Search Filter (Database Level):**
+   - Files: `supabase/functions/search_functions.sql`, `lib/constants/countries.ts`
+   - Filters out artists in GDPR jurisdictions from all search results
+   - Uses `artist_locations.country_code` with blocklist
+   - GDPR country codes: AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE, GB, IS, LI, NO, CH
+
+### Why Two Layers?
+- Discovery filter prevents accidental data collection
+- Search filter ensures no GDPR-regulated artists appear even if data exists
+- Defense in depth protects against single point of failure
+
+### Files
+- `lib/constants/countries.ts` - Country list with GDPR flags
+- `lib/instagram/bio-location-extractor.ts` - Location extraction from bios
+- `supabase/functions/search_functions.sql` - Search filter implementation
+
+---
+
+## Multi-Location Support (Phase 15)
+
+### Overview
+Artists can now have multiple locations (traveling artists, multiple studios).
+
+### Tier Limits
+- **Free tier:** 1 location
+- **Pro tier:** Up to 20 locations
+
+### Location Types
+- **US locations:** City + State (e.g., "Austin, TX") OR State-only (e.g., "Texas")
+- **International:** City + Country (e.g., "London, UK")
+
+### Database
+- `artist_locations` table stores all artist locations
+- One location marked `is_primary = true` for display
+- All locations searchable via vector search
+
+### API Endpoints
+- `GET /api/dashboard/locations` - Get artist locations
+- `POST /api/dashboard/locations/add` - Add location (tier-enforced)
+- `DELETE /api/dashboard/locations/remove` - Remove location
+- `PATCH /api/dashboard/locations/set-primary` - Set primary location
+
+### Search Integration
+All search functions (`search_artists_by_embedding`, `search_artists_with_count`) join with `artist_locations` for location filtering.
+
+---
+
+## Artist Location Sync
+
+### Problem Solved
+New cities (Houston, Dallas, Boston, etc.) were returning 404 errors because artists weren't appearing in `artist_locations` table.
+
+### Solution
+1. **Trigger:** Auto-inserts into `artist_locations` when new artist created
+2. **Backfill Migration:** `20260105_003_sync_artist_locations.sql`
+   - Creates function `sync_artist_to_locations()`
+   - Creates trigger `artist_insert_location_sync`
+   - Backfills existing artists missing from `artist_locations`
+
+### Pending
+Migration file exists but needs to be applied:
+```bash
+npm run db:push
+```

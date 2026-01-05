@@ -1,321 +1,233 @@
 ---
-Last-Updated: 2026-01-04
+Last-Updated: 2026-01-05
 Maintainer: Claude
-Status: Design Reference
-Source: Inherited from /coding_projects/ddd architecture
+Status: Active Reference - Reflects Actual Implementation
 ---
 
 # Architecture Patterns: Tattoo Artist Discovery Platform
 
 ## Overview
 
-Proven architecture patterns inherited from the DDD restaurant map project. These patterns prioritize **clean separation of concerns**, **maintainability**, and **type safety** while keeping implementation simple (KISS + YAGNI).
-
-**Source Reference:** `/Users/rb/Documents/coding_projects/ddd/`
+Architecture patterns used in the Inkdex platform. Prioritizes **clean separation of concerns**, **maintainability**, and **type safety** while keeping implementation simple (KISS + YAGNI).
 
 ---
 
-## Layered Architecture
+## Layered Architecture (Actual Implementation)
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  App Layer (Next.js App Router)                │
 │  - Server Components (data fetching)           │
 │  - Client Components (interactivity)           │
-│  - API Routes (search, upload)                 │
+│  - API Routes (17+ route groups)               │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐
-│  Service Layer (Business Logic)                │
-│  - search-service.ts                           │
-│  - embedding-service.ts                        │
-│  - artist-enrichment-service.ts (Phase 2+)     │
-└─────────────────────────────────────────────────┘
-                      ↓
-┌─────────────────────────────────────────────────┐
-│  Repository Layer (Data Access)                │
-│  - artist-repository.ts                        │
-│  - portfolio-repository.ts                     │
-│  - search-repository.ts                        │
+│  Query Layer (Centralized Data Access)         │
+│  - lib/supabase/queries.ts (1,200+ lines)      │
+│  - RPC functions via search_functions.sql      │
 └─────────────────────────────────────────────────┘
                       ↓
 ┌─────────────────────────────────────────────────┐
 │  Database (Supabase PostgreSQL + pgvector)     │
+│  - RPC functions for complex queries           │
+│  - IVFFlat indexing for vector search          │
 └─────────────────────────────────────────────────┘
 ```
 
-**Key Principles:**
-1. **Repository Pattern**: All database access centralized in repositories
-2. **Service Layer**: Single-purpose business logic, orchestrates repositories
-3. **Domain Models**: TypeScript interfaces in `lib/types.ts`
-4. **Shared Utilities**: Reusable helpers in `lib/utils/`
+**Actual Implementation Notes:**
+- **No Repository/Service layers exist** - business logic lives in API routes and queries.ts
+- **RPC-first approach** - Complex queries use PostgreSQL RPC functions
+- **Centralized queries** - All database access in `lib/supabase/queries.ts`
+- **Domain Models** - TypeScript interfaces in `types/` directory
 
 ---
 
 ## Directory Structure
 
-### Application Structure (Aligned with DDD Project)
+### Application Structure (Actual - No src/ Directory)
+
+**IMPORTANT:** All code lives at the project root with `@/*` aliases pointing to `./`.
 
 ```
 /tattoo
-├── src/
-│   ├── app/                          # Next.js App Router
-│   │   ├── layout.tsx                # Root layout (metadata, analytics)
-│   │   ├── page.tsx                  # Landing page with search
-│   │   ├── search/
-│   │   │   └── page.tsx              # Search results page
-│   │   ├── [city]/
-│   │   │   ├── page.tsx              # City browse page
-│   │   │   └── [style]/page.tsx      # Style landing pages (SEO)
-│   │   ├── artist/[slug]/page.tsx    # Artist profile pages
-│   │   ├── saved/page.tsx            # Saved artists (post-MVP)
-│   │   ├── dashboard/                # Artist dashboard (post-MVP)
-│   │   ├── api/
-│   │   │   ├── search/route.ts       # POST /api/search (image/text → embedding)
-│   │   │   ├── saved-artists/route.ts # GET/POST/DELETE saved artists
-│   │   │   └── claim-profile/route.ts # POST /api/claim-profile
-│   │   ├── sitemap.ts                # Dynamic sitemap
-│   │   └── robots.ts                 # robots.txt
-│   │
-│   ├── components/
-│   │   ├── search/
-│   │   │   ├── ImageUpload.tsx       # Image upload component
-│   │   │   ├── TextSearch.tsx        # Text search input
-│   │   │   ├── SearchResults.tsx     # Artist cards grid
-│   │   │   └── CityFilter.tsx        # City filter dropdown
-│   │   ├── artist/
-│   │   │   ├── ArtistCard.tsx        # Artist card (grid view)
-│   │   │   ├── ArtistProfile.tsx     # Artist profile header
-│   │   │   ├── PortfolioGrid.tsx     # Portfolio images grid
-│   │   │   ├── VerificationBadge.tsx # Verified artist badge
-│   │   │   ├── SaveButton.tsx        # Save/unsave artist (post-MVP)
-│   │   │   └── ClaimProfileButton.tsx # Claim profile (post-MVP)
-│   │   └── ui/
-│   │       ├── Header.tsx            # Site header
-│   │       ├── Footer.tsx            # Site footer
-│   │       ├── Button.tsx            # Reusable button
-│   │       ├── Card.tsx              # Card component
-│   │       └── Input.tsx             # Form input
-│   │
-│   ├── lib/
-│   │   ├── supabase/
-│   │   │   ├── client.ts             # Browser Supabase client (singleton)
-│   │   │   ├── server.ts             # Server Supabase client
-│   │   │   └── types.ts              # Database types (generated)
-│   │   │
-│   │   ├── repositories/             # Data Access Layer (DDD Pattern)
-│   │   │   ├── artist-repository.ts  # Artist CRUD operations
-│   │   │   ├── portfolio-repository.ts # Portfolio image operations
-│   │   │   ├── search-repository.ts  # Search operations
-│   │   │   └── style-repository.ts   # Style seed operations
-│   │   │
-│   │   ├── services/                 # Business Logic Layer (DDD Pattern)
-│   │   │   ├── search-service.ts     # Search orchestration (image/text/hybrid)
-│   │   │   ├── embedding-service.ts  # CLIP embedding generation (Modal.com)
-│   │   │   └── image-processing-service.ts # Image upload, resize, R2 upload
-│   │   │
-│   │   ├── utils/
-│   │   │   ├── image.ts              # Image utilities (Sharp processing)
-│   │   │   ├── url.ts                # Slug generation, URL helpers
-│   │   │   ├── seo.ts                # SEO helpers (metadata, sitemap)
-│   │   │   └── validation.ts         # Zod schemas for input validation
-│   │   │
-│   │   ├── constants/
-│   │   │   ├── cities.ts             # Supported cities config
-│   │   │   └── styles.ts             # Style seed definitions
-│   │   │
-│   │   ├── schema.ts                 # Schema.org structured data (JSON-LD)
-│   │   ├── analytics.ts              # PostHog/GA4 tracking utilities
-│   │   └── env.ts                    # Environment variable validation
-│   │
-│   └── types/
-│       ├── artist.ts                 # Artist domain model
-│       ├── search.ts                 # Search domain model
-│       ├── portfolio.ts              # Portfolio image domain model
-│       └── database.ts               # Supabase generated types
+├── app/                              # Next.js App Router (NOT under src/)
+│   ├── layout.tsx                    # Root layout
+│   ├── page.tsx                      # Landing page
+│   ├── search/                       # Search results
+│   ├── [city]/                       # City browse pages (116 cities)
+│   ├── [state]/                      # State browse pages (51 states)
+│   ├── artist/[slug]/                # Artist profiles
+│   ├── dashboard/                    # Artist dashboard (claimed artists)
+│   ├── admin/                        # Admin panel
+│   ├── onboarding/                   # Artist onboarding flow
+│   ├── claim/                        # Profile claiming
+│   ├── add-artist/                   # Self-add and recommendations
+│   ├── legal/                        # Terms, Privacy
+│   ├── about/                        # About page
+│   ├── api/                          # API Routes (17+ groups)
+│   │   ├── add-artist/               # Self-add and recommend
+│   │   ├── admin/                    # Admin endpoints
+│   │   ├── analytics/                # Analytics tracking
+│   │   ├── artist/                   # Artist CRUD
+│   │   ├── auth/                     # Instagram OAuth
+│   │   ├── cities/                   # City data
+│   │   ├── cron/                     # Scheduled tasks
+│   │   ├── dashboard/                # Dashboard endpoints
+│   │   ├── dev/                      # Development utilities
+│   │   ├── email/                    # Email endpoints
+│   │   ├── embeddings/               # CLIP embeddings
+│   │   ├── locations/                # Location search
+│   │   ├── onboarding/               # Onboarding flow
+│   │   ├── search/                   # Search endpoint
+│   │   ├── stripe/                   # Stripe webhooks + checkout
+│   │   └── warmup/                   # Modal container warmup
+│   ├── sitemap.ts                    # Dynamic sitemap
+│   └── robots.ts                     # robots.txt
 │
-├── scripts/                          # Data Pipeline Scripts
-│   ├── city-analysis/
-│   │   └── analyze-markets.ts        # DataForSEO city analysis (Phase 0)
-│   ├── discovery/
-│   │   ├── google-maps-discovery.ts  # Google Maps artist discovery
-│   │   ├── website-scraper.ts        # Scrape shop websites for artists
-│   │   └── instagram-validator.ts    # Validate Instagram handles + extract user IDs
-│   ├── scraping/
-│   │   └── instagram-scraper.ts      # Apify Instagram scraper integration
-│   ├── images/
-│   │   └── process-and-upload.ts     # Download + Sharp processing + R2 upload
-│   ├── embeddings/
-│   │   ├── generate_embeddings.py    # Modal.com GPU function (OpenCLIP)
-│   │   └── batch-process.ts          # Node.js orchestration for batching
-│   └── seo/
-│       └── seed-styles.ts            # Populate style_seeds table
+├── components/                       # React Components (18 subdirectories)
+│   ├── admin/                        # Admin panel components
+│   ├── analytics/                    # Analytics dashboard
+│   ├── artist/                       # Artist cards, profiles (17 files)
+│   ├── badges/                       # Pro, Featured, Verified badges
+│   ├── consent/                      # Cookie consent
+│   ├── dashboard/                    # Dashboard components (22 files)
+│   ├── editorial/                    # Editorial content blocks
+│   ├── email/                        # Email templates
+│   ├── layout/                       # Header, footer, nav (11 files)
+│   ├── legal/                        # Legal page layouts
+│   ├── onboarding/                   # Onboarding components
+│   ├── pagination/                   # Pagination
+│   ├── search/                       # Search components (14 files)
+│   ├── ui/                           # Base UI components
+│   └── warmup/                       # Modal warmup trigger
 │
+├── lib/                              # Utilities & Business Logic
+│   ├── supabase/                     # Supabase clients
+│   │   ├── client.ts                 # Browser client (singleton)
+│   │   ├── server.ts                 # Server client
+│   │   ├── service.ts                # Service role client
+│   │   ├── middleware.ts             # Auth middleware
+│   │   ├── queries.ts                # Centralized queries (1,200+ lines)
+│   │   └── vault.ts                  # OAuth token encryption
+│   ├── admin/                        # Admin utilities
+│   ├── analytics/                    # Analytics utilities
+│   ├── config/                       # Configuration
+│   ├── constants/                    # Constants (countries, portfolio limits)
+│   ├── content/                      # Editorial content
+│   ├── email/                        # Email (Resend integration)
+│   ├── instagram/                    # Instagram utilities
+│   ├── onboarding/                   # Onboarding validation
+│   ├── processing/                   # Image processing
+│   ├── redis/                        # Redis caching
+│   ├── stripe/                       # Stripe utilities
+│   └── utils/                        # General utilities
+│
+├── types/                            # TypeScript types
+│   ├── database.ts                   # Supabase generated types
+│   ├── search.ts                     # Search types
+│   └── ...
+│
+├── hooks/                            # Custom React hooks
+├── data/                             # Data files
+├── scripts/                          # Data pipeline scripts
 ├── supabase/
-│   └── migrations/
-│       ├── 001_initial_schema.sql    # Core tables (artists, portfolio_images, searches)
-│       └── 002_auth_extensions.sql   # Future auth tables (users, saved_artists)
+│   ├── migrations/                   # 30+ migration files
+│   └── functions/
+│       └── search_functions.sql      # Single source of truth for search RPC
 │
-├── memory-bank/                      # Project Documentation
-├── .env.local                        # Local environment variables
-├── next.config.ts                    # Next.js configuration
-├── tailwind.config.ts                # Tailwind CSS configuration
-└── tsconfig.json                     # TypeScript configuration
+├── memory-bank/                      # Project documentation
+└── tsconfig.json                     # Path alias: @/* → ./
 ```
 
----
-
-## Core Patterns (Inherited from DDD)
-
-### 1. Repository Pattern
-
-**Purpose:** Centralize all database access, abstract away Supabase implementation details.
-
-**Pattern from DDD:**
-```typescript
-// lib/repositories/artist-repository.ts
-import { supabase } from '@/lib/supabase/client';
-import type { Artist } from '@/types/artist';
-
-export const artistRepository = {
-  async findBySlug(slug: string): Promise<Artist | null> {
-    const { data, error } = await supabase()
-      .from('artists')
-      .select('*')
-      .eq('slug', slug)
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async findByCity(city: string): Promise<Artist[]> {
-    const { data, error } = await supabase()
-      .from('artists')
-      .select('*')
-      .eq('city', city)
-      .eq('status', 'active')
-      .order('name');
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  async getSlugs(): Promise<string[]> {
-    const { data, error } = await supabase()
-      .from('artists')
-      .select('slug')
-      .eq('status', 'active');
-
-    if (error) throw error;
-    return data?.map(r => r.slug) || [];
-  },
-
-  // Add more repository methods as needed
-};
-```
-
-**Benefits:**
-- Single source of truth for database queries
-- Easy to mock for testing
-- Can swap database implementation without changing business logic
-- Type-safe with TypeScript
-
-**Usage in App:**
-```typescript
-// app/artist/[slug]/page.tsx
-import { artistRepository } from '@/lib/repositories/artist-repository';
-
-export default async function ArtistPage({ params }: { params: { slug: string } }) {
-  const artist = await artistRepository.findBySlug(params.slug);
-  if (!artist) notFound();
-
-  return <ArtistProfile artist={artist} />;
-}
-```
-
----
-
-### 2. Service Layer Pattern
-
-**Purpose:** Orchestrate business logic, coordinate multiple repositories, handle complex operations.
-
-**Pattern from DDD:**
-```typescript
-// lib/services/search-service.ts
-import { searchRepository } from '@/lib/repositories/search-repository';
-import { embeddingService } from '@/lib/services/embedding-service';
-import type { SearchResult, SearchType } from '@/types/search';
-
-export const searchService = {
-  /**
-   * Perform multi-modal search (image, text, or hybrid)
-   */
-  async search(params: {
-    type: SearchType;
-    image?: File;
-    query?: string;
-    city?: string;
-  }): Promise<SearchResult> {
-    // 1. Generate embedding based on search type
-    let embedding: number[];
-
-    if (params.type === 'image' && params.image) {
-      // Image search: CLIP image encoder
-      embedding = await embeddingService.generateImageEmbedding(params.image);
-    } else if (params.type === 'text' && params.query) {
-      // Text search: CLIP text encoder (same vector space!)
-      embedding = await embeddingService.generateTextEmbedding(params.query);
-    } else if (params.type === 'hybrid' && params.image && params.query) {
-      // Hybrid: Combine image + text embeddings (weighted average)
-      const [imageEmbed, textEmbed] = await Promise.all([
-        embeddingService.generateImageEmbedding(params.image),
-        embeddingService.generateTextEmbedding(params.query),
-      ]);
-      embedding = combineEmbeddings(imageEmbed, textEmbed, 0.6, 0.4); // 60% image, 40% text
-    } else {
-      throw new Error('Invalid search parameters');
+### Path Aliases
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]  // Points to root, NOT src/
     }
+  }
+}
+```
 
-    // 2. Store search in database (for analytics, caching)
-    const searchId = await searchRepository.createSearch({
-      embedding,
-      type: params.type,
-      query: params.query,
-      city: params.city,
-    });
+---
 
-    // 3. Run vector similarity search
-    const artists = await searchRepository.searchByEmbedding({
-      embedding,
-      city: params.city,
-      threshold: 0.7,
-      limit: 20,
-    });
+## Core Patterns (Actual Implementation)
 
-    return {
-      searchId,
-      artists,
-      type: params.type,
-    };
-  },
-};
+### 1. Centralized Query Pattern
 
-function combineEmbeddings(
-  embed1: number[],
-  embed2: number[],
-  weight1: number,
-  weight2: number
-): number[] {
-  return embed1.map((val, idx) => val * weight1 + embed2[idx] * weight2);
+**Purpose:** All database access centralized in `lib/supabase/queries.ts` with typed query functions.
+
+**Note:** The theoretical Repository/Service layer patterns from DDD were not implemented. Instead, queries are centralized in a single file using RPC functions for complex operations.
+
+**Actual Implementation:**
+```typescript
+// lib/supabase/queries.ts (1,200+ lines - single source of truth)
+import { createClient } from '@/lib/supabase/server';
+import type { SearchResult } from '@/types/search';
+
+// Simple queries: Supabase query builder
+export async function getArtistBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('artists')
+    .select('*, portfolio_images(*)')
+    .eq('slug', slug)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+// Complex queries: RPC functions
+export async function searchArtists(
+  embedding: number[],
+  options: SearchOptions
+): Promise<SearchResult[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
+    query_embedding: embedding,
+    match_count: options.limit,
+    location_ids: options.locationIds,
+  });
+
+  if (error) throw error;
+  return data;
 }
 ```
 
 **Benefits:**
-- Single-purpose services (search-service, embedding-service, etc.)
-- Orchestrates multiple repositories
-- Reusable across API routes and server components
-- Easy to test with mocked repositories
+- Single file to find all database queries
+- RPC functions for performance-critical operations
+- Type-safe with Supabase generated types
+- Easy to add logging, caching, or metrics
+
+---
+
+### 2. RPC-First Pattern
+
+**Purpose:** Complex queries (especially vector search) use PostgreSQL RPC functions for performance.
+
+**Why RPC Instead of Query Builder:**
+- Vector search with JOINs and CTEs is complex
+- PostgreSQL optimizer works better with compiled functions
+- Single source of truth in `supabase/functions/search_functions.sql`
+- Easier to debug and optimize SQL directly
+
+**Example:**
+```typescript
+// Simple query - use query builder
+const { data } = await supabase.from('artists').select('*').eq('id', id);
+
+// Complex query - use RPC
+const { data } = await supabase.rpc('search_artists_by_embedding', {
+  query_embedding: embedding,
+  match_count: 20,
+  location_ids: [123, 456],
+});
+```
 
 ---
 

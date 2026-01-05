@@ -1,7 +1,7 @@
 ---
 Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Production Ready
+Status: Launched - All 15 Phases Complete
 ---
 
 # Progress Log: Inkdex
@@ -18,7 +18,48 @@ Status: Production Ready
 | Static Pages | ~3,500+ |
 | SEO Content | ~155,000 words |
 
+## Launch Milestone
+
+**Inkdex v1.0.0 - Full US Coverage** (Jan 5, 2026)
+
+All 15 implementation phases complete:
+- 116 cities across 50 states + DC
+- 15,626 artists indexed
+- 68,440 portfolio images with CLIP embeddings
+- 20 styles with averaged seed embeddings
+- Multi-modal search (image, text, Instagram links)
+- Artist claiming via Instagram OAuth
+- Pro tier ($15/mo) with Stripe integration
+- Admin panel with pipeline control
+- Multi-location support (international)
+- GDPR compliance (EU artist filtering)
+
+**Remaining Production Tasks:**
+- Deploy Stripe live keys to Vercel
+- Run image scraping for ~10k pending artists
+- Apply artist location sync migration (`npm run db:push`)
+
+---
+
 ## Recent Completions
+
+### Jan 5, 2026 (Session 15 - Launch Prep)
+- **Memory Bank Cleanup** - Documentation updates for launch readiness
+  - Archived outdated `user-artist-account-implementation.md`
+  - Updated `projectbrief.md` with actual launch metrics
+  - Fixed `patterns.md` to reflect actual architecture (no Repository/Service layers)
+  - Added GDPR and Multi-location documentation to `operations.md`
+  - Updated all files to "Launched" status
+
+### Jan 5, 2026 (Session 14)
+- **City 404 Bug Fix** - Houston, Dallas, Boston and other Batch 4 cities were returning 404
+  - **Root Cause:** Artists discovered after `artist_locations` migration had no entries in that table
+  - **Solution:** Database trigger + backfill migration
+  - **Trigger:** `sync_artist_location_on_insert` auto-creates `artist_locations` entry on artist INSERT
+  - **Backfill:** One-time INSERT synced all existing artists missing from `artist_locations`
+  - **Files Created:**
+    - `supabase/migrations/20260105_003_sync_artist_locations.sql`
+  - **Impact:** All 116 city pages now work correctly; future artist discovery auto-syncs
 
 ### Jan 5, 2026 (Session 13)
 - **Style System Expansion** - Added 3 new styles, total now 20

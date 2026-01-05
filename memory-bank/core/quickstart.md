@@ -1,16 +1,16 @@
 ---
-Last-Updated: 2026-01-04 (Session 10 - 50-State Coverage Complete)
+Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Production Ready - 116 Cities Live Across All 50 States + DC
+Status: Launched - Full US Coverage
 ---
 
 # Quickstart: Inkdex
 
 ## Current Status
-- **Phase**: Production - Full US Coverage
-- **Version**: 0.3.0 (50-State Coverage Complete)
-- **Environment**: Production Ready
-- **Scale**: 116 cities, 15,626 artists, ~25,000 portfolio images (est.)
+- **Phase**: Launched - All 15 phases complete
+- **Version**: 1.0.0 (Full Launch)
+- **Environment**: Production
+- **Scale**: 116 cities, 15,626 artists, 68,440 images with embeddings
 
 ## Project Summary
 Inkdex - AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) using multi-modal CLIP embeddings. Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
@@ -74,13 +74,16 @@ npx supabase gen types typescript --local > types/database.ts
 ```
 
 ## Active Focus
-- ✅ Market analysis complete (Phase 0)
-- ✅ Austin + LA selected as launch cities
-- 🔄 Infrastructure setup (Phase 1)
-  - Supabase project + pgvector setup
-  - Supabase Storage configuration
-  - Next.js project initialization
-  - Instagram OAuth configuration (for post-MVP)
+All 15 implementation phases complete:
+- ✅ Phase 1-4: Database, OAuth, Claim Flow, Add Artist
+- ✅ Phase 5-8: Onboarding, Portfolio, Profile, Legal Pages
+- ✅ Phase 9: Stripe Integration (test mode working, production pending)
+- ✅ Phase 10-12: Email, Auto-Sync, Search Ranking
+- ✅ Phase 13-15: Analytics, Admin Panel, Multi-Location
+
+**Pending Production Tasks:**
+- Deploy Stripe live keys to Vercel
+- Run image scraping for ~10k pending artists
 
 ## Critical Architecture Points
 - **Search**: Multi-modal (image + text) using CLIP embeddings
@@ -161,9 +164,8 @@ NEXT_PUBLIC_APP_URL=
 - **Monthly (96 cities)**: ~$12-20 (storage + re-scraping + Redis)
 
 ## Next Immediate Steps
-1. Create Supabase project with pgvector extension
-2. Run database schema migrations
-3. Set up Supabase Storage buckets
-4. Initialize Next.js project
-5. Configure Instagram OAuth in Supabase
-6. Begin artist discovery for Austin + LA
+1. Add Stripe live keys to Vercel environment variables
+2. Run pending GDPR migration (`npm run db:push`)
+3. Process pending artists through scraping pipeline
+4. Monitor production for issues
+5. Begin marketing/artist outreach
