@@ -9,8 +9,8 @@ import { spawn, ChildProcess } from 'child_process';
 import { createAdminClient } from '@/lib/supabase/server';
 import { invalidatePipelineCache } from '@/lib/redis/invalidation';
 
-// Maximum job runtime: 2 hours
-const MAX_JOB_RUNTIME_MS = 2 * 60 * 60 * 1000;
+// Maximum job runtime: 6 hours (scraping 500+ artists takes 3-4 hours)
+const MAX_JOB_RUNTIME_MS = 6 * 60 * 60 * 1000;
 
 // Heartbeat interval: 30 seconds
 const HEARTBEAT_INTERVAL_MS = 30 * 1000;

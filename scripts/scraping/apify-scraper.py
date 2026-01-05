@@ -23,6 +23,28 @@ from threading import Lock
 from typing import List, Dict
 import subprocess
 import time
+import signal
+
+# Use threading.Event for proper thread synchronization
+shutdown_event = threading.Event()
+_signal_count = 0
+
+def handle_shutdown_signal(signum, frame):
+    """Handle SIGTERM/SIGINT for graceful shutdown"""
+    global _signal_count
+    _signal_count += 1
+    signal_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
+
+    if _signal_count == 1:
+        print(f"\n⚠️  {signal_name} received, finishing current batch...")
+        shutdown_event.set()
+    else:
+        print(f"\n❌ {signal_name} received {_signal_count} times - forcing exit")
+        sys.exit(1)
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, handle_shutdown_signal)
+signal.signal(signal.SIGINT, handle_shutdown_signal)
 
 # Load environment variables
 load_dotenv('.env.local')
@@ -44,7 +66,7 @@ MAX_POSTS = 12  # Instagram's public API only exposes ~12 recent posts without a
 BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
 
 # Parallel scraping settings
-CONCURRENT_APIFY_CALLS = 8  # Run 8 in parallel (balance speed vs memory)
+CONCURRENT_APIFY_CALLS = 4  # Reduced from 8 for stability (less DB lock contention)
 db_lock = Lock()  # Thread-safe database operations
 
 # Get project root (2 levels up from this script)
@@ -796,13 +818,42 @@ def main():
                                 timeout=1200
                             )
 
+                        # Check for graceful shutdown request
+                        if shutdown_event.is_set():
+                            print("\n🛑 Shutdown requested - stopping after current batch")
+                            # Cancel only pending futures (not running/completed)
+                            for future in futures.keys():
+                                if not future.done():
+                                    future.cancel()
+                            break
+
                     except Exception as e:
                         print(f"   ❌ Future execution error: {e}")
                         total_errors += 1
 
         except KeyboardInterrupt:
-            print("\n\n⚠️  Interrupted by user")
-            executor.shutdown(wait=False, cancel_futures=True)
+            print("\n\n⚠️  Interrupted by user - canceling pending work...")
+            # Cancel pending futures for faster shutdown
+            for future in futures.keys():
+                if not future.done():
+                    future.cancel()
+            # Context manager will wait for running futures to complete
+
+        # Report canceled work if shutdown was requested
+        if shutdown_event.is_set():
+            canceled_count = len(artists) - completed_count
+            if canceled_count > 0:
+                print(f"⚠️  {canceled_count} artists were not processed due to shutdown")
+
+            # Update final progress
+            if supabase_client and pipeline_run_id:
+                update_pipeline_progress(
+                    supabase_client,
+                    pipeline_run_id,
+                    len(artists),
+                    completed_count - total_errors,
+                    total_errors
+                )
 
         # Wait for all background processes to finish
         print("\n⏳ Waiting for background processes to complete...")
@@ -824,20 +875,9 @@ def main():
         except subprocess.CalledProcessError as e:
             print(f"❌ Final batch processing failed: {e}\n")
 
-        # Final embeddings
-        print("🔮 Generating final embeddings...")
-        try:
-            subprocess.run(
-                ["python3", "scripts/embeddings/local_batch_embeddings.py"],
-                check=True,
-                cwd=str(PROJECT_ROOT),
-                timeout=3600  # 1 hour for final embedding pass
-            )
-            print("✅ Final embeddings generated\n")
-        except subprocess.TimeoutExpired:
-            print(f"❌ Final embedding generation timed out\n")
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Final embedding generation failed: {e}\n")
+        # Skip final embeddings - run separately via admin panel to avoid timeout
+        print("⏭️  Skipping final embeddings (run separately via admin panel)\n")
+        print("   To generate embeddings: Admin Panel → Pipeline → Generate Embeddings\n")
 
         # Summary
         print("\n✅ Incremental scraping complete!")
