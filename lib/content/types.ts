@@ -3,6 +3,22 @@
  * Supports state, city, and style landing pages with structured content sections
  */
 
+/**
+ * FAQ item for structured data
+ */
+export interface FAQ {
+  question: string
+  answer: string
+}
+
+/**
+ * City FAQ content for FAQPage schema
+ */
+export interface CityFAQContent {
+  citySlug: string
+  faqs: FAQ[]
+}
+
 export interface ContentSection {
   /** Optional H2 heading for the section */
   heading?: string

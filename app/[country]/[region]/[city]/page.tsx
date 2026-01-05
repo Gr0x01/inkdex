@@ -8,6 +8,8 @@ import { getCountryName, getRegionName, slugToName } from '@/lib/utils/location'
 import ArtistCard from '@/components/search/ArtistCard'
 import { transformToSearchResult } from '@/lib/utils/artists'
 import Pagination from '@/components/pagination/Pagination'
+import FAQSection from '@/components/seo/FAQSection'
+import { getCityFAQs } from '@/lib/content/editorial/city-faqs'
 
 // Validation patterns
 const COUNTRY_CODE_REGEX = /^[a-z]{2}$/
@@ -116,6 +118,7 @@ export default async function CityPage({
 
   const styleSeeds = await getStyleSeeds()
   const totalPages = Math.ceil(total / limit)
+  const cityFAQs = getCityFAQs(citySlug)
 
   // JSON-LD Breadcrumbs
   const jsonLd = {
@@ -308,6 +311,16 @@ export default async function CityPage({
                   </Link>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* FAQ Section (for SEO featured snippets) */}
+          {cityFAQs && cityFAQs.length > 0 && (
+            <div className="mt-16 pt-12 border-t border-neutral-800">
+              <FAQSection
+                faqs={cityFAQs}
+                cityName={cityName}
+              />
             </div>
           )}
         </div>
