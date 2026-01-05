@@ -75,6 +75,21 @@ USING ivfflat (embedding vector_cosine_ops) WITH (lists = 261);
 
 ---
 
+## Migrations
+
+```
+supabase/migrations/
+├── 00000000000000_baseline.sql  # Full schema (5,100 lines)
+├── README.md
+└── _archive/                     # 86 historical migrations
+```
+
+**RPC functions:** `supabase/functions/search_functions.sql` (single source of truth)
+
+**New migrations:** Add to `supabase/migrations/` with timestamp prefix (e.g., `20260106_001_feature.sql`)
+
+---
+
 ## Search Performance
 
 **Optimized Jan 4, 2026:** 2900ms → ~200ms
