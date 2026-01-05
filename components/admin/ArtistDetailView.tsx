@@ -99,15 +99,20 @@ export default function ArtistDetailView({
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showProDialog, setShowProDialog] = useState(false);
+  const [showBasicDialog, setShowBasicDialog] = useState(false);
+  const [showFeatureDialog, setShowFeatureDialog] = useState(false);
+  const [showUnfeatureDialog, setShowUnfeatureDialog] = useState(false);
   const [deleted, setDeleted] = useState(false);
 
-  const handleTogglePro = async () => {
+  const handleMakePro = async () => {
+    setShowProDialog(false);
     setUpdating(true);
     try {
       const response = await fetch(`/api/admin/artists/${artist.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_pro: !artist.is_pro }),
+        body: JSON.stringify({ is_pro: true }),
       });
 
       if (!response.ok) {
@@ -117,20 +122,43 @@ export default function ArtistDetailView({
       const data = await response.json();
       setArtist((prev) => ({ ...prev, is_pro: data.artist.is_pro }));
     } catch (error) {
-      console.error('Failed to toggle pro:', error);
-      alert('Failed to update pro status');
+      console.error('Failed to make pro:', error);
     } finally {
       setUpdating(false);
     }
   };
 
-  const handleToggleFeatured = async () => {
+  const handleMakeBasic = async () => {
+    setShowBasicDialog(false);
     setUpdating(true);
     try {
       const response = await fetch(`/api/admin/artists/${artist.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_featured: !artist.is_featured }),
+        body: JSON.stringify({ is_pro: false }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update');
+      }
+
+      const data = await response.json();
+      setArtist((prev) => ({ ...prev, is_pro: data.artist.is_pro }));
+    } catch (error) {
+      console.error('Failed to make basic:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleFeature = async () => {
+    setShowFeatureDialog(false);
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/artists/${artist.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: true }),
       });
 
       if (!response.ok) {
@@ -140,8 +168,30 @@ export default function ArtistDetailView({
       const data = await response.json();
       setArtist((prev) => ({ ...prev, is_featured: data.artist.is_featured }));
     } catch (error) {
-      console.error('Failed to toggle featured:', error);
-      alert('Failed to update featured status');
+      console.error('Failed to feature:', error);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleUnfeature = async () => {
+    setShowUnfeatureDialog(false);
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/artists/${artist.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_featured: false }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update');
+      }
+
+      const data = await response.json();
+      setArtist((prev) => ({ ...prev, is_featured: data.artist.is_featured }));
+    } catch (error) {
+      console.error('Failed to unfeature:', error);
     } finally {
       setUpdating(false);
     }
@@ -306,33 +356,51 @@ export default function ArtistDetailView({
         </h2>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Toggle Pro */}
-          <button
-            onClick={handleTogglePro}
-            disabled={updating}
-            className={`flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50 ${
-              artist.is_pro
-                ? 'bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20'
-                : 'bg-paper border border-ink/20 text-ink hover:border-ink/40'
-            }`}
-          >
-            <Crown className="w-3.5 h-3.5" />
-            {artist.is_pro ? 'Remove Pro' : 'Make Pro'}
-          </button>
+          {/* Make Pro / Make Basic */}
+          {artist.is_pro ? (
+            <button
+              onClick={() => setShowBasicDialog(true)}
+              disabled={updating}
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50
+                         bg-paper border border-ink/20 text-ink hover:border-ink/40"
+            >
+              <Crown className="w-3.5 h-3.5" />
+              Make Basic
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowProDialog(true)}
+              disabled={updating}
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50
+                         bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20"
+            >
+              <Crown className="w-3.5 h-3.5" />
+              Make Pro
+            </button>
+          )}
 
-          {/* Toggle Featured */}
-          <button
-            onClick={handleToggleFeatured}
-            disabled={updating}
-            className={`flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50 ${
-              artist.is_featured
-                ? 'bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20'
-                : 'bg-paper border border-ink/20 text-ink hover:border-ink/40'
-            }`}
-          >
-            <Star className={`w-3.5 h-3.5 ${artist.is_featured ? 'fill-current' : ''}`} />
-            {artist.is_featured ? 'Unfeature' : 'Feature'}
-          </button>
+          {/* Feature / Unfeature */}
+          {artist.is_featured ? (
+            <button
+              onClick={() => setShowUnfeatureDialog(true)}
+              disabled={updating}
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50
+                         bg-paper border border-ink/20 text-ink hover:border-ink/40"
+            >
+              <Star className="w-3.5 h-3.5" />
+              Unfeature
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowFeatureDialog(true)}
+              disabled={updating}
+              className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-body transition-colors disabled:opacity-50
+                         bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20"
+            >
+              <Star className="w-3.5 h-3.5 fill-current" />
+              Feature
+            </button>
+          )}
 
           {/* Delete Artist */}
           <button
@@ -464,6 +532,50 @@ export default function ArtistDetailView({
           onImagesDeleted={handleImagesDeleted}
         />
       </div>
+
+      {/* Make Pro Confirmation */}
+      <ConfirmDialog
+        isOpen={showProDialog}
+        title="Make Pro"
+        message={`Are you sure you want to upgrade ${artist.name} (@${artist.instagram_handle}) to Pro status? This will give them access to Pro features.`}
+        confirmLabel="Make Pro"
+        cancelLabel="Cancel"
+        onConfirm={handleMakePro}
+        onCancel={() => setShowProDialog(false)}
+      />
+
+      {/* Make Basic Confirmation */}
+      <ConfirmDialog
+        isOpen={showBasicDialog}
+        title="Make Basic"
+        message={`Are you sure you want to downgrade ${artist.name} (@${artist.instagram_handle}) to Basic status? They will lose access to Pro features.`}
+        confirmLabel="Make Basic"
+        cancelLabel="Cancel"
+        onConfirm={handleMakeBasic}
+        onCancel={() => setShowBasicDialog(false)}
+      />
+
+      {/* Feature Confirmation */}
+      <ConfirmDialog
+        isOpen={showFeatureDialog}
+        title="Feature Artist"
+        message={`Are you sure you want to feature ${artist.name} (@${artist.instagram_handle})? They will appear in featured sections across the site.`}
+        confirmLabel="Feature"
+        cancelLabel="Cancel"
+        onConfirm={handleFeature}
+        onCancel={() => setShowFeatureDialog(false)}
+      />
+
+      {/* Unfeature Confirmation */}
+      <ConfirmDialog
+        isOpen={showUnfeatureDialog}
+        title="Unfeature Artist"
+        message={`Are you sure you want to remove ${artist.name} (@${artist.instagram_handle}) from featured? They will no longer appear in featured sections.`}
+        confirmLabel="Unfeature"
+        cancelLabel="Cancel"
+        onConfirm={handleUnfeature}
+        onCancel={() => setShowUnfeatureDialog(false)}
+      />
 
       {/* Delete Artist Confirmation */}
       <ConfirmDialog

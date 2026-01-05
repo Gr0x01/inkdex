@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
     const location = searchParams.get('location') || null;
     const tier = searchParams.get('tier') || null;
     const isFeatured = searchParams.get('is_featured');
+    const hasImages = searchParams.get('has_images');
+    const sortBy = searchParams.get('sort_by') || 'instagram_handle';
+    const sortOrder = searchParams.get('sort_order') || 'asc';
 
     const offset = (page - 1) * limit;
 
@@ -62,8 +65,17 @@ export async function GET(request: NextRequest) {
     const featuredFilter =
       isFeatured === 'true' ? true : isFeatured === 'false' ? false : null;
 
+    // Convert has_images param to boolean or null
+    const hasImagesFilter =
+      hasImages === 'true' ? true : hasImages === 'false' ? false : null;
+
+    // Validate sort column to prevent SQL injection
+    const validSortColumns = ['instagram_handle', 'name', 'city', 'verification_status', 'image_count', 'is_featured'];
+    const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'instagram_handle';
+    const safeSortOrder = sortOrder === 'desc' ? 'desc' : 'asc';
+
     // Generate cache key based on filters
-    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}`;
+    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}:images:${hasImages || 'none'}:sort:${safeSortBy}:${safeSortOrder}`;
 
     // Use Redis cache with 5-minute TTL
     const result = await getCached(
@@ -82,6 +94,9 @@ export async function GET(request: NextRequest) {
           p_location_state: locationState,
           p_tier: tier,
           p_is_featured: featuredFilter,
+          p_has_images: hasImagesFilter,
+          p_sort_by: safeSortBy,
+          p_sort_order: safeSortOrder,
         });
 
         if (error) {

@@ -8,7 +8,10 @@ import {
   Star,
   Crown,
   ExternalLink,
-  Pencil,
+  Eye,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import Link from 'next/link';
 import AdminSelect from './AdminSelect';
@@ -49,6 +52,9 @@ export default function ArtistTable() {
   const [locationFilter, setLocationFilter] = useState('');
   const [tierFilter, setTierFilter] = useState<string>('');
   const [isFeaturedFilter, setIsFeaturedFilter] = useState<string>('');
+  const [hasImagesFilter, setHasImagesFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('instagram_handle');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
@@ -65,6 +71,9 @@ export default function ArtistTable() {
     if (locationFilter) params.set('location', locationFilter);
     if (tierFilter) params.set('tier', tierFilter);
     if (isFeaturedFilter) params.set('is_featured', isFeaturedFilter);
+    if (hasImagesFilter) params.set('has_images', hasImagesFilter);
+    if (sortBy) params.set('sort_by', sortBy);
+    if (sortOrder) params.set('sort_order', sortOrder);
 
     try {
       const response = await fetch(`/api/admin/artists?${params}`);
@@ -78,7 +87,7 @@ export default function ArtistTable() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter]);
+  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter, hasImagesFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchArtists();
@@ -177,6 +186,27 @@ export default function ArtistTable() {
     return `/artist/${artist.slug}`;
   };
 
+  const toggleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+    setPagination((p) => ({ ...p, page: 1 }));
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-ink" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-ink" />
+    );
+  };
+
   return (
     <div className="space-y-3 text-[13px]">
       {/* Search and Filters */}
@@ -231,6 +261,20 @@ export default function ArtistTable() {
           ]}
           className="w-28"
         />
+
+        <AdminSelect
+          value={hasImagesFilter}
+          onChange={(val) => {
+            setHasImagesFilter(val);
+            setPagination((p) => ({ ...p, page: 1 }));
+          }}
+          options={[
+            { value: '', label: 'Images' },
+            { value: 'true', label: 'Has Images' },
+            { value: 'false', label: 'No Images' },
+          ]}
+          className="w-28"
+        />
       </div>
 
       {/* Bulk Actions */}
@@ -265,11 +309,11 @@ export default function ArtistTable() {
       )}
 
       {/* Table */}
-      <div className="bg-paper border border-ink/10 overflow-hidden">
+      <div className="bg-paper border border-ink/10 overflow-hidden max-h-[70vh] overflow-y-auto">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="border-b border-ink/10 bg-gray-50">
-              <th className="w-10 py-2 text-center">
+              <th className="w-10 py-2 text-center bg-gray-50">
                 <input
                   type="checkbox"
                   checked={selectedIds.size === artists.length && artists.length > 0}
@@ -279,34 +323,55 @@ export default function ArtistTable() {
                              checked:bg-ink checked:border-ink"
                 />
               </th>
-              <th className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                Artist
+              <th
+                onClick={() => toggleSort('instagram_handle')}
+                className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
+              >
+                <span className="flex items-center gap-1">
+                  Artist
+                  <SortIcon column="instagram_handle" />
+                </span>
               </th>
-              <th className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                Location
+              <th
+                onClick={() => toggleSort('city')}
+                className="px-2 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
+              >
+                <span className="flex items-center gap-1">
+                  Location
+                  <SortIcon column="city" />
+                </span>
               </th>
-              <th className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                Status
+              <th
+                onClick={() => toggleSort('verification_status')}
+                className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
+              >
+                <span className="flex items-center justify-center gap-1">
+                  Status
+                  <SortIcon column="verification_status" />
+                </span>
               </th>
-              <th className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500">
-                Imgs
+              <th
+                onClick={() => toggleSort('image_count')}
+                className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
+              >
+                <span className="flex items-center justify-end gap-1">
+                  Imgs
+                  <SortIcon column="image_count" />
+                </span>
               </th>
-              <th className="px-2 py-2 text-center font-mono text-[10px] uppercase tracking-wider text-gray-500 w-16">
-                Feat
-              </th>
-              <th className="px-2 py-2 w-16"></th>
+              <th className="px-2 py-2 w-24 bg-gray-50"></th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
+                <td colSpan={6} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   Loading...
                 </td>
               </tr>
             ) : artists.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
+                <td colSpan={6} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   No artists found
                 </td>
               </tr>
@@ -327,20 +392,13 @@ export default function ArtistTable() {
                     />
                   </td>
                   <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className="text-ink font-medium text-[13px] truncate">
-                            {artist.name}
-                          </span>
-                          {artist.is_pro && (
-                            <Crown className="w-2.5 h-2.5 text-status-warning flex-shrink-0" />
-                          )}
-                        </div>
-                        <span className="text-gray-400 font-mono text-[11px]">
-                          @{artist.instagram_handle}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-ink text-[13px] font-medium truncate">
+                        @{artist.instagram_handle}
+                      </span>
+                      {artist.is_pro && (
+                        <Crown className="w-2.5 h-2.5 text-status-warning flex-shrink-0" />
+                      )}
                     </div>
                   </td>
                   <td className="px-2 py-1.5">
@@ -362,41 +420,39 @@ export default function ArtistTable() {
                   <td className="px-2 py-1.5 text-right font-mono text-[13px] text-ink tabular-nums">
                     {artist.image_count}
                   </td>
-                  <td className="px-2 py-1.5 text-center">
-                    <button
-                      onClick={() => toggleFeatured(artist)}
-                      disabled={updatingIds.has(artist.id)}
-                      className={`p-1 transition-colors ${
-                        artist.is_featured
-                          ? 'text-status-warning hover:text-status-warning/80'
-                          : 'text-gray-300 hover:text-gray-500'
-                      } disabled:opacity-50`}
-                      title={artist.is_featured ? 'Remove from featured' : 'Add to featured'}
-                    >
-                      {updatingIds.has(artist.id) ? (
-                        <div className="w-3.5 h-3.5 border border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Star className={`w-3.5 h-3.5 ${artist.is_featured ? 'fill-current' : ''}`} />
-                      )}
-                    </button>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-1">
+                  <td className="px-2 py-1">
+                    <div className="flex items-center justify-end gap-4">
+                      <button
+                        onClick={() => toggleFeatured(artist)}
+                        disabled={updatingIds.has(artist.id)}
+                        className={`p-2 transition-colors ${
+                          artist.is_featured
+                            ? 'text-status-warning hover:text-status-warning/80'
+                            : 'text-gray-300 hover:text-gray-500'
+                        } disabled:opacity-50`}
+                        title={artist.is_featured ? 'Remove from featured' : 'Add to featured'}
+                      >
+                        {updatingIds.has(artist.id) ? (
+                          <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Star className={`w-4 h-4 ${artist.is_featured ? 'fill-current' : ''}`} />
+                        )}
+                      </button>
                       <Link
                         href={`/admin/artists/${artist.id}`}
-                        className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
-                        title="Edit artist"
+                        className="p-2 text-gray-300 hover:text-ink transition-colors"
+                        title="View artist"
                       >
-                        <Pencil className="w-3.5 h-3.5" />
+                        <Eye className="w-4 h-4" />
                       </Link>
                       <a
                         href={getProfileUrl(artist)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1 text-gray-300 hover:text-ink transition-colors inline-block"
+                        className="p-2 text-gray-300 hover:text-ink transition-colors"
                         title="View profile"
                       >
-                        <ExternalLink className="w-3.5 h-3.5" />
+                        <ExternalLink className="w-4 h-4" />
                       </a>
                     </div>
                   </td>
