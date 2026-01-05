@@ -114,19 +114,13 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 
       <div className="container mx-auto px-4">
-        <div className={`flex items-center justify-between gap-3 md:gap-6 relative transition-[height] duration-300 ${
-          isCompact ? 'h-14 md:h-24' : 'h-20 md:h-24'
-        }`}>
-          {/* Logo - Editorial Magazine Masthead (shrinks on mobile when scrolled) */}
-          <Link href="/" className="flex items-center gap-1.5 md:gap-2 group relative z-10 flex-shrink-0">
-            <div className={`font-display font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-300 ${
-              isCompact ? 'text-2xl md:text-4xl' : 'text-3xl md:text-4xl'
-            }`}>
+        <div className="flex items-center justify-between gap-3 md:gap-6 relative h-20">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-1.5 group relative z-10 flex-shrink-0">
+            <div className="font-display font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-300 text-2xl md:text-3xl">
               INKDEX
             </div>
-            <span className={`font-mono font-bold text-ink uppercase tracking-[0.15em] border border-ink leading-none transition-all duration-300 ${
-              isCompact ? 'text-[0.4rem] px-1 py-0.5 md:text-[0.6rem] md:px-1.5' : 'text-[0.5rem] px-1.5 py-0.5 md:text-[0.6rem]'
-            }`}>
+            <span className="font-mono font-bold text-ink uppercase tracking-[0.15em] border border-ink leading-none text-[0.4rem] px-1 py-0.5 md:text-[0.5rem] md:px-1.5">
               Beta
             </span>
           </Link>

@@ -78,69 +78,66 @@ export default async function Home() {
         <div className="absolute inset-0 grain-overlay pointer-events-none opacity-30" />
 
         {/* Content Layer */}
-        <div className="container mx-auto px-4 relative z-20 pt-8 pb-12 md:pt-20 md:pb-24">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Editorial Headline - Refined Scale */}
-            <div className="mb-6 md:mb-10">
-              <h1
-                className="font-display leading-[0.95] mb-4 md:mb-5 tracking-tight text-balance"
-                style={{
-                  fontSize: 'clamp(2.5rem, 8vw, 5rem)',
-                  color: '#FFFFFF',
-                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.7)'
-                }}
-              >
-                INSTAGRAM HAS YOUR ARTIST.
-                <br />
-                <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                  WE HELP YOU FIND&nbsp;THEM.
-                </span>
-              </h1>
-
-              {/* Refined Subheading */}
-              <p
-                className="font-body text-base md:text-lg leading-relaxed max-w-2xl mx-auto animate-fade-up"
-                style={{
-                  animationDelay: '100ms',
-                  color: 'rgba(255, 255, 255, 0.75)',
-                  textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
-                }}
-              >
-                Upload a reference image or describe what you're looking for. We'll scan tattoo portfolios to find artists whose work match your style.
-              </p>
-            </div>
-
-            {/* Search Bar */}
-            <div className="animate-fade-up" style={{ animationDelay: '200ms' }}>
-              <UnifiedSearchBar />
-            </div>
-
-            {/* Trust Strip - Credibility Stats */}
-            <div
-              className="mt-6 md:mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 animate-fade-up"
-              style={{ animationDelay: '300ms' }}
+        <div className="relative z-20 pt-8 pb-12 md:pt-20 md:pb-24">
+          {/* Headline Section */}
+          <div className="max-w-4xl mx-auto text-center px-4 mb-6 md:mb-10">
+            <h1
+              className="font-display leading-[0.95] mb-4 md:mb-5 tracking-tight text-balance"
+              style={{
+                fontSize: 'clamp(2.5rem, 8vw, 5rem)',
+                color: '#FFFFFF',
+                textShadow: '0 4px 20px rgba(0, 0, 0, 0.7)'
+              }}
             >
-              <span
-                className="font-mono text-sm uppercase tracking-[0.15em]"
-                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-              >
-                15,600+ Artists
+              INSTAGRAM HAS YOUR ARTIST.
+              <br />
+              <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                WE HELP YOU FIND&nbsp;THEM.
               </span>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <span
-                className="font-mono text-sm uppercase tracking-[0.15em]"
-                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-              >
-                116 Cities
-              </span>
-              <span className="text-white/20 hidden sm:inline">•</span>
-              <span
-                className="font-mono text-sm uppercase tracking-[0.15em]"
-                style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-              >
-                All 50 States + DC
-              </span>
-            </div>
+            </h1>
+
+            <p
+              className="font-body text-base md:text-lg leading-relaxed max-w-2xl mx-auto animate-fade-up"
+              style={{
+                animationDelay: '100ms',
+                color: 'rgba(255, 255, 255, 0.75)',
+                textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
+              }}
+            >
+              Upload a reference image or describe what you're looking for. We'll scan tattoo portfolios to find artists whose work match your style.
+            </p>
+          </div>
+
+          {/* Search Bar - Full width with 1rem padding on mobile, max-w-3xl on desktop */}
+          <div className="px-4 md:max-w-3xl md:mx-auto animate-fade-up" style={{ animationDelay: '200ms' }}>
+            <UnifiedSearchBar />
+          </div>
+
+          {/* Trust Strip */}
+          <div
+            className="mt-6 md:mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 animate-fade-up px-4"
+            style={{ animationDelay: '300ms' }}
+          >
+            <span
+              className="font-mono text-sm uppercase tracking-[0.15em]"
+              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+            >
+              15,600+ Artists
+            </span>
+            <span className="text-white/20 hidden sm:inline">•</span>
+            <span
+              className="font-mono text-sm uppercase tracking-[0.15em]"
+              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+            >
+              116 Cities
+            </span>
+            <span className="text-white/20 hidden sm:inline">•</span>
+            <span
+              className="font-mono text-sm uppercase tracking-[0.15em]"
+              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+            >
+              All 50 States + DC
+            </span>
           </div>
         </div>
 

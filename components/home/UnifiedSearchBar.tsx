@@ -237,13 +237,13 @@ export default function UnifiedSearchBar({ forceLoading = false }: UnifiedSearch
   ) && !isLoading
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4" id="search">
+    <div className="w-full" id="search">
       <form onSubmit={handleSubmit} className="relative">
-        <div className="flex flex-col sm:flex-row items-stretch gap-0.5">
+        <div className="flex flex-col sm:flex-row gap-3">
           {/* Input Field Container */}
           <div
             className={`
-              relative flex-1 flex items-center gap-4 h-16 px-4 bg-white/95
+              relative flex-1 flex items-center gap-4 px-4 bg-white/95
               transition-all duration-150
               ${isLoading ? '' : 'border-2'}
               ${isLoading ? '' : error ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
@@ -363,14 +363,15 @@ export default function UnifiedSearchBar({ forceLoading = false }: UnifiedSearch
             )}
           </div>
 
-          {/* Search Button - Separate, next to input */}
+          {/* Search Button - Same height as input */}
           <button
             type="submit"
             disabled={!canSubmit}
+            style={{ height: '44px' }}
             className={`
-              h-16 px-4 border-2
-              font-mono text-sm sm:text-base font-bold uppercase tracking-widest
-              transition-all duration-150
+              w-full sm:w-auto px-6 border-2
+              font-mono text-sm font-bold uppercase tracking-widest
+              transition-all duration-150 flex items-center justify-center
               ${
                 canSubmit
                   ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-400 active:bg-orange-600'
