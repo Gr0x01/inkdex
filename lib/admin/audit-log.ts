@@ -18,9 +18,10 @@ export type AuditAction =
   | 'admin.logout'
   | 'pipeline.trigger'
   | 'pipeline.retry'
-  | 'pipeline.cancel';
+  | 'pipeline.cancel'
+  | 'seo.indexnow_submit';
 
-export type AuditResourceType = 'artist' | 'admin_session' | 'pipeline_run';
+export type AuditResourceType = 'artist' | 'admin_session' | 'pipeline_run' | 'indexnow';
 
 interface AuditLogEntry {
   adminEmail: string;

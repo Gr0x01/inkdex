@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { STATES, CITIES } from '@/lib/constants/cities'
 import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
 import { getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
+import { getAllCityGuides } from '@/lib/content/editorial/guides'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
@@ -116,6 +117,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
+  // City guide pages (long-form editorial content)
+  const guides = getAllCityGuides()
+  const guideUrls: MetadataRoute.Sitemap = [
+    // Guides index page
+    {
+      url: `${baseUrl}/guides`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    },
+    // Individual guide pages
+    ...guides.map((guide) => ({
+      url: `${baseUrl}/guides/${guide.citySlug}`,
+      lastModified: guide.updatedAt ? new Date(guide.updatedAt) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+  ]
+
   return [
     {
       url: baseUrl,
@@ -124,6 +144,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 1,
     },
     ...legalUrls,
+    ...guideUrls,
     ...stateUrls,
     ...cityUrls,
     ...styleUrls,

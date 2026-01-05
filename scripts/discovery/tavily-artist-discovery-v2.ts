@@ -16,6 +16,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database.types';
 import { generateQueriesForCity, getQueryStats } from './query-generator';
 import { generateSlugFromInstagram } from '../../lib/utils/slug';
+import { notifyArtistCreated } from '../../lib/seo/indexnow';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
@@ -331,11 +332,12 @@ async function discoverArtistsForCity(
 async function saveArtistsToDatabase(
   artists: DiscoveredArtist[],
   citySlug: string
-): Promise<{ inserted: number; skipped: number }> {
+): Promise<{ inserted: number; skipped: number; insertedSlugs: string[] }> {
   console.log(`\n💾 Saving ${artists.length} artists to database...`);
 
   let inserted = 0;
   let skipped = 0;
+  const insertedSlugs: string[] = [];
 
   for (const artist of artists) {
     const { data: existing } = await supabase
@@ -377,6 +379,7 @@ async function saveArtistsToDatabase(
       console.error(`   ❌ Error inserting @${artist.instagramHandle}: ${error.message}`);
     } else {
       inserted++;
+      insertedSlugs.push(slug);
       if (inserted % 10 === 0) {
         console.log(`   ✅ Inserted ${inserted} artists...`);
       }
@@ -387,7 +390,7 @@ async function saveArtistsToDatabase(
 
   console.log(`   ✅ Complete: ${inserted} inserted, ${skipped} skipped`);
 
-  return { inserted, skipped };
+  return { inserted, skipped, insertedSlugs };
 }
 
 // ============================================================================
@@ -411,23 +414,24 @@ async function main() {
     inserted: 0,
     skipped: 0,
   };
+  const allInsertedSlugs: string[] = [];
 
   // Process all cities in parallel
   const cityResults = await Promise.all(
     CITIES.map(async (city) => {
       try {
         const artists = await discoverArtistsForCity(city);
-        const { inserted, skipped } = await saveArtistsToDatabase(artists, city.slug);
+        const { inserted, skipped, insertedSlugs } = await saveArtistsToDatabase(artists, city.slug);
 
         console.log(`\n📊 ${city.name} Summary:`);
         console.log(`   Discovered: ${artists.length}`);
         console.log(`   Inserted: ${inserted}`);
         console.log(`   Skipped: ${skipped}`);
 
-        return { discovered: artists.length, inserted, skipped };
+        return { discovered: artists.length, inserted, skipped, insertedSlugs };
       } catch (error: any) {
         console.error(`\n❌ Error processing ${city.name}: ${error.message}`);
-        return { discovered: 0, inserted: 0, skipped: 0 };
+        return { discovered: 0, inserted: 0, skipped: 0, insertedSlugs: [] };
       }
     })
   );
@@ -437,6 +441,7 @@ async function main() {
     totalStats.discovered += result.discovered;
     totalStats.inserted += result.inserted;
     totalStats.skipped += result.skipped;
+    allInsertedSlugs.push(...result.insertedSlugs);
   });
 
   console.log(`\n${'='.repeat(60)}`);
@@ -445,6 +450,19 @@ async function main() {
   console.log(`Total Discovered: ${totalStats.discovered}`);
   console.log(`Total Inserted: ${totalStats.inserted}`);
   console.log(`Total Skipped (duplicates): ${totalStats.skipped}`);
+
+  // Notify IndexNow about new artists
+  if (allInsertedSlugs.length > 0 && process.env.INDEXNOW_KEY) {
+    console.log(`\n📡 Notifying IndexNow about ${allInsertedSlugs.length} new artists...`);
+    try {
+      const results = await notifyArtistCreated(allInsertedSlugs);
+      const successCount = results.filter(r => r.success).length;
+      console.log(`   ✅ IndexNow notified: ${successCount}/${results.length} engines succeeded`);
+    } catch (error: any) {
+      console.error(`   ⚠️ IndexNow notification failed: ${error.message}`);
+    }
+  }
+
   console.log(`\n💡 Next steps:`);
   console.log(`   1. Validate Instagram profiles (npm run validate-instagram)`);
   console.log(`   2. Add Google Places supplement if needed`);
