@@ -1,864 +1,161 @@
 ---
 Last-Updated: 2026-01-05
 Maintainer: RB
-Status: Active Guidelines - All 15 Phases Complete
+Status: Active Guidelines
 ---
 
-# Operations: Tattoo Artist Discovery Platform
+# Operations Guide
 
 ## Quality Gates
 
-### Code Quality
-- **Linting**: ESLint with Next.js config + accessibility rules
-  - Must pass without warnings before commit
-  - Pre-commit hook: `npm run lint`
-  - Config: `.eslintrc.json` (strict mode, no unused vars, a11y rules)
-- **Type Checking**: TypeScript strict mode
-  - Must pass before deployment
-  - Run: `npm run type-check`
-  - Zero type errors policy
-- **Code Reviews**: Required for significant changes
-  - Use `code-reviewer` subagent after implementing features
-  - Address Critical issues before handoff
-  - Document significant feedback in commit messages
-- **Formatting**: Prettier + Tailwind plugin
-  - Auto-format on save (VSCode)
-  - Run: `npm run format`
-  - Config: `.prettierrc` (2-space indent, single quotes, trailing commas)
+```bash
+npm run lint          # Must pass
+npm run type-check    # Must pass
+npm run build         # Must succeed
+npm run db:push       # For migrations (runs sqlfluff first)
+```
 
-### Testing Requirements
-- **MVP Approach**: Manual testing prioritized over automated (8-week timeline)
-  - Manual testing of all user flows
-  - Mobile responsive testing (iOS Safari, Android Chrome)
-  - Cross-browser testing (Chrome, Safari, Firefox)
-  - Search quality validation (70%+ relevant matches)
-
-- **Post-MVP Testing** (Weeks 9-12):
-  - Unit tests: Jest + React Testing Library for critical components
-  - E2E tests: Playwright for search flow (image upload → results)
-  - Visual regression: Percy or Chromatic (optional)
-  - Test coverage: Minimum 70% for core business logic
-
-- **Data Quality Validation**:
-  - Manual curation of discovered artists (Phase 2)
-  - Embedding quality checks (similarity scores >0.7)
-  - Image processing validation (WebP thumbnails, no broken images)
-  - Instagram scraping error rate <5%
-
-### Performance Standards
-- **Lighthouse Scores**: 90+ in all categories
-  - Performance: 90+
-  - Accessibility: 90+
-  - Best Practices: 90+
-  - SEO: 100
-  - Run before deployment: `npm run lighthouse`
-
-- **Search Performance**:
-  - Vector search latency: <500ms (IVFFlat + city filtering)
-  - API response time: <1s (embedding generation + search)
-  - Page load: <2s LCP (Largest Contentful Paint)
-  - Image load: <1s for thumbnails (320w, 640w)
-
-- **Bundle Size**:
-  - First load JS: <200KB (Next.js bundled)
-  - Route-based code splitting for heavy components
-  - Dynamic imports for search, image upload
-  - Run: `npm run analyze` (webpack-bundle-analyzer)
-
-- **Database Performance**:
-  - Non-vector queries: <100ms
-  - Vector search: <500ms (with IVFFlat index)
-  - Connection pooling: Supabase Pooler enabled
-  - Monitor slow queries via Supabase dashboard
-
-### Security Standards
-- **Input Validation**: Zod schemas for all API inputs
-  - Image upload: File type (jpg, png, webp), size <10MB
-  - Text search: Max length 500 chars, sanitize input
-  - API routes: Validate all request bodies
-
-- **Environment Variables**: Never commit secrets
-  - Use `.env.local` for development
-  - Vercel environment variables for production
-  - Rotate API keys quarterly (post-MVP)
-
-- **Authentication & Authorization** (Post-MVP):
-  - Supabase Auth with Instagram OAuth
-  - Row Level Security (RLS) enforced on `saved_artists` table
-  - Server-side auth checks via `@supabase/auth-helpers-nextjs`
-  - JWT tokens in httpOnly cookies
-
-- **Data Security**:
-  - Only scrape public Instagram data
-  - Respect artist opt-out (claiming enables control)
-  - DMCA takedown process (post-MVP)
-  - No PII collection in MVP
-
-- **Regular Security Audits**:
-  - Review dependencies for vulnerabilities: `npm audit`
-  - Update dependencies quarterly
-  - Use `code-reviewer` subagent for security review of critical changes
+**Use `code-reviewer` subagent after significant changes.**
 
 ---
 
-## Development Workflow
-
-### Branch Strategy
-- **Main Branch**: Production-ready code only
-  - Auto-deploys to Vercel production (post-MVP CI/CD)
-  - Protected branch (no direct commits)
-  - All changes via feature branches
-
-- **Feature Branches**: `feat/[feature-name]`
-  - Example: `feat/image-upload`, `feat/artist-profiles`
-  - Branch from `main`, merge back via PR
-
-- **Hotfix Branches**: `hotfix/[issue]`
-  - For critical production bugs
-  - Fast-track merge to `main`
-
-### Code Review Process
-1. **Create feature branch** from `main`
-2. **Implement changes** following coding standards
-3. **Run quality checks locally**:
-   - `npm run lint`
-   - `npm run type-check`
-   - `npm run build` (ensure no build errors)
-4. **Use `code-reviewer` subagent**:
-   - Delegate to `code-reviewer` after implementing feature
-   - Review feedback (Critical/Warning/Suggestion)
-   - Address Critical issues before proceeding
-5. **Manual testing**: Test all affected user flows
-6. **Commit changes** with conventional commit messages
-7. **Update memory bank** if significant changes
-8. **Deploy to Vercel preview** (automatic on PR)
-9. **User approval** (RB reviews)
-10. **Merge to main** → auto-deploy to production (post-MVP)
-
-### Commit Conventions
-Follow Conventional Commits format:
-```
-feat: Add image upload search component
-fix: Fix vector search performance issue
-docs: Update techStack.md with Supabase Storage configuration
-refactor: Simplify artist card component
-perf: Optimize IVFFlat index for 100k images
-chore: Update dependencies
-```
-
-**Subagent Integration**:
-- Document significant `code-reviewer` feedback in commit messages
-- Example: `fix: Address RLS policy for saved_artists (code-reviewer)`
-
-### Deployment Process
-
-**MVP (Manual Deployments):**
-1. Merge to `main` branch
-2. Vercel auto-builds and deploys
-3. Verify deployment via preview URL
-4. Test critical flows on production
-5. Monitor Vercel Analytics for errors
-
-**Post-MVP (Automated CI/CD):**
-1. Push to feature branch
-2. GitHub Actions runs:
-   - `npm run lint`
-   - `npm run type-check`
-   - `npm run build`
-3. Vercel creates preview deployment
-4. Manual approval required for merge
-5. Merge to `main` → auto-deploy to production
-6. Monitor Sentry for errors
-
-### Release Management
-- **MVP Launch**: Version 1.0.0 (Week 8)
-  - Tag release: `git tag -a v1.0.0 -m "MVP launch"`
-  - Announce in memory bank: `development/progress.md`
-
-- **Post-MVP Releases**: Semantic versioning
-  - Major: Breaking changes (2.0.0)
-  - Minor: New features (1.1.0)
-  - Patch: Bug fixes (1.0.1)
-
-- **Changelog**: Document all releases
-  - Location: `CHANGELOG.md` (root directory)
-  - Format: Keep a Changelog standard
-
----
-
-## Tools & Commands
-
-### Development Commands
-```bash
-# Start development server
-npm run dev                 # Next.js dev server (http://localhost:3000)
-
-# Build and production
-npm run build               # Build Next.js app for production
-npm run start               # Start production server locally
-
-# Code quality
-npm run lint                # ESLint (check for errors)
-npm run lint:fix            # ESLint (auto-fix issues)
-npm run format              # Prettier (format code)
-npm run type-check          # TypeScript type checking
-
-# Component development
-npm run storybook           # Storybook dev server (http://localhost:6006)
-npm run build-storybook     # Build static Storybook for deployment
-
-# Analysis
-npm run analyze             # Bundle size analysis (webpack-bundle-analyzer)
-npm run lighthouse          # Lighthouse performance audit (install globally first)
-```
-
-### Data Pipeline Commands
-```bash
-# Phase 0: Market Analysis (DONE)
-npm run analyze-cities      # DataForSEO city analysis
-
-# Phase 2: Artist Discovery
-npm run discover-artists    # Google Maps API discovery
-npm run scrape-websites     # Scrape shop websites for artist rosters
-npm run validate-instagram  # Validate Instagram handles
-
-# Phase 3: Instagram Scraping
-npm run scrape-instagram    # Apify Instagram scraper
-npm run process-images      # Download + process + upload to Supabase Storage
-
-# Phase 4: Embedding Generation
-npm run generate-embeddings # Modal.com CLIP embeddings (Python)
-npm run batch-embeddings    # Node.js orchestration for batch processing
-
-# Phase 7: SEO
-npm run seed-styles         # Populate style_seeds table
-```
-
-### Instagram Mining Pipeline Commands
-```bash
-# Hashtag Mining - Discover artists from Instagram hashtags
-npm run mine:hashtags                              # Interactive mode
-npm run mine:hashtags -- --hashtag blackworktattoo --posts 100  # Specific hashtag
-npm run mine:hashtags -- --skip-images             # Bio-only filter (no OpenAI cost)
-npm run mine:hashtags -- --dry-run                 # Cost estimate only
-
-# Follower Mining - Mine followers of seed accounts
-npm run mine:followers                             # Interactive mode
-npm run mine:followers -- --type supply_company    # Filter by seed type
-npm run mine:followers -- --dry-run                # Cost estimate only
-
-# Batch Classification - Process pending candidates with GPT-5-mini
-npm run mine:classify                              # Process all pending
-npm run mine:classify -- --limit 50                # Limit batch size
-npm run mine:classify -- --dry-run                 # Show what would be processed
-
-# Status & Monitoring
-npm run mine:status                                # View stats, costs, city distribution
-```
-
-**Note: Follower Mining Disabled**
-Follower mining (`npm run mine:followers`) is currently non-functional. All Apify actors that scrape Instagram follower lists require authentication (cookies or API tokens). Instagram restricts follower list access to authenticated users only. Hashtag mining works without authentication and is the primary discovery method.
-
-### Mining Pipeline Workflow
-
-**Two-Stage Artist Classification:**
-1. **Stage 1: Bio Keywords** (Free, instant)
-   - Checks Instagram bio for tattoo-related keywords
-   - Keywords: `tattoo`, `ink`, `booking`, `flash`, style names, etc.
-   - ~70% of real artists caught here
-
-2. **Stage 2: GPT-5-mini Image Classification** (Paid, ~$0.00012/profile)
-   - For profiles that fail bio check but may have tattoo portfolios
-   - Downloads 6 images, converts to base64 (Instagram CDN URLs expire)
-   - Uses flex tier pricing for 50% cost reduction
-   - Requires 3+ tattoo images to pass
-
-**Typical Workflow:**
-```bash
-# 1. Mine hashtags with --skip-images (fast, free filtering)
-npm run mine:hashtags -- --hashtag traditionaltattoo --posts 500 --skip-images
-
-# 2. Check status - see how many pending candidates
-npm run mine:status
-
-# 3. Run batch classification on pending candidates
-npm run mine:classify -- --limit 100
-
-# 4. Verify results
-npm run mine:status
-```
-
-**Database Tables:**
-- `hashtag_mining_runs` - Tracks hashtag mining runs (posts, handles, costs)
-- `follower_mining_runs` - Tracks follower mining runs
-- `mining_candidates` - All discovered profiles with classification status
-  - `bio_filter_passed` (boolean) - Did bio keywords match?
-  - `image_filter_passed` (boolean/null) - Did images pass? (null = pending)
-  - `processed_at` (timestamp) - When classification was completed
-
-**Deduplication & Retry Logic:**
-- Existing artists (in `artists` table) are always skipped
-- Failed candidates (bio=false AND image=false) are skipped for **30 days**
-- After 30 days, failed candidates can be re-evaluated (accounts may change)
-- This saves tokens while allowing recovery of accounts that start posting tattoo work
-
-**Artist Pipeline Status:**
-- `artists.pipeline_status` tracks discovery-to-searchable lifecycle:
-  - `pending_scrape` - New artist, needs Instagram portfolio scraping
-  - `scraping` - Currently being scraped
-  - `pending_embeddings` - Scraped, waiting for CLIP embeddings
-  - `complete` - Fully processed, searchable
-  - `failed` - Scraping failed (private account, no posts, etc.)
-- Trigger auto-updates status to `complete` when all images have embeddings
-
-**Cost Estimates (Flex Tier):**
-- Hashtag scraping: ~$0.004/post (Apify)
-- Bio filtering: Free
-- Image classification: ~$0.00012/profile (GPT-5-mini flex, 6 images)
-- 10,000 profiles classified: ~$1.20
-
-### Database Commands
-```bash
-# Supabase local development
-npx supabase init           # Initialize Supabase project
-npx supabase start          # Start local Supabase instance
-npm run db:push             # Lint SQL + push migrations (PREFERRED)
-npm run db:lint             # Lint migrations only (sqlfluff)
-npx supabase db push        # Push migrations without linting (use db:push instead)
-npx supabase db reset       # Reset local database
-npx supabase db diff        # Generate migration from schema changes
-
-# Type generation
-npx supabase gen types typescript --local > types/database.ts
-
-# Production
-npx supabase link           # Link to production project
-npx supabase db push --remote  # Push migrations to production
-```
+## Critical Rules
 
 ### Search Functions - SINGLE SOURCE OF TRUTH
+**File:** `supabase/functions/search_functions.sql`
 
-**CRITICAL**: All search functions are consolidated in one file:
-```
-supabase/functions/search_functions.sql
-```
+**DO NOT create migrations that rewrite search functions.** Edit the file directly, then run `npx supabase db push`.
 
-**DO NOT create new migrations that rewrite search functions.** This has caused repeated breakages.
+### SQL Naming Convention (Prevents Ambiguous Column Errors)
+CTE columns MUST be prefixed:
+- `ri_` for `ranked_images`
+- `aa_` for `aggregated_artists`
+- `fa_` for `filtered_artists`
+- `ba_` for `boosted_artists`
 
-**To modify search functions:**
-1. Edit `supabase/functions/search_functions.sql`
-2. Run `npx supabase db push`
-
-**Functions included:**
-- `search_artists_by_embedding` - Main vector search
-- `search_artists_with_count` - Vector search with pagination count
-- `find_related_artists` - Similar artist recommendations
-- `get_regions_with_counts` - Region listing
-- `get_countries_with_counts` - Country listing
-- `get_cities_with_counts` - City listing
-- `get_state_cities_with_counts` - Cities within a state
-
-**Features baked in:**
-- Multi-location support (`artist_locations` table)
-- Pro/Featured ranking boosts (+0.05 / +0.02)
-- Boosted score display (transparency)
-- Location count for UI badges
-- GDPR compliance (EU/EEA/UK/CH filtering)
-- CTE column aliasing (`ri_`, `aa_`, `ba_` prefixes)
-
-### SQL Naming Conventions (Prevent Ambiguous Column Errors)
-
-**CRITICAL**: PL/pgSQL functions have THREE namespaces that can conflict:
-1. Return table column names (e.g., `artist_id`, `city`)
-2. CTE column names (e.g., `artist_id` in `ranked_images`)
-3. Local variables (e.g., `avg_embedding`)
-
-**Naming Rules:**
-- **CTE columns**: MUST be prefixed with CTE abbreviation
-  - `ri_` for `ranked_images` (e.g., `ri_artist_id`)
-  - `aa_` for `aggregated_artists` (e.g., `aa_artist_id`)
-  - `fa_` for `filtered_artists` (e.g., `fa_city`)
-  - `ba_` for `boosted_artists` (e.g., `ba_artist_id`)
-  - `ae_` for `artist_embeddings` (e.g., `ae_avg_embedding`)
-- **Local variables**: MUST be descriptive or prefixed with `v_` or context
-  - Good: `source_avg_embedding`, `v_total_count`
-  - Bad: `avg_embedding` (conflicts with CTE column)
-- **Always use explicit table aliases** in JOINs and WHERE clauses
-  - Good: `WHERE pi.artist_id = fa.id`
-  - Bad: `WHERE artist_id = id`
-
-**Example (CORRECT):**
 ```sql
 WITH ranked_images AS (
-  SELECT
-    pi.artist_id as ri_artist_id,  -- Prefixed with ri_
-    1 - (pi.embedding <=> query_embedding) as ri_similarity
-  FROM portfolio_images pi
-),
-aggregated_artists AS (
-  SELECT
-    ri.ri_artist_id as aa_artist_id,  -- Prefixed with aa_
-    MAX(ri.ri_similarity) as aa_best_similarity
-  FROM ranked_images ri
-  GROUP BY ri.ri_artist_id
+  SELECT pi.artist_id as ri_artist_id, ...
 )
-SELECT fa.id, aa.aa_best_similarity
-FROM aggregated_artists aa
-INNER JOIN filtered_artists fa ON fa.id = aa.aa_artist_id;
 ```
 
-### Quality Checks
+### Parallelization
+**ALWAYS parallelize and batch operations by default.** Serial execution is ONLY for initial testing.
+
+### Minimal Implementation (KISS + YAGNI)
+1. Ask: "What is the smallest change that solves this?"
+2. Implement only that minimum
+3. Stop and check in before adding abstractions
+
+---
+
+## Commands
+
+### Development
 ```bash
-# Pre-commit checks (run before every commit)
-npm run lint && npm run type-check && npm run build
-
-# Pre-deployment checks (run before production deployment)
-npm run build && npm run type-check
-npm run lighthouse          # Performance audit
-
-# Security checks
-npm audit                   # Check for vulnerabilities
-npm audit fix               # Auto-fix vulnerabilities (if safe)
+npm run dev           # Dev server
+npm run storybook     # Component dev (localhost:6006)
 ```
 
-### Deployment Commands
+### Data Pipeline
 ```bash
-# Vercel deployments
-vercel                      # Deploy to preview
-vercel --prod               # Deploy to production
-vercel logs                 # View deployment logs
-vercel env pull             # Pull environment variables
+npm run mine:hashtags                    # Discover artists from hashtags
+npm run mine:classify                    # GPT classification of candidates
+npm run mine:status                      # View pipeline stats
+npm run scrape-instagram                 # Apify Instagram scraper
+npm run process-images                   # Process + upload images
+npm run generate-embeddings              # CLIP embeddings (Modal)
 ```
-
----
-
-## Subagent Workflow
-
-### Available Subagents
-- **code-reviewer**: Proactive code quality, security, and maintainability reviews
-  - **Use after**: Writing features, refactoring, fixing bugs
-  - **Output**: Prioritized feedback (Critical/Warning/Suggestion)
-  - **Integration**: Address Critical issues before handoff
-
-- **backend-architect**: Backend system design and architecture guidance
-  - **Use before**: API changes, database schema updates, scaling decisions
-  - **Output**: Architecture recommendations, trade-offs analysis
-
-- **frontend-developer**: Elite frontend specialist for modern web development
-  - **Use for**: Complex UI work, state management, performance optimization
-  - **Output**: Implemented components following best practices
-
-- **ui-designer**: Visionary UI designer for rapid, implementable interfaces
-  - **Use for**: Interface design, design systems, visual improvements
-  - **Output**: Design mockups, component wireframes
-
-### Delegation Triggers
-
-**Automatic Review (After Implementation):**
-```
-1. Implement feature (e.g., image upload component)
-2. Run local quality checks (lint, type-check)
-3. Delegate to code-reviewer → Review feedback
-4. Address Critical issues
-5. Document significant feedback in commit message
-6. Commit and push
-```
-
-**Architecture Review (Before Implementation):**
-```
-1. User requests backend change (e.g., "optimize vector search")
-2. Consult backend-architect BEFORE coding
-3. Follow architectural guidelines
-4. Implement solution
-5. Measure performance impact
-6. Delegate to code-reviewer → Address feedback
-```
-
-**Frontend Implementation:**
-```
-1. User requests UI feature (e.g., "add city filter dropdown")
-2. Use frontend-developer OR ui-designer (if design-heavy)
-3. Implement following best practices
-4. Test responsiveness (mobile, tablet, desktop)
-5. Delegate to code-reviewer → Address feedback
-```
-
-### Integration Checklist
-- [ ] Run quality checks before delegating to subagents
-- [ ] Use `code-reviewer` after all significant code changes
-- [ ] Consult `backend-architect` before database/API changes
-- [ ] Document subagent recommendations in memory bank if significant
-- [ ] Address Critical issues before completing task
-- [ ] Include subagent feedback in commit messages when relevant
-
----
-
-## Monitoring & Alerts
-
-### MVP Monitoring
-- **Vercel Analytics**: Page views, Web Vitals, errors
-  - Check daily for first week post-launch
-  - Alert if LCP >2s or errors spike
-- **Supabase Dashboard**: Database performance, connection pool usage
-  - Monitor vector search query times (target <500ms)
-  - Alert if query times >1s consistently
-- **Manual Testing**: Daily smoke tests
-  - Test search flow (image upload → results)
-  - Check artist profile pages load correctly
-  - Verify Instagram links work
-
-### Post-MVP Monitoring (Weeks 9+)
-- **Sentry**: Error tracking and performance monitoring
-  - Alert on errors (email + Slack)
-  - Track search API latency, embedding generation time
-- **Custom Metrics**:
-  - Search quality: Track similarity scores distribution
-  - User engagement: Searches per session, artist clicks
-  - Artist claiming: Track verification funnel
-- **Uptime Monitoring**: UptimeRobot or Vercel Monitoring
-  - 99.9% uptime target
-  - Alert if downtime >1 minute
-
-### Alert Thresholds
-| Metric | Warning | Critical | Action |
-|--------|---------|----------|--------|
-| Vector search latency | >700ms | >1s | Tune IVFFlat index, add caching |
-| Page load (LCP) | >2.5s | >4s | Optimize images, reduce bundle size |
-| Error rate | >1% | >5% | Check Sentry, rollback if needed |
-| Uptime | <99.5% | <99% | Investigate infra, contact Vercel support |
-
----
-
-## Incident Response
-
-### Severity Levels
-- **P0 (Critical)**: Site down, data loss, security breach
-  - Response time: Immediate
-  - Rollback deployment, investigate, fix, redeploy
-- **P1 (High)**: Search broken, major feature down
-  - Response time: <1 hour
-  - Hotfix branch, test, deploy
-- **P2 (Medium)**: Minor feature broken, performance degraded
-  - Response time: <4 hours
-  - Fix in next deployment
-- **P3 (Low)**: Cosmetic issue, non-critical bug
-  - Response time: Next sprint
-  - Add to backlog
-
-### Incident Workflow
-1. **Detect**: Monitoring alert or user report
-2. **Assess**: Severity level (P0-P3)
-3. **Communicate**: Log in `development/daily-log/` if deep debugging required
-4. **Mitigate**: Rollback deployment if P0/P1
-5. **Investigate**: Root cause analysis
-6. **Fix**: Hotfix branch → test → deploy
-7. **Document**: Update memory bank with lessons learned
-8. **Prevent**: Add monitoring/tests to prevent recurrence
-
-### Rollback Procedure
-```bash
-# Vercel instant rollback
-1. Go to Vercel dashboard
-2. Click "Deployments"
-3. Find previous working deployment
-4. Click "Promote to Production"
-5. Verify rollback successful
-6. Investigate issue in rolled-back code
-```
-
----
-
-## Documentation Standards
-
-### Memory Bank Updates
-**When to Update:**
-- After completing a feature (update `development/progress.md`)
-- After architecture changes (update `architecture/techStack.md`)
-- After discovering new patterns (update `architecture/patterns.md`)
-- After Phase completion (update `development/activeContext.md`)
-
-**Update Checklist:**
-- [ ] Update `Last-Updated` metadata header
-- [ ] Update `Status` if project phase changed
-- [ ] Add to relevant section (avoid long narratives in living docs)
-- [ ] Move historical context to `memory-bank/archive/` if outdated
-
-### Code Documentation
-- **Inline Comments**: Only where logic isn't self-evident
-  - Avoid: `// Increment counter` (obvious)
-  - Good: `// IVFFlat lists = sqrt(total_rows) for optimal recall`
-- **Function/Component Documentation**: JSDoc for public APIs
-  ```typescript
-  /**
-   * Searches artists by CLIP embedding similarity.
-   * @param embedding - 768-dim CLIP vector
-   * @param city - Optional city filter
-   * @returns Ranked artists with matching images
-   */
-  export async function searchArtistsByEmbedding(...)
-  ```
-- **README**: Keep up to date with setup instructions
-  - Location: `/README.md` (root directory)
-  - Sections: Setup, Development, Deployment, Architecture
-
-### API Documentation
-- **Endpoints**: Document in `docs/api.md` (post-MVP)
-  - Request/response schemas (Zod types)
-  - Authentication requirements
-  - Rate limits
-  - Example requests (cURL)
-- **Database Schema**: Maintain in implementation plan
-  - Update when schema changes
-  - Document migrations in `supabase/migrations/`
-
----
-
-## Performance Optimization Workflow
-
-### Before Optimization
-1. **Measure**: Run Lighthouse audit, check Vercel Analytics
-2. **Identify**: Find slowest queries, largest bundles, slow pages
-3. **Prioritize**: Focus on user-facing issues (LCP, search latency)
-
-### Optimization Techniques
-- **Database**:
-  - Add indexes for frequent queries (`CREATE INDEX ...`)
-  - Tune IVFFlat `lists` parameter as data grows
-  - Use `EXPLAIN ANALYZE` to profile slow queries
-  - Enable connection pooling (Supabase Pooler)
-
-- **Images**:
-  - Use Next.js Image component (automatic optimization)
-  - Generate WebP thumbnails (85% quality)
-  - Lazy load images (first 6-8 eager, rest lazy)
-  - Use blur placeholders (`blurDataURL`)
-
-- **Bundle**:
-  - Code splitting: Dynamic imports for heavy components
-  - Tree shaking: Import only used utilities
-  - Remove unused dependencies
-  - Run `npm run analyze` to find large bundles
-
-- **Caching**:
-  - ISR with 24h revalidation for artist/city pages
-  - Edge caching for static assets (Vercel CDN)
-  - Supabase Storage CDN for portfolio images
-  - Database query caching (post-MVP: Redis)
-
-### After Optimization
-1. **Measure**: Re-run Lighthouse, compare before/after
-2. **Verify**: Check Vercel Analytics for real-world impact
-3. **Document**: Update memory bank with optimization approach
-
----
-
-## Quality Checklist (Pre-Deployment)
-
-### Code Quality
-- [ ] ESLint passes (`npm run lint`)
-- [ ] TypeScript type-check passes (`npm run type-check`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] Code reviewed by `code-reviewer` subagent (Critical issues addressed)
-- [ ] No console.logs or debug code left in production
-
-### Performance
-- [ ] Lighthouse score 90+ (all categories)
-- [ ] Vector search <500ms (test with sample queries)
-- [ ] Page load <2s LCP (test on 3G throttled connection)
-- [ ] Images optimized (WebP, lazy loading, blur placeholders)
-- [ ] Bundle size <200KB first load
-
-### Testing
-- [ ] Manual testing of all user flows (search, browse, profile pages)
-- [ ] Mobile responsive (iOS Safari, Android Chrome)
-- [ ] Cross-browser (Chrome, Safari, Firefox)
-- [ ] Search quality validation (70%+ relevant matches)
-- [ ] No broken links or 404 errors
-
-### Security
-- [ ] Environment variables not committed
-- [ ] API input validation (Zod schemas)
-- [ ] No sensitive data in client-side code
-- [ ] RLS policies enabled (post-MVP auth)
-
-### SEO
-- [ ] Meta tags (title, description, OG images) for all pages
-- [ ] Sitemap generated (`app/sitemap.ts`)
-- [ ] Robots.txt configured (`app/robots.ts`)
-- [ ] JSON-LD structured data for artist pages
-- [ ] Internal linking (cities ↔ artists ↔ styles)
-
-### Documentation
-- [ ] Memory bank updated (`development/progress.md`, `architecture/techStack.md`)
-- [ ] README up to date (setup, development, deployment)
-- [ ] Commit messages follow Conventional Commits
-- [ ] Significant changes documented in `CHANGELOG.md`
-
----
-
-## Development Best Practices
-
-### Component Development Workflow
-
-**Storybook vs /dev/login:**
-- **Storybook**: Component isolation, visual design, props exploration, responsive testing, auth state variations (mocked)
-  - Use for: UI development, design system work, component documentation
-  - Mock auth states: 5 variations (logged out, fan, unclaimed, free, pro)
-  - Viewport testing: Mobile (375px), tablet (768px), desktop (1280px), wide (1920px)
-  - Accessibility: Built-in a11y addon for WCAG compliance
-- **/dev/login**: Integration testing with real database, full page flows, API endpoints
-  - Use for: Full feature testing, database integration, OAuth flows
-  - Test users: 3 seeded users (Jamie Chen unclaimed, Alex Rivera free, Morgan Black pro)
-
-**Storybook Development Pattern:**
-1. Build component in Storybook with mock data
-2. Test all states (loading, error, empty, populated)
-3. Verify responsive behavior across viewports
-4. Test auth variations using `parameters: { authState: 'PRO_ARTIST' }`
-5. Move to /dev/login for integration testing
-6. Debug visual issues back in Storybook
-7. Debug data/API issues in /dev/login
-
-### Parallelization & Batching
-**ALWAYS parallelize and batch operations by default. Serial execution is ONLY for initial testing (1-2 items to verify correctness), then immediately switch to parallel/batch for production runs.**
-
-### Minimal First Implementation (KISS + YAGNI)
-1. **Ask**: "What is the smallest change that solves this?"
-2. **Implement**: Only that minimum
-3. **Stop**: Check in before adding abstractions or advanced error handling
-4. **Follow**: KISS (Keep It Simple, Stupid) and YAGNI (You Aren't Gonna Need It)
-
-**Example:**
-```typescript
-// ❌ Over-engineered (premature abstraction)
-export function createImageUploader(config: UploaderConfig) {
-  return new ImageUploader(config).withValidation().withRetry(3).build();
-}
-
-// ✅ Minimal first implementation
-export async function uploadImage(file: File) {
-  if (file.size > 10_000_000) throw new Error('File too large');
-  return await fetch('/api/upload', { method: 'POST', body: file });
-}
-```
-
-### Code Style Conventions
-- **Components**: PascalCase (`SearchInput.tsx`)
-- **Functions**: camelCase (`searchArtistsByEmbedding()`)
-- **Constants**: UPPER_SNAKE_CASE (`MAX_FILE_SIZE`)
-- **Types**: PascalCase (`ArtistProfile`, `SearchResult`)
-- **Files**: kebab-case for utilities (`image-processing.ts`)
-
-### Error Handling
-- **MVP**: Simple try-catch with user-friendly messages
-  - Avoid over-engineering (no retry logic, fallbacks for unlikely scenarios)
-- **Post-MVP**: Add error tracking (Sentry), retry logic for critical paths
-
-### Git Workflow
-- **Commit often**: Small, focused commits
-- **Pull before push**: Always sync with `main` before pushing
-- **Use feature branches**: Never commit directly to `main`
-- **Write good commit messages**: Use Conventional Commits format
-
----
-
-## Process Reminders
-
-### Coordination & Communication
-- **Deep-dive debugging**: Document in `development/daily-log/` for incident notes
-- **Subagent recommendations**: Document in memory bank when significant
-- **Architecture changes**: Update `architecture/techStack.md` immediately
-- **When unsure**: Ask before proceeding (surprises slow the team more than questions)
-
-### Search Before Creating
-- **Respect existing patterns**: Search the repo before inventing new abstractions
-- **Reuse components**: Check `components/` before creating new ones
-- **Follow code style**: Check existing files for conventions
-
-### Fast Feedback Loops
-- **Run quality checks early**: Lint and type-check before committing
-- **Test locally first**: Don't rely on CI/CD to catch basic errors
-- **Use subagents proactively**: `code-reviewer` after features, `backend-architect` before backend changes
-- **Deploy often**: Small, frequent deployments reduce risk
-
----
-
-**Stay focused, keep the memory bank tight, and maintain fast feedback loops.**
-
----
-
-## GDPR Compliance (Phase 15)
-
-### Two-Layer Defense
-Inkdex implements GDPR compliance via two independent filtering layers:
-
-1. **Discovery Filter (Bio Location Extraction):**
-   - File: `lib/instagram/bio-location-extractor.ts`
-   - Extracts location from Instagram bios during artist discovery
-   - Rejects artists with EU/EEA/UK/CH country indicators
-   - Prevents GDPR-regulated artists from entering the database
-
-2. **Search Filter (Database Level):**
-   - Files: `supabase/functions/search_functions.sql`, `lib/constants/countries.ts`
-   - Filters out artists in GDPR jurisdictions from all search results
-   - Uses `artist_locations.country_code` with blocklist
-   - GDPR country codes: AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE, GB, IS, LI, NO, CH
-
-### Why Two Layers?
-- Discovery filter prevents accidental data collection
-- Search filter ensures no GDPR-regulated artists appear even if data exists
-- Defense in depth protects against single point of failure
-
-### Files
-- `lib/constants/countries.ts` - Country list with GDPR flags
-- `lib/instagram/bio-location-extractor.ts` - Location extraction from bios
-- `supabase/functions/search_functions.sql` - Search filter implementation
-
----
-
-## Multi-Location Support (Phase 15)
-
-### Overview
-Artists can now have multiple locations (traveling artists, multiple studios).
-
-### Tier Limits
-- **Free tier:** 1 location
-- **Pro tier:** Up to 20 locations
-
-### Location Types
-- **US locations:** City + State (e.g., "Austin, TX") OR State-only (e.g., "Texas")
-- **International:** City + Country (e.g., "London, UK")
 
 ### Database
-- `artist_locations` table stores all artist locations
-- One location marked `is_primary = true` for display
-- All locations searchable via vector search
-
-### API Endpoints
-- `GET /api/dashboard/locations` - Get artist locations
-- `POST /api/dashboard/locations/add` - Add location (tier-enforced)
-- `DELETE /api/dashboard/locations/remove` - Remove location
-- `PATCH /api/dashboard/locations/set-primary` - Set primary location
-
-### Search Integration
-All search functions (`search_artists_by_embedding`, `search_artists_with_count`) join with `artist_locations` for location filtering.
+```bash
+npm run db:push       # Lint + push migrations (PREFERRED)
+npm run db:lint       # Lint only (sqlfluff)
+npx supabase db push  # Push without lint
+```
 
 ---
 
-## Artist Location Sync
+## Pipeline Status Lifecycle
 
-### Problem Solved
-New cities (Houston, Dallas, Boston, etc.) were returning 404 errors because artists weren't appearing in `artist_locations` table.
+`artists.pipeline_status`:
+- `pending_scrape` → New artist, needs scraping
+- `scraping` → Currently being scraped
+- `pending_embeddings` → Scraped, awaiting embeddings
+- `complete` → Fully searchable
+- `failed` → Scraping failed
 
-### Solution
-1. **Trigger:** Auto-inserts into `artist_locations` when new artist created
-2. **Backfill Migration:** `20260105_003_sync_artist_locations.sql`
-   - Creates function `sync_artist_to_locations()`
-   - Creates trigger `artist_insert_location_sync`
-   - Backfills existing artists missing from `artist_locations`
+---
 
-### Pending
-Migration file exists but needs to be applied:
-```bash
-npm run db:push
+## GDPR Compliance
+
+**Two-layer defense:**
+
+1. **Discovery Filter:** `lib/instagram/bio-location-extractor.ts`
+   - Rejects EU/EEA/UK/CH artists during discovery
+
+2. **Search Filter:** `supabase/functions/search_functions.sql`
+   - Excludes GDPR countries from all search results
+   - Uses `artist_locations.country_code` blocklist
+
+**GDPR countries (32):** AT, BE, BG, HR, CY, CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK, SI, ES, SE, GB, IS, LI, NO, CH
+
+---
+
+## Multi-Location Support
+
+- `artist_locations` table stores all locations
+- Free tier: 1 location / Pro tier: Up to 20
+- One location marked `is_primary = true`
+
+**API Endpoints:**
+- `GET /api/dashboard/locations`
+- `POST /api/dashboard/locations/add`
+- `DELETE /api/dashboard/locations/remove`
+- `PATCH /api/dashboard/locations/set-primary`
+
+---
+
+## Code Style
+
+- **Components:** PascalCase (`SearchInput.tsx`)
+- **Functions:** camelCase (`searchArtistsByEmbedding()`)
+- **Constants:** UPPER_SNAKE_CASE (`MAX_FILE_SIZE`)
+- **Types:** PascalCase (`ArtistProfile`)
+- **Files:** kebab-case (`image-processing.ts`)
+
+---
+
+## Commit Convention
+
 ```
+feat: Add image upload component
+fix: Fix vector search performance
+docs: Update techStack.md
+refactor: Simplify artist card
+perf: Optimize IVFFlat index
+```
+
+---
+
+## Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| Vector search | <500ms |
+| Page load (LCP) | <2s |
+| Lighthouse | 90+ all categories |
+| Bundle size | <200KB first load |
+
+---
+
+## Subagent Usage
+
+| Agent | When to Use |
+|-------|-------------|
+| `code-reviewer` | After implementing features |
+| `backend-architect` | Before API/database changes |
+| `frontend-developer` | Complex UI work |
+| `ui-designer` | Design system work |
+
+**Workflow:** Implement → Run quality checks → `code-reviewer` → Address Critical issues
