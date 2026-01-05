@@ -192,10 +192,10 @@ export default async function CityGuidePage({
             </p>
 
             {/* Quick links */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
               <Link
                 href={`/us/${stateSlug}/${citySlug}`}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-ink-black text-paper-white text-sm font-medium rounded-lg hover:bg-gray-900 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-ink-black text-paper-white font-mono text-xs uppercase tracking-[0.15em] border-2 border-ink-black hover:-translate-y-0.5 hover:shadow-md transition-all"
               >
                 Browse {cityName} Artists
                 <span aria-hidden="true">&rarr;</span>
@@ -204,7 +204,7 @@ export default async function CityGuidePage({
                 <Link
                   key={style}
                   href={`/us/${stateSlug}/${citySlug}/${style}`}
-                  className="inline-flex items-center px-4 py-2 bg-bg-secondary text-text-secondary text-sm rounded-lg hover:bg-gray-300 transition-colors border border-border-subtle"
+                  className="inline-flex items-center px-4 py-3 font-mono text-xs uppercase tracking-[0.15em] text-text-secondary border-2 border-border-subtle hover:border-ink-black hover:text-ink-black transition-all"
                 >
                   {style.charAt(0).toUpperCase() + style.slice(1)}
                 </Link>
@@ -214,8 +214,13 @@ export default async function CityGuidePage({
         </header>
 
         {/* Content with TOC */}
-        <div className="max-w-4xl mx-auto px-4 py-12 md:py-16">
-          <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-12">
+        <div className="max-w-5xl mx-auto px-4 py-12 md:py-16">
+          <div className="lg:grid lg:grid-cols-[200px_1fr] lg:gap-12">
+            {/* Sticky TOC (desktop only) - LEFT SIDE */}
+            <aside className="hidden lg:block">
+              <TableOfContents items={tocItems} />
+            </aside>
+
             {/* Main Content */}
             <article className="prose-inkdex">
               {/* Introduction */}
@@ -320,7 +325,7 @@ export default async function CityGuidePage({
               )}
 
               {/* CTA */}
-              <section className="mt-16 p-8 bg-bg-secondary rounded-xl border border-border-subtle">
+              <section className="mt-16 p-8 bg-bg-secondary border-2 border-border-subtle">
                 <h2 className="font-display text-xl font-bold text-text-primary mb-3">
                   Ready to find your artist?
                 </h2>
@@ -330,18 +335,13 @@ export default async function CityGuidePage({
                 </p>
                 <Link
                   href={`/us/${stateSlug}/${citySlug}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-ink-black text-paper-white font-medium rounded-lg hover:bg-gray-900 transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-ink-black text-paper-white font-mono text-xs uppercase tracking-[0.15em] border-2 border-ink-black hover:-translate-y-0.5 hover:shadow-md transition-all"
                 >
                   Browse {cityName} Artists
                   <span aria-hidden="true">&rarr;</span>
                 </Link>
               </section>
             </article>
-
-            {/* Sticky TOC (desktop only) */}
-            <aside className="hidden lg:block">
-              <TableOfContents items={tocItems} />
-            </aside>
           </div>
         </div>
       </main>

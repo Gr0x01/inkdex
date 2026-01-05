@@ -117,7 +117,7 @@ export default function GuidesIndexPage() {
                       <Link
                         key={guide.citySlug}
                         href={`/guides/${guide.citySlug}`}
-                        className="group block p-6 bg-bg-secondary rounded-lg hover:shadow-md transition-all duration-200 border border-transparent hover:border-border-subtle"
+                        className="group block p-6 bg-bg-secondary border-2 border-border-subtle hover:border-ink-black hover:-translate-y-1 hover:shadow-md transition-all duration-200"
                       >
                         <h3 className="font-display text-xl font-semibold text-text-primary mb-2 group-hover:text-ink-black transition-colors">
                           {guide.title.replace(': A Complete Guide', '')}
@@ -125,7 +125,7 @@ export default function GuidesIndexPage() {
                         <p className="font-body text-sm text-text-secondary line-clamp-2">
                           {guide.metaDescription}
                         </p>
-                        <div className="mt-4 flex items-center gap-2 text-xs text-text-tertiary">
+                        <div className="mt-4 flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-tertiary">
                           <span>{guide.neighborhoods.length} neighborhoods</span>
                           <span>&middot;</span>
                           <span>
@@ -152,7 +152,7 @@ export default function GuidesIndexPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex items-center justify-center px-6 py-3 bg-ink-black text-paper-white font-medium rounded-lg hover:bg-gray-900 transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3 bg-ink-black text-paper-white font-mono text-xs uppercase tracking-[0.15em] border-2 border-ink-black hover:-translate-y-0.5 hover:shadow-md transition-all"
             >
               Search Artists
             </Link>

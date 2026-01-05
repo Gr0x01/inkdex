@@ -37,7 +37,7 @@ const NeighborhoodSection = memo(function NeighborhoodSection({
           {neighborhood.characteristics.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-3 py-1 text-xs font-medium text-text-tertiary bg-bg-secondary rounded-full border border-border-subtle"
+              className="inline-flex items-center px-3 py-1 font-mono text-xs uppercase tracking-wider text-text-tertiary border border-border-subtle"
             >
               {tag}
             </span>
