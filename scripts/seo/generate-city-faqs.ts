@@ -1,17 +1,25 @@
 /**
- * Generate FAQ Content for City Pages using GPT-4
+ * Generate FAQ Content for City Pages using GPT-4.1-mini
  *
  * Generates 5 SEO-optimized FAQs per city for FAQPage schema markup.
  * Targets featured snippets for queries like "how much do tattoos cost in [city]"
+ *
+ * Only generates FAQs for cities that have artists in the database.
  */
 
 import OpenAI from 'openai';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { CITIES } from '../../lib/constants/cities';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -155,6 +163,11 @@ export function getCityFAQs(citySlug: string): FAQ[] | undefined {
 `;
 }
 
+// Helper to convert city name to slug
+function toSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
 async function main() {
   // Parse CLI args
   const args = process.argv.slice(2);
@@ -167,34 +180,97 @@ async function main() {
   if (limit !== Infinity) console.log(`Limit: ${limit} cities`);
   if (dryRun) console.log('DRY RUN - no files will be written');
 
-  // Check for existing FAQs file
+  // Query database for unique cities (using distinct query)
+  console.log('\nFetching cities with artists from database...');
+
+  // Paginate through all artists to get complete city list
+  const uniqueCities = new Map<string, { city: string; state: string; count: number }>();
+  const PAGE_SIZE = 1000;
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: artistsData, error } = await supabase
+      .from('artists')
+      .select('city, state')
+      .not('city', 'is', null)
+      .not('state', 'is', null)
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('Failed to fetch cities from database:', error.message);
+      process.exit(1);
+    }
+
+    if (!artistsData || artistsData.length === 0) {
+      hasMore = false;
+      break;
+    }
+
+    for (const row of artistsData) {
+      if (row.city && row.state) {
+        const slug = toSlug(row.city);
+        const existing = uniqueCities.get(slug);
+        if (existing) {
+          existing.count++;
+        } else {
+          uniqueCities.set(slug, { city: row.city, state: row.state, count: 1 });
+        }
+      }
+    }
+
+    offset += PAGE_SIZE;
+    if (artistsData.length < PAGE_SIZE) {
+      hasMore = false;
+    }
+  }
+
+  console.log(`Found ${uniqueCities.size} cities with artists in database`);
+
+  // Check for existing FAQs file and load existing data
   const faqsFilePath = path.join(__dirname, '../../lib/content/editorial/city-faqs.ts');
-  let existingCities = new Set<string>();
+  let existingFAQs: CityFAQ[] = [];
 
   try {
     const existingContent = await fs.readFile(faqsFilePath, 'utf-8');
-    // Extract existing city slugs
-    const matches = existingContent.matchAll(/'([a-z-]+)':\s*\[/g);
-    for (const match of matches) {
-      existingCities.add(match[1]);
+    // Extract existing FAQs using regex
+    const cityRegex = /'([a-z-]+)':\s*\[\s*([\s\S]*?)\s*\]/g;
+    let match;
+    while ((match = cityRegex.exec(existingContent)) !== null) {
+      const citySlug = match[1];
+      const faqsBlock = match[2];
+
+      // Parse individual FAQ items
+      const faqItemRegex = /\{\s*question:\s*"([^"]+)",\s*answer:\s*"([^"]+)"\s*\}/g;
+      const faqs: { question: string; answer: string }[] = [];
+      let faqMatch;
+      while ((faqMatch = faqItemRegex.exec(faqsBlock)) !== null) {
+        faqs.push({ question: faqMatch[1], answer: faqMatch[2] });
+      }
+
+      if (faqs.length > 0) {
+        existingFAQs.push({ citySlug, faqs });
+      }
     }
-    console.log(`Found ${existingCities.size} cities with existing FAQs`);
+    console.log(`Found ${existingFAQs.length} cities with existing FAQs`);
   } catch {
     console.log('No existing FAQs file found, creating new one');
   }
 
-  // Get cities that need FAQs (apply limit)
-  const citiesToGenerate = CITIES
-    .filter(city => !existingCities.has(city.slug))
-    .slice(0, limit)
-    .map(city => ({
-      name: city.name,
-      slug: city.slug,
-      state: city.state,
-    }));
+  const existingCitySlugs = new Set(existingFAQs.map(f => f.citySlug));
+
+  // Get cities that need FAQs (only cities with artists, apply limit)
+  const citiesToGenerate = Array.from(uniqueCities.entries())
+    .map(([slug, data]) => ({
+      name: data.city,
+      slug,
+      state: data.state,
+    }))
+    .filter(city => !existingCitySlugs.has(city.slug))
+    .slice(0, limit);
 
   if (citiesToGenerate.length === 0) {
-    console.log('\n✅ All cities already have FAQs!');
+    console.log('\n✅ All cities with artists already have FAQs!');
     return;
   }
 
@@ -230,9 +306,10 @@ async function main() {
     }
   }
 
-  // Format and write to file
+  // Merge existing + new FAQs and write to file
   console.log('\n\n📝 Writing TypeScript file...');
-  const tsContent = formatAsTypeScript(generatedFAQs);
+  const allFAQs = [...existingFAQs, ...generatedFAQs];
+  const tsContent = formatAsTypeScript(allFAQs);
   await fs.writeFile(faqsFilePath, tsContent, 'utf-8');
 
   console.log('\n✅ FAQ generation complete!');

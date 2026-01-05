@@ -48,7 +48,7 @@ const FAQSection = memo(function FAQSection({
       />
 
       <section
-        className={`faq-section max-w-3xl ${className}`}
+        className={`faq-section max-w-3xl mx-auto ${className}`}
         aria-labelledby="faq-heading"
       >
         {/* Section Header */}
