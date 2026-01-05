@@ -759,7 +759,7 @@ export const CITY_EDITORIAL_CONTENT: CityEditorialContent[] = [
       'tattoo art in San Antonio',
       'best tattoos in San Antonio'
     ],
-    popularStyles: ['Chicano', 'American Traditional', 'Realism'],
+    popularStyles: ['Black & Gray', 'American Traditional', 'Realism'],
   },
   {
     citySlug: 'tampa',
@@ -1861,7 +1861,7 @@ export const CITY_EDITORIAL_CONTENT: CityEditorialContent[] = [
       'Bay View tattoos',
       'East Side Milwaukee tattoos'
     ],
-    popularStyles: ['traditional', 'fine-line', 'Chicano', 'minimalist', 'realism'],
+    popularStyles: ['traditional', 'fine-line', 'Black & Gray', 'minimalist', 'realism'],
   },
   {
     citySlug: 'memphis',

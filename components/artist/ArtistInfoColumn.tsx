@@ -5,6 +5,7 @@ import ClaimProfileButton from './ClaimProfileButton'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { trackClick } from '@/lib/analytics/client'
 import { sanitizeText } from '@/lib/utils/sanitize'
+import { getProfileImageUrl } from '@/lib/utils/images'
 import { ArtistLocation } from '@/types/search'
 import { US_STATES } from '@/lib/constants/states'
 
@@ -60,6 +61,9 @@ interface ArtistInfoColumnProps {
     website_url: string | null
     booking_url: string | null
     profile_image_url: string | null
+    profile_storage_path?: string | null
+    profile_storage_thumb_320?: string | null
+    profile_storage_thumb_640?: string | null
     follower_count: number | null
     verification_status: string
     is_pro: boolean | null
@@ -138,11 +142,11 @@ export default function ArtistInfoColumn({
       <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-2.5">
 
         {/* Profile Image - Portrait 3:4, More Compact */}
-        {artist.profile_image_url && (
+        {(artist.profile_storage_thumb_640 || artist.profile_image_url) && (
           <div className="relative w-full max-w-[200px] mx-auto">
             <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
               <Image
-                src={artist.profile_image_url}
+                src={getProfileImageUrl(artist)}
                 alt={`${artist.name} profile`}
                 fill
                 className="object-cover"
