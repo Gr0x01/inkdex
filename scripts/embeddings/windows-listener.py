@@ -12,12 +12,14 @@ Security Features:
 - IP whitelist support (optional)
 
 Usage:
-    python windows-listener.py --port 5000 --api-key YOUR_SECRET_KEY
+    python windows-listener.py                    # Uses WINDOWS_GPU_API_KEY from .env.local
+    python windows-listener.py --port 5000        # Custom port
+    python windows-listener.py --api-key SECRET   # Override API key
 
 On Windows, run this in PowerShell:
     cd C:\tattoo-embeddings
     .\venv\Scripts\activate
-    python windows-listener.py --api-key YOUR_SECRET_KEY
+    python windows-listener.py
 
 Environment Variables:
     WINDOWS_GPU_API_KEY - API key for authentication (alternative to --api-key)
@@ -34,6 +36,11 @@ import os
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env.local (same as other scripts)
+load_dotenv('.env.local')
+load_dotenv()  # Fallback to .env
 
 # Fix Windows console encoding for emojis
 if sys.platform == 'win32':
