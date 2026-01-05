@@ -10,6 +10,7 @@ import { transformToSearchResult } from '@/lib/utils/artists'
 import Pagination from '@/components/pagination/Pagination'
 import FAQSection from '@/components/seo/FAQSection'
 import { getCityFAQs } from '@/lib/content/editorial/city-faqs'
+import { getCityGuide } from '@/lib/content/editorial/guides'
 
 // Validation patterns
 const COUNTRY_CODE_REGEX = /^[a-z]{2}$/
@@ -119,6 +120,7 @@ export default async function CityPage({
   const styleSeeds = await getStyleSeeds()
   const totalPages = Math.ceil(total / limit)
   const cityFAQs = getCityFAQs(citySlug)
+  const cityGuide = getCityGuide(citySlug)
 
   // JSON-LD Breadcrumbs
   const jsonLd = {
@@ -213,6 +215,17 @@ export default async function CityPage({
             <p className="font-body text-body text-text-secondary">
               Browse tattoo artists based in {cityName}, {regionName}. Discover talented artists, view their portfolios, and connect via Instagram.
             </p>
+            {cityGuide && (
+              <Link
+                href={`/guides/${citySlug}`}
+                className="inline-flex items-center gap-2 mt-4 text-accent-primary hover:text-accent-secondary transition-colors font-body text-body"
+              >
+                <span>Read our {cityName} tattoo guide</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            )}
           </div>
 
           {/* Artists Grid */}

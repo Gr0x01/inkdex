@@ -115,6 +115,14 @@ export default function Footer() {
             <ul className="mt-4 space-y-3">
               <li>
                 <Link
+                  href="/guides"
+                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                >
+                  City Guides
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/about"
                   className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
                 >
