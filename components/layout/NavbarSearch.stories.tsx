@@ -68,6 +68,78 @@ export const Tablet: Story = {
 };
 
 /**
+ * Instagram Post URL detected - shows "IG Post" badge
+ * Compact purple/pink gradient badge
+ */
+export const WithInstagramPostBadge: Story = {
+  render: () => (
+    <div className="max-w-2xl">
+      <NavbarSearch
+        forceTextQuery="https://instagram.com/p/ABC123xyz/"
+        forceInstagramDetection={{
+          type: 'post',
+          id: 'ABC123xyz',
+          originalUrl: 'https://instagram.com/p/ABC123xyz/',
+        }}
+      />
+    </div>
+  ),
+};
+
+/**
+ * Instagram Profile URL detected - shows "@username" badge
+ */
+export const WithInstagramProfileBadge: Story = {
+  render: () => (
+    <div className="max-w-2xl">
+      <NavbarSearch
+        forceTextQuery="https://instagram.com/tattooartist"
+        forceInstagramDetection={{
+          type: 'profile',
+          id: 'tattooartist',
+          originalUrl: 'https://instagram.com/tattooartist',
+        }}
+      />
+    </div>
+  ),
+};
+
+/**
+ * Image preview state - shows compact thumbnail
+ */
+export const WithImagePreview: Story = {
+  render: () => (
+    <div className="max-w-2xl">
+      <NavbarSearch
+        forceImagePreview="https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=100&h=100&fit=crop"
+      />
+    </div>
+  ),
+};
+
+/**
+ * Text input state - shows text query
+ */
+export const WithTextInput: Story = {
+  render: () => (
+    <div className="max-w-2xl">
+      <NavbarSearch forceTextQuery="dark floral sketchy" />
+    </div>
+  ),
+};
+
+/**
+ * Error state - red border and error message below
+ */
+export const WithError: Story = {
+  render: () => (
+    <div className="max-w-2xl pb-8">
+      <NavbarSearch forceError="Please enter at least 3 characters or upload an image" />
+    </div>
+  ),
+};
+
+/**
  * In navbar context - simulates actual placement
  */
 export const InNavbarContext: Story = {
@@ -235,4 +307,60 @@ export const WithSurroundingUI: Story = {
   parameters: {
     layout: 'fullscreen',
   },
+};
+
+/**
+ * All search patterns comparison - shows all input types side by side
+ */
+export const AllSearchPatterns: Story = {
+  render: () => (
+    <div className="space-y-6 max-w-2xl">
+      <h3 className="font-display text-2xl mb-4 text-ink">
+        Search Pattern States:
+      </h3>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-gray-500 text-sm mb-2 font-mono">Instagram Post URL</p>
+          <NavbarSearch
+            forceTextQuery="https://instagram.com/p/ABC123xyz/"
+            forceInstagramDetection={{
+              type: 'post',
+              id: 'ABC123xyz',
+              originalUrl: 'https://instagram.com/p/ABC123xyz/',
+            }}
+          />
+        </div>
+
+        <div>
+          <p className="text-gray-500 text-sm mb-2 font-mono">Instagram Profile URL</p>
+          <NavbarSearch
+            forceTextQuery="https://instagram.com/blackworktattoo"
+            forceInstagramDetection={{
+              type: 'profile',
+              id: 'blackworktattoo',
+              originalUrl: 'https://instagram.com/blackworktattoo',
+            }}
+          />
+        </div>
+
+        <div>
+          <p className="text-gray-500 text-sm mb-2 font-mono">Image Upload</p>
+          <NavbarSearch
+            forceImagePreview="https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=100&h=100&fit=crop"
+          />
+        </div>
+
+        <div>
+          <p className="text-gray-500 text-sm mb-2 font-mono">Text Query</p>
+          <NavbarSearch forceTextQuery="dark floral sketchy" />
+        </div>
+
+        <div className="pb-8">
+          <p className="text-gray-500 text-sm mb-2 font-mono">Error State</p>
+          <NavbarSearch forceError="Rate limit exceeded. Please try again." />
+        </div>
+      </div>
+    </div>
+  ),
 };

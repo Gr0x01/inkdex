@@ -65,6 +65,78 @@ export const WideDesktop: Story = {
 };
 
 /**
+ * Instagram Post URL detected - shows "IG Post" badge
+ * Purple/pink gradient badge appears when post URL is pasted
+ */
+export const WithInstagramPostBadge: Story = {
+  args: {
+    forceTextQuery: 'https://instagram.com/p/ABC123xyz/',
+    forceInstagramDetection: {
+      type: 'post',
+      id: 'ABC123xyz',
+      originalUrl: 'https://instagram.com/p/ABC123xyz/',
+    },
+  },
+};
+
+/**
+ * Instagram Profile URL detected - shows "@username" badge
+ * Badge displays truncated username for long handles
+ */
+export const WithInstagramProfileBadge: Story = {
+  args: {
+    forceTextQuery: 'https://instagram.com/tattooartist',
+    forceInstagramDetection: {
+      type: 'profile',
+      id: 'tattooartist',
+      originalUrl: 'https://instagram.com/tattooartist',
+    },
+  },
+};
+
+/**
+ * Instagram Profile with long username - shows truncated badge
+ */
+export const WithLongInstagramUsername: Story = {
+  args: {
+    forceTextQuery: 'https://instagram.com/verylongusernamehere',
+    forceInstagramDetection: {
+      type: 'profile',
+      id: 'verylongusernamehere',
+      originalUrl: 'https://instagram.com/verylongusernamehere',
+    },
+  },
+};
+
+/**
+ * Image preview state - shows uploaded image thumbnail
+ * Uses a placeholder image to demonstrate the preview UI
+ */
+export const WithImagePreview: Story = {
+  args: {
+    forceImagePreview: 'https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=200&h=200&fit=crop',
+  },
+};
+
+/**
+ * Text input state - shows text query entered
+ */
+export const WithTextInput: Story = {
+  args: {
+    forceTextQuery: 'dark floral sketchy blackwork',
+  },
+};
+
+/**
+ * Error state - shows validation error with red border
+ */
+export const WithError: Story = {
+  args: {
+    forceError: 'Please upload an image or describe what you\'re looking for',
+  },
+};
+
+/**
  * Interactive demo - shows all states
  * Try typing text, uploading images, or pasting Instagram URLs
  */
@@ -177,4 +249,60 @@ export const WithHeroContext: Story = {
   parameters: {
     layout: 'fullscreen',
   },
+};
+
+/**
+ * All search patterns comparison - shows all input types side by side
+ */
+export const AllSearchPatterns: Story = {
+  render: () => (
+    <div className="space-y-6 w-full max-w-4xl">
+      <h3 className="text-white font-display text-2xl mb-4">
+        Search Pattern States:
+      </h3>
+
+      <div className="space-y-4">
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">Instagram Post URL</p>
+          <UnifiedSearchBar
+            forceTextQuery="https://instagram.com/p/ABC123xyz/"
+            forceInstagramDetection={{
+              type: 'post',
+              id: 'ABC123xyz',
+              originalUrl: 'https://instagram.com/p/ABC123xyz/',
+            }}
+          />
+        </div>
+
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">Instagram Profile URL</p>
+          <UnifiedSearchBar
+            forceTextQuery="https://instagram.com/blackworktattoo"
+            forceInstagramDetection={{
+              type: 'profile',
+              id: 'blackworktattoo',
+              originalUrl: 'https://instagram.com/blackworktattoo',
+            }}
+          />
+        </div>
+
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">Image Upload</p>
+          <UnifiedSearchBar
+            forceImagePreview="https://images.unsplash.com/photo-1611501275019-9b5cda994e8d?w=200&h=200&fit=crop"
+          />
+        </div>
+
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">Text Query</p>
+          <UnifiedSearchBar forceTextQuery="dark floral sketchy blackwork" />
+        </div>
+
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">Error State</p>
+          <UnifiedSearchBar forceError="Rate limit exceeded. Please try again in a few minutes." />
+        </div>
+      </div>
+    </div>
+  ),
 };
