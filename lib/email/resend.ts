@@ -35,6 +35,7 @@ export type EmailType =
   | 'sync_failed'
   | 'sync_reauthenticate'
   | 'downgrade_warning'
+  | 'payment_failed'
   | 'profile_deleted';
 
 /**

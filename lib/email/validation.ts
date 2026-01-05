@@ -125,3 +125,13 @@ export const downgradeWarningEmailSchema = baseEmailSchema.extend({
 });
 
 export type DowngradeWarningEmailParams = z.infer<typeof downgradeWarningEmailSchema>;
+
+/**
+ * Payment failed email parameters
+ */
+export const paymentFailedEmailSchema = baseEmailSchema.extend({
+  artistName: artistNameSchema,
+  billingPortalUrl: inkdexUrlSchema,
+});
+
+export type PaymentFailedEmailParams = z.infer<typeof paymentFailedEmailSchema>;

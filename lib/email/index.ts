@@ -10,16 +10,19 @@ import WelcomeEmail from './templates/welcome';
 import SyncFailedEmail from './templates/sync-failed';
 import SubscriptionCreatedEmail from './templates/subscription-created';
 import DowngradeWarningEmail from './templates/downgrade-warning';
+import PaymentFailedEmail from './templates/payment-failed';
 import { sendEmail, type EmailType as _EmailType } from './resend';
 import {
   welcomeEmailSchema,
   syncFailedEmailSchema,
   subscriptionCreatedEmailSchema,
   downgradeWarningEmailSchema,
+  paymentFailedEmailSchema,
   type WelcomeEmailParams,
   type SyncFailedEmailParams,
   type SubscriptionCreatedEmailParams,
   type DowngradeWarningEmailParams,
+  type PaymentFailedEmailParams,
 } from './validation';
 
 /**
@@ -137,6 +140,32 @@ export async function sendDowngradeWarningEmail(params: DowngradeWarningEmailPar
     html,
     text,
     type: 'downgrade_warning',
+  });
+}
+
+/**
+ * Send payment failed email
+ */
+export async function sendPaymentFailedEmail(params: PaymentFailedEmailParams) {
+  // Validate and sanitize all inputs
+  const validated = paymentFailedEmailSchema.parse(params);
+
+  const html = await render(
+    PaymentFailedEmail({
+      artistName: validated.artistName,
+      billingPortalUrl: validated.billingPortalUrl,
+      to: validated.to,
+    })
+  );
+
+  const text = `Hi ${validated.artistName}, we couldn't process your Pro subscription payment. Please update your payment method at ${validated.billingPortalUrl}`;
+
+  return sendEmail({
+    to: validated.to,
+    subject: 'Payment Issue - Update Your Payment Method',
+    html,
+    text,
+    type: 'payment_failed',
   });
 }
 

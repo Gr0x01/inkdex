@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendPaymentFailedEmail } from '@/lib/email'
 import type Stripe from 'stripe'
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const supabase = createAdminClient()
@@ -233,10 +236,15 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
 
   if (!subscriptionId) return
 
-  // Get subscription to find artist
+  // Get subscription and artist info
   const { data: sub } = await supabase
     .from('artist_subscriptions')
-    .select('artist_id, user_id')
+    .select(`
+      artist_id,
+      user_id,
+      artists!inner(name),
+      users!inner(email)
+    `)
     .eq('stripe_subscription_id', subscriptionId)
     .single()
 
@@ -251,7 +259,25 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     })
     .eq('stripe_subscription_id', subscriptionId)
 
-  // TODO: Send email notification about payment failure
+  // Send payment failed email
+  const artist = sub.artists as unknown as { name: string } | null
+  const user = sub.users as unknown as { email: string } | null
+  const artistName = artist?.name || 'Artist'
+  const userEmail = user?.email
+
+  if (userEmail) {
+    try {
+      await sendPaymentFailedEmail({
+        to: userEmail,
+        artistName,
+        billingPortalUrl: `${APP_URL}/api/stripe/portal`,
+      })
+      console.log(`Payment failed email sent to ${userEmail}`)
+    } catch (error) {
+      console.error('Failed to send payment failed email:', error)
+    }
+  }
+
   console.log(`Payment failed for subscription ${subscriptionId}`)
 }
 
