@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-05 (Session 15 - Launch Ready)
+Last-Updated: 2026-01-05 (Session 16 - SEO Enhancements)
 Maintainer: RB
-Status: Launched - All 15 Phases Complete
+Status: Launched - All 15 Phases Complete + SEO Enhancements
 ---
 
 # Active Context: Inkdex
@@ -39,11 +39,31 @@ Status: Launched - All 15 Phases Complete
 - Alaska (Anchorage)
 - District of Columbia (Washington)
 
+## SEO Enhancements (Jan 5, 2026)
+
+**IndexNow Integration** - Notify Bing/Yandex of content changes:
+- `lib/seo/indexnow.ts` - Client library with retry logic
+- `app/api/seo/indexnow/route.ts` - Admin API for manual submissions
+- Auto-notifies when artists discovered via pipeline
+- Database tracking in `indexnow_submissions` table
+- Key file: `public/{INDEXNOW_KEY}.txt` (generated from env var)
+- Env var: `INDEXNOW_KEY` (see .env.local)
+
+**City Guides** - Long-form editorial content:
+- `/guides` - Index page listing all guides
+- `/guides/[city]` - Individual guide pages (~1,500-2,000 words)
+- Components: `TableOfContents`, `NeighborhoodSection`, `GuideCard`
+- Content: `lib/content/editorial/guides.ts` (Austin, LA complete)
+- Generation: `scripts/seo/generate-guide-content.ts`
+- Includes Schema.org Article markup, breadcrumbs, FAQ integration
+
 **Next Actions:**
+- Add `INDEXNOW_KEY` to Vercel environment
+- Run `npm run db:push` to apply IndexNow migration
+- Generate more city guide content: `npx tsx scripts/seo/generate-guide-content.ts --limit 20`
 - Run image scraping pipeline for new artists (via admin panel)
 - Generate embeddings for new portfolio images
 - Monitor search performance across new cities
-- Consider additional expansion based on success metrics
 
 **Core Features Working:**
 - Multi-modal search (image, text, Instagram post/profile links)

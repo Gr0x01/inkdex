@@ -24,6 +24,7 @@ from typing import List, Dict
 import subprocess
 import time
 import signal
+import argparse
 
 # Use threading.Event for proper thread synchronization
 shutdown_event = threading.Event()
@@ -66,7 +67,7 @@ MAX_POSTS = 12  # Instagram's public API only exposes ~12 recent posts without a
 BATCH_SIZE = 5000  # Max concurrent requests (Tier 5 supports 30k RPM)
 
 # Parallel scraping settings
-CONCURRENT_APIFY_CALLS = 4  # Reduced from 8 for stability (less DB lock contention)
+CONCURRENT_APIFY_CALLS = 30  # Limited by Apify account memory (32GB / ~1GB per actor)
 db_lock = Lock()  # Thread-safe database operations
 
 # Get project root (2 levels up from this script)
@@ -314,11 +315,47 @@ def get_pending_artists(conn, limit=None):
         ORDER BY a.created_at
     """
 
-    # Add LIMIT for testing
-    if limit:
-        query += f" LIMIT {limit}"
+    # Add LIMIT using parameterized query to prevent SQL injection
+    if limit is not None:
+        if not isinstance(limit, int) or limit < 0:
+            raise ValueError(f"Invalid limit value: {limit}")
+        query += " LIMIT %s"
+        cursor.execute(query, (limit,))
+    else:
+        cursor.execute(query)
 
-    cursor.execute(query)
+    artists = cursor.fetchall()
+    cursor.close()
+
+    return artists
+
+def get_artists_needing_profile_images(conn, limit=None):
+    """Get artists that need profile image scraping (profile_storage_path is NULL)
+
+    Used for --profile-only mode to backfill profile images without re-scraping portfolio.
+    """
+    cursor = conn.cursor()
+
+    query = """
+        SELECT a.id, a.instagram_handle, a.name
+        FROM artists a
+        WHERE a.instagram_private != TRUE
+        AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
+        AND a.deleted_at IS NULL
+        AND a.instagram_handle IS NOT NULL
+        AND a.profile_storage_path IS NULL
+        ORDER BY a.created_at
+    """
+
+    # Add LIMIT using parameterized query to prevent SQL injection
+    if limit is not None:
+        if not isinstance(limit, int) or limit < 0:
+            raise ValueError(f"Invalid limit value: {limit}")
+        query += " LIMIT %s"
+        cursor.execute(query, (limit,))
+    else:
+        cursor.execute(query)
+
     artists = cursor.fetchall()
     cursor.close()
 
@@ -468,6 +505,105 @@ async def batch_classify_images(image_paths: list[Path]) -> list[bool]:
 
     return all_results
 
+def scrape_profile_image_only(apify_client, instagram_handle, artist_id):
+    """Scrape only the profile image (no portfolio posts) - for --profile-only mode"""
+    try:
+        # Validate handle
+        if not validate_instagram_handle(instagram_handle):
+            return False, f"Invalid Instagram handle format: {instagram_handle}", None
+
+        # Normalize to lowercase
+        instagram_handle = instagram_handle.lower().strip()
+
+        # Sanitize artist_id
+        safe_artist_id = sanitize_artist_id(artist_id)
+        artist_dir = TEMP_DIR / safe_artist_id
+        artist_dir.mkdir(parents=True, exist_ok=True)
+
+        print(f"   📥 Fetching profile for @{instagram_handle}...")
+
+        # Prepare Apify actor input - only need profile data, not posts
+        run_input = {
+            "usernames": [instagram_handle],
+            "resultsLimit": 1,  # Only need profile, not posts
+            "resultsType": "posts",
+            "searchType": "user",
+            "searchLimit": 1,
+            "addParentData": False
+        }
+
+        # Run the Actor
+        run = apify_client.actor(APIFY_ACTOR).call(run_input=run_input, timeout_secs=120)
+
+        # Fetch results
+        results = []
+        for item in apify_client.dataset(run["defaultDatasetId"]).iterate_items():
+            results.append(item)
+            break  # Only need first result
+
+        if not results:
+            return False, "Profile not found (private or invalid)", None
+
+        profile = results[0]
+
+        # Extract and download profile image
+        profile_pic_url = profile.get('profilePicUrlHD') or profile.get('profilePicUrl')
+        if not profile_pic_url:
+            return False, "No profile image URL found", None
+
+        print(f"   📷 Downloading profile image...")
+        try:
+            import requests
+            MAX_PROFILE_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+            response = requests.get(profile_pic_url, timeout=30, stream=True)
+            if response.status_code == 200:
+                # Validate Content-Type
+                content_type = response.headers.get('Content-Type', '')
+                if not content_type.startswith('image/'):
+                    return False, f"Invalid content type: {content_type}", None
+
+                # Check Content-Length header if present
+                content_length = response.headers.get('Content-Length')
+                if content_length and int(content_length) > MAX_PROFILE_IMAGE_SIZE:
+                    return False, f"Image too large: {content_length} bytes", None
+
+                # Stream download with size check
+                profile_path = artist_dir / f"{safe_artist_id}_profile.jpg"
+                downloaded = 0
+                with open(profile_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        downloaded += len(chunk)
+                        if downloaded > MAX_PROFILE_IMAGE_SIZE:
+                            f.close()
+                            profile_path.unlink()  # Delete partial file
+                            return False, "Image exceeds size limit", None
+                        f.write(chunk)
+
+                # Validate it's actually an image (check magic bytes)
+                with open(profile_path, 'rb') as f:
+                    header = f.read(12)  # Read enough bytes for all formats
+                    is_jpeg = header.startswith(b'\xff\xd8\xff')
+                    is_png = header.startswith(b'\x89PNG\r\n\x1a\n')
+                    is_gif = header.startswith(b'GIF87a') or header.startswith(b'GIF89a')
+                    if not (is_jpeg or is_png or is_gif):
+                        profile_path.unlink()
+                        return False, "Downloaded file is not a valid image", None
+
+                # Create .complete marker for process-and-upload.ts
+                lock_file = artist_dir / '.complete'
+                lock_file.touch()
+
+                print(f"   ✅ Downloaded profile image ({downloaded} bytes)")
+                return True, None, profile_pic_url
+            else:
+                return False, f"Failed to download: HTTP {response.status_code}", None
+        except Exception as e:
+            return False, f"Download failed: {e}", None
+
+    except Exception as e:
+        return False, str(e), None
+
 def scrape_artist_profile(apify_client, instagram_handle, artist_id):
     """Scrape an artist's Instagram profile using Apify"""
     try:
@@ -516,8 +652,58 @@ def scrape_artist_profile(apify_client, instagram_handle, artist_id):
         follower_count = profile.get('followersCount', 0)
 
         print(f"   👤 Profile: {follower_count:,} followers")
+
+        # Download profile image to temp directory for later processing
+        profile_image_downloaded = False
+        MAX_PROFILE_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
         if profile_pic_url:
             print(f"   📷 Profile photo: {profile_pic_url[:60]}...")
+            try:
+                import requests
+                response = requests.get(profile_pic_url, timeout=30, stream=True)
+                if response.status_code == 200:
+                    # Validate Content-Type
+                    content_type = response.headers.get('Content-Type', '')
+                    if not content_type.startswith('image/'):
+                        print(f"   ⚠️  Invalid content type: {content_type}")
+                    else:
+                        # Check Content-Length header if present
+                        content_length = response.headers.get('Content-Length')
+                        if content_length and int(content_length) > MAX_PROFILE_IMAGE_SIZE:
+                            print(f"   ⚠️  Profile image too large: {content_length} bytes")
+                        else:
+                            # Stream download with size check
+                            profile_path = artist_dir / f"{safe_artist_id}_profile.jpg"
+                            downloaded = 0
+                            valid = True
+                            with open(profile_path, 'wb') as f:
+                                for chunk in response.iter_content(chunk_size=8192):
+                                    downloaded += len(chunk)
+                                    if downloaded > MAX_PROFILE_IMAGE_SIZE:
+                                        valid = False
+                                        break
+                                    f.write(chunk)
+
+                            if not valid:
+                                profile_path.unlink()
+                                print(f"   ⚠️  Profile image exceeds size limit")
+                            else:
+                                # Validate magic bytes (read enough for all formats)
+                                with open(profile_path, 'rb') as f:
+                                    header = f.read(12)
+                                    is_jpeg = header.startswith(b'\xff\xd8\xff')
+                                    is_png = header.startswith(b'\x89PNG\r\n\x1a\n')
+                                    is_gif = header.startswith(b'GIF87a') or header.startswith(b'GIF89a')
+                                    if not (is_jpeg or is_png or is_gif):
+                                        profile_path.unlink()
+                                        print(f"   ⚠️  Downloaded file is not a valid image")
+                                    else:
+                                        profile_image_downloaded = True
+                                        print(f"   ✅ Downloaded profile image ({downloaded} bytes)")
+                else:
+                    print(f"   ⚠️  Failed to download profile image: HTTP {response.status_code}")
+            except Exception as e:
+                print(f"   ⚠️  Failed to download profile image: {e}")
 
         if not posts:
             return 0, "No posts found in profile", profile_pic_url, follower_count
@@ -651,9 +837,42 @@ def process_single_artist(artist_data, apify_client, conn):
         print(f"   ❌ Fatal error for {artist_name}: {e}")
         return {'success': False, 'artist_id': artist_id, 'images': 0}
 
+def process_profile_only_artist(artist_data, apify_client, conn):
+    """Process a single artist for profile image only (--profile-only mode)"""
+    artist_id, instagram_handle, artist_name, index, total = artist_data
+
+    try:
+        print(f"[{index}/{total}] {artist_name} (@{instagram_handle})")
+
+        success, error, profile_pic_url = scrape_profile_image_only(apify_client, instagram_handle, artist_id)
+
+        if error:
+            print(f"   ⚠️  Error: {error}")
+            return {'success': False, 'artist_id': artist_id}
+        else:
+            # Update legacy profile_image_url field too
+            if profile_pic_url:
+                update_artist_profile_metadata(conn, artist_id, profile_pic_url, None)
+            return {'success': True, 'artist_id': artist_id}
+
+    except Exception as e:
+        print(f"   ❌ Fatal error for {artist_name}: {e}")
+        return {'success': False, 'artist_id': artist_id}
+
 def main():
     """Main scraping workflow (incremental processing)"""
-    print("🤖 Instagram Portfolio Scraper (Apify - Incremental)\n")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Instagram Portfolio Scraper')
+    parser.add_argument('--profile-only', action='store_true',
+                        help='Only scrape profile images (no portfolio posts) for artists missing profile_storage_path')
+    parser.add_argument('--limit', type=int, default=None,
+                        help='Limit number of artists to process (for testing)')
+    args = parser.parse_args()
+
+    if args.profile_only:
+        print("🤖 Instagram Profile Image Scraper (Profile-Only Mode)\n")
+    else:
+        print("🤖 Instagram Portfolio Scraper (Apify - Incremental)\n")
 
     # Check for Apify token
     if not APIFY_API_TOKEN:
@@ -711,18 +930,26 @@ def main():
             except Exception as e:
                 print(f"⚠️  Progress tracking disabled: {e}\n")
 
-        # Get pending artists (TEST RUN - 20 artists)
+        # Get pending artists
         print("📋 Finding artists to scrape...")
-        TEST_LIMIT = None  # Set to an integer to limit artists for testing
-        artists = get_pending_artists(conn, limit=TEST_LIMIT)
-        if TEST_LIMIT:
-            print(f"⚠️  TEST MODE: Limited to {TEST_LIMIT} artists")
+        limit = args.limit  # Use command-line limit if provided
 
-        if not artists:
-            print("✅ No artists to scrape (all completed)")
-            return
-
-        print(f"Found {len(artists)} artists to scrape\n")
+        if args.profile_only:
+            # Profile-only mode: get artists missing profile_storage_path
+            artists = get_artists_needing_profile_images(conn, limit=limit)
+            if not artists:
+                print("✅ No artists need profile images (all have profile_storage_path)")
+                return
+            print(f"Found {len(artists)} artists needing profile images\n")
+        else:
+            # Normal mode: get artists without portfolio images
+            artists = get_pending_artists(conn, limit=limit)
+            if limit:
+                print(f"⚠️  TEST MODE: Limited to {limit} artists")
+            if not artists:
+                print("✅ No artists to scrape (all completed)")
+                return
+            print(f"Found {len(artists)} artists to scrape\n")
 
         # Update progress tracking with actual artist count
         if supabase_client and pipeline_run_id:
@@ -744,16 +971,75 @@ def main():
             heartbeat = HeartbeatThread(supabase_client, pipeline_run_id, interval=30)
             heartbeat.start()
 
-        print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
-        print(f"📦 Incremental processing:")
-        print(f"   - Process/upload every 10 artists")
-        print(f"   - Generate embeddings every 50 artists\n")
-
         # Prepare artist data with indices
         artist_data_list = [
             (artist_id, instagram_handle, artist_name, index, len(artists))
             for index, (artist_id, instagram_handle, artist_name) in enumerate(artists, 1)
         ]
+
+        # Profile-only mode: simpler processing without portfolio images
+        if args.profile_only:
+            print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel (profile-only mode)\n")
+
+            total_success = 0
+            total_errors = 0
+            completed_count = 0
+
+            try:
+                with ThreadPoolExecutor(max_workers=CONCURRENT_APIFY_CALLS) as executor:
+                    futures = {
+                        executor.submit(process_profile_only_artist, artist_data, apify_client, conn): artist_data
+                        for artist_data in artist_data_list
+                    }
+
+                    for future in as_completed(futures):
+                        try:
+                            result = future.result()
+                            completed_count += 1
+
+                            if result['success']:
+                                total_success += 1
+                            else:
+                                total_errors += 1
+
+                            percentage = (completed_count / len(artists)) * 100
+                            print(f"   📊 Progress: {percentage:.1f}% ({completed_count}/{len(artists)}) - {total_success} profiles downloaded\n")
+
+                            # Update pipeline progress
+                            if supabase_client and pipeline_run_id:
+                                with db_lock:
+                                    update_pipeline_progress(
+                                        supabase_client, pipeline_run_id,
+                                        len(artists), total_success, total_errors
+                                    )
+
+                            # Process profile images every 50 artists
+                            if completed_count % 50 == 0:
+                                print(f"   🔄 Running process-and-upload for profile images...")
+                                subprocess.run(["npm", "run", "process-batch"], check=False, capture_output=True)
+
+                        except Exception as e:
+                            print(f"   ❌ Error processing result: {e}")
+                            total_errors += 1
+
+            finally:
+                # Final process-and-upload run
+                print(f"\n🔄 Final processing of profile images...")
+                subprocess.run(["npm", "run", "process-batch"], check=False)
+
+            # Summary
+            print(f"\n📊 Profile-Only Scraping Summary:")
+            print(f"   ✅ Successful: {total_success}")
+            print(f"   ❌ Failed: {total_errors}")
+            print(f"\n📋 Next steps:")
+            print(f"   Run: npm run process-batch (to upload profile images to storage)")
+            return
+
+        # Normal mode: full portfolio scraping
+        print(f"🚀 Running {CONCURRENT_APIFY_CALLS} artists in parallel\n")
+        print(f"📦 Incremental processing:")
+        print(f"   - Process/upload every 10 artists")
+        print(f"   - Generate embeddings every 50 artists\n")
 
         # Incremental processing settings
         PROCESS_BATCH_SIZE = 10   # Process/upload every 10 artists

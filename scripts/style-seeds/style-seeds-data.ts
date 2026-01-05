@@ -157,17 +157,55 @@ export const styleSeedsData: StyleSeedData[] = [
     displayName: 'Horror',
     description:
       'Dark and macabre imagery featuring horror movie icons, skulls, demons, and nightmarish scenes. Often in black and grey realism or blackwork.',
-    imageUrls: [
-      // Local seed images in tmp/seeds/horror-*.{jpg,webp}
-    ],
+    imageUrls: [],
   },
   {
-    styleName: 'stick-and-poke',
-    displayName: 'Stick and Poke',
+    styleName: 'biomechanical',
+    displayName: 'Biomechanical',
     description:
-      'Hand-poked tattoos with a raw, DIY aesthetic. Simple designs, dotwork, and intentionally imperfect lines with punk and indie roots.',
-    imageUrls: [
-      // Local seed images in tmp/seeds/stick-and-poke-*.{jpg,webp}
-    ],
+      'Fusion of organic and mechanical elements, featuring gears, pistons, and robotic parts integrated with human anatomy. Inspired by H.R. Giger.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'lettering-script',
+    displayName: 'Lettering/Script',
+    description:
+      'Typography-focused tattoos featuring words, quotes, names, and elaborate calligraphy. Ranges from elegant script to bold block letters.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'minimalist',
+    displayName: 'Minimalist',
+    description:
+      'Simple, clean designs using fine lines and minimal detail. Less is more aesthetic with small, subtle tattoos and negative space.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'ornamental',
+    displayName: 'Ornamental',
+    description:
+      'Decorative patterns inspired by jewelry, mandalas, and architectural motifs. Often features symmetrical designs and intricate details.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'sketch-line-art',
+    displayName: 'Sketch/Line Art',
+    description:
+      'Intentionally unfinished look mimicking pencil sketches or pen drawings. Features loose linework and artistic imperfection.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'surrealism',
+    displayName: 'Surrealism',
+    description:
+      'Dreamlike, fantastical imagery blending reality with impossible scenes. Inspired by Dalí and Magritte with melting forms and optical illusions.',
+    imageUrls: [],
+  },
+  {
+    styleName: 'trash-polka',
+    displayName: 'Trash Polka',
+    description:
+      'German-originated style mixing realistic imagery with abstract smears, geometric shapes, and typography. Bold red and black color scheme.',
+    imageUrls: [],
   },
 ];
