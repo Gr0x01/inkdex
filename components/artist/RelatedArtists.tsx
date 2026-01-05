@@ -19,7 +19,7 @@ interface RelatedArtist {
 interface RelatedArtistsProps {
   artistId: string
   artistSlug: string
-  city: string
+  city: string | null
 }
 
 function formatFollowers(count: number): string {
@@ -53,7 +53,7 @@ export default async function RelatedArtists({
     <div className="my-12 pt-12 border-t border-gray-300">
       <div className="mb-8">
         <h3 className="font-display text-[2rem] font-[900] text-ink mb-2 tracking-tight">
-          Similar Artists in {city}
+          Similar Artists{city ? ` in ${city}` : ''}
         </h3>
         <p className="font-body text-[0.9375rem] text-gray-600">
           Artists with comparable styles based on portfolio similarity

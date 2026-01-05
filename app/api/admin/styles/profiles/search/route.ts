@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient();
 
-    // Query artists with this style profile
+    // Query artists with this style profile (join artist_locations for location data)
     const query = adminClient
       .from('artist_style_profiles')
       .select(`
@@ -75,10 +75,13 @@ export async function GET(request: NextRequest) {
           id,
           name,
           instagram_handle,
-          city,
-          state,
           follower_count,
-          claimed_at
+          claimed_at,
+          artist_locations!left(
+            city,
+            region,
+            is_primary
+          )
         )
       `)
       .eq('style_name', style)
@@ -92,26 +95,35 @@ export async function GET(request: NextRequest) {
       throw new Error(error.message);
     }
 
+    interface LocationData {
+      city: string | null;
+      region: string | null;
+      is_primary: boolean;
+    }
+
     interface ArtistJoin {
       id: string;
       name: string;
       instagram_handle: string | null;
-      city: string | null;
-      state: string | null;
       follower_count: number | null;
       claimed_at: string | null;
+      artist_locations: LocationData[] | null;
     }
 
     // Filter and format results
     const artists = (data || [])
       .map(row => {
         const artist = row.artists as unknown as ArtistJoin;
+        // Extract primary location from artist_locations
+        const primaryLoc = Array.isArray(artist.artist_locations)
+          ? artist.artist_locations.find(l => l.is_primary) || artist.artist_locations[0]
+          : null;
         return {
           artist_id: row.artist_id,
           name: artist.name,
           instagram_handle: artist.instagram_handle,
-          city: artist.city,
-          state: artist.state,
+          city: primaryLoc?.city || null,
+          state: primaryLoc?.region || null,
           follower_count: artist.follower_count,
           claimed_at: artist.claimed_at,
           percentage: row.percentage,

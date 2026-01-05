@@ -31,8 +31,6 @@ export default async function ProfilePage() {
       `
       id,
       name,
-      city,
-      state,
       instagram_handle,
       bio_override,
       booking_url,
@@ -110,8 +108,6 @@ export default async function ProfilePage() {
       artistId={artist.id}
       initialData={{
         name: artist.name,
-        city: artist.city,
-        state: artist.state,
         instagramHandle: artist.instagram_handle,
         bioOverride: artist.bio_override || '',
         bookingLink: artist.booking_url || '',

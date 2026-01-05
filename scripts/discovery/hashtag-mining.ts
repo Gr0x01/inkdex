@@ -302,18 +302,16 @@ async function insertArtist(profile: {
   // Generate slug
   const baseSlug = profile.username.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
-  const { error } = await supabase.from('artists').insert({
+  const { data: artistData, error } = await supabase.from('artists').insert({
     name: profile.username, // Use username as name initially
     slug: baseSlug,
     instagram_handle: profile.username.toLowerCase(),
     instagram_url: `https://instagram.com/${profile.username}`,
     bio: profile.bio,
     follower_count: profile.followerCount,
-    city: profile.city,
-    state: profile.state,
     discovery_source: profile.discoverySource,
     verification_status: 'unclaimed',
-  });
+  }).select('id').single();
 
   if (error) {
     // Likely duplicate
@@ -322,6 +320,22 @@ async function insertArtist(profile: {
     }
     console.error(`[Mining] Error inserting artist ${profile.username}:`, error);
     return false;
+  }
+
+  // Insert into artist_locations (single source of truth for location data)
+  if (artistData?.id && profile.city) {
+    const { error: locError } = await supabase.from('artist_locations').insert({
+      artist_id: artistData.id,
+      city: profile.city,
+      region: profile.state || null,
+      country_code: 'US',
+      location_type: 'city',
+      is_primary: true,
+      display_order: 0,
+    });
+    if (locError && locError.code !== '23505') {
+      console.warn(`[Mining] Warning: Could not insert location for @${profile.username}: ${locError.message}`);
+    }
   }
 
   return true;

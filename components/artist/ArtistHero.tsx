@@ -1,14 +1,13 @@
 import Image from 'next/image'
 import { getArtistFeaturedImageUrl } from '@/lib/utils/images'
 import { sanitizeText } from '@/lib/utils/sanitize'
+import { getPrimaryLocation, ArtistLocationData } from '@/lib/utils/location'
 
 interface ArtistHeroProps {
   artist: {
     id: string
     name: string
     slug: string
-    city: string
-    state: string | null
     shop_name: string | null
     bio: string | null
     bio_override: string | null
@@ -19,6 +18,7 @@ interface ArtistHeroProps {
     profile_image_url: string | null
     follower_count: number | null
     verification_status: string
+    locations?: ArtistLocationData[]
   }
   featuredImage?: {
     storage_thumb_1280?: string | null
@@ -33,6 +33,12 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
     featuredImage,
     artist.profile_image_url
   )
+
+  // Get primary location from artist_locations
+  const primaryLoc = getPrimaryLocation(artist.locations)
+  const locationStr = primaryLoc
+    ? [primaryLoc.city, primaryLoc.region].filter(Boolean).join(', ')
+    : ''
 
   return (
     <section className="relative w-full min-h-[80vh] md:min-h-screen bg-bg-primary">
@@ -60,11 +66,12 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
               </h1>
 
               {/* Location */}
-              <p className="font-body text-body text-text-secondary">
-                {artist.city}
-                {artist.state && `, ${artist.state}`}
-                {artist.shop_name && ` • ${sanitizeText(artist.shop_name)}`}
-              </p>
+              {(locationStr || artist.shop_name) && (
+                <p className="font-body text-body text-text-secondary">
+                  {locationStr}
+                  {artist.shop_name && ` • ${sanitizeText(artist.shop_name)}`}
+                </p>
+              )}
             </div>
 
             {/* Bio */}

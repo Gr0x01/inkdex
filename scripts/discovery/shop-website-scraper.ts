@@ -316,20 +316,35 @@ async function saveArtistsToDatabase(artists: ScrapedArtist[]): Promise<number> 
     const slug = `${artist.instagramHandle}-${Date.now().toString(36)}`;
 
     // Insert artist
-    const { error } = await supabase.from('artists').insert({
+    const { data: artistData, error } = await supabase.from('artists').insert({
       name: artist.name,
       slug,
       instagram_handle: artist.instagramHandle,
       instagram_url: `https://instagram.com/${artist.instagramHandle}`,
-      city: CITY_SLUG,
       shop_name: artist.shopName,
       website_url: artist.shopUrl,
       discovery_source: 'shop_scraping',
       verification_status: 'unclaimed',
       instagram_private: false,
-    });
+    }).select('id').single();
 
     if (!error) {
+      // Insert into artist_locations (single source of truth for location data)
+      if (artistData?.id) {
+        const { error: locError } = await supabase.from('artist_locations').insert({
+          artist_id: artistData.id,
+          city: 'Austin',
+          region: 'TX',
+          country_code: 'US',
+          location_type: 'city',
+          is_primary: true,
+          display_order: 0,
+        });
+        if (locError && locError.code !== '23505') {
+          console.warn(`   ⚠️ Warning: Could not insert location for @${artist.instagramHandle}: ${locError.message}`);
+        }
+      }
+
       added++;
       console.log(`   ✅ Added: @${artist.instagramHandle} (${artist.shopName})`);
     } else {

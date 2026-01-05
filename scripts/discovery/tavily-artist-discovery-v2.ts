@@ -363,21 +363,36 @@ async function saveArtistsToDatabase(
     // Find the corresponding city config to get state code
     const cityConfig = CITIES.find(c => c.slug === citySlug);
 
-    const { error } = await supabase.from('artists').insert({
+    // Insert artist
+    const { data: artistData, error } = await supabase.from('artists').insert({
       name: artist.name,
       slug,
       instagram_handle: artist.instagramHandle,
       instagram_url: artist.instagramUrl,
-      city: artist.city,  // Use proper case city name: "Austin", "Atlanta", etc.
-      state: cityConfig?.state || null,  // Add state code: "TX", "GA", "CA", etc.
       discovery_source: artist.discoverySource,
       verification_status: 'unclaimed',
       instagram_private: false,
-    });
+    }).select('id').single();
 
     if (error) {
       console.error(`   ❌ Error inserting @${artist.instagramHandle}: ${error.message}`);
     } else {
+      // Insert into artist_locations (single source of truth for location data)
+      if (artistData?.id && artist.city && cityConfig?.state) {
+        const { error: locError } = await supabase.from('artist_locations').insert({
+          artist_id: artistData.id,
+          city: artist.city,
+          region: cityConfig.state,
+          country_code: 'US',
+          location_type: 'city',
+          is_primary: true,
+          display_order: 0,
+        });
+        if (locError && locError.code !== '23505') {
+          console.warn(`   ⚠️ Warning: Could not insert location for @${artist.instagramHandle}: ${locError.message}`);
+        }
+      }
+
       inserted++;
       insertedSlugs.push(slug);
       if (inserted % 10 === 0) {

@@ -12,7 +12,6 @@
     "type-check": "tsc --noEmit",
     "analyze-cities": "tsx scripts/city-analysis/analyze-markets.ts",
     "discover-artists": "tsx scripts/discovery/tavily-artist-discovery-v2.ts",
-    "discover-artists-v1": "tsx scripts/discovery/tavily-artist-discovery.ts",
     "discover-google-places": "tsx scripts/discovery/google-places-discovery.ts",
     "scrape-shops": "tsx scripts/discovery/shop-website-scraper.ts",
     "cleanup-false-positives": "tsx scripts/discovery/cleanup-false-positives.ts",

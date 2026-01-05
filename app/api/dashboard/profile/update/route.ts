@@ -120,22 +120,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Get primary location for backward-compatible city/state columns
+    // 7. Validate at least one location exists
     const primaryLocation = locations.find(loc => loc.isPrimary);
-    if (!primaryLocation) {
+    if (!primaryLocation && locations.length === 0) {
       return NextResponse.json(
         { error: 'At least one location is required' },
         { status: 400 }
       );
     }
-    const artistCity = primaryLocation.city || '';
-    const artistState = primaryLocation.region || '';
 
-    // 7. Build update object (conditionally include pro fields)
+    // 8. Build update object (location data is stored in artist_locations only)
     const updateData: Record<string, unknown> = {
       name,
-      city: artistCity,
-      state: artistState,
       bio_override: bioOverride || null,
       booking_url: bookingLink || null,
       updated_at: new Date().toISOString(),

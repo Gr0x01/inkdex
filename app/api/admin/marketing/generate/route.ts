@@ -14,14 +14,19 @@ const generateSchema = z.object({
   outreachIds: z.array(z.string().uuid()).min(1).max(20),
 });
 
-interface ArtistData {
+interface LocationData {
+  city: string | null;
+  region: string | null;
+  is_primary: boolean;
+}
+
+interface ArtistDataRaw {
   id: string;
   name: string;
   instagram_handle: string;
-  city: string | null;
-  state: string | null;
   slug: string;
   bio: string | null;
+  artist_locations: LocationData[] | null;
   portfolio_images: Array<{
     id: string;
     storage_thumb_1280: string | null;
@@ -33,6 +38,17 @@ interface ArtistData {
       confidence: number;
     }>;
   }>;
+}
+
+interface ArtistData {
+  id: string;
+  name: string;
+  instagram_handle: string;
+  city: string | null;
+  state: string | null;
+  slug: string;
+  bio: string | null;
+  portfolio_images: ArtistDataRaw['portfolio_images'];
 }
 
 // Extract top styles from image style tags
@@ -141,6 +157,7 @@ export async function POST(request: NextRequest) {
     const adminClient = createAdminClient();
 
     // Fetch outreach records with artist data - specify FK to avoid ambiguity
+    // Join artist_locations for location data (single source of truth)
     const { data: outreachRecords, error: fetchError } = await adminClient
       .from('marketing_outreach')
       .select(`
@@ -151,10 +168,13 @@ export async function POST(request: NextRequest) {
           id,
           name,
           instagram_handle,
-          city,
-          state,
           slug,
           bio,
+          artist_locations!left (
+            city,
+            region,
+            is_primary
+          ),
           portfolio_images (
             id,
             storage_thumb_1280,
@@ -188,12 +208,24 @@ export async function POST(request: NextRequest) {
     const results: Array<{ id: string; success: boolean; error?: string }> = [];
 
     for (const record of outreachRecords) {
-      const artist = record.artists as unknown as ArtistData;
+      const artistRaw = record.artists as unknown as ArtistDataRaw;
 
-      if (!artist) {
+      if (!artistRaw) {
         results.push({ id: record.id, success: false, error: 'Artist not found' });
         continue;
       }
+
+      // Extract primary location from artist_locations
+      const primaryLoc = Array.isArray(artistRaw.artist_locations)
+        ? artistRaw.artist_locations.find(l => l.is_primary) || artistRaw.artist_locations[0]
+        : null;
+
+      // Transform to ArtistData format expected by generateCaption
+      const artist: ArtistData = {
+        ...artistRaw,
+        city: primaryLoc?.city || null,
+        state: primaryLoc?.region || null,
+      };
 
       const caption = await generateCaption(artist);
       const imageUrls = selectBestImages(artist, 4);

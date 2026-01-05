@@ -291,20 +291,34 @@ async function insertArtist(artist: ScrapedArtist): Promise<'added' | 'duplicate
   const slug = `${handle}-${Date.now().toString(36)}`;
 
   // Insert artist
-  const { error } = await supabase.from('artists').insert({
+  const { data: artistData, error } = await supabase.from('artists').insert({
     name: artist.name || handle,
     slug,
     instagram_handle: handle,
     instagram_url: `https://instagram.com/${handle}`,
-    city: artist.city?.toLowerCase().replace(/\s+/g, '-') || null,
-    state: artist.state || null,
     discovery_source: 'findink_scraper',
     verification_status: 'unclaimed',
-  });
+  }).select('id').single();
 
   if (error) {
     console.error(`   ❌ Error inserting @${handle}: ${error.message}`);
     return 'error';
+  }
+
+  // Insert into artist_locations (single source of truth for location data)
+  if (artistData?.id && artist.city && artist.state) {
+    const { error: locError } = await supabase.from('artist_locations').insert({
+      artist_id: artistData.id,
+      city: artist.city,
+      region: artist.state,
+      country_code: 'US',
+      location_type: 'city',
+      is_primary: true,
+      display_order: 0,
+    });
+    if (locError && locError.code !== '23505') {
+      console.warn(`   ⚠️ Warning: Could not insert location for @${handle}: ${locError.message}`);
+    }
   }
 
   return 'added';

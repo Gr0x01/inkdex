@@ -51,8 +51,6 @@ interface ArtistInfoColumnProps {
     id: string
     name: string
     slug: string
-    city: string
-    state: string | null
     shop_name: string | null
     bio: string | null
     bio_override: string | null
@@ -103,18 +101,15 @@ export default function ArtistInfoColumn({
     return syncDate.toLocaleDateString()
   }
 
-  // Multi-location support
+  // Multi-location support (artist_locations is the single source of truth)
   const locations = artist.locations || []
-  const primaryLocation = locations.find(l => l.is_primary) || {
-    city: artist.city,
-    region: artist.state,
-    country_code: 'US'
-  }
+  const primaryLocation = locations.find(l => l.is_primary) || locations[0] || null
   const otherLocations = locations.filter(l => !l.is_primary)
   const hasMultipleLocations = otherLocations.length > 0
 
   // Format location string (US vs international)
-  const formatLocation = (loc: ArtistLocation | typeof primaryLocation) => {
+  const formatLocation = (loc: ArtistLocation | null) => {
+    if (!loc) return ''
     if (loc.country_code === 'US') {
       // Handle state-only (no city) - show full state name
       if (!loc.city && loc.region) {
@@ -122,7 +117,7 @@ export default function ArtistInfoColumn({
         return state ? state.name : loc.region
       }
       // Handle city + state
-      return `${loc.city}${loc.region ? `, ${loc.region}` : ''}`
+      return `${loc.city || ''}${loc.region ? `, ${loc.region}` : ''}`
     } else {
       // International: handle missing city
       const parts = []
@@ -194,27 +189,29 @@ export default function ArtistInfoColumn({
             </h1>
 
             {/* Location + Shop (inline) */}
-            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-              {hasMultipleLocations && (
-                <span className="relative group inline-flex items-center justify-center bg-ink text-paper w-[14px] h-[14px] text-[10px] font-bold font-sans leading-none p-0.5">
-                  P
-                  <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-ink text-paper text-xs font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-1000 pointer-events-none">
-                    Primary location
+            {(primaryLocation || artist.shop_name) && (
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                {hasMultipleLocations && (
+                  <span className="relative group inline-flex items-center justify-center bg-ink text-paper w-[14px] h-[14px] text-[10px] font-bold font-sans leading-none p-0.5">
+                    P
+                    <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-ink text-paper text-xs font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-1000 pointer-events-none">
+                      Primary location
+                    </span>
                   </span>
-                </span>
-              )}
-              <p className="font-body text-base font-normal text-gray-600">
-                {formatLocation(primaryLocation)}
-                {artist.shop_name && (
-                  <span className="text-gray-400"> — {artist.shop_name}</span>
                 )}
-              </p>
-              {otherLocations.map((loc) => (
-                <p key={loc.id} className="font-body text-base font-normal text-gray-600">
-                  • {formatLocation(loc)}
+                <p className="font-body text-base font-normal text-gray-600">
+                  {formatLocation(primaryLocation)}
+                  {artist.shop_name && (
+                    <span className="text-gray-400"> — {artist.shop_name}</span>
+                  )}
                 </p>
-              ))}
-            </div>
+                {otherLocations.map((loc) => (
+                  <p key={loc.id} className="font-body text-base font-normal text-gray-600">
+                    • {formatLocation(loc)}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

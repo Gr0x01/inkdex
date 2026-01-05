@@ -23,8 +23,6 @@ interface ProfileEditorProps {
   artistId: string;
   initialData: {
     name: string;
-    city: string;
-    state: string;
     instagramHandle: string;
     bioOverride: string;
     bookingLink: string;
@@ -89,19 +87,12 @@ export default function ProfileEditor({
     setSaveError(null);
 
     try {
-      // Extract primary location for backward compatibility
-      const primaryLocation = locations.find((l) => l.isPrimary) || locations[0];
-      const city = primaryLocation?.city || '';
-      const state = primaryLocation?.region || '';
-
       const response = await fetch('/api/dashboard/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           artistId,
           name: name.trim(),
-          city: city,
-          state: state,
           locations: locations,
           bioOverride: bioOverride.trim() || null,
           bookingLink: bookingLink.trim() || null,
@@ -147,19 +138,11 @@ export default function ProfileEditor({
     setLocationError(null);
 
     try {
-      // Extract primary location for backward compatibility
-      const primaryLocation = newLocations.find((l) => l.isPrimary) || newLocations[0];
-      const city = primaryLocation?.city || '';
-      const state = primaryLocation?.region || '';
-
       const response = await fetch('/api/dashboard/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           artistId,
-          // Only send location-related fields
-          city: city,
-          state: state,
           locations: newLocations,
           // Preserve other fields
           name: name.trim(),

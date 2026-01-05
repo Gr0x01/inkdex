@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 interface FindSimilarArtistsButtonProps {
   artistId: string
   artistName: string
-  city: string
+  city: string | null
 }
 
 export default function FindSimilarArtistsButton({
@@ -44,7 +44,7 @@ export default function FindSimilarArtistsButton({
 
       // Navigate with optional city filter
       const params = new URLSearchParams({ id: searchId })
-      if (useCityFilter) {
+      if (useCityFilter && city) {
         params.set('city', city.toLowerCase().replace(/\s+/g, '-'))
       }
 
@@ -94,23 +94,25 @@ export default function FindSimilarArtistsButton({
         )}
       </button>
 
-      {/* City Toggle */}
-      <button
-        onClick={() => setUseCityFilter(!useCityFilter)}
-        className="w-full text-center font-body text-[0.75rem] text-gray-500 hover:text-ink transition-colors duration-fast"
-      >
-        {useCityFilter ? (
-          <span>
-            Searching in {city} only •{' '}
-            <span className="underline">Search all cities</span>
-          </span>
-        ) : (
-          <span>
-            Searching all cities •{' '}
-            <span className="underline">Search {city} only</span>
-          </span>
-        )}
-      </button>
+      {/* City Toggle - only show if artist has a city */}
+      {city && (
+        <button
+          onClick={() => setUseCityFilter(!useCityFilter)}
+          className="w-full text-center font-body text-[0.75rem] text-gray-500 hover:text-ink transition-colors duration-fast"
+        >
+          {useCityFilter ? (
+            <span>
+              Searching in {city} only •{' '}
+              <span className="underline">Search all cities</span>
+            </span>
+          ) : (
+            <span>
+              Searching all cities •{' '}
+              <span className="underline">Search {city} only</span>
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Error Message */}
       {error && (

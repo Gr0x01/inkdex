@@ -49,15 +49,18 @@ export async function getTestArtist(handle: string): Promise<FeaturedArtist & { 
       id,
       name,
       slug,
-      city,
-      state,
       shop_name,
       bio,
       instagram_handle,
       instagram_url,
       verification_status,
       follower_count,
-      is_pro
+      is_pro,
+      artist_locations!left (
+        city,
+        region,
+        is_primary
+      )
     `)
     .eq('instagram_handle', handle)
     .single();
@@ -65,6 +68,13 @@ export async function getTestArtist(handle: string): Promise<FeaturedArtist & { 
   if (error || !artist) {
     throw new Error(`Test user not found: ${handle}. Run: npx tsx scripts/seed/create-test-users.ts`);
   }
+
+  // Extract primary location from artist_locations (single source of truth)
+  interface LocationData { city: string | null; region: string | null; is_primary: boolean }
+  const locations = artist.artist_locations as LocationData[] | null;
+  const primaryLoc = Array.isArray(locations)
+    ? locations.find(l => l.is_primary) || locations[0]
+    : null;
 
   // Fetch portfolio images
   const { data: images } = await supabase
@@ -86,8 +96,8 @@ export async function getTestArtist(handle: string): Promise<FeaturedArtist & { 
     id: artist.id,
     name: artist.name,
     slug: artist.slug,
-    city: artist.city,
-    state: artist.state || '',
+    city: primaryLoc?.city || '',
+    state: primaryLoc?.region || '',
     shop_name: artist.shop_name,
     instagram_handle: artist.instagram_handle || '',
     verification_status: artist.verification_status,
@@ -112,13 +122,17 @@ export async function getTestSearchResult(handle: string): Promise<SearchResult 
       id,
       name,
       slug,
-      city,
       profile_image_url,
       instagram_url,
       verification_status,
       follower_count,
       is_pro,
-      is_featured
+      is_featured,
+      artist_locations!left (
+        city,
+        region,
+        is_primary
+      )
     `)
     .eq('instagram_handle', handle)
     .single();
@@ -126,6 +140,13 @@ export async function getTestSearchResult(handle: string): Promise<SearchResult 
   if (error || !artist) {
     throw new Error(`Test user not found: ${handle}. Run: npx tsx scripts/seed/create-test-users.ts`);
   }
+
+  // Extract primary location from artist_locations (single source of truth)
+  interface LocationData { city: string | null; region: string | null; is_primary: boolean }
+  const locations = artist.artist_locations as LocationData[] | null;
+  const primaryLoc = Array.isArray(locations)
+    ? locations.find(l => l.is_primary) || locations[0]
+    : null;
 
   // Fetch portfolio images for matching_images
   const { data: images } = await supabase
@@ -147,7 +168,7 @@ export async function getTestSearchResult(handle: string): Promise<SearchResult 
     artist_id: artist.id,
     artist_name: artist.name,
     artist_slug: artist.slug,
-    city: artist.city,
+    city: primaryLoc?.city || '',
     profile_image_url: artist.profile_image_url,
     instagram_url: artist.instagram_url || '',
     is_verified: artist.verification_status === 'verified' || artist.verification_status === 'claimed',

@@ -229,8 +229,6 @@ async function insertArtist(candidate: PendingCandidate, location: ReturnType<ty
       instagram_url: `https://instagram.com/${candidate.instagram_handle}`,
       bio: candidate.biography,
       follower_count: candidate.follower_count,
-      city: location?.city || null,
-      state: location?.stateCode || null,
       discovery_source: `${candidate.source_type}_mining_classified`,
       verification_status: 'unclaimed',
     })
@@ -247,7 +245,25 @@ async function insertArtist(candidate: PendingCandidate, location: ReturnType<ty
     return null;
   }
 
-  return data?.id || null;
+  const artistId = data?.id || null;
+
+  // Insert into artist_locations (single source of truth for location data)
+  if (artistId && location?.city && location?.stateCode) {
+    const { error: locError } = await supabase.from('artist_locations').insert({
+      artist_id: artistId,
+      city: location.city,
+      region: location.stateCode,
+      country_code: 'US',
+      location_type: 'city',
+      is_primary: true,
+      display_order: 0,
+    });
+    if (locError && locError.code !== '23505') {
+      console.warn(`[Classify] Warning: Could not insert location for @${candidate.instagram_handle}: ${locError.message}`);
+    }
+  }
+
+  return artistId;
 }
 
 async function processCandidate(candidate: PendingCandidate): Promise<{

@@ -264,19 +264,34 @@ async function discoverArtistsForCity(city: CityConfig): Promise<number> {
           continue;
         }
 
-        const { error } = await supabase.from('artists').insert({
+        const { data: artistData, error } = await supabase.from('artists').insert({
           name: place.name,
           slug,
           instagram_handle: handle,
           instagram_url: `https://instagram.com/${handle}`,
-          city: city.slug,
           google_place_id: placeId,
           discovery_source: 'google_places',
           verification_status: 'unclaimed',
           instagram_private: false,
-        });
+        }).select('id').single();
 
         if (!error) {
+          // Insert into artist_locations (single source of truth for location data)
+          if (artistData?.id) {
+            const { error: locError } = await supabase.from('artist_locations').insert({
+              artist_id: artistData.id,
+              city: city.name,
+              region: city.state,
+              country_code: 'US',
+              location_type: 'city',
+              is_primary: true,
+              display_order: 0,
+            });
+            if (locError && locError.code !== '23505') {
+              console.warn(`   ⚠️ Warning: Could not insert location for @${handle}: ${locError.message}`);
+            }
+          }
+
           artistsAdded++;
           console.log(`   ✅ Added: ${place.name} (@${handle})`);
         }

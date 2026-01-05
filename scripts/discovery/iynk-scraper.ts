@@ -276,7 +276,7 @@ async function insertArtist(artist: ScrapedArtist): Promise<'added' | 'duplicate
   // Generate slug
   const slug = `${handle}-${Date.now().toString(36)}`;
 
-  // Insert artist
+  // Insert artist (iynk doesn't have location data, so no artist_locations insert)
   const { error } = await supabase.from('artists').insert({
     name: artist.name || handle,
     slug,
@@ -290,6 +290,9 @@ async function insertArtist(artist: ScrapedArtist): Promise<'added' | 'duplicate
     console.error(`   ❌ Error inserting @${handle}: ${error.message}`);
     return 'error';
   }
+
+  // Note: iynk scraper doesn't extract location data, so no artist_locations insert
+  // Location will be populated later by instagram-validator.ts bio extraction
 
   return 'added';
 }

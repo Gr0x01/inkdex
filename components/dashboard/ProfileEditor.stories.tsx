@@ -75,8 +75,6 @@ const proMockLocations = [
 // Mock initial data for stories
 const baseInitialData = {
   name: 'Alex Rivera',
-  city: 'Los Angeles',
-  state: 'CA',
   instagramHandle: 'alex.ink',
   bioOverride: '',
   bookingLink: '',
@@ -87,8 +85,6 @@ const baseInitialData = {
 
 const filledInitialData = {
   name: 'Morgan Black',
-  city: 'New York',
-  state: 'NY',
   instagramHandle: 'morganblackink',
   bioOverride:
     'Neo-traditional and Japanese-inspired designs. 10+ years experience. Specializing in large-scale work and custom pieces. DM for consultations.',
@@ -145,8 +141,6 @@ export const EmptyProfile: Story = {
     isPro: false,
     initialData: {
       name: '',
-      city: '',
-      state: '',
       instagramHandle: 'newartist',
       bioOverride: '',
       bookingLink: '',

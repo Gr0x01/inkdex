@@ -220,3 +220,33 @@ export function isValidRegion(region: string): boolean {
 export function isValidCitySlug(slug: string): boolean {
   return /^[a-z0-9-]+$/.test(slug) && slug.length <= 50
 }
+
+/**
+ * Location data from artist_locations table
+ */
+export interface ArtistLocationData {
+  id?: string
+  city: string | null
+  region: string | null
+  country_code: string
+  location_type?: 'city' | 'region' | 'country'
+  is_primary?: boolean
+  display_order?: number
+}
+
+/**
+ * Get the primary location from an artist's locations array
+ * Returns the first location marked as primary, or the first location by display_order
+ */
+export function getPrimaryLocation(
+  locations?: ArtistLocationData[] | null
+): ArtistLocationData | null {
+  if (!locations || locations.length === 0) return null
+
+  // Find primary location first
+  const primary = locations.find(l => l.is_primary)
+  if (primary) return primary
+
+  // Fall back to first by display_order (already sorted by query)
+  return locations[0]
+}

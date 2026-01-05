@@ -720,18 +720,25 @@ a:hover {
   transition: all var(--duration-medium) var(--ease-smooth);
   min-width: 220px;
   z-index: 50;
+  /* Prevent hidden dropdown from extending page height */
+  max-height: 0;
+  overflow: hidden;
 }
 
 .editorial-dropdown-menu-open {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .group:hover .editorial-dropdown-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 /* Editorial Dropdown Header - State/Region Headers */

@@ -68,16 +68,35 @@ export default async function AdminArtistDetailPage({ params }: Props) {
     }
   );
 
-  // Fetch artist
+  // Fetch artist with primary location from artist_locations
   const { data: artist, error: artistError } = await serviceClient
     .from('artists')
-    .select('*')
+    .select(`
+      *,
+      artist_locations!left (
+        city,
+        region,
+        is_primary
+      )
+    `)
     .eq('id', id)
     .single();
 
   if (artistError || !artist) {
     notFound();
   }
+
+  // Extract primary location from artist_locations (single source of truth)
+  const primaryLocation = Array.isArray(artist.artist_locations)
+    ? artist.artist_locations.find((loc: { is_primary: boolean }) => loc.is_primary) || artist.artist_locations[0]
+    : null;
+
+  // Add city/state to artist object for component compatibility
+  const artistWithLocation = {
+    ...artist,
+    city: primaryLocation?.city || null,
+    state: primaryLocation?.region || null,
+  };
 
   // Fetch all portfolio images
   const { data: images, error: imagesError } = await serviceClient
@@ -145,7 +164,7 @@ export default async function AdminArtistDetailPage({ params }: Props) {
 
   return (
     <ArtistDetailView
-      initialArtist={artist}
+      initialArtist={artistWithLocation}
       initialImages={transformedImages}
       initialImageCount={transformedImages.length}
       initialAnalytics={analytics}

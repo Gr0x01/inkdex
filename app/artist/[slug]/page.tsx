@@ -5,6 +5,7 @@ import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getPortfolioImageUrl, getProfileImageUrl } from '@/lib/utils/images'
+import { getPrimaryLocation } from '@/lib/utils/location'
 import { CITIES } from '@/lib/constants/cities'
 import { US_STATES } from '@/lib/constants/states'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
@@ -67,11 +68,17 @@ export async function generateMetadata({
     return { title: 'Artist Not Found' }
   }
 
-  const title = `@${artist.instagram_handle} - Tattoo Artist in ${artist.city}${artist.state ? ', ' + artist.state : ''}`
+  // Get primary location from artist_locations (single source of truth)
+  const primaryLoc = getPrimaryLocation(artist.locations)
+  const artistCity = primaryLoc?.city || null
+  const artistRegion = primaryLoc?.region || null
+  const locationStr = [artistCity, artistRegion].filter(Boolean).join(', ')
+
+  const title = `@${artist.instagram_handle} - Tattoo Artist${locationStr ? ` in ${locationStr}` : ''}`
   const description =
     artist.bio_override ||
     artist.bio ||
-    `Browse @${artist.instagram_handle}'s tattoo portfolio and connect via Instagram. Based in ${artist.city}${artist.state ? ', ' + artist.state : ''}.`
+    `Browse @${artist.instagram_handle}'s tattoo portfolio and connect via Instagram.${locationStr ? ` Based in ${locationStr}.` : ''}`
 
   // Use profile image or first portfolio image for OG
   // Priority: stored profile image > legacy profile URL > first portfolio image > default
@@ -115,13 +122,18 @@ export default async function ArtistPage({
 
   if (!artist) notFound()
 
+  // Get primary location from artist_locations (single source of truth)
+  const primaryLoc = getPrimaryLocation(artist.locations)
+  const artistCity = primaryLoc?.city || null
+  const artistRegion = primaryLoc?.region || null
+
   // Get state and city data for breadcrumb navigation
   // Using new international URL format: /us/tx/austin
-  const state = US_STATES.find((s) => s.code === artist.state)
-  const city = CITIES.find((c) => c.name === artist.city)
+  const state = US_STATES.find((s) => s.code === artistRegion)
+  const city = CITIES.find((c) => c.name === artistCity)
   const countrySlug = 'us' // Currently US-only, can be expanded later
-  const stateSlug = artist.state?.toLowerCase() || ''
-  const citySlug = city?.slug || artist.city?.toLowerCase().replace(/\s+/g, '-') || ''
+  const stateSlug = artistRegion?.toLowerCase() || ''
+  const citySlug = city?.slug || artistCity?.toLowerCase().replace(/\s+/g, '-') || ''
 
   // JSON-LD structured data (sanitized to prevent XSS)
   const jsonLdImage = getProfileImageUrl(artist)
@@ -136,8 +148,8 @@ export default async function ArtistPage({
     sameAs: artist.instagram_url ? [artist.instagram_url] : [],
     address: {
       '@type': 'PostalAddress',
-      addressLocality: sanitizeForJsonLd(artist.city),
-      addressRegion: sanitizeForJsonLd(artist.state),
+      addressLocality: sanitizeForJsonLd(artistCity),
+      addressRegion: sanitizeForJsonLd(artistRegion),
     },
   }
 
@@ -153,8 +165,8 @@ export default async function ArtistPage({
         },
         address: {
           '@type': 'PostalAddress',
-          addressLocality: sanitizeForJsonLd(artist.city),
-          addressRegion: sanitizeForJsonLd(artist.state),
+          addressLocality: sanitizeForJsonLd(artistCity),
+          addressRegion: sanitizeForJsonLd(artistRegion),
         },
       }
     : null
@@ -286,7 +298,7 @@ export default async function ArtistPage({
             <RelatedArtists
               artistId={artist.id}
               artistSlug={artist.slug}
-              city={artist.city}
+              city={artistCity}
             />
 
             {/* Find Similar Artists - positioned after related artists */}
@@ -294,7 +306,7 @@ export default async function ArtistPage({
               <FindSimilarArtistsButton
                 artistId={artist.id}
                 artistName={artist.name}
-                city={artist.city}
+                city={artistCity}
               />
             </div>
           </div>

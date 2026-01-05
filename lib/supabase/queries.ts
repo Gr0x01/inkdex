@@ -755,12 +755,12 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
  */
 export async function getRelatedArtists(
   artistId: string,
-  city: string,
+  city: string | null,
   limit: number = 3
 ) {
   // Validate inputs
   validateUUID(artistId, 'artistId')
-  validateString(city, 'city', 100)
+  if (city) validateString(city, 'city', 100)
   validateInteger(limit, 'limit', 1, 10)
 
   const supabase = await createClient()
@@ -770,7 +770,7 @@ export async function getRelatedArtists(
     'find_related_artists',
     {
       source_artist_id: artistId,
-      city_filter: city,
+      city_filter: city || null,
       match_count: limit,
     }
   )

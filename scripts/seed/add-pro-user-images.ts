@@ -82,8 +82,6 @@ async function addProUser() {
     id: artistId,
     name: 'Morgan Black',
     slug: 'morgan-black',
-    city: 'New York',
-    state: 'New York',
     instagram_handle: 'test_pro_artist',
     instagram_id: 'test_pro_ig_id',
     bio: 'Award-winning blackwork & geometric. Book via website.',
@@ -97,6 +95,18 @@ async function addProUser() {
 
   if (artistError) throw new Error(`Artist creation failed: ${artistError.message}`);
   console.log(`   ✅ Created artist: ${artistId}`);
+
+  // Insert location into artist_locations
+  const { error: locError } = await supabase.from('artist_locations').insert({
+    artist_id: artistId,
+    city: 'New York',
+    region: 'NY',
+    country_code: 'US',
+    location_type: 'city',
+    is_primary: true,
+    display_order: 0,
+  });
+  if (locError) console.warn(`   ⚠️ Location insert warning: ${locError.message}`);
 
   // Step 5: Clone images from multiple artists to reach 80 total
   console.log('📸 Cloning images from multiple artists to reach 80 total...');
