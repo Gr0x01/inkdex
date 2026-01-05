@@ -1,7 +1,8 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import PricingCards from '@/components/pricing/PricingCards'
-import { ChevronDown } from 'lucide-react'
+import FAQSection from '@/components/seo/FAQSection'
+import type { FAQ } from '@/lib/content/types'
 
 export const metadata: Metadata = {
   title: 'Pricing | Inkdex',
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   },
 }
 
-const FAQ_ITEMS = [
+const FAQ_ITEMS: FAQ[] = [
   {
     question: 'Can I cancel anytime?',
     answer:
@@ -75,31 +76,13 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="pb-16 md:pb-24 border-t border-gray-200">
+      <section className="pb-16 md:pb-24 border-t border-border-subtle">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-16 md:pt-24">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="font-heading text-2xl md:text-3xl text-center mb-12">
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-0 divide-y divide-gray-200">
-              {FAQ_ITEMS.map((item, index) => (
-                <details
-                  key={index}
-                  className="group py-5"
-                >
-                  <summary className="flex items-center justify-between cursor-pointer list-none">
-                    <h3 className="font-heading text-base md:text-lg pr-4">
-                      {item.question}
-                    </h3>
-                    <ChevronDown className="w-5 h-5 text-gray-400 transition-transform duration-200 group-open:rotate-180 flex-shrink-0" />
-                  </summary>
-                  <p className="font-body text-gray-600 mt-3 leading-relaxed">
-                    {item.answer}
-                  </p>
-                </details>
-              ))}
-            </div>
-          </div>
+          <FAQSection
+            faqs={FAQ_ITEMS}
+            title="Frequently Asked Questions"
+            label="Pricing"
+          />
         </div>
       </section>
 

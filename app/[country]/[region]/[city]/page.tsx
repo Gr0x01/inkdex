@@ -317,10 +317,7 @@ export default async function CityPage({
           {/* FAQ Section (for SEO featured snippets) */}
           {cityFAQs && cityFAQs.length > 0 && (
             <div className="mt-16 pt-12 border-t border-border-subtle">
-              <FAQSection
-                faqs={cityFAQs}
-                cityName={cityName}
-              />
+              <FAQSection faqs={cityFAQs} />
             </div>
           )}
         </div>

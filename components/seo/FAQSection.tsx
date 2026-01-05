@@ -6,7 +6,10 @@ import { serializeJsonLd, sanitizeForJsonLd } from '@/lib/utils/seo'
 
 interface FAQSectionProps {
   faqs: FAQ[]
-  cityName: string
+  /** Optional title override (default: "Common Questions") */
+  title?: string
+  /** Optional label override (default: "FAQ") */
+  label?: string
   className?: string
 }
 
@@ -16,7 +19,8 @@ interface FAQSectionProps {
  */
 const FAQSection = memo(function FAQSection({
   faqs,
-  cityName,
+  title = 'Common Questions',
+  label = 'FAQ',
   className = '',
 }: FAQSectionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
@@ -54,13 +58,13 @@ const FAQSection = memo(function FAQSection({
         {/* Section Header */}
         <div className="mb-8">
           <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-tertiary mb-2">
-            FAQ
+            {label}
           </p>
           <h2
             id="faq-heading"
             className="font-display text-2xl md:text-3xl font-bold text-text-primary tracking-tight"
           >
-            Common Questions
+            {title}
           </h2>
         </div>
 
