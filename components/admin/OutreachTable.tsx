@@ -16,6 +16,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Instagram,
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
@@ -316,6 +317,9 @@ export default function OutreachTable({
                   <SortIcon column="instagram_handle" />
                 </span>
               </th>
+              <th className="px-3 py-2 text-left font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50">
+                Location
+              </th>
               <th
                 onClick={() => toggleSort('follower_count')}
                 className="px-3 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 w-20 cursor-pointer hover:text-ink select-none"
@@ -359,14 +363,21 @@ export default function OutreachTable({
                 >
                   {/* Artist */}
                   <td className="px-3 py-2">
-                    <div className="flex items-center gap-1">
-                      <span className="text-ink font-medium">
-                        @{artist.instagram_handle}
-                      </span>
-                    </div>
-                    <span className="text-gray-400 text-[11px]">
-                      {artist.city}{artist.state && `, ${artist.state}`}
-                    </span>
+                    <a
+                      href={`https://instagram.com/${artist.instagram_handle}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-ink font-medium hover:text-pink-600 transition-colors group"
+                      title="Open Instagram profile"
+                    >
+                      <Instagram className="w-3.5 h-3.5 text-gray-400 group-hover:text-pink-600 transition-colors" />
+                      @{artist.instagram_handle}
+                    </a>
+                  </td>
+
+                  {/* Location */}
+                  <td className="px-3 py-2 text-gray-500 text-[12px]">
+                    {artist.city}{artist.state && `, ${artist.state}`}
                   </td>
 
                   {/* Followers */}

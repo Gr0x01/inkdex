@@ -113,7 +113,7 @@ export default function MarketingDashboard() {
   });
 
   // Select new candidates
-  const selectCandidates = async (limit: number = 20) => {
+  const selectCandidates = async (limit: number = 5) => {
     setActionLoading(true);
     const range = followerRanges.find((r) => r.value === followerRange) || followerRanges[2];
     try {
@@ -339,13 +339,13 @@ export default function MarketingDashboard() {
             />
 
             <button
-              onClick={() => selectCandidates(20)}
+              onClick={() => selectCandidates(5)}
               disabled={actionLoading}
               className="h-9 flex items-center gap-1.5 px-3 bg-ink text-paper text-sm font-body
                        hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <Users className="w-3.5 h-3.5" />
-              Select 20
+              Select 5
             </button>
 
             <button

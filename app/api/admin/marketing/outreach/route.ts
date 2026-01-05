@@ -155,15 +155,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Filter out already-contacted and ensure minimum images
-    const candidates = (artists || [])
+    const filtered = (artists || [])
       .filter((a) => !existingIds.has(a.id))
       .filter((a) => {
         const imgCount = Array.isArray(a.portfolio_images)
           ? a.portfolio_images.filter((img: { embedding: unknown }) => img.embedding).length
           : 0;
         return imgCount >= 4;
-      })
-      .slice(0, params.limit);
+      });
+
+    // Shuffle to get a mix of follower counts (Fisher-Yates)
+    for (let i = filtered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+    }
+
+    const candidates = filtered.slice(0, params.limit);
 
     if (candidates.length === 0) {
       return NextResponse.json({
