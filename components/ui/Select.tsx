@@ -6,11 +6,10 @@
  * Replaces native <select> with a fully styled dropdown
  * Sharp corners, monospace labels, editorial aesthetic
  * Supports typeahead search for faster selection
- * Uses React Portal to avoid overflow clipping issues
+ * Uses absolute positioning relative to container (works in iframes/Storybook)
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface SelectOption {
@@ -27,6 +26,7 @@ interface SelectProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   size?: 'default' | 'sm';
+  disabled?: boolean;
 }
 
 export default function Select({
@@ -38,35 +38,16 @@ export default function Select({
   searchable = false,
   searchPlaceholder = 'Type to search...',
   size = 'default',
+  disabled = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Track mounted state for portal
-  useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
-  }, []);
-
-  // Update dropdown position when opened
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4, // 4px gap (mt-1)
-        left: rect.left + window.scrollX,
-        width: rect.width, // min-width will be the button width
-      });
-    }
-  }, [isOpen]);
 
   // Filter options based on search query
   const filteredOptions = searchable && searchQuery
@@ -171,15 +152,10 @@ export default function Select({
     : 'px-4 py-2.5 text-[1.0625rem]';
 
   // Render dropdown content
-  const dropdownContent = isOpen && isMounted && (
+  const dropdownContent = isOpen && (
     <div
       ref={dropdownRef}
-      className="fixed z-[100] bg-[var(--paper-white)] border-2 border-[var(--ink-black)] shadow-lg"
-      style={{
-        top: `${dropdownPosition.top}px`,
-        left: `${dropdownPosition.left}px`,
-        width: `${dropdownPosition.width}px`,
-      }}
+      className="absolute left-0 right-0 top-full mt-1 z-[100] bg-[var(--paper-white)] border-2 border-[var(--ink-black)] shadow-lg"
     >
           {/* Search Input */}
           {searchable && (
@@ -240,10 +216,16 @@ export default function Select({
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-[var(--paper-white)] border-2 border-[var(--border-subtle)] text-left font-body text-[var(--text-primary)] transition-all duration-150 hover:border-[var(--gray-500)] focus:outline-none focus:border-[var(--ink-black)] focus:shadow-sm flex items-center justify-between gap-2 ${triggerClasses}`}
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        className={`w-full border-2 text-left font-body transition-all duration-150 flex items-center justify-between gap-2 ${triggerClasses} ${
+          disabled
+            ? 'bg-[var(--gray-100)] border-[var(--gray-300)] text-[var(--gray-500)] cursor-not-allowed'
+            : 'bg-[var(--paper-white)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--gray-500)] focus:outline-none focus:border-[var(--ink-black)] focus:shadow-sm'
+        }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-disabled={disabled}
       >
         <span className={selectedOption ? 'truncate' : 'text-[var(--text-tertiary)] italic truncate'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -255,8 +237,8 @@ export default function Select({
         />
       </button>
 
-      {/* Dropdown Menu - Rendered via Portal */}
-      {typeof window !== 'undefined' && dropdownContent && createPortal(dropdownContent, document.body)}
+      {/* Dropdown Menu - Positioned absolutely relative to container */}
+      {dropdownContent}
     </div>
   );
 }

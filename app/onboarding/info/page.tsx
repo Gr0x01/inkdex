@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Crown, Sparkles } from 'lucide-react';
+import { Crown } from 'lucide-react';
 
 function InfoContent() {
   const router = useRouter();
@@ -15,7 +15,7 @@ function InfoContent() {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [bookingLink, setBookingLink] = useState('');
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
   const [filterNonTattoo, setFilterNonTattoo] = useState(true);
   const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -326,7 +326,7 @@ function InfoContent() {
             </h3>
 
             {/* Auto-Sync Toggle */}
-            <div className={`mb-3 rounded border-2 ${isPro ? 'border-border-subtle bg-gray-50' : 'border-purple-200 bg-purple-50'} p-4`}>
+            <div className="mb-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -339,34 +339,45 @@ function InfoContent() {
                     Automatically sync your latest Instagram posts daily at 2am UTC
                   </p>
                 </div>
-                {isPro ? (
-                  <button
-                    type="button"
-                    onClick={() => setAutoSyncEnabled(!autoSyncEnabled)}
-                    className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                      autoSyncEnabled ? 'bg-ink' : 'bg-gray-300'
+                <button
+                  type="button"
+                  onClick={() => isPro && setAutoSyncEnabled(!autoSyncEnabled)}
+                  disabled={!isPro}
+                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
+                    isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
+                  }`}
+                  role="switch"
+                  aria-checked={autoSyncEnabled}
+                  aria-label="Toggle auto-sync"
+                >
+                  <div
+                    className={`absolute top-0 bottom-0 transition-all duration-300 ease-out ${isPro ? 'bg-ink' : 'bg-gray-400'}`}
+                    style={{
+                      width: '50%',
+                      left: autoSyncEnabled ? '50%' : '0'
+                    }}
+                  />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      !autoSyncEnabled ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
                     }`}
-                    aria-label="Toggle auto-sync"
                   >
-                    <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                        autoSyncEnabled ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                ) : (
-                  <Link
-                    href="/pricing"
-                    className="flex-shrink-0 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
+                    OFF
+                  </span>
+                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      autoSyncEnabled ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
+                    }`}
                   >
-                    Upgrade
-                  </Link>
-                )}
+                    ON
+                  </span>
+                </button>
               </div>
             </div>
 
             {/* Filter Non-Tattoo Toggle */}
-            <div className={`rounded border-2 ${isPro ? 'border-border-subtle bg-gray-50' : 'border-purple-200 bg-purple-50'} p-4`}>
+            <div>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -376,46 +387,46 @@ function InfoContent() {
                     {!isPro && <Crown className="h-3.5 w-3.5 text-purple-600" />}
                   </div>
                   <p className="font-body text-sm text-gray-600 leading-relaxed">
-                    Use AI to filter out lifestyle photos and non-tattoo posts
+                    Filter out lifestyle photos and non-tattoo posts
                   </p>
-                  {isPro && (
-                    <p className="flex items-center gap-1.5 mt-1 font-body text-xs text-gray-500">
-                      <Sparkles className="h-3 w-3" />
-                      Powered by GPT-5-mini vision
-                    </p>
-                  )}
                 </div>
-                {isPro ? (
-                  <button
-                    type="button"
-                    onClick={() => setFilterNonTattoo(!filterNonTattoo)}
-                    className={`relative h-6 w-11 flex-shrink-0 rounded-full transition-colors ${
-                      filterNonTattoo ? 'bg-ink' : 'bg-gray-300'
+                <button
+                  type="button"
+                  onClick={() => isPro && setFilterNonTattoo(!filterNonTattoo)}
+                  disabled={!isPro}
+                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
+                    isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
+                  }`}
+                  role="switch"
+                  aria-checked={filterNonTattoo}
+                  aria-label="Toggle filter non-tattoo content"
+                >
+                  <div
+                    className={`absolute top-0 bottom-0 transition-all duration-300 ease-out ${isPro ? 'bg-ink' : 'bg-gray-400'}`}
+                    style={{
+                      width: '50%',
+                      left: filterNonTattoo ? '50%' : '0'
+                    }}
+                  />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      !filterNonTattoo ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
                     }`}
-                    aria-label="Toggle filter non-tattoo content"
                   >
-                    <span
-                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                        filterNonTattoo ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                ) : (
-                  <Link
-                    href="/pricing"
-                    className="flex-shrink-0 rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-700 transition-colors"
+                    OFF
+                  </span>
+                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
+                  <span
+                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
+                      filterNonTattoo ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
+                    }`}
                   >
-                    Upgrade
-                  </Link>
-                )}
+                    ON
+                  </span>
+                </button>
               </div>
             </div>
 
-            {!isPro && (
-              <p className="font-body text-xs text-gray-600 mt-3 leading-relaxed">
-                <strong className="text-gray-900">Free tier:</strong> Manual portfolio management only. Upgrade to Pro for auto-sync.
-              </p>
-            )}
           </div>
 
           {error && (

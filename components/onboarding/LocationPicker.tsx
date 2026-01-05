@@ -216,6 +216,7 @@ export default function LocationPicker({
                     placeholder="Select state"
                     searchable
                     searchPlaceholder="Search states..."
+                    disabled={!!cityInput}
                   />
                 </div>
               </div>
