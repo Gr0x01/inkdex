@@ -16,8 +16,9 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
-  Instagram,
+  Eye,
 } from 'lucide-react';
+import Link from 'next/link';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface OutreachRecord {
@@ -367,10 +368,9 @@ export default function OutreachTable({
                       href={`https://instagram.com/${artist.instagram_handle}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-ink font-medium hover:text-pink-600 transition-colors group"
+                      className="text-ink font-medium hover:text-pink-600 transition-colors"
                       title="Open Instagram profile"
                     >
-                      <Instagram className="w-3.5 h-3.5 text-gray-400 group-hover:text-pink-600 transition-colors" />
                       @{artist.instagram_handle}
                     </a>
                   </td>
@@ -518,13 +518,22 @@ export default function OutreachTable({
                         </button>
                       )}
 
-                      {/* View profile */}
+                      {/* Admin artist page */}
+                      <Link
+                        href={`/admin/artists/${artist.id}`}
+                        className="p-2 text-gray-400 hover:text-ink hover:bg-gray-100 transition-colors"
+                        title="View artist details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Link>
+
+                      {/* View public profile */}
                       <a
                         href={`/artist/${artist.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-gray-400 hover:text-ink hover:bg-gray-100 transition-colors"
-                        title="View profile"
+                        title="View public profile"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </a>
