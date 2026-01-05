@@ -13,7 +13,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { finalizeOnboardingSchema } from '@/lib/onboarding/validation';
 import { checkOnboardingRateLimit } from '@/lib/rate-limiter';
 import { ZodError } from 'zod';
@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
 
     // Define types for session data
     interface ProfileUpdates {
+      email?: string
       name: string
       bio?: string
       locations?: Array<{
@@ -408,7 +409,72 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 9. Delete onboarding session
+    // 9. Update user email if provided during onboarding (BEFORE deleting session)
+    const rawEmail = profileUpdates.email;
+    let normalizedEmail: string | null = null;
+
+    if (rawEmail) {
+      // Normalize email: lowercase and trim
+      normalizedEmail = rawEmail.toLowerCase().trim();
+
+      // Server-side validation
+      const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+      if (!emailRegex.test(normalizedEmail)) {
+        return NextResponse.json(
+          { error: 'Invalid email address format' },
+          { status: 400 }
+        );
+      }
+      if (normalizedEmail.length > 254) {
+        return NextResponse.json(
+          { error: 'Email address is too long' },
+          { status: 400 }
+        );
+      }
+      if (normalizedEmail.endsWith('@instagram.inkdex.io')) {
+        return NextResponse.json(
+          { error: 'Please use your real email address' },
+          { status: 400 }
+        );
+      }
+
+      // Update users table (replaces synthetic Instagram placeholder email)
+      const { error: emailUpdateError } = await supabase
+        .from('users')
+        .update({
+          email: normalizedEmail,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (emailUpdateError) {
+        // Check for unique constraint violation
+        if (emailUpdateError.code === '23505') {
+          return NextResponse.json(
+            { error: 'This email is already associated with another account' },
+            { status: 409 }
+          );
+        }
+        console.error('[Onboarding] Failed to update user email:', emailUpdateError);
+        // Non-critical for other errors - continue with onboarding
+      } else {
+        console.log(`[Onboarding] Updated user email to ${normalizedEmail}`);
+
+        // Also update Supabase Auth user email
+        const adminClient = createAdminClient();
+        const { error: authEmailError } = await adminClient.auth.admin.updateUserById(
+          user.id,
+          { email: normalizedEmail }
+        );
+
+        if (authEmailError) {
+          console.error('[Onboarding] Failed to update auth email:', authEmailError);
+          // Non-critical - continue
+        }
+      }
+    }
+
+    // 10. Delete onboarding session (AFTER email update to preserve state on failure)
     const { error: deleteError } = await supabase
       .from('onboarding_sessions')
       .delete()
@@ -421,8 +487,9 @@ export async function POST(request: NextRequest) {
 
     console.log(`[Onboarding] Finalized for user ${user.id}: ${isNewArtist ? 'created' : 'updated'} artist ${artistId}`);
 
-    // 10. Send welcome email (async, non-blocking)
-    if (user.email) {
+    // 11. Send welcome email (async, non-blocking)
+    const emailToUse = normalizedEmail || user.email;
+    if (emailToUse && !emailToUse.endsWith('@instagram.inkdex.io')) {
       // Check if artist has Pro subscription
       const { data: subscription } = await supabase
         .from('artist_subscriptions')
@@ -436,7 +503,7 @@ export async function POST(request: NextRequest) {
 
       // Send email asynchronously (don't await to avoid blocking)
       sendWelcomeEmail({
-        to: user.email,
+        to: emailToUse,
         artistName: profileUpdates.name,
         profileUrl,
         instagramHandle: instagramUsername,

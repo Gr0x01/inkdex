@@ -10,6 +10,8 @@ function InfoContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
 
+  const [email, setEmail] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [bookingLink, setBookingLink] = useState('');
@@ -45,7 +47,7 @@ function InfoContent() {
         // Fetch session data
         const { data: session, error: sessionError } = await supabase
           .from('onboarding_sessions')
-          .select('profile_data, profile_updates, user_id, current_step, booking_link')
+          .select('profile_data, profile_updates, user_id, current_step, booking_link, artist_id')
           .eq('id', sessionId)
           .single();
 
@@ -68,9 +70,31 @@ function InfoContent() {
         const profileData = session.profile_data || {};
         const updates = session.profile_updates || {};
 
-        setName(updates.name || profileData.username || '');
-        setBio(updates.bio || profileData.bio || '');
-        setBookingLink(session.booking_link || '');
+        // If claiming an existing artist, fetch their bio and name
+        let existingArtistBio = '';
+        let existingArtistName = '';
+        let existingBookingUrl = '';
+        if (session.artist_id) {
+          const { data: claimedArtist } = await supabase
+            .from('artists')
+            .select('bio, name, booking_url')
+            .eq('id', session.artist_id)
+            .single();
+
+          if (claimedArtist) {
+            existingArtistBio = claimedArtist.bio || '';
+            existingArtistName = claimedArtist.name || '';
+            existingBookingUrl = claimedArtist.booking_url || '';
+          }
+        }
+
+        setEmail(updates.email || '');
+        // Priority: user edits > existing artist name > Instagram username
+        setName(updates.name || existingArtistName || profileData.username || '');
+        // Priority: user edits > existing artist bio > Instagram bio
+        setBio(updates.bio || existingArtistBio || profileData.bio || '');
+        // Priority: session booking link > existing artist booking url
+        setBookingLink(session.booking_link || existingBookingUrl || '');
         setAutoSyncEnabled(updates.autoSyncEnabled || false);
         setFilterNonTattoo(updates.filterNonTattoo !== undefined ? updates.filterNonTattoo : true);
 
@@ -119,7 +143,37 @@ function InfoContent() {
     return !url || /^https?:\/\/.+/.test(url);
   };
 
+  const isValidEmail = (emailStr: string) => {
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    return emailRegex.test(emailStr);
+  };
+
   const handleContinue = async () => {
+    // Clear previous errors
+    setEmailError('');
+    setError('');
+
+    // Normalize email for validation
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Validate email
+    if (!normalizedEmail) {
+      setEmailError('Email is required');
+      return;
+    }
+    if (normalizedEmail.length > 254) {
+      setEmailError('Email address is too long');
+      return;
+    }
+    if (!isValidEmail(normalizedEmail)) {
+      setEmailError('Please enter a valid email address');
+      return;
+    }
+    if (normalizedEmail.endsWith('@instagram.inkdex.io')) {
+      setEmailError('Please use your real email address');
+      return;
+    }
+
     // Validate name
     if (!name.trim()) {
       setError('Name is required');
@@ -132,7 +186,6 @@ function InfoContent() {
       return;
     }
 
-    setError('');
     setLoading(true);
 
     try {
@@ -143,6 +196,7 @@ function InfoContent() {
           sessionId,
           step: 'info',
           data: {
+            email: normalizedEmail,
             name,
             bio,
             bookingLink,
@@ -194,6 +248,30 @@ function InfoContent() {
         </div>
 
         <div className="space-y-4 sm:space-y-5">
+          {/* Email */}
+          <div>
+            <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
+              Email *
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailError('');
+              }}
+              className={`input w-full ${emailError ? 'border-status-error' : ''}`}
+              placeholder="your@email.com"
+              autoComplete="email"
+            />
+            <p className="font-body text-sm text-gray-500 mt-1.5 leading-relaxed">
+              We&apos;ll send you updates about your profile and account
+            </p>
+            {emailError && (
+              <p className="font-body text-sm text-status-error mt-1">{emailError}</p>
+            )}
+          </div>
+
           {/* Name */}
           <div>
             <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">

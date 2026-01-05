@@ -18,6 +18,55 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return
   }
 
+  // Capture email from Stripe checkout (user may have entered a different email)
+  const rawStripeEmail = session.customer_details?.email
+  if (rawStripeEmail) {
+    // Normalize and validate email
+    const normalizedEmail = rawStripeEmail.toLowerCase().trim()
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/
+
+    // Only proceed if email is valid and not too long
+    if (normalizedEmail.length <= 254 && emailRegex.test(normalizedEmail)) {
+      const { data: currentUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', userId)
+        .single()
+
+      const isSyntheticEmail = currentUser?.email?.endsWith('@instagram.inkdex.io')
+
+      // Update if: no email, synthetic email, or different email at Stripe
+      if (!currentUser?.email || isSyntheticEmail || currentUser.email !== normalizedEmail) {
+        console.log(`[Stripe] Updating user email from ${currentUser?.email} to ${normalizedEmail}`)
+
+        const { error: emailUpdateError } = await supabase
+          .from('users')
+          .update({
+            email: normalizedEmail,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', userId)
+
+        if (emailUpdateError) {
+          // Log but don't fail - subscription is more important
+          console.error('[Stripe] Failed to update user email:', emailUpdateError)
+        } else {
+          // Also update Supabase Auth user email
+          const { error: authEmailError } = await supabase.auth.admin.updateUserById(
+            userId,
+            { email: normalizedEmail }
+          )
+
+          if (authEmailError) {
+            console.error('[Stripe] Failed to update auth email:', authEmailError)
+          }
+        }
+      }
+    } else {
+      console.warn(`[Stripe] Invalid email from checkout session: ${rawStripeEmail}`)
+    }
+  }
+
   // Get subscription details
   const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription & {
     current_period_start?: number

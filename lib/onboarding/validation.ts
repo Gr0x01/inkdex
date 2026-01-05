@@ -113,9 +113,31 @@ export const bookingLinkSchema = z.object({
 export type BookingLink = z.infer<typeof bookingLinkSchema>;
 
 /**
+ * Email validation schema
+ * - Standard email format (RFC 5322)
+ * - Max 254 characters (RFC 5321)
+ * - Normalize to lowercase and trim whitespace
+ * - Reject synthetic @instagram.inkdex.io addresses
+ */
+const realEmailSchema = z
+  .string()
+  .min(1, 'Email is required')
+  .transform((email) => email.toLowerCase().trim())
+  .pipe(
+    z.string()
+      .email('Please enter a valid email address')
+      .max(254, 'Email address is too long')
+      .refine(
+        (email) => !email.endsWith('@instagram.inkdex.io'),
+        'Please use your real email address'
+      )
+  );
+
+/**
  * Step 1 (NEW): Info Step - Combined profile data + booking link
  */
 export const infoStepSchema = z.object({
+  email: realEmailSchema,
   name: z
     .string()
     .min(2, 'Name must be at least 2 characters')

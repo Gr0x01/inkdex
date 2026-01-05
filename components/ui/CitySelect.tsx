@@ -19,6 +19,35 @@ interface CityResult {
   label: string;
 }
 
+// Fallback mock data for Storybook and offline development
+const MOCK_US_CITIES: CityResult[] = [
+  { city: 'New York', state: 'NY', stateName: 'New York', label: 'New York, NY' },
+  { city: 'Los Angeles', state: 'CA', stateName: 'California', label: 'Los Angeles, CA' },
+  { city: 'Chicago', state: 'IL', stateName: 'Illinois', label: 'Chicago, IL' },
+  { city: 'Houston', state: 'TX', stateName: 'Texas', label: 'Houston, TX' },
+  { city: 'Phoenix', state: 'AZ', stateName: 'Arizona', label: 'Phoenix, AZ' },
+  { city: 'Philadelphia', state: 'PA', stateName: 'Pennsylvania', label: 'Philadelphia, PA' },
+  { city: 'San Antonio', state: 'TX', stateName: 'Texas', label: 'San Antonio, TX' },
+  { city: 'San Diego', state: 'CA', stateName: 'California', label: 'San Diego, CA' },
+  { city: 'Dallas', state: 'TX', stateName: 'Texas', label: 'Dallas, TX' },
+  { city: 'Austin', state: 'TX', stateName: 'Texas', label: 'Austin, TX' },
+  { city: 'San Jose', state: 'CA', stateName: 'California', label: 'San Jose, CA' },
+  { city: 'San Francisco', state: 'CA', stateName: 'California', label: 'San Francisco, CA' },
+  { city: 'Seattle', state: 'WA', stateName: 'Washington', label: 'Seattle, WA' },
+  { city: 'Denver', state: 'CO', stateName: 'Colorado', label: 'Denver, CO' },
+  { city: 'Boston', state: 'MA', stateName: 'Massachusetts', label: 'Boston, MA' },
+  { city: 'Nashville', state: 'TN', stateName: 'Tennessee', label: 'Nashville, TN' },
+  { city: 'Portland', state: 'OR', stateName: 'Oregon', label: 'Portland, OR' },
+  { city: 'Las Vegas', state: 'NV', stateName: 'Nevada', label: 'Las Vegas, NV' },
+  { city: 'Miami', state: 'FL', stateName: 'Florida', label: 'Miami, FL' },
+  { city: 'Atlanta', state: 'GA', stateName: 'Georgia', label: 'Atlanta, GA' },
+  { city: 'Minneapolis', state: 'MN', stateName: 'Minnesota', label: 'Minneapolis, MN' },
+  { city: 'Detroit', state: 'MI', stateName: 'Michigan', label: 'Detroit, MI' },
+  { city: 'Brooklyn', state: 'NY', stateName: 'New York', label: 'Brooklyn, NY' },
+  { city: 'Oakland', state: 'CA', stateName: 'California', label: 'Oakland, CA' },
+  { city: 'Tampa', state: 'FL', stateName: 'Florida', label: 'Tampa, FL' },
+];
+
 interface CitySelectProps {
   value: string;
   onChange: (city: string) => void;
@@ -41,7 +70,7 @@ export default function CitySelect({
   const isUS = countryCode === 'US';
   const cityMapRef = useRef<Map<string, string>>(new Map()); // city -> state mapping
 
-  // Fetch cities from API
+  // Fetch cities from API (falls back to mock data for Storybook/offline)
   useEffect(() => {
     if (!isUS) {
       setCities([]);
@@ -71,7 +100,18 @@ export default function CitySelect({
           cityMapRef.current = newMap;
         }
       } catch (error) {
-        console.error('[CitySelect] Failed to fetch cities:', error);
+        console.error('[CitySelect] Failed to fetch cities, using mock data:', error);
+        // Fall back to mock data (for Storybook and offline development)
+        if (!cancelled) {
+          setCities(MOCK_US_CITIES);
+          const newMap = new Map<string, string>();
+          MOCK_US_CITIES.forEach((city) => {
+            if (city.state) {
+              newMap.set(city.city.toLowerCase(), city.state);
+            }
+          });
+          cityMapRef.current = newMap;
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);

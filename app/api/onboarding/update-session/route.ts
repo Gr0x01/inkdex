@@ -112,6 +112,7 @@ export async function POST(request: NextRequest) {
         // Step 1 - Combined profile info + booking + sync preferences
         {
           const infoData = data as {
+            email?: string
             name?: string
             bio?: string
             locations?: Array<{ city?: string; region?: string }>
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
           };
           updateData = {
             profile_updates: {
+              email: infoData.email,
               name: infoData.name,
               bio: infoData.bio,
               locations: infoData.locations,
