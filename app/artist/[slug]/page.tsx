@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
-import { getPortfolioImageUrl } from '@/lib/utils/images'
+import { getPortfolioImageUrl, getProfileImageUrl } from '@/lib/utils/images'
 import { CITIES } from '@/lib/constants/cities'
 import { US_STATES } from '@/lib/constants/states'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
@@ -74,10 +74,13 @@ export async function generateMetadata({
     `Browse @${artist.instagram_handle}'s tattoo portfolio and connect via Instagram. Based in ${artist.city}${artist.state ? ', ' + artist.state : ''}.`
 
   // Use profile image or first portfolio image for OG
-  let ogImage = artist.profile_image_url || '/og-default.jpg'
+  // Priority: stored profile image > legacy profile URL > first portfolio image > default
+  let ogImage = getProfileImageUrl(artist)
 
-  if (!ogImage.startsWith('http') && artist.portfolio_images?.[0]) {
+  if (ogImage === '/placeholder-tattoo.jpg' && artist.portfolio_images?.[0]) {
     ogImage = getPortfolioImageUrl(artist.portfolio_images[0])
+  } else if (ogImage === '/placeholder-tattoo.jpg') {
+    ogImage = '/og-default.jpg'
   }
 
   return {
@@ -121,13 +124,14 @@ export default async function ArtistPage({
   const citySlug = city?.slug || artist.city?.toLowerCase().replace(/\s+/g, '-') || ''
 
   // JSON-LD structured data (sanitized to prevent XSS)
+  const jsonLdImage = getProfileImageUrl(artist)
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: `@${sanitizeForJsonLd(artist.instagram_handle)}`,
     description: sanitizeForJsonLd(artist.bio_override || artist.bio),
     url: `/artist/${slug}`,
-    image: artist.profile_image_url,
+    image: jsonLdImage !== '/placeholder-tattoo.jpg' ? jsonLdImage : undefined,
     jobTitle: 'Tattoo Artist',
     sameAs: artist.instagram_url ? [artist.instagram_url] : [],
     address: {

@@ -209,6 +209,23 @@ export function generateImagePaths(artistId: string, postId: string) {
 }
 
 /**
+ * Generate storage paths for artist profile image (original + 2 thumbnails)
+ * Profile images only need 320 and 640 since they're displayed small
+ */
+export function generateProfileImagePaths(artistId: string) {
+  // Validate input to prevent path traversal
+  if (!validateArtistId(artistId)) {
+    throw new Error(`Invalid artistId format: ${artistId}`);
+  }
+
+  return {
+    original: `profiles/original/${artistId}.jpg`,
+    thumb320: `profiles/320/${artistId}.webp`,
+    thumb640: `profiles/640/${artistId}.webp`,
+  };
+}
+
+/**
  * Get storage stats (requires admin access)
  */
 export async function getStorageStats(): Promise<{

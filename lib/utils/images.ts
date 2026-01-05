@@ -96,3 +96,24 @@ export function getArtistFeaturedImageUrl(
     profileImage,
   })
 }
+
+/**
+ * Get artist profile image URL with fallback chain
+ * Priority: storage_thumb_640 > storage_thumb_320 > storage_path > legacy CDN URL > placeholder
+ * @param artist - Artist object with profile image fields
+ * @returns Image URL
+ */
+export function getProfileImageUrl(artist: {
+  profile_storage_thumb_640?: string | null
+  profile_storage_thumb_320?: string | null
+  profile_storage_path?: string | null
+  profile_image_url?: string | null // legacy fallback (Instagram CDN)
+}): string {
+  const path =
+    artist.profile_storage_thumb_640 ||
+    artist.profile_storage_thumb_320 ||
+    artist.profile_storage_path ||
+    artist.profile_image_url
+
+  return getImageUrl(path)
+}

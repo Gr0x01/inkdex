@@ -142,11 +142,13 @@ export default function ArtistInfoColumn({
       <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-2.5">
 
         {/* Profile Image - Portrait 3:4, More Compact */}
-        {(artist.profile_storage_thumb_640 || artist.profile_image_url) && (
+        {(() => {
+          const profileUrl = getProfileImageUrl(artist)
+          return profileUrl !== '/placeholder-tattoo.jpg' ? (
           <div className="relative w-full max-w-[200px] mx-auto">
             <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
               <Image
-                src={getProfileImageUrl(artist)}
+                src={profileUrl}
                 alt={`${artist.name} profile`}
                 fill
                 className="object-cover"
@@ -175,7 +177,8 @@ export default function ArtistInfoColumn({
             {/* Minimal corner accent - top right only */}
             <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-warm-gray" />
           </div>
-        )}
+        ) : null
+        })()}
 
         {/* Header: Name (overline) + Handle + Badges + Location - TIGHT SPACING */}
         {artist.instagram_handle && (
