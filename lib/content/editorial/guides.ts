@@ -129,7 +129,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
       'best tattoo neighborhoods austin',
       'austin ink scene',
     ],
-    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   // ============================================================
@@ -246,7 +246,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
       'chicano tattoo los angeles',
       'best tattoo neighborhoods la',
     ],
-    relatedStyles: ['chicano', 'fine-line', 'realism', 'traditional', 'illustrative'],
+    relatedStyles: ['black-and-gray', 'minimalist', 'realism', 'traditional', 'illustrative'],
   },
 
   {
@@ -323,7 +323,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['New York tattoos', 'NYC tattoo shops', 'tattoo styles NYC', 'book tattoos NYC', 'tattoo pricing New York', 'best tattoo places NYC'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -400,7 +400,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Chicago tattoo', 'tattoo styles Chicago', 'best tattoo shops Chicago', 'Chicago tattoo artists', 'tattoo prices Chicago', 'tattoo appointments Chicago'],
-    relatedStyles: ['traditional', 'fine-line', 'Chicano', 'minimalist', 'realism', 'blackwork'],
+    relatedStyles: ['traditional', 'minimalist', 'black-and-gray', 'realism', 'blackwork'],
   },
 
   {
@@ -477,7 +477,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Houston tattoo', 'Montrose ink', 'The Heights tattoo studio', 'East End tattoos', 'Houston tattoo styles', 'tattoo artists in Houston'],
-    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -554,7 +554,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Phoenix tattoo guide', 'best tattoo shops Phoenix', 'tattoo styles Phoenix', 'Phoenix artists', 'tattoo appointments Phoenix', 'tattoo pricing Phoenix'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'minimalist', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -631,7 +631,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Philadelphia tattoo shops', 'Philly tattoo artists', 'best tattoos in Philadelphia', 'Fishtown tattoo studios', 'South Street tattoos', 'Northern Liberties tattoo'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'illustrative', 'minimalist', 'neo-traditional'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'illustrative', 'neo-traditional'],
   },
 
   {
@@ -708,7 +708,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['San Antonio tattoos', 'tattoo shops in San Antonio', 'Chicano tattoos', 'best tattoos in San Antonio', 'tattoo artists in San Antonio', 'San Antonio ink'],
-    relatedStyles: ['chicano', 'realism', 'portrait', 'watercolor', 'geometric', 'fine-line'],
+    relatedStyles: ['black-and-gray', 'realism', 'watercolor', 'ornamental', 'minimalist'],
   },
 
   {
@@ -785,7 +785,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['San Diego tattoos', 'best tattoo parlors San Diego', 'tattoo styles San Diego', 'tattoo advice San Diego', 'tattoo prices San Diego', 'popular tattoos San Diego'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'japanese', 'tribal'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'japanese', 'tribal'],
   },
 
   {
@@ -862,7 +862,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Dallas tattoos', 'Deep Ellum tattoo', 'Bishop Arts tattoos', 'Uptown Dallas tattoo', 'fine-line tattoos Dallas', 'Chicano tattoos Dallas'],
-    relatedStyles: ['traditional', 'fine-line', 'chicano', 'minimalist', 'blackwork', 'realism'],
+    relatedStyles: ['traditional', 'minimalist', 'black-and-gray', 'blackwork', 'realism'],
   },
 
   {
@@ -939,7 +939,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['San Francisco tattoo', 'tattoo artists in SF', 'best tattoo shops SF', 'SOMA tattoos', 'Mission District tattoos', 'Haight-Ashbury tattoos'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -1016,7 +1016,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Seattle tattoo culture', 'Seattle tattoo styles', 'best tattoo shops in Seattle', 'Capitol Hill tattoos', 'Ballard tattoo artists', 'Georgetown tattoos'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'japanese'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'japanese'],
   },
 
   {
@@ -1093,7 +1093,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Denver tattoo', 'Denver tattoo artists', 'tattoo studios Denver', 'best tattoos Denver', 'ink shops Denver', 'Denver ink', 'tattoo art Denver'],
-    relatedStyles: ['traditional', 'fine-line', 'geometric', 'realism', 'watercolor', 'blackwork'],
+    relatedStyles: ['traditional', 'minimalist', 'ornamental', 'realism', 'watercolor', 'blackwork'],
   },
 
   {
@@ -1170,7 +1170,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Boston tattoo shops', 'tattoo styles Boston', 'best tattoos Boston', 'Boston ink guide', 'tattoo artists Boston', 'Boston tattoo culture'],
-    relatedStyles: ['traditional', 'realism', 'blackwork', 'minimalist', 'fine-line', 'illustrative'],
+    relatedStyles: ['traditional', 'realism', 'blackwork', 'minimalist', 'illustrative'],
   },
 
   {
@@ -1238,7 +1238,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Nashville tattoo', 'Music City ink', 'tattoo studios Nashville', 'tattoo artists Nashville', 'East Nashville tattoos', 'Midtown tattoo parlors'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'minimalist', 'custom', 'music-themed'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist'],
   },
 
   {
@@ -1315,7 +1315,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Portland tattoo', 'Portland tattoo artists', 'tattoo styles Portland', 'tattoo shops Portland', 'custom tattoos Portland', 'Portland ink'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'minimalist', 'realism', 'abstract'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'realism', 'surrealism'],
   },
 
   {
@@ -1392,7 +1392,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Las Vegas tattoos', 'tattoo artists in Las Vegas', 'best tattoo shops Las Vegas', 'Las Vegas tattoo styles', 'custom tattoos Las Vegas', 'ink Las Vegas'],
-    relatedStyles: ['realism', 'traditional', 'neo-traditional', 'fine-line', 'blackwork', 'chicano'],
+    relatedStyles: ['realism', 'traditional', 'neo-traditional', 'minimalist', 'blackwork', 'black-and-gray'],
   },
 
   {
@@ -1469,7 +1469,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Miami tattoo', 'Wynwood tattoo studios', 'South Beach tattoos', 'Little Havana ink', 'Miami tattoo artists', 'tattoo styles Miami'],
-    relatedStyles: ['chicano', 'realism', 'fine-line', 'minimalist'],
+    relatedStyles: ['black-and-gray', 'realism', 'minimalist'],
   },
 
   {
@@ -1546,7 +1546,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Atlanta tattoo', 'tattoo artists in Atlanta', 'best tattoo shops Atlanta', 'tattoo styles Atlanta', 'ink guide Atlanta', 'Atlanta tattoo culture'],
-    relatedStyles: ['blackwork', 'fine-line', 'illustrative', 'watercolor', 'traditional', 'modern'],
+    relatedStyles: ['blackwork', 'minimalist', 'illustrative', 'watercolor', 'traditional'],
   },
 
   {
@@ -1673,7 +1673,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Minneapolis tattoo guide', 'tattoo artists in Minneapolis', 'tattoo styles Minneapolis', 'best tattoo Minneapolis', 'Minneapolis tattoo pricing', 'book tattoo Minneapolis'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'Nordic tribal', 'Hmong-inspired', 'illustrative'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'tribal', 'ornamental', 'illustrative'],
   },
 
   {
@@ -1750,7 +1750,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['New Orleans tattoos', 'French Quarter ink', 'Bywater tattoo art', 'Uptown tattoo studios', 'NOLA tattoo styles', 'tattoo artists in New Orleans'],
-    relatedStyles: ['traditional', 'blackwork', 'illustrative', 'realism', 'neo-traditional', 'fine-line'],
+    relatedStyles: ['traditional', 'blackwork', 'illustrative', 'realism', 'neo-traditional', 'minimalist'],
   },
 
   {
@@ -1827,7 +1827,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Cleveland tattoo', 'Ohio City tattoos', 'Gordon Square ink', 'Tremont tattoo parlors', 'tattoo styles Cleveland', 'get inked Cleveland'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'illustrative', 'geometric', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'illustrative', 'ornamental', 'minimalist'],
   },
 
   {
@@ -1904,7 +1904,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Pittsburgh tattoo', 'tattoo shops in Pittsburgh', 'best tattoo artists Pittsburgh', 'traditional tattoos Pittsburgh', 'contemporary tattoos Pittsburgh', 'tattoo styles Pittsburgh'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -1981,7 +1981,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Baltimore tattoo', 'tattoo studios Baltimore', 'best tattoo Baltimore', 'tattoo style Baltimore', 'tattoo artist Baltimore', 'tattoo prices Baltimore'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -2058,7 +2058,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['St. Louis tattoo', 'tattoo artists in St. Louis', 'best tattoo shops St. Louis', 'St. Louis ink', 'tattoo styles St. Louis', 'tattoo pricing St. Louis'],
-    relatedStyles: ['traditional', 'blackwork', 'realism', 'japanese', 'chicano', 'fine-line'],
+    relatedStyles: ['traditional', 'blackwork', 'realism', 'japanese', 'black-and-gray', 'minimalist'],
   },
 
   {
@@ -2135,7 +2135,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Tampa tattoo shops', 'best tattoos in Tampa', 'Tampa tattoo styles', 'tattoo artists in Tampa', 'Tampa ink', 'Ybor City tattoos'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -2212,7 +2212,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Asheville tattoo guide', 'tattoo artists in Asheville', 'best tattoo shops Asheville', 'Asheville ink styles', 'tattoo culture Asheville', 'Asheville tattoo art', 'custom tattoos Asheville'],
-    relatedStyles: ['traditional', 'fine-line', 'watercolor', 'abstract'],
+    relatedStyles: ['traditional', 'minimalist', 'watercolor', 'surrealism'],
   },
 
   {
@@ -2289,7 +2289,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Savannah tattoo', 'tattoo studios Savannah', 'tattoo styles Savannah', 'Savannah ink', 'tattoo artists Savannah', 'Savannah tattoo guide'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'minimalist', 'illustrative'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'illustrative'],
   },
 
   {
@@ -2366,7 +2366,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Charleston tattoo', 'tattoo studios Charleston', 'tattoo artists Charleston', 'tattoo styles Charleston', 'Charleston ink', 'tattoo tips Charleston'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'geometric', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'ornamental'],
   },
 
   {
@@ -2443,7 +2443,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Richmond tattoo guide', 'Richmond tattoo artists', 'best tattoo shops in Richmond', 'tattoo styles Richmond', 'Richmond ink', 'tattoo prices Richmond'],
-    relatedStyles: ['traditional', 'minimalist', 'geometric', 'blackwork', 'japanese', 'fine-line'],
+    relatedStyles: ['traditional', 'minimalist', 'ornamental', 'blackwork', 'japanese'],
   },
 
   {
@@ -2520,7 +2520,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Charlotte tattoo', 'NoDa tattoo shops', 'Plaza Midwood tattoos', 'South End tattoo studios', 'tattoo styles Charlotte', 'tattoo artist Charlotte'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'blackwork', 'geometric', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'blackwork', 'ornamental'],
   },
 
   {
@@ -2597,7 +2597,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Columbus tattoo', 'best tattoo in Columbus', 'Columbus tattoo artists', 'tattoo styles Columbus', 'Columbus ink', 'tattoo studios Columbus'],
-    relatedStyles: ['traditional', 'fine-line', 'minimalist', 'blackwork', 'realism', 'mixed-media'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'realism', 'trash-polka'],
   },
 
   {
@@ -2674,7 +2674,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Salt Lake City tattoo', 'tattoo artists in Utah', 'best tattoo shops Salt Lake', 'tattoo styles Salt Lake', 'tattoo pricing Utah', 'book tattoo Salt Lake'],
-    relatedStyles: ['traditional', 'realism', 'fine-line', 'blackwork', 'neo-traditional', 'japanese'],
+    relatedStyles: ['traditional', 'realism', 'minimalist', 'blackwork', 'neo-traditional', 'japanese'],
   },
 
   {
@@ -2751,7 +2751,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Kansas City tattoos', 'best tattoo shops in KC', 'tattoo styles KC', 'Kansas City arts district tattoos', 'tattoo pricing Kansas City', 'tattoo conventions KC'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'japanese', 'tribal', 'watercolor', 'minimalist', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'japanese', 'tribal', 'watercolor', 'black-and-gray'],
   },
 
   {
@@ -2828,7 +2828,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Providence tattoo', 'tattoo artists in Providence', 'tattoo shops in Providence', 'best tattoos Providence', 'Providence ink', 'tattoo styles Providence'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'illustrative', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'illustrative'],
   },
 
   {
@@ -2905,7 +2905,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Albuquerque tattoo', 'Nob Hill ink', 'Old Town tattoos', 'Downtown tattoo studios', 'tattoo styles Albuquerque', 'tattoo artist Albuquerque'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -2973,7 +2973,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['El Paso tattoo', 'Chicano tattoos', 'tattoo artists in El Paso', 'best tattoo shops El Paso', 'tattoo style El Paso', 'custom tattoos El Paso'],
-    relatedStyles: ['chicano', 'traditional', 'realism', 'minimalist', 'geometric'],
+    relatedStyles: ['black-and-gray', 'traditional', 'realism', 'minimalist', 'ornamental'],
   },
 
   {
@@ -3050,7 +3050,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Buffalo tattoo guide', 'Buffalo tattoo artists', 'tattoo styles in Buffalo', 'best tattoo shops Buffalo', 'Buffalo tattoo culture', 'tattoo consultation Buffalo'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'realism', 'blackwork', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'realism', 'blackwork', 'watercolor'],
   },
 
   {
@@ -3127,7 +3127,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Tucson tattoo', 'tattoo artists in Tucson', 'Tucson tattoo styles', 'tattoo shops Tucson', 'custom tattoos Tucson', 'Chicano tattoos Tucson'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -3204,7 +3204,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Madison tattoo studios', 'best tattoos in Madison', 'eco-friendly tattoos Madison', 'Madison ink', 'Madison tattoo art', 'custom tattoos Madison'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'watercolor', 'minimalist', 'eco-friendly'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'watercolor'],
   },
 
   {
@@ -3272,7 +3272,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Ann Arbor tattoo scene', 'best tattoo shops in Ann Arbor', 'custom tattoos Ann Arbor', 'fine-line tattoos Ann Arbor', 'Ann Arbor tattoo artists', 'tattoo pricing Ann Arbor'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'minimalist', 'blackwork', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'blackwork', 'ornamental'],
   },
 
   {
@@ -3349,7 +3349,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Chapel Hill tattoo', 'tattoo artists in Chapel Hill', 'best tattoo shops in Chapel Hill', 'tattoo styles in Chapel Hill', 'tattoo pricing Chapel Hill', 'book a tattoo in Chapel Hill'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'fine-line', 'minimalist', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'minimalist', 'watercolor'],
   },
 
   {
@@ -3426,7 +3426,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Durham tattoo', 'tattoo artists in Durham', 'best tattoo in Durham', 'Durham tattoo styles', 'tattoo shops Durham NC', 'custom tattoo Durham'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'watercolor'],
   },
 
   {
@@ -3503,7 +3503,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Oklahoma City tattoo', 'OKC ink', 'tattoo artists in OKC', 'best tattoo places in Oklahoma City', 'tattoo styles OKC', 'tattoo tips Oklahoma City'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'realism', 'minimalist', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'realism', 'ornamental'],
   },
 
   {
@@ -3580,7 +3580,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Raleigh tattoo', 'Raleigh tattoo artists', 'best tattoos in Raleigh', 'Raleigh tattoo styles', 'tattoo shops Raleigh NC', 'custom tattoos Raleigh'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'blackwork', 'geometric', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'blackwork', 'ornamental', 'watercolor'],
   },
 
   {
@@ -3657,7 +3657,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Honolulu tattoo', 'Polynesian tattoo', 'tattoo artists in Honolulu', 'best tattoo shops in Honolulu', 'tattoo styles Honolulu', 'tattoo advice Honolulu'],
-    relatedStyles: ['traditional', 'tribal', 'realism', 'Japanese', 'neo-traditional', 'watercolor'],
+    relatedStyles: ['traditional', 'tribal', 'realism', 'neo-traditional', 'watercolor'],
   },
 
   {
@@ -3734,7 +3734,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Fort Lauderdale tattoo', 'tattoo artists in Fort Lauderdale', 'best tattoo shops Fort Lauderdale', 'tattoo styles Fort Lauderdale', 'custom tattoos Fort Lauderdale', 'tattoo booking Fort Lauderdale'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'watercolor', 'blackwork'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'watercolor', 'blackwork'],
   },
 
   {
@@ -3811,7 +3811,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Boise tattoo', 'tattoo artists in Boise', 'Boise tattoo studios', 'tattoo styles Boise', 'Boise ink', 'tattoo culture Boise'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'watercolor', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'watercolor'],
   },
 
   {
@@ -3888,7 +3888,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Boulder tattoo guide', 'tattoo shops in Boulder', 'Boulder ink styles', 'best tattoos Boulder', 'Boulder tattoo artists', 'tattoo ideas Boulder'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line', 'japanese', 'tribal', 'watercolor', 'minimalist', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist', 'japanese', 'tribal', 'watercolor', 'black-and-gray'],
   },
 
   {
@@ -3965,7 +3965,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Indianapolis tattoo', 'best tattoo in Indianapolis', 'Indianapolis tattoo artists', 'tattoo styles Indianapolis', 'tattoo shops Indianapolis', 'Indy ink'],
-    relatedStyles: ['traditional', 'realism', 'fine-line', 'geometric', 'colorwork', 'minimalist'],
+    relatedStyles: ['traditional', 'realism', 'minimalist', 'ornamental', 'watercolor'],
   },
 
   {
@@ -4042,7 +4042,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Sacramento tattoo shops', 'Midtown ink', 'Old Sacramento tattoos', 'East Sacramento tattoo studios', 'tattoo styles Sacramento', 'tattoo pricing Sacramento'],
-    relatedStyles: ['traditional', 'chicano', 'realism', 'fine-line', 'japanese', 'tribal'],
+    relatedStyles: ['traditional', 'black-and-gray', 'realism', 'minimalist', 'japanese', 'tribal'],
   },
 
   {
@@ -4119,7 +4119,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Milwaukee tattoo', 'tattoo shops in Milwaukee', 'best tattoo Milwaukee', 'ink Milwaukee', 'tattoo artists Milwaukee', 'Milwaukee tattoo styles'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -4196,7 +4196,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Memphis tattoo', 'tattoo artists in Memphis', 'Memphis tattoo styles', 'best tattoo shops Memphis', 'tattoo pricing Memphis', 'tattoo appointments Memphis'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'illustrative'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'illustrative'],
   },
 
   {
@@ -4273,7 +4273,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Louisville tattoo', 'tattoo artists in Louisville', 'best tattoo places in Louisville', 'Louisville tattoo styles', 'tattoo ideas Louisville', 'Louisville ink guide'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'illustrative'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'illustrative'],
   },
 
   {
@@ -4350,7 +4350,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Cincinnati tattoo guide', 'Cincinnati tattoo shops', 'best tattoo in Cincinnati', 'Over-the-Rhine tattoos', 'Northside tattoo artists', 'Clifton tattoo studios'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'illustrative'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'illustrative'],
   },
 
   {
@@ -4427,7 +4427,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Des Moines tattoo', 'tattoo shops in Des Moines', 'best tattoos Des Moines', 'Des Moines tattoo artists', 'custom tattoo Des Moines', 'tattoo styles Des Moines'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'geometric', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'ornamental', 'minimalist'],
   },
 
   {
@@ -4504,7 +4504,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Little Rock tattoo', 'best tattoo Little Rock', 'tattoo artists in Little Rock', 'tattoo styles Little Rock', 'fine-line tattoos Little Rock', 'traditional tattoos Little Rock'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -4581,7 +4581,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Rochester NY tattoos', 'tattoo artists in Rochester', 'Rochester tattoo styles', 'best tattoo shops Rochester', 'Rochester tattoo guide', 'tattoo appointments Rochester'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'fine-line', 'blackwork'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'blackwork'],
   },
 
   {
@@ -4658,7 +4658,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Tallahassee tattoo', 'Tallahassee tattoo shops', 'tattoo styles Tallahassee', 'best tattoo Tallahassee', 'Tallahassee ink', 'tattoo artist Tallahassee'],
-    relatedStyles: ['traditional', 'illustrative', 'minimalist', 'fine-line', 'blackwork', 'geometric'],
+    relatedStyles: ['traditional', 'illustrative', 'minimalist', 'blackwork', 'ornamental'],
   },
 
   {
@@ -4726,7 +4726,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Athens tattoo guide', 'tattoo studios Athens GA', 'best tattoo Athens', 'Athens tattoo styles', 'tattoo artist Athens', 'tattoo pricing Athens'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'geometric', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'ornamental', 'watercolor'],
   },
 
   {
@@ -4803,7 +4803,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Fresno tattoo', 'tattoo artists in Fresno', 'best tattoo shops Fresno', 'tattoo styles Fresno', 'Fresno ink', 'custom tattoos Fresno'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'geometric', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'ornamental', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -4880,7 +4880,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Chattanooga tattoo', 'Chattanooga tattoo shops', 'best tattoo in Chattanooga', 'Southside tattoo', 'North Shore tattoo', 'St. Elmo tattoo', 'tattoo styles Chattanooga'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -4957,7 +4957,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Knoxville tattoo', 'tattoo artists in Knoxville', 'Knoxville tattoo styles', 'tattoo studios Knoxville', 'best tattoos Knoxville', 'Knoxville ink'],
-    relatedStyles: ['traditional', 'fine-line', 'realism', 'blackwork', 'geometric', 'watercolor'],
+    relatedStyles: ['traditional', 'minimalist', 'realism', 'blackwork', 'ornamental', 'watercolor'],
   },
 
   {
@@ -5034,7 +5034,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Greenville SC tattoos', 'tattoo artists in Greenville', 'best tattoo shops Greenville', 'tattoo styles Greenville', 'tattoo pricing Greenville', 'book tattoo Greenville'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'geometric', 'realism', 'minimalist'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'ornamental', 'realism'],
   },
 
   {
@@ -5111,7 +5111,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Omaha tattoo shops', 'tattoo styles Omaha', 'tattoo artists in Omaha', 'best tattoos Omaha', 'Omaha ink', 'tattoo appointments Omaha'],
-    relatedStyles: ['traditional', 'fine-line', 'realism', 'geometric', 'illustrative', 'minimalist'],
+    relatedStyles: ['traditional', 'minimalist', 'realism', 'ornamental', 'illustrative'],
   },
 
   {
@@ -5188,7 +5188,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Wichita tattoos', 'Douglas Design District ink', 'Delano tattoo studios', 'Old Town Wichita tattoos', 'custom tattoos Wichita', 'traditional American tattoos'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'watercolor'],
   },
 
   {
@@ -5265,7 +5265,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Eugene tattoo guide', 'tattoo shops in Eugene', 'best tattoos Eugene', 'Eugene ink studios', 'tattoo artists Eugene', 'Eugene tattoo styles'],
-    relatedStyles: ['traditional', 'fine-line', 'illustrative', 'geometric', 'watercolor', 'nature-inspired'],
+    relatedStyles: ['traditional', 'minimalist', 'illustrative', 'ornamental', 'watercolor'],
   },
 
   {
@@ -5342,7 +5342,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Gainesville tattoo', 'Gainesville tattoo artists', 'best tattoo in Gainesville', 'tattoo styles Gainesville', 'Gainesville ink', 'custom tattoos Gainesville'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'japanese', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'japanese'],
   },
 
   {
@@ -5419,7 +5419,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Cambridge tattoo', 'Harvard Square tattoos', 'Central Square tattoo artists', 'Kendall Square tattoo studios', 'Cambridge tattoo styles', 'tattoo art Cambridge'],
-    relatedStyles: ['fine-line', 'illustrative', 'geometric', 'japanese', 'tribal', 'watercolor'],
+    relatedStyles: ['minimalist', 'illustrative', 'ornamental', 'japanese', 'tribal', 'watercolor'],
   },
 
   {
@@ -5496,7 +5496,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Jacksonville tattoo', 'tattoo artists in Jacksonville', 'best tattoo Jacksonville', 'tattoo styles Jacksonville', 'Jacksonville ink', 'tattoo shops Jacksonville', 'custom tattoo Jacksonville'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'minimalist', 'nautical', 'naturalistic'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -5564,7 +5564,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Spokane tattoo', 'tattoo studios in Spokane', 'Spokane ink', 'tattoo artists Spokane', 'tattoo styles Spokane', 'getting a tattoo in Spokane'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'fine-line', 'watercolor', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'minimalist', 'watercolor'],
   },
 
   {
@@ -5641,7 +5641,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Tacoma tattoo', 'Tacoma tattoo studios', 'Tacoma tattoo artists', 'best tattoos in Tacoma', 'traditional tattoos Tacoma', 'modern tattoos Tacoma'],
-    relatedStyles: ['traditional', 'tribal', 'neo-traditional', 'fine-line', 'watercolor', 'blackwork'],
+    relatedStyles: ['traditional', 'tribal', 'neo-traditional', 'minimalist', 'watercolor', 'blackwork'],
   },
 
   {
@@ -5718,7 +5718,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Long Beach tattoo shops', 'Belmont Shore ink', 'Downtown Long Beach tattoos', 'East Village Arts tattoos', 'nautical tattoos Long Beach', 'fine-line tattoos Long Beach'],
-    relatedStyles: ['traditional', 'blackwork', 'fine-line', 'watercolor', 'chicano', 'nautical'],
+    relatedStyles: ['traditional', 'blackwork', 'minimalist', 'watercolor', 'black-and-gray'],
   },
 
   {
@@ -5872,7 +5872,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Tulsa tattoo', 'Tulsa tattoo shops', 'Tulsa tattoo artists', 'Tulsa tattoo styles', 'Tulsa ink', 'tattoo art in Tulsa'],
-    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'fine-line', 'realism', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'minimalist', 'realism'],
   },
 
   {
@@ -5949,7 +5949,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Reno tattoo guide', 'tattoo artists in Reno', 'best tattoo shops Reno', 'Reno tattoo styles', 'tattoo pricing Reno', 'book a tattoo in Reno'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -6017,7 +6017,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Springfield tattoo guide', 'best tattoo shops in Springfield', 'Springfield MO tattoo styles', 'where to get inked in Springfield', 'Springfield tattoo artist', 'tattoo culture in Springfield'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'minimalist'],
   },
 
   {
@@ -6085,7 +6085,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Iowa City tattoos', 'tattoo artists in Iowa City', 'best tattoo shops Iowa City', 'Downtown Iowa City tattoos', 'Northside Marketplace tattoos', 'Iowa City tattoo styles', 'tattoo pricing Iowa City'],
-    relatedStyles: ['fine-line', 'illustrative', 'traditional', 'blackwork', 'geometric', 'minimalist'],
+    relatedStyles: ['minimalist', 'illustrative', 'traditional', 'blackwork', 'ornamental'],
   },
 
   {
@@ -6153,7 +6153,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Bloomington IN tattoos', 'best tattoo shops Bloomington', 'tattoo styles Bloomington', 'tattoo artists Bloomington', 'tattoo prices Bloomington', 'book tattoo Bloomington'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'minimalist', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'watercolor'],
   },
 
   {
@@ -6230,7 +6230,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['New Haven tattoo', 'tattoo artists in New Haven', 'best tattoo in New Haven', 'New Haven tattoo styles', 'tattoo studios New Haven', 'ink spots in New Haven'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'minimalist'],
   },
 
   {
@@ -6307,7 +6307,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Baton Rouge tattoo', 'tattoo shops in Baton Rouge', 'best tattoos Baton Rouge', 'custom tattoo Baton Rouge', 'Baton Rouge ink', 'tattoo art Baton Rouge'],
-    relatedStyles: ['traditional', 'minimalist', 'fine-line', 'nature-inspired', 'Americana', 'custom'],
+    relatedStyles: ['traditional', 'minimalist', 'illustrative'],
   },
 
   {
@@ -6384,7 +6384,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Columbia SC tattoo', 'best tattoo in Columbia', 'Columbia tattoo artists', 'tattoo styles Columbia', 'tattoo prices Columbia', 'book tattoo Columbia'],
-    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'fine-line', 'geometric', 'japanese'],
+    relatedStyles: ['traditional', 'neo-traditional', 'blackwork', 'minimalist', 'ornamental', 'japanese'],
   },
 
   {
@@ -6461,7 +6461,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Bend Oregon tattoos', 'Pacific Northwest tattoos', 'Bend tattoo artists', 'tattoo styles Bend', 'nature-inspired tattoos', 'custom tattoos Bend'],
-    relatedStyles: ['traditional', 'tribal', 'fine-line', 'watercolor', 'minimalist', 'geometric'],
+    relatedStyles: ['traditional', 'tribal', 'minimalist', 'watercolor', 'ornamental'],
   },
 
   {
@@ -6538,7 +6538,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Ithaca NY tattoo', 'tattoo artists in Ithaca', 'best tattoo shops Ithaca', 'Ithaca college tattoos', 'custom tattoos Ithaca', 'fine-line tattoos Ithaca'],
-    relatedStyles: ['fine-line', 'minimalist', 'custom', 'blackwork', 'illustrative', 'environmental'],
+    relatedStyles: ['minimalist', 'blackwork', 'illustrative'],
   },
 
   {
@@ -6615,7 +6615,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Lexington KY tattoo', 'best tattoo shops in Lexington', 'Lexington tattoo artists', 'tattoo styles Lexington', 'tattoo prices Lexington', 'book tattoo Lexington'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'illustrative', 'blackwork'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'illustrative', 'blackwork'],
   },
 
   {
@@ -6692,7 +6692,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Lincoln tattoo guide', 'best tattoo shops Lincoln', 'tattoo styles Lincoln', 'Lincoln tattoo artists', 'tattoo pricing Lincoln', 'book tattoo Lincoln'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'geometric', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'ornamental', 'watercolor'],
   },
 
   {
@@ -6769,7 +6769,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Anchorage tattoos', 'Alaska tattoo artists', 'tattoo shops in Anchorage', 'custom tattoos Anchorage', 'indigenous tattoos Alaska', 'realism tattoos Anchorage'],
-    relatedStyles: ['traditional', 'realism', 'blackwork', 'illustrative', 'geometric', 'fine-line'],
+    relatedStyles: ['traditional', 'realism', 'blackwork', 'illustrative', 'ornamental', 'minimalist'],
   },
 
   {
@@ -6846,7 +6846,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Burlington tattoo shops', 'Burlington tattoo artists', 'tattoo styles Burlington', 'get inked in Burlington', 'Burlington tattoo culture', 'tattoo consultation Burlington'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'ornamental'],
   },
 
   {
@@ -6914,7 +6914,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Charlottesville tattoo', 'Virginia ink', 'tattoo artists in Charlottesville', 'Downtown Mall tattoos', 'Belmont tattoo studios', 'UVa student tattoos'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist'],
   },
 
   {
@@ -6991,7 +6991,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Birmingham tattoo', 'Birmingham tattoo artists', 'tattoo styles Birmingham', 'ink guide Birmingham', 'tattoo parlors Birmingham', 'Birmingham ink'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'geometric', 'minimalist', 'realism'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'ornamental', 'realism'],
   },
 
   {
@@ -7068,7 +7068,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Washington D.C. tattoos', 'tattoo studios in D.C.', 'Adams Morgan tattoo', 'Georgetown ink', 'U Street tattoo culture', 'D.C. tattoo styles', 'tattoo pricing Washington'],
-    relatedStyles: ['traditional', 'fine-line', 'watercolor', 'blackwork', 'geometric', 'japanese'],
+    relatedStyles: ['traditional', 'minimalist', 'watercolor', 'blackwork', 'ornamental', 'japanese'],
   },
 
   {
@@ -7145,7 +7145,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Wilmington NC tattoos', 'best tattoo shops Wilmington', 'tattoo artists Wilmington', 'custom tattoos Wilmington', 'Wilmington ink studios', 'tattoo styles Wilmington'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'watercolor', 'geometric'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'watercolor', 'ornamental'],
   },
 
   {
@@ -7222,7 +7222,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Fort Worth tattoos', 'best tattoo shops in Fort Worth', 'tattoo styles Fort Worth', 'tattoo prices Fort Worth', 'tattoo bookings Fort Worth', 'custom tattoos Fort Worth'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'chicano'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'black-and-gray'],
   },
 
   {
@@ -7299,7 +7299,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Colorado Springs tattoo', 'tattoo artists in Colorado Springs', 'tattoo styles Colorado Springs', 'tattoo parlors Colorado Springs', 'best tattoos Colorado Springs', 'custom tattoos Colorado Springs'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'geometric', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'ornamental', 'minimalist'],
   },
 
   {
@@ -7376,7 +7376,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Portland Maine tattoo', 'best tattoo shops Portland', 'tattoo styles Portland', 'Old Port tattoos', 'Arts District tattoo', 'East End tattoo artists'],
-    relatedStyles: ['traditional', 'fine-line', 'geometric', 'realism', 'minimalist', 'blackwork'],
+    relatedStyles: ['traditional', 'minimalist', 'ornamental', 'realism', 'blackwork'],
   },
 
   {
@@ -7453,7 +7453,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Wilmington DE tattoos', 'best tattoo shops Wilmington', 'tattoo artists Wilmington', 'Wilmington tattoo styles', 'tattoo pricing Wilmington', 'book tattoo Wilmington'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -7530,7 +7530,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Jackson Mississippi tattoo', 'tattoo shops Jackson MS', 'tattoo artists in Jackson', 'Fondren tattoo culture', 'Belhaven tattoos', 'Downtown Jackson ink'],
-    relatedStyles: ['traditional', 'realism', 'blackwork', 'fine-line', 'portraits', 'custom'],
+    relatedStyles: ['traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -7598,7 +7598,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Biloxi tattoo culture', 'Biloxi tattoo studios', 'Mississippi tattoos', 'Gulf Coast tattoos', 'Biloxi ink', 'tattoo art Biloxi'],
-    relatedStyles: ['traditional', 'neo-traditional', 'watercolor', 'fine-line', 'blackwork', 'tribal'],
+    relatedStyles: ['traditional', 'neo-traditional', 'watercolor', 'minimalist', 'blackwork', 'tribal'],
   },
 
   {
@@ -7675,7 +7675,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Missoula tattoo', 'Montana ink', 'tattoo artists in Missoula', 'Missoula tattoo studios', 'tattoo styles Missoula', 'Missoula tattoo culture'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -7743,7 +7743,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Bozeman tattoos', 'Montana tattoo artists', 'Downtown Bozeman ink', 'Midtown tattoo studios', 'wildlife tattoos', 'tribal tattoos Bozeman'],
-    relatedStyles: ['traditional', 'realism', 'fine-line', 'watercolor', 'tribal'],
+    relatedStyles: ['traditional', 'realism', 'minimalist', 'watercolor', 'tribal'],
   },
 
   {
@@ -7802,7 +7802,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Billings tattoo', 'Montana tattoo culture', 'tattoo studios Billings', 'traditional American tattoo', 'fine-line tattoos', 'blackwork tattoo Montana'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist'],
   },
 
   {
@@ -7879,7 +7879,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Portsmouth tattoo', 'tattoo artists in Portsmouth', 'Portsmouth tattoo shops', 'best tattoos in Portsmouth', 'custom tattoos Portsmouth', 'Portsmouth ink'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'fine-line', 'watercolor'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'minimalist', 'watercolor'],
   },
 
   {
@@ -7956,7 +7956,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Manchester tattoo shops', 'tattoo styles Manchester', 'booking tattoos Manchester', 'tattoo pricing Manchester', 'best tattoo artists Manchester', 'tattoo culture Manchester'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'geometric', 'blackwork'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'ornamental', 'blackwork'],
   },
 
   {
@@ -8033,7 +8033,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Jersey City tattoos', 'best tattoo shops in Jersey City', 'tattoo artists Jersey City', 'tattoo styles Jersey City', 'tattoo prices Jersey City', 'book a tattoo in Jersey City'],
-    relatedStyles: ['traditional', 'fine-line', 'illustrative', 'realism', 'blackwork', 'neo-traditional'],
+    relatedStyles: ['traditional', 'minimalist', 'illustrative', 'realism', 'blackwork', 'neo-traditional'],
   },
 
   {
@@ -8110,7 +8110,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Hoboken tattoo', 'tattoo studios Hoboken', 'Hoboken ink', 'tattoo art Hoboken', 'tattoo style Hoboken', 'tattoo booking Hoboken'],
-    relatedStyles: ['traditional', 'fine-line', 'minimalist', 'geometric', 'blackwork', 'realism'],
+    relatedStyles: ['traditional', 'minimalist', 'ornamental', 'blackwork', 'realism'],
   },
 
   {
@@ -8178,7 +8178,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Asbury Park tattoo', 'Jersey Shore tattoos', 'ink guide Asbury Park', 'tattoo artists in Asbury Park', 'tattoo styles Asbury Park', 'Asbury Park tattoo shops'],
-    relatedStyles: ['traditional', 'fine-line', 'blackwork', 'minimalist', 'neo-traditional', 'illustrative'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'neo-traditional', 'illustrative'],
   },
 
   {
@@ -8255,7 +8255,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Atlantic City tattoo', 'tattoo shops in Atlantic City', 'best tattoos Atlantic City', 'Atlantic City tattoo styles', 'tattoo art Atlantic City', 'tattoo pricing Atlantic City'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'fine-line', 'minimalist', 'blackwork'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'minimalist', 'blackwork'],
   },
 
   {
@@ -8332,7 +8332,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Fargo tattoo', 'tattoo artists in Fargo', 'best tattoo Fargo', 'Fargo tattoo styles', 'tattoo shops Fargo', 'Fargo ink'],
-    relatedStyles: ['traditional', 'minimalist', 'fine-line', 'blackwork', 'geometric'],
+    relatedStyles: ['traditional', 'minimalist', 'blackwork', 'ornamental'],
   },
 
   {
@@ -8400,7 +8400,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Bismarck tattoo', 'Bismarck tattoo artists', 'North Dakota tattoos', 'Downtown Bismarck ink', 'custom tattoos in Bismarck', 'fine-line tattoos Bismarck'],
-    relatedStyles: ['traditional', 'realism', 'fine-line', 'minimalist', 'custom', 'Americana'],
+    relatedStyles: ['traditional', 'realism', 'minimalist'],
   },
 
   {
@@ -8468,7 +8468,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Sioux Falls tattoo', 'tattoo artists in Sioux Falls', 'best tattoo Sioux Falls', 'Sioux Falls tattoo studios', 'Sioux Falls tattoo designs', 'Sioux Falls ink'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'watercolor', 'minimalist', 'native American'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'watercolor', 'tribal'],
   },
 
   {
@@ -8536,7 +8536,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Rapid City tattoo', 'Black Hills ink', 'downtown tattoo studios', 'American traditional tattoos', 'Native American tattoo designs', 'realism tattoos Rapid City'],
-    relatedStyles: ['traditional', 'blackwork', 'fine-line', 'realism', 'tribal', 'minimalist'],
+    relatedStyles: ['traditional', 'blackwork', 'minimalist', 'realism', 'tribal'],
   },
 
   {
@@ -8604,7 +8604,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Charleston WV tattoos', 'best tattoo shops in Charleston', 'Charleston tattoo artists', 'tattoo styles in Charleston', 'tattoo pricing Charleston WV', 'tattoo booking Charleston'],
-    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'fine-line'],
+    relatedStyles: ['traditional', 'neo-traditional', 'realism', 'blackwork', 'illustrative', 'minimalist'],
   },
 
   {
@@ -8681,7 +8681,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Morgantown tattoo', 'tattoo artists in Morgantown', 'best tattoo Morgantown', 'Morgantown tattoo shops', 'Morgantown ink', 'tattoo styles Morgantown'],
-    relatedStyles: ['realism', 'fine-line', 'traditional', 'neo-traditional', 'abstract', 'geometric'],
+    relatedStyles: ['realism', 'minimalist', 'traditional', 'neo-traditional', 'surrealism', 'ornamental'],
   },
 
   {
@@ -8749,7 +8749,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Jackson Wyoming tattoos', 'tattoo artists in Jackson', 'best tattoo shops Jackson', 'custom tattoos Jackson', 'fine-line tattoos Jackson', 'traditional tattoos Jackson'],
-    relatedStyles: ['traditional', 'neo-traditional', 'fine-line', 'blackwork', 'realism', 'minimalist'],
+    relatedStyles: ['traditional', 'neo-traditional', 'minimalist', 'blackwork', 'realism'],
   },
 
   {
@@ -8817,7 +8817,7 @@ export const CITY_GUIDE_CONTENT: CityGuideContent[] = [
     },
 
     keywords: ['Cheyenne tattoo studios', 'Western style tattoos', 'fine-line tattoos Cheyenne', 'realism tattoos Cheyenne', 'tattoo artists in Cheyenne', 'Cheyenne tattoo culture'],
-    relatedStyles: ['traditional', 'realism', 'fine-line', 'western', 'minimalist'],
+    relatedStyles: ['traditional', 'realism', 'minimalist'],
   }
 ]
 

@@ -1,12 +1,10 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Image from 'next/image'
 import { getArtistsByStyleSeed, getStyleSeedBySlug, getStyleSeeds } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getCountryName, getRegionName, slugToName } from '@/lib/utils/location'
 import ArtistCard from '@/components/search/ArtistCard'
-import { getImageUrl } from '@/lib/utils/images'
 import type { SearchResult } from '@/types/search'
 import Pagination from '@/components/pagination/Pagination'
 
@@ -154,140 +152,108 @@ export default async function StylePage({
   }
 
   return (
-    <div className="min-h-screen">
+    <main className="min-h-screen bg-bg-primary">
       {/* JSON-LD Breadcrumbs */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      {/* Breadcrumbs */}
-      <div className="border-b border-neutral-800 bg-[#0a0a0a]">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center space-x-2 text-sm">
-            <Link href="/" className="text-neutral-400 hover:text-white transition-colors">
-              Home
+      {/* Hero Section */}
+      <header className="border-b border-border-subtle">
+        <div className="max-w-4xl mx-auto px-4 py-12 md:py-16">
+          {/* Breadcrumbs */}
+          <nav className="mb-8 flex items-center gap-2 text-sm text-text-tertiary flex-wrap">
+            <Link href="/" className="hover:text-text-primary transition-colors">
+              Inkdex
             </Link>
-            <span className="text-neutral-600">/</span>
-            <Link href={`/${countrySlug}`} className="text-neutral-400 hover:text-white transition-colors">
-              {countryName}
-            </Link>
-            <span className="text-neutral-600">/</span>
-            <Link href={`/${countrySlug}/${regionSlug}`} className="text-neutral-400 hover:text-white transition-colors">
+            <span>/</span>
+            <Link href={`/${countrySlug}/${regionSlug}`} className="hover:text-text-primary transition-colors">
               {regionName}
             </Link>
-            <span className="text-neutral-600">/</span>
-            <Link href={`/${countrySlug}/${regionSlug}/${citySlug}`} className="text-neutral-400 hover:text-white transition-colors">
+            <span>/</span>
+            <Link href={`/${countrySlug}/${regionSlug}/${citySlug}`} className="hover:text-text-primary transition-colors">
               {cityName}
             </Link>
-            <span className="text-neutral-600">/</span>
-            <span className="text-white">{styleSeed.display_name}</span>
+            <span>/</span>
+            <span className="text-text-secondary">{styleSeed.display_name}</span>
           </nav>
-        </div>
-      </div>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a]">
-        <div className="mx-auto max-w-7xl px-4 pt-4 md:pt-8 lg:pt-16 pb-12 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-            {/* Text Content */}
-            <div className="flex flex-col justify-center">
-              <h1 className="font-display text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {styleSeed.display_name} Tattoo Artists
-              </h1>
-              <p className="mt-4 font-display text-xl text-neutral-300">
-                in {cityName}, {regionCode}
-              </p>
-              <p className="mt-6 text-lg leading-relaxed text-neutral-400">
-                {styleSeed.description}
-              </p>
-              <p className="mt-6 text-base text-neutral-500">
-                Showing <span className="font-medium text-white">{total.toLocaleString()}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style in {cityName}.
-              </p>
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+            {styleSeed.display_name} Tattoo Artists in {cityName}
+          </h1>
 
-              {/* Internal Links */}
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href={`/${countrySlug}/${regionSlug}/${citySlug}`}
-                  className="inline-flex items-center rounded-lg bg-neutral-800 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 transition-colors"
-                >
-                  All {cityName} Artists
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex items-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-neutral-300 hover:bg-neutral-800 transition-colors"
-                >
-                  Search by Image
-                </Link>
-              </div>
-            </div>
+          <p className="font-body text-lg text-text-secondary max-w-2xl mb-6">
+            {styleSeed.description}
+          </p>
 
-            {/* Style Example Image (Seed Image) */}
-            {styleSeed.seed_image_url && (
-              <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-900 lg:aspect-[4/5]">
-                <Image
-                  src={getImageUrl(styleSeed.seed_image_url)}
-                  alt={`${styleSeed.display_name} tattoo example`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6">
-                  <p className="text-sm font-medium text-white/90">Example of {styleSeed.display_name} style</p>
-                </div>
-              </div>
-            )}
+          <p className="font-body text-text-tertiary mb-8">
+            Showing <span className="font-medium text-text-primary">{total.toLocaleString()}</span> artists whose work matches the {styleSeed.display_name.toLowerCase()} style.
+          </p>
+
+          {/* Action Links */}
+          <div className="flex flex-wrap gap-4">
+            <Link
+              href={`/${countrySlug}/${regionSlug}/${citySlug}`}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ink-black text-paper-white font-mono text-xs uppercase tracking-[0.15em] border-2 border-ink-black hover:-translate-y-0.5 hover:shadow-md transition-all"
+            >
+              All {cityName} Artists
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center px-4 py-3 font-mono text-xs uppercase tracking-[0.15em] text-text-secondary border-2 border-border-subtle hover:border-ink-black hover:text-ink-black transition-all"
+            >
+              Search by Image
+            </Link>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Artist Grid */}
-      <div className="bg-[#0a0a0a] py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {artists.length === 0 ? (
-            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/50 p-12 text-center">
-              <p className="text-lg text-neutral-400">
-                No {styleSeed.display_name.toLowerCase()} artists found in {cityName} yet.
-              </p>
-              <p className="mt-2 text-sm text-neutral-500">
-                Check back soon as we add more artists!
+      <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        {artists.length === 0 ? (
+          <div className="p-12 text-center border-2 border-border-subtle bg-bg-secondary">
+            <p className="font-body text-lg text-text-secondary">
+              No {styleSeed.display_name.toLowerCase()} artists found in {cityName} yet.
+            </p>
+            <p className="mt-2 font-body text-sm text-text-tertiary">
+              Check back soon as we add more artists!
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="mb-8 flex items-center justify-between">
+              <h2 className="font-display text-2xl font-bold text-text-primary">
+                {styleSeed.display_name} Artists
+              </h2>
+              <p className="font-mono text-xs uppercase tracking-wider text-text-tertiary">
+                {total} results
               </p>
             </div>
-          ) : (
-            <>
-              <div className="mb-8 flex items-center justify-between">
-                <h2 className="font-display text-2xl font-bold text-white">
-                  {styleSeed.display_name} Artists in {cityName}
-                </h2>
-                <p className="text-sm text-neutral-500">{total} total results</p>
-              </div>
-              <div className="grid gap-2 md:gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {artists.map((artist: SearchResult) => (
-                  <ArtistCard key={artist.artist_id} artist={artist} />
-                ))}
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {artists.map((artist: SearchResult) => (
+                <ArtistCard key={artist.artist_id} artist={artist} />
+              ))}
+            </div>
 
-              {/* Pagination */}
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                buildUrl={(pageNum) =>
-                  pageNum === 1
-                    ? `/${countrySlug}/${regionSlug}/${citySlug}/${styleSlug}`
-                    : `/${countrySlug}/${regionSlug}/${citySlug}/${styleSlug}?page=${pageNum}`
-                }
-              />
-            </>
-          )}
-        </div>
-      </div>
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              buildUrl={(pageNum) =>
+                pageNum === 1
+                  ? `/${countrySlug}/${regionSlug}/${citySlug}/${styleSlug}`
+                  : `/${countrySlug}/${regionSlug}/${citySlug}/${styleSlug}?page=${pageNum}`
+              }
+            />
+          </>
+        )}
+      </section>
 
-      {/* Other Styles Section (Internal Linking) */}
-      <div className="border-t border-neutral-800 bg-[#0a0a0a] py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="mb-6 font-display text-2xl font-bold text-white">
+      {/* Other Styles Section */}
+      <section className="border-t border-border-subtle bg-bg-secondary">
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <h2 className="font-display text-xl font-bold text-text-primary mb-6">
             Explore Other Styles in {cityName}
           </h2>
           <div className="flex flex-wrap gap-3">
@@ -298,14 +264,14 @@ export default async function StylePage({
                 <Link
                   key={style.style_name}
                   href={`/${countrySlug}/${regionSlug}/${citySlug}/${style.style_name}`}
-                  className="inline-flex items-center rounded-lg border border-neutral-800 bg-neutral-900/50 px-4 py-2 text-sm font-medium text-neutral-300 hover:border-accent hover:bg-neutral-800 hover:text-white transition-colors"
+                  className="inline-flex items-center px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary border-2 border-border-subtle hover:border-ink-black hover:text-ink-black transition-all"
                 >
                   {style.display_name}
                 </Link>
               ))}
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }

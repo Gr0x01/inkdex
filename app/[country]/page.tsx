@@ -111,86 +111,97 @@ export default async function CountryPage({
   }
 
   return (
-    <>
+    <main className="min-h-screen bg-bg-primary">
+      {/* JSON-LD */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
-      <main className="min-h-screen bg-bg-primary relative noise-overlay">
-        <div className="container mx-auto px-4 py-12 md:py-16">
+      {/* Hero Section */}
+      <header className="border-b border-border-subtle">
+        <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           {/* Breadcrumbs */}
-          <nav className="font-body text-small text-text-secondary mb-6" aria-label="Breadcrumb">
-            <ol className="flex items-center gap-2">
-              <li>
-                <Link
-                  href="/"
-                  className="hover:text-accent-primary transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li>/</li>
-              <li aria-current="page" className="text-text-primary">
-                {countryName}
-              </li>
-            </ol>
+          <nav className="mb-8 flex items-center gap-2 text-sm text-text-tertiary flex-wrap" aria-label="Breadcrumb">
+            <Link href="/" className="hover:text-text-primary transition-colors">
+              Inkdex
+            </Link>
+            <span>/</span>
+            <span className="text-text-secondary">{countryName}</span>
           </nav>
 
           {/* Header */}
-          <div className="mb-12">
-            <h1 className="font-display text-display font-[700] text-text-primary mb-4">
-              {countryName} Tattoo Artists
-            </h1>
-            <p className="font-body text-body-large text-text-secondary max-w-2xl">
-              Explore {totalArtists.toLocaleString()} talented tattoo artists
-              across {regions.length}{' '}
-              {regions.length === 1 ? 'region' : 'regions'} in {countryName}.
-            </p>
-          </div>
+          <h1 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-text-primary mb-4 tracking-tight">
+            {countryName} Tattoo Artists
+          </h1>
+          <p className="font-body text-lg text-text-secondary max-w-2xl mb-6">
+            Explore {totalArtists.toLocaleString()} talented tattoo artists
+            across {regions.length} {regions.length === 1 ? 'state' : 'states'} in {countryName}.
+          </p>
 
-          {/* Regions Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {regions.map((region: RegionData) => {
-              const regionSlug = region.region.toLowerCase()
-              const displayName = getRegionName(region.region, countryCode)
-
-              return (
-                <Link
-                  key={region.region}
-                  href={`/${countrySlug}/${regionSlug}`}
-                  className="group bg-surface-low border border-border-subtle rounded-xl p-8 hover:border-accent-primary transition-all duration-medium lift-hover"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h3 className="font-display text-h3 font-[700] text-text-primary mb-2 group-hover:text-accent-primary transition-colors">
-                        {displayName}
-                      </h3>
-                      <p className="font-body text-body text-text-secondary">
-                        {region.artist_count} {region.artist_count === 1 ? 'artist' : 'artists'}
-                      </p>
-                    </div>
-
-                    <svg
-                      className="w-6 h-6 text-accent-primary group-hover:translate-x-1 transition-transform flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                </Link>
-              )
-            })}
+          {/* Action Links */}
+          <div className="flex flex-wrap gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-ink-black text-paper-white font-mono text-xs uppercase tracking-[0.15em] border-2 border-ink-black hover:-translate-y-0.5 hover:shadow-md transition-all"
+            >
+              Search by Image
+            </Link>
           </div>
         </div>
-      </main>
-    </>
+      </header>
+
+      {/* Regions Grid */}
+      <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+        <div className="mb-8 flex items-center justify-between">
+          <h2 className="font-display text-2xl font-bold text-text-primary">
+            States in {countryName}
+          </h2>
+          <p className="font-mono text-xs uppercase tracking-wider text-text-tertiary">
+            {regions.length} {regions.length === 1 ? 'state' : 'states'}
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {regions.map((region: RegionData) => {
+            const regionSlug = region.region.toLowerCase()
+            const displayName = getRegionName(region.region, countryCode)
+
+            return (
+              <Link
+                key={region.region}
+                href={`/${countrySlug}/${regionSlug}`}
+                className="group p-6 border-2 border-border-subtle hover:border-ink-black hover:-translate-y-1 hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-xl font-bold text-text-primary mb-1 group-hover:text-ink-black transition-colors truncate">
+                      {displayName}
+                    </h3>
+                    <p className="font-mono text-xs uppercase tracking-wider text-text-tertiary">
+                      {region.artist_count} {region.artist_count === 1 ? 'artist' : 'artists'}
+                    </p>
+                  </div>
+
+                  <svg
+                    className="w-5 h-5 text-text-tertiary group-hover:text-ink-black group-hover:translate-x-1 transition-all flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </section>
+    </main>
   )
 }

@@ -11,14 +11,15 @@
 --   2. Run: npx supabase db push
 --   OR run this file directly in Supabase SQL Editor
 --
--- Last Updated: 2026-01-04
+-- Last Updated: 2026-01-06
 -- Features included:
---   - Multi-location support (artist_locations table)
+--   - Multi-location support (artist_locations table is SINGLE SOURCE OF TRUTH)
 --   - Pro/Featured ranking boosts (+0.05 / +0.02)
 --   - Boosted score display (transparency)
 --   - Location count for UI badges
 --   - GDPR compliance via artists.is_gdpr_blocked column (fast!)
 --   - CTE column aliasing (ri_, aa_, ba_ prefixes)
+--   - NOTE: artists.city/state are DEPRECATED - use artist_locations only
 --
 -- GDPR SETUP (run once in SQL Editor before using these functions):
 --   See: supabase/functions/gdpr_setup.sql
@@ -530,7 +531,11 @@ COMMENT ON FUNCTION find_related_artists IS
 -- ============================================
 -- get_regions_with_counts
 -- Get regions/states with artist counts
+-- UPDATED: Now includes legacy artists table for US artists
+-- UPDATED: Only counts artists with active portfolio images
 -- ============================================
+DROP FUNCTION IF EXISTS get_regions_with_counts(text);
+
 CREATE OR REPLACE FUNCTION get_regions_with_counts(p_country_code text DEFAULT 'US')
 RETURNS TABLE (
   region text,
@@ -559,23 +564,55 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- First get artists with active portfolio images
+  WITH artists_with_images AS (
+    SELECT DISTINCT pi.artist_id
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.storage_thumb_640 IS NOT NULL
+  ),
+  all_artist_regions AS (
+    -- Source 1: artist_locations table
+    SELECT
+      al.artist_id as ar_artist_id,
+      al.region as ar_region
+    FROM artist_locations al
+    INNER JOIN artists a ON a.id = al.artist_id
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE al.region IS NOT NULL
+      AND al.country_code = UPPER(p_country_code)
+      AND a.deleted_at IS NULL
+
+    UNION
+
+    -- Source 2: legacy artists table (US only)
+    SELECT
+      a.id as ar_artist_id,
+      a.state as ar_region
+    FROM artists a
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE a.state IS NOT NULL
+      AND a.deleted_at IS NULL
+      AND UPPER(p_country_code) = 'US'
+      -- Only include if not already in artist_locations
+      AND NOT EXISTS (
+        SELECT 1 FROM artist_locations al
+        WHERE al.artist_id = a.id
+      )
+  )
   SELECT
-    al.region,
-    al.region as region_name,
-    COUNT(DISTINCT al.artist_id)::bigint as artist_count
-  FROM artist_locations al
-  INNER JOIN artists a ON a.id = al.artist_id
-  WHERE al.region IS NOT NULL
-    AND al.country_code = UPPER(p_country_code)
-    AND a.deleted_at IS NULL
-  GROUP BY al.region
-  HAVING COUNT(DISTINCT al.artist_id) >= 1
-  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.region ASC;
+    ar.ar_region as region,
+    ar.ar_region as region_name,
+    COUNT(DISTINCT ar.ar_artist_id)::bigint as artist_count
+  FROM all_artist_regions ar
+  GROUP BY ar.ar_region
+  HAVING COUNT(DISTINCT ar.ar_artist_id) >= 1
+  ORDER BY COUNT(DISTINCT ar.ar_artist_id) DESC, ar.ar_region ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_regions_with_counts IS
-  'Returns regions/states within a country with artist counts. Excludes GDPR countries.';
+  'Returns regions/states within a country with artist counts. Only includes artists with active portfolio images. Includes legacy artists table for US. Excludes GDPR countries.';
 
 
 -- ============================================
@@ -629,6 +666,8 @@ COMMENT ON FUNCTION get_countries_with_counts IS
 -- ============================================
 -- get_cities_with_counts
 -- Get cities with artist counts
+-- UPDATED: Now includes legacy artists table for US artists
+-- UPDATED: Only counts artists with active portfolio images
 -- ============================================
 DROP FUNCTION IF EXISTS get_cities_with_counts(integer, text, text);
 
@@ -675,38 +714,77 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- First get artists with active portfolio images
+  WITH artists_with_images AS (
+    SELECT DISTINCT pi.artist_id
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.storage_thumb_640 IS NOT NULL
+  ),
+  all_artist_cities AS (
+    -- Source 1: artist_locations table
+    SELECT
+      al.artist_id as ac_artist_id,
+      al.city as ac_city,
+      al.region as ac_region,
+      al.country_code as ac_country_code
+    FROM artist_locations al
+    INNER JOIN artists a ON a.id = al.artist_id
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE al.city IS NOT NULL
+      AND a.deleted_at IS NULL
+      AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
+      AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
+      -- Exclude GDPR countries
+      AND al.country_code NOT IN (
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+        'IS', 'LI', 'NO',
+        'GB', 'CH'
+      )
+
+    UNION
+
+    -- Source 2: legacy artists table (US only, when country is US or NULL)
+    SELECT
+      a.id as ac_artist_id,
+      a.city as ac_city,
+      a.state as ac_region,
+      'US'::text as ac_country_code
+    FROM artists a
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE a.city IS NOT NULL
+      AND a.deleted_at IS NULL
+      AND (p_country_code IS NULL OR UPPER(p_country_code) = 'US')
+      AND (p_region IS NULL OR LOWER(a.state) = LOWER(p_region))
+      -- Only include if not already in artist_locations
+      AND NOT EXISTS (
+        SELECT 1 FROM artist_locations al
+        WHERE al.artist_id = a.id
+      )
+  )
   SELECT
-    al.city,
-    al.region,
-    al.country_code,
-    COUNT(DISTINCT al.artist_id)::bigint AS artist_count
-  FROM artist_locations al
-  INNER JOIN artists a ON a.id = al.artist_id
-  WHERE al.city IS NOT NULL
-    AND a.deleted_at IS NULL
-    AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
-    AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
-    -- Exclude GDPR countries
-    AND al.country_code NOT IN (
-      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-      'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-      'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-      'IS', 'LI', 'NO',
-      'GB', 'CH'
-    )
-  GROUP BY al.city, al.region, al.country_code
-  HAVING COUNT(DISTINCT al.artist_id) >= min_count
-  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
+    ac.ac_city as city,
+    ac.ac_region as region,
+    ac.ac_country_code as country_code,
+    COUNT(DISTINCT ac.ac_artist_id)::bigint AS artist_count
+  FROM all_artist_cities ac
+  GROUP BY ac.ac_city, ac.ac_region, ac.ac_country_code
+  HAVING COUNT(DISTINCT ac.ac_artist_id) >= min_count
+  ORDER BY COUNT(DISTINCT ac.ac_artist_id) DESC, ac.ac_city ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_cities_with_counts IS
-  'Returns cities with artist counts. Excludes GDPR countries for compliance.';
+  'Returns cities with artist counts. Only includes artists with active portfolio images. Includes legacy artists table for US. Excludes GDPR countries for compliance.';
 
 
 -- ============================================
 -- get_state_cities_with_counts
 -- Get cities within a state with artist counts
+-- UPDATED: Now includes legacy artists table for US artists
+-- UPDATED: Only counts artists with active portfolio images
 -- ============================================
 DROP FUNCTION IF EXISTS get_state_cities_with_counts(text);
 
@@ -726,22 +804,55 @@ BEGIN
   END IF;
 
   RETURN QUERY
+  -- First get artists with active portfolio images
+  WITH artists_with_images AS (
+    SELECT DISTINCT pi.artist_id
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.storage_thumb_640 IS NOT NULL
+  ),
+  all_state_cities AS (
+    -- Source 1: artist_locations table
+    SELECT
+      al.artist_id as sc_artist_id,
+      al.city as sc_city
+    FROM artist_locations al
+    INNER JOIN artists a ON a.id = al.artist_id
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE LOWER(al.region) = LOWER(state_code)
+      AND al.city IS NOT NULL
+      AND a.deleted_at IS NULL
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+
+    UNION
+
+    -- Source 2: legacy artists table (US states)
+    SELECT
+      a.id as sc_artist_id,
+      a.city as sc_city
+    FROM artists a
+    INNER JOIN artists_with_images awi ON awi.artist_id = a.id
+    WHERE LOWER(a.state) = LOWER(state_code)
+      AND a.city IS NOT NULL
+      AND a.deleted_at IS NULL
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+      -- Only include if not already in artist_locations
+      AND NOT EXISTS (
+        SELECT 1 FROM artist_locations al
+        WHERE al.artist_id = a.id
+      )
+  )
   SELECT
-    al.city,
-    COUNT(DISTINCT al.artist_id) as artist_count
-  FROM artist_locations al
-  INNER JOIN artists a ON a.id = al.artist_id
-  WHERE al.region = state_code
-    AND al.city IS NOT NULL
-    AND a.deleted_at IS NULL
-    AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-  GROUP BY al.city
-  ORDER BY artist_count DESC, al.city ASC;
+    sc.sc_city as city,
+    COUNT(DISTINCT sc.sc_artist_id)::bigint as artist_count
+  FROM all_state_cities sc
+  GROUP BY sc.sc_city
+  ORDER BY COUNT(DISTINCT sc.sc_artist_id) DESC, sc.sc_city ASC;
 END;
 $$;
 
 COMMENT ON FUNCTION get_state_cities_with_counts IS
-  'Get cities within a state/region with artist counts. Excludes GDPR artists for compliance.';
+  'Get cities within a state/region with artist counts. Only includes artists with active portfolio images. Includes legacy artists table. Excludes GDPR artists for compliance.';
 
 
 -- ============================================

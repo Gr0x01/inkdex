@@ -939,6 +939,9 @@ export async function getCityArtists(
 /**
  * Get artists by location (country, region, city)
  * Used for international location-based browse pages
+ *
+ * NOTE: Queries BOTH artist_locations table AND falls back to artists table
+ * for artists who don't have artist_locations entries yet.
  */
 export async function getLocationArtists(
   country: string,
@@ -971,9 +974,11 @@ export async function getLocationArtists(
     portfolio_images: Array<{ id: string; url: string; instagram_url: string | null | undefined; likes_count: number | null | undefined }>
   }
 
-  // Query artist_locations with country, region, and city
+  const artistsMap = new Map<string, ProcessedLocationArtist>()
+
+  // Query 1: Get artists from artist_locations table
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types don't support dynamic table joins
-  const { data, error, count } = await (supabase as any)
+  const { data: locationData, error: locationError } = await (supabase as any)
     .from('artist_locations')
     .select(
       `
@@ -995,8 +1000,7 @@ export async function getLocationArtists(
           status
         )
       )
-    `,
-      { count: 'exact' }
+    `
     )
     .eq('country_code', country)
     .ilike('region', escapeLikePattern(region))
@@ -1004,66 +1008,161 @@ export async function getLocationArtists(
     .eq('artists.portfolio_images.status', 'active')
     .not('artists.portfolio_images.storage_thumb_640', 'is', null)
 
-  if (error) {
-    console.error('Error fetching location artists:', error)
-    return { artists: [], total: 0 }
+  if (locationError) {
+    console.error('Error fetching location artists:', locationError)
   }
 
-  // Transform data to group by unique artists and aggregate portfolio images
-  const artistsMap = new Map<string, ProcessedLocationArtist>()
+  // Process artist_locations results
+  if (locationData) {
+    ;(locationData as ArtistLocationRow[]).forEach((row) => {
+      const artist = row.artists
+      if (!artist) return
 
-  ;(data as ArtistLocationRow[]).forEach((row) => {
-    const artist = row.artists
-    if (!artist) return
+      if (!artistsMap.has(artist.id)) {
+        artistsMap.set(artist.id, {
+          id: artist.id,
+          name: artist.name,
+          slug: artist.slug,
+          shop_name: artist.shop_name,
+          verification_status: artist.verification_status,
+          profile_image_url: artist.profile_image_url,
+          instagram_handle: artist.instagram_handle,
+          follower_count: artist.follower_count,
+          portfolio_images: [],
+        })
+      }
 
-    if (!artistsMap.has(artist.id)) {
-      artistsMap.set(artist.id, {
-        id: artist.id,
-        name: artist.name,
-        slug: artist.slug,
-        shop_name: artist.shop_name,
-        verification_status: artist.verification_status,
-        profile_image_url: artist.profile_image_url,
-        instagram_handle: artist.instagram_handle,
-        follower_count: artist.follower_count,
-        portfolio_images: [],
-      })
+      const artistData = artistsMap.get(artist.id)!
+      if (Array.isArray(artist.portfolio_images)) {
+        artist.portfolio_images.forEach((image) => {
+          if (image?.id && !artistData.portfolio_images.some(p => p.id === image.id)) {
+            const publicUrl = getImageUrl(image.storage_thumb_640)
+            artistData.portfolio_images.push({
+              id: image.id,
+              url: publicUrl,
+              instagram_url: image.instagram_url,
+              likes_count: image.likes_count,
+            })
+          }
+        })
+      }
+    })
+  }
+
+  // Query 2: Get artists from main artists table (fallback for US artists without artist_locations)
+  // Only for US since legacy data uses state codes like 'CA', 'TX'
+  if (country === 'US') {
+    // Convert region slug to state code (e.g., 'california' -> 'CA')
+    const stateCode = region.length === 2 ? region.toUpperCase() :
+      REGION_TO_STATE_CODE[region.toLowerCase()] || region.toUpperCase()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase types
+    const { data: legacyData, error: legacyError } = await (supabase as any)
+      .from('artists')
+      .select(
+        `
+        id,
+        name,
+        slug,
+        shop_name,
+        verification_status,
+        profile_image_url,
+        instagram_handle,
+        follower_count,
+        portfolio_images!inner (
+          id,
+          storage_thumb_640,
+          instagram_url,
+          likes_count,
+          status
+        )
+      `
+      )
+      .ilike('city', escapeLikePattern(city))
+      .eq('state', stateCode)
+      .is('deleted_at', null)
+      .eq('portfolio_images.status', 'active')
+      .not('portfolio_images.storage_thumb_640', 'is', null)
+
+    if (legacyError) {
+      console.error('Error fetching legacy artists:', legacyError)
     }
 
-    const artistData = artistsMap.get(artist.id)!
+    // Process legacy artists results
+    if (legacyData) {
+      legacyData.forEach((artist: ArtistRow) => {
+        if (!artist || artistsMap.has(artist.id)) return // Skip if already added from artist_locations
 
-    // portfolio_images is an array from the INNER JOIN
-    if (Array.isArray(artist.portfolio_images)) {
-      artist.portfolio_images.forEach((image) => {
-        if (image?.id) {
-          const publicUrl = getImageUrl(image.storage_thumb_640)
-          artistData.portfolio_images.push({
-            id: image.id,
-            url: publicUrl,
-            instagram_url: image.instagram_url,
-            likes_count: image.likes_count,
+        artistsMap.set(artist.id, {
+          id: artist.id,
+          name: artist.name,
+          slug: artist.slug,
+          shop_name: artist.shop_name,
+          verification_status: artist.verification_status,
+          profile_image_url: artist.profile_image_url,
+          instagram_handle: artist.instagram_handle,
+          follower_count: artist.follower_count,
+          portfolio_images: [],
+        })
+
+        const artistData = artistsMap.get(artist.id)!
+        if (Array.isArray(artist.portfolio_images)) {
+          artist.portfolio_images.forEach((image) => {
+            if (image?.id) {
+              const publicUrl = getImageUrl(image.storage_thumb_640)
+              artistData.portfolio_images.push({
+                id: image.id,
+                url: publicUrl,
+                instagram_url: image.instagram_url,
+                likes_count: image.likes_count,
+              })
+            }
           })
         }
       })
     }
-  })
+  }
 
   // Convert to array, filter, and sort
-  const artists = Array.from(artistsMap.values())
+  const allArtists = Array.from(artistsMap.values())
     .filter((artist) => artist.portfolio_images.length >= 1)
     .sort((a, b) => {
-      // Sort by verification status desc, then name asc
+      // Sort by verification status desc, then follower count desc, then name asc
       if (a.verification_status !== b.verification_status) {
         return b.verification_status === 'verified' ? 1 : -1
       }
+      const aFollowers = a.follower_count || 0
+      const bFollowers = b.follower_count || 0
+      if (aFollowers !== bFollowers) {
+        return bFollowers - aFollowers
+      }
       return (a.name || '').localeCompare(b.name || '')
     })
-    .slice(offset, offset + limit)
+
+  const total = allArtists.length
+  const artists = allArtists.slice(offset, offset + limit)
 
   return {
     artists,
-    total: count ?? 0,
+    total,
   }
+}
+
+// Map region slugs to US state codes for legacy data compatibility
+const REGION_TO_STATE_CODE: Record<string, string> = {
+  'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR',
+  'california': 'CA', 'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE',
+  'florida': 'FL', 'georgia': 'GA', 'hawaii': 'HI', 'idaho': 'ID',
+  'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA', 'kansas': 'KS',
+  'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+  'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS',
+  'missouri': 'MO', 'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV',
+  'new-hampshire': 'NH', 'new-jersey': 'NJ', 'new-mexico': 'NM', 'new-york': 'NY',
+  'north-carolina': 'NC', 'north-dakota': 'ND', 'ohio': 'OH', 'oklahoma': 'OK',
+  'oregon': 'OR', 'pennsylvania': 'PA', 'rhode-island': 'RI', 'south-carolina': 'SC',
+  'south-dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT',
+  'vermont': 'VT', 'virginia': 'VA', 'washington': 'WA', 'west-virginia': 'WV',
+  'wisconsin': 'WI', 'wyoming': 'WY', 'district-of-columbia': 'DC',
 }
 
 /**
