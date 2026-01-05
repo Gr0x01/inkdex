@@ -4,6 +4,7 @@ import Footer from '@/components/layout/Footer';
 import { SearchProvider } from '@/components/search/SearchProvider';
 import GlobalSearchModal from '@/components/search/GlobalSearchModal';
 import { CookieBanner } from '@/components/consent/CookieBanner';
+import { NavbarVisibilityProvider } from '@/components/layout/NavbarContext';
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -30,11 +31,13 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
   // All other pages get the full site layout
   return (
     <SearchProvider>
-      <NavbarWithAuth />
-      <GlobalSearchModal />
-      {children}
-      <Footer />
-      <CookieBanner />
+      <NavbarVisibilityProvider>
+        <NavbarWithAuth />
+        <GlobalSearchModal />
+        {children}
+        <Footer />
+        <CookieBanner />
+      </NavbarVisibilityProvider>
     </SearchProvider>
   );
 }

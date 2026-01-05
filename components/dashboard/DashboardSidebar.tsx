@@ -72,9 +72,9 @@ export default function DashboardSidebar() {
         </div>
       </div>
 
-      {/* Desktop: Vertical sidebar */}
+      {/* Desktop: Vertical sidebar - sticky below navbar + toolbar */}
       <div className="hidden lg:block pr-8">
-        <div className="space-y-1 sticky top-24">
+        <div className="space-y-1 sticky top-[calc(var(--navbar-height-desktop)+56px)]">
           {navItems.map((item) => {
             const Icon = item.icon
             const active = isActive(item.href)

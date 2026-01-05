@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ArtistCard from '@/components/search/ArtistCard'
 import LocationFilter from '@/components/search/LocationFilter'
+import { StickyFilterBar } from '@/components/search/StickyFilterBar'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { generatePageNumbers } from '@/components/pagination/Pagination'
 import { createClient } from '@/lib/supabase/server'
@@ -155,7 +156,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <main className="min-h-screen bg-light">
       {/* COMPACT EDITORIAL FILTER BAR - Mobile Optimized */}
-      <div className="sticky top-0 z-40 bg-[#F8F7F5] backdrop-blur-md border-b border-ink/10 shadow-sm">
+      <StickyFilterBar>
         <div className="w-full px-3 md:px-4 md:container md:mx-auto md:px-6">
           <div className="flex items-center gap-1.5 md:gap-4 h-12 md:h-14 overflow-x-auto scrollbar-hide">
             {/* Back Link - Mobile Friendly */}
@@ -315,7 +316,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </div>
           </div>
         </div>
-      </div>
+      </StickyFilterBar>
 
       {/* RESULTS GRID - Mobile Optimized */}
       <div className="w-full px-4 md:container md:mx-auto md:px-6 pt-4 md:pt-8 lg:pt-16 pb-6 md:pb-12">

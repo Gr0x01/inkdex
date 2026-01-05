@@ -6,6 +6,7 @@ import { CITIES, type City } from '@/lib/constants/cities'
 import { buildCityUrl } from '@/lib/utils/city-helpers'
 import NavbarSearch from '@/components/layout/NavbarSearch'
 import { NavbarUserMenu, NavbarUserMenuMobile } from '@/components/layout/NavbarUserMenu'
+import { useNavbarVisibility } from '@/components/layout/NavbarContext'
 
 interface NavbarUser {
   id: string
@@ -59,6 +60,9 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
   const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
 
+  // Get navbar visibility from context (shared with other sticky elements)
+  const { isNavbarHidden, isCompact } = useNavbarVisibility()
+
   // Memoize sorted cities - only compute once
   const sortedCities = useMemo(
     () => [...CITIES].sort((a, b) => a.name.localeCompare(b.name)),
@@ -102,18 +106,27 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
   }
 
   return (
-    <header className="bg-paper border-b-2 border-ink/10 relative z-50">
+    <header
+      className={`navbar-sticky bg-paper border-b-2 border-ink/10 ${isNavbarHidden ? 'navbar-hidden' : ''}`}
+      data-navbar-hidden={isNavbarHidden}
+    >
       {/* Top decorative line */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between gap-3 md:gap-6 h-20 md:h-24 relative">
-          {/* Logo - Editorial Magazine Masthead */}
-          <Link href="/" className="flex items-center gap-2 group relative z-10 flex-shrink-0">
-            <div className="font-display text-3xl md:text-4xl font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-medium">
+        <div className={`flex items-center justify-between gap-3 md:gap-6 relative transition-[height] duration-300 ${
+          isCompact ? 'h-14 md:h-24' : 'h-20 md:h-24'
+        }`}>
+          {/* Logo - Editorial Magazine Masthead (shrinks on mobile when scrolled) */}
+          <Link href="/" className="flex items-center gap-1.5 md:gap-2 group relative z-10 flex-shrink-0">
+            <div className={`font-display font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-300 ${
+              isCompact ? 'text-2xl md:text-4xl' : 'text-3xl md:text-4xl'
+            }`}>
               INKDEX
             </div>
-            <span className="font-mono text-[0.5rem] md:text-[0.6rem] font-bold text-ink uppercase tracking-[0.15em] border border-ink px-1.5 py-0.5 leading-none">
+            <span className={`font-mono font-bold text-ink uppercase tracking-[0.15em] border border-ink leading-none transition-all duration-300 ${
+              isCompact ? 'text-[0.4rem] px-1 py-0.5 md:text-[0.6rem] md:px-1.5' : 'text-[0.5rem] px-1.5 py-0.5 md:text-[0.6rem]'
+            }`}>
               Beta
             </span>
           </Link>

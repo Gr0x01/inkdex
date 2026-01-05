@@ -272,9 +272,9 @@ export default function ProfileEditor({
             </section>
           </div>
 
-          {/* Right Column - Pro Features & Tips */}
+          {/* Right Column - Pro Features & Tips - sticky below navbar + toolbar */}
           <aside className="lg:col-span-5">
-            <div className="lg:sticky lg:top-24 space-y-6">
+            <div className="lg:sticky lg:top-[calc(var(--navbar-height-desktop)+56px)] space-y-6">
               {/* Pro Features Card */}
               {isPro && (
                 <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">

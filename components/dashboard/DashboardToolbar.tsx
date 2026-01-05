@@ -5,7 +5,7 @@
  *
  * Features:
  * - Editorial "Paper & Ink" aesthetic matching main site header
- * - Sticky positioning with backdrop blur
+ * - Sticky positioning with backdrop blur (below main navbar)
  * - Centered navigation items only (Overview, Portfolio, Profile, Account)
  * - Responsive mobile tabs with animated sliding bottom indicator
  * - Optimized for touch targets (min 44px) and screen sizes from 320px+
@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BarChart3, Image, User, Settings } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
+import { useNavbarVisibility } from '@/components/layout/NavbarContext';
 
 const navItems = [
   { label: 'Overview', href: '/dashboard', icon: BarChart3, exact: true },
@@ -29,6 +30,7 @@ export default function DashboardToolbar() {
   const pathname = usePathname();
   const navRef = useRef<HTMLDivElement>(null);
   const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0 });
+  const { isNavbarHidden, isCompact } = useNavbarVisibility();
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) return pathname === href;
@@ -55,7 +57,15 @@ export default function DashboardToolbar() {
   }, [activeIndex, pathname]);
 
   return (
-    <div className="sticky top-0 z-40 bg-paper/95 backdrop-blur-md border-b-2 border-ink/10 relative">
+    <div
+      className={`sticky z-40 bg-paper/95 backdrop-blur-md border-b-2 border-ink/10 relative transition-[top] duration-300 ${
+        isNavbarHidden
+          ? 'top-0'
+          : isCompact
+            ? 'top-[var(--navbar-height-compact)] md:top-[var(--navbar-height-desktop)]'
+            : 'top-[var(--navbar-height)] md:top-[var(--navbar-height-desktop)]'
+      }`}
+    >
       {/* Top decorative line - editorial accent */}
       <div
         className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-ink/15 to-transparent"

@@ -66,6 +66,11 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
 
+  /* Navbar Heights (for sticky positioning) */
+  --navbar-height: 80px;
+  --navbar-height-compact: 56px; /* Mobile compact when scrolled */
+  --navbar-height-desktop: 96px;
+
   /* Timing Functions */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
@@ -834,4 +839,50 @@ a:hover {
 .dropdown-item:hover {
   background: var(--gray-100);
   color: var(--ink-black);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STICKY NAVBAR - HIDE ON SCROLL
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Sticky navbar base styles */
+.navbar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* Hidden state (scroll down) */
+.navbar-hidden {
+  transform: translateY(-100%);
+}
+
+/* Secondary sticky elements adjust position based on navbar visibility */
+.sticky-below-navbar {
+  position: sticky;
+  top: var(--navbar-height);
+  z-index: 40;
+  transition: top 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (min-width: 768px) {
+  .sticky-below-navbar {
+    top: var(--navbar-height-desktop);
+  }
+}
+
+/* When navbar is hidden, secondary elements move to top */
+.navbar-hidden ~ main .sticky-below-navbar,
+.navbar-hidden + .sticky-below-navbar {
+  top: 0;
+}
+
+/* Accessibility: Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .navbar-sticky,
+  .sticky-below-navbar {
+    transition: none;
+  }
 }
