@@ -446,7 +446,7 @@ function InfoContent() {
 
           {/* Subtle helper text */}
           <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-            Step 1 of 3
+            Step 1 of 2
           </p>
         </div>
       </div>

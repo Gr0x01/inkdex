@@ -11,6 +11,7 @@ function LocationsContent() {
 
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [locationError, setLocationError] = useState('');
@@ -112,6 +113,7 @@ function LocationsContent() {
     setLoading(true);
 
     try {
+      // Step 1: Save locations to session
       const res = await fetch('/api/onboarding/update-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -124,11 +126,27 @@ function LocationsContent() {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to save');
-      router.push(`/onboarding/complete?session_id=${sessionId}`);
+      if (!res.ok) throw new Error('Failed to save locations');
+
+      // Step 2: Finalize onboarding
+      setLoading(false);
+      setFinalizing(true);
+
+      const finalizeRes = await fetch('/api/onboarding/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+
+      const finalizeData = await finalizeRes.json();
+      if (!finalizeRes.ok) throw new Error(finalizeData.error || 'Failed to finalize');
+
+      // Success - redirect to dashboard
+      router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
+      setFinalizing(false);
     }
   };
 
@@ -140,6 +158,18 @@ function LocationsContent() {
             <div className="w-16 h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="font-body text-gray-700">Loading...</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (finalizing) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-5" />
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Creating Your Profile...</h1>
+          <p className="font-body text-sm sm:text-base text-gray-700">Setting up your profile and importing your portfolio</p>
         </div>
       </div>
     );
@@ -193,13 +223,13 @@ function LocationsContent() {
               disabled={loading}
               className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Continue →'}
+              {loading ? 'Saving...' : 'Finish →'}
             </button>
           </div>
 
           {/* Subtle helper text */}
           <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-            Step 2 of 3
+            Step 2 of 2
           </p>
         </div>
       </div>

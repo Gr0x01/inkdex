@@ -428,7 +428,7 @@ function Step1BasicInfo({
               </button>
 
               <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-                Step 1 of 3
+                Step 1 of 2
               </p>
             </div>
           </div>
@@ -900,121 +900,13 @@ function Step2Locations({
                   disabled={loading}
                   className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Saving...' : 'Continue →'}
+                  {loading ? 'Saving...' : 'Finish →'}
                 </button>
               </div>
 
               <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-                Step 2 of 3
+                Step 2 of 2
               </p>
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// STEP 3: COMPLETE (Isolated Component)
-// =============================================================================
-
-interface Step3Props {
-  isLoading?: boolean;
-  hasError?: boolean;
-  errorMessage?: string;
-  onRetry?: () => void;
-}
-
-function Step3Complete({
-  isLoading = true,
-  hasError = false,
-  errorMessage = 'Something went wrong',
-  onRetry,
-}: Step3Props) {
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[var(--paper-white)] relative">
-        <div className="grain-overlay absolute inset-0 pointer-events-none" />
-        <div className="relative">
-          <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-5" />
-                <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Creating Your Profile...</h1>
-                <p className="font-body text-sm sm:text-base text-gray-700">Setting up your profile</p>
-
-                <div className="mt-6 p-5 bg-gray-100 border-2 border-border-subtle">
-                  <p className="font-mono text-xs text-gray-700 uppercase tracking-wider mb-3">
-                    What Happens Next
-                  </p>
-                  <div className="font-body text-sm text-gray-700 space-y-1.5 text-left">
-                    <p>• Pin your favorite images to showcase your best work</p>
-                    <p>• Manage your portfolio and locations</p>
-                    <p>• View analytics and profile performance</p>
-                    <p>• Upgrade to Pro for 100 portfolio images and auto-sync</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  if (hasError) {
-    return (
-      <div className="min-h-screen bg-[var(--paper-white)] relative">
-        <div className="grain-overlay absolute inset-0 pointer-events-none" />
-        <div className="relative">
-          <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
-            <div className="max-w-2xl mx-auto text-center">
-              <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-status-error/10 border-2 border-status-error flex items-center justify-center mx-auto mb-5 sm:mb-6">
-                  <svg className="w-8 h-8 sm:w-10 sm:h-10 text-status-error" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-
-                <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-3">Something Went Wrong</h1>
-                <p className="font-body text-sm sm:text-base text-status-error mb-5 sm:mb-6 max-w-md mx-auto">{errorMessage}</p>
-
-                <button
-                  onClick={onRetry}
-                  className="btn btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[var(--paper-white)] relative">
-      <div className="grain-overlay absolute inset-0 pointer-events-none" />
-      <div className="relative">
-        <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-status-success/10 border-2 border-status-success flex items-center justify-center mx-auto mb-5 sm:mb-6">
-                <svg className="w-10 h-10 sm:w-12 sm:h-12 text-status-success" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-
-              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-3">You&apos;re Live on Inkdex!</h1>
-              <p className="font-body text-sm sm:text-base lg:text-lg text-gray-700 mb-5 sm:mb-6 max-w-lg mx-auto leading-relaxed">
-                Your profile is now visible to thousands of people looking for tattoo artists
-              </p>
-
-              <button className="btn btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base">
-                Go to Dashboard →
-              </button>
             </div>
           </div>
         </main>
@@ -1048,25 +940,10 @@ function OnboardingFlowSimulator() {
     );
   }
 
-  if (currentStep === 2) {
-    return (
-      <div>
-        <Step2Locations onContinue={() => setCurrentStep(3)} onBack={() => setCurrentStep(1)} />
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
-          <button
-            onClick={handleReset}
-            className="font-mono text-xs text-gray-500 hover:text-ink uppercase tracking-wider underline transition-colors bg-white px-3 py-1 rounded shadow"
-          >
-            Reset Demo
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // Step 2 is the final step - "Finish" button completes onboarding
   return (
     <div>
-      <Step3Complete isLoading={false} />
+      <Step2Locations onContinue={handleReset} onBack={() => setCurrentStep(1)} />
       <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
         <button
           onClick={handleReset}
@@ -1262,62 +1139,6 @@ export const Step2_Locations_Pro_Empty: Story = {
   },
 };
 
-/**
- * Step 3: Complete - Loading state
- */
-export const Step3_Complete_Loading: Story = {
-  render: () => <Step3Complete isLoading={true} />,
-  parameters: {
-    docs: {
-      description: {
-        story: `
-**Step 3: Complete (Loading)**
-
-While the profile is being finalized:
-- Spinner animation
-- "What happens next" info box
-- Auto-redirects to dashboard when done
-        `,
-      },
-    },
-  },
-};
-
-/**
- * Step 3: Complete - Success state
- */
-export const Step3_Complete_Success: Story = {
-  render: () => <Step3Complete isLoading={false} />,
-  parameters: {
-    docs: {
-      description: {
-        story: 'Success state shown briefly before redirect to dashboard.',
-      },
-    },
-  },
-};
-
-/**
- * Step 3: Complete - Error state
- */
-export const Step3_Complete_Error: Story = {
-  render: () => (
-    <Step3Complete
-      isLoading={false}
-      hasError={true}
-      errorMessage="Failed to create profile. Please try again."
-      onRetry={() => alert('Retry clicked')}
-    />
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Error state with retry button. Shown when profile creation fails.',
-      },
-    },
-  },
-};
-
 // =============================================================================
 // STORIES: INTERACTIVE FLOW
 // =============================================================================
@@ -1333,23 +1154,22 @@ export const InteractiveFlow: Story = {
         story: `
 # Interactive Onboarding Flow
 
-Complete click-through simulation of the 3-step onboarding experience.
+Complete click-through simulation of the 2-step onboarding experience.
 
 ## How to Use
 
 1. **Step 1**: Fill in basic info (email, name, bio, booking link)
-2. **Step 2**: Add your location(s)
-3. **Step 3**: See the completion screen
-4. Click "Reset Demo" to start over
+2. **Step 2**: Add your location(s) and click "Finish"
+3. Click "Reset Demo" to start over
 
 ## Features
 
-- ✅ Live form validation
-- ✅ Working dropdowns with mock data
-- ✅ City auto-fills state for US cities
-- ✅ Pro vs Free tier differences
-- ✅ Simulated API delays
-- ✅ Editorial design (paper & ink aesthetic)
+- Live form validation
+- Working dropdowns with mock data
+- City auto-fills state for US cities
+- Pro vs Free tier differences
+- Simulated API delays
+- Editorial design (paper & ink aesthetic)
         `,
       },
     },
