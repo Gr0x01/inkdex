@@ -7,7 +7,7 @@ const STYLE_TAGS = [
   { name: 'Fine Line', showOnMobile: true },
   { name: 'Ignorant', showOnMobile: true },
   { name: 'Trash Polka', showOnMobile: true },
-  { name: 'Chicano', showOnMobile: true },
+  { name: 'Black & Gray', showOnMobile: true },
   { name: 'Irezumi', showOnMobile: false },
   { name: 'Dotwork', showOnMobile: false },
 ]

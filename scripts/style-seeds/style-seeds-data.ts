@@ -135,17 +135,12 @@ export const styleSeedsData: StyleSeedData[] = [
     ],
   },
   {
-    styleName: 'chicano',
-    displayName: 'Chicano',
+    styleName: 'black-and-gray',
+    displayName: 'Black & Gray',
     description:
-      'Usually fine line, black and grey rooted in Mexican Revolution, Los Angeles low-riders and Pachuco culture. Classic LA style.',
+      'Smooth grayscale shading using only black ink diluted to various gray tones. Portraits, nature, and realistic subjects without color.',
     imageUrls: [
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/167341.jpg',
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/167327.jpg',
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/167333.jpg',
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/171598.jpg',
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/163492.jpg',
-      'https://d1kq2dqeox7x40.cloudfront.net/images/news_uploads/legacy/0/167980.jpg',
+      // Local seed images in tmp/seeds/black-and-gray-*.webp
     ],
   },
   {

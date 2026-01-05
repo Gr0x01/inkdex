@@ -99,9 +99,9 @@ const STYLE_TAXONOMY: Record<string, { displayName: string; description: string 
     displayName: 'Trash Polka',
     description: 'Chaotic collage mixing realism, typography, and abstract. Red and black.',
   },
-  'chicano': {
-    displayName: 'Chicano',
-    description: 'Religious imagery, lowriders, portraits. Primarily black and grey.',
+  'black-and-gray': {
+    displayName: 'Black & Gray',
+    description: 'Smooth grayscale shading using only black ink diluted to various gray tones. Portraits, nature, and realistic subjects.',
   },
   'biomechanical': {
     displayName: 'Biomechanical',

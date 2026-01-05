@@ -70,9 +70,9 @@ const STYLE_INFO: Record<string, { displayName: string; description: string }> =
     displayName: 'Illustrative',
     description: 'Storybook or comic-style artwork with artistic interpretation and fine details.',
   },
-  'chicano': {
-    displayName: 'Chicano',
-    description: 'Fine line black and grey, religious imagery, lowriders. Rooted in LA culture.',
+  'black-and-gray': {
+    displayName: 'Black & Gray',
+    description: 'Smooth grayscale shading using only black ink diluted to various gray tones. Portraits, nature, and realistic subjects.',
   },
   'biomechanical': {
     displayName: 'Biomechanical',

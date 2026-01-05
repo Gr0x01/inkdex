@@ -2548,48 +2548,48 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
   // - finding: 80-100 words about portfolio evaluation and artist selection
   // - keywords: 4-6 SEO keywords for this style×city combination
 
-  // ===== CHICANO STYLE (All 8 Cities) =====
+  // ===== BLACK AND GRAY STYLE (All 8 Cities) =====
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'austin',
     stateSlug: 'texas',
     intro: {
       paragraphs: [
-        "Chicano tattooing represents one of the most culturally significant styles in American tattoo history, characterized by fine-line black and grey work that carries profound personal and spiritual meaning. Religious imagery—the Virgin of Guadalupe, praying hands, rosaries, crosses—appears alongside script lettering in Old English or Gothic fonts, roses with delicate shading, lowrider culture references, and photo-realistic family portraits. The style's technical hallmark is smooth gradient work achieved through fine needle configurations and meticulous shading.",
-        "Originating in Mexican-American communities of the Southwest during the mid-20th century, Chicano tattooing evolved from hand-poked prison work into a sophisticated fine-line art form. The style carries deep cultural weight, serving as visual testimony to family heritage, spiritual beliefs, barrio identity, and cultural pride. Each tattoo tells a story rooted in lived experience rather than aesthetic preference alone.",
+        "Black and gray tattooing uses only black ink diluted to various shades of gray to create stunning depth, dimension, and realism without color. This versatile style produces everything from soft, ethereal portraits to bold dramatic compositions through masterful shading techniques. Artists create smooth gradients, delicate halftones, and rich contrast using wash techniques that layer diluted ink to build tonal complexity.",
+        "The style's appeal lies in its timeless elegance and graceful aging—black and gray work maintains its beauty for decades, with smooth gradients that settle naturally into skin. Unlike color tattoos that may fade or shift over time, well-executed black and gray work develops a classic quality with age, making it an enduring choice for meaningful pieces.",
       ],
     },
     cityContext: {
-      heading: 'Chicano in Austin',
+      heading: 'Black & Gray in Austin',
       paragraphs: [
-        "Austin's Chicano tattoo tradition connects directly to the city's long-standing Mexican-American community, particularly in East Austin neighborhoods where Tejano culture has thrived for generations. Artists working in this style often operate in shops along East 6th Street, South First Street, and throughout East Austin, serving clients seeking culturally authentic work that honors Mexican-American heritage.",
-        "The proximity to the Texas-Mexico border and Austin's position within Tejano cultural territory means local Chicano artists draw from deep regional roots. Many grew up in families where this tattoo style represented cultural identity, giving their work an authenticity that comes from lived experience rather than aesthetic study. The style here frequently incorporates Texas-specific elements—the Virgen de San Juan de los Lagos, symbols of South Texas ranch culture, or imagery reflecting Austin's particular blend of Mexican-American and Texan identity.",
-        "East Austin's historically Latino neighborhoods, while facing gentrification pressures, maintain cultural institutions and gathering spaces where Chicano artistic traditions continue. Local artists often have connections to these communities that inform the cultural consultation aspect of their work—ensuring clients understand the significance of religious imagery or cultural symbols before committing them to skin.",
+        "Austin's black and gray tattoo scene thrives across the city's diverse tattoo districts, from South Congress to East Austin. Artists here bring the style's technical precision to subjects ranging from realistic wildlife and nature scenes to portraiture and abstract compositions. The city's creative culture encourages experimentation within the style's grayscale constraints.",
+        "Texas has deep roots in black and gray tattooing, and Austin benefits from this regional expertise. Local artists often specialize in wildlife realism—detailed renderings of Texas landscapes, native animals, and botanical subjects executed entirely in grayscale. The style's versatility suits Austin's eclectic clientele, serving everyone from first-timers wanting understated designs to collectors seeking large-scale realistic pieces.",
+        "The city's vibrant music and arts scene influences local black and gray work, with artists incorporating illustrative elements, fine art references, and atmospheric compositions that reflect Austin's creative identity.",
       ],
     },
     expectations: {
       heading: 'What to Expect',
       paragraphs: [
-        "Chicano fine-line work requires patience and multiple sessions for larger pieces. The delicate shading that creates smooth gradients and photo-realistic detail cannot be rushed. A Virgin of Guadalupe back piece might require 15-20 hours across several sessions, while smaller script or religious imagery completes more quickly. Pain levels vary by placement, though the fine-line technique often feels less intense than bold traditional work.",
-        "Healing demands careful attention—fine-line grey work shows imperfections more readily than bold styles. Expect detailed aftercare instructions and potential touch-ups to perfect gradient work. Artists experienced in Chicano style often conduct thorough consultations about imagery meaning, particularly for religious iconography. Cultural respect matters deeply in this style; reputable artists ensure clients understand and have genuine connection to the symbols they request.",
+        "Black and gray sessions focus on building gradients through multiple passes of diluted ink. Realistic pieces require significant time—portraits and detailed work may need 4-8 hours for medium pieces, with large-scale work spanning multiple sessions. The layering technique means artists work methodically, building depth through careful shading rather than bold line work.",
+        "Healing black and gray work requires protecting the subtle gradations from sun exposure and following proper aftercare. The delicate halftones that create realism can fade if not properly cared for during healing. Touch-ups may be needed for areas where skin absorbed less pigment. Austin artists typically charge $150-200+ hourly for quality black and gray work.",
       ],
     },
     finding: {
       heading: 'Finding Your Artist',
       paragraphs: [
-        "Portfolio evaluation for Chicano work focuses on gradient smoothness, photo-realistic detail in portraits, and clean script lettering. Look for healed work showing how fine lines settle over time. Cultural authenticity matters—artists with personal connection to Chicano culture typically bring deeper understanding of imagery significance and proper representation. During consultations, discuss your connection to requested imagery. Reputable artists will ask about cultural background and meaning, not as gatekeeping but ensuring respectful, authentic work.",
+        "Evaluate portfolios for smooth gradient transitions, rich contrast between light and dark areas, and detail retention in healed work. Quality black and gray shows no harsh lines or patchy shading—just seamless tonal progression. Ask to see healed photos, as this style's success shows most clearly after settling into skin.",
       ],
     },
     keywords: [
-      'austin chicano tattoo',
-      'chicano tattoo artists austin',
-      'austin black and grey tattoo',
-      'fine line tattoo austin',
-      'austin texas chicano',
+      'austin black and gray tattoo',
+      'black and grey tattoo artists austin',
+      'grayscale tattoo austin',
+      'realistic black and gray austin',
+      'austin texas black and gray',
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'atlanta',
     stateSlug: 'georgia',
     intro: {
@@ -2628,7 +2628,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'los-angeles',
     stateSlug: 'california',
     intro: {
@@ -2667,7 +2667,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'new-york-city',
     stateSlug: 'new-york',
     intro: {
@@ -2706,7 +2706,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'chicago',
     stateSlug: 'illinois',
     intro: {
@@ -2745,7 +2745,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'portland',
     stateSlug: 'oregon',
     intro: {
@@ -2784,7 +2784,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'seattle',
     stateSlug: 'washington',
     intro: {
@@ -2823,7 +2823,7 @@ export const STYLE_EDITORIAL_CONTENT: StyleEditorialContent[] = [
     ],
   },
   {
-    styleSlug: 'chicano',
+    styleSlug: 'black-and-gray',
     citySlug: 'miami',
     stateSlug: 'florida',
     intro: {

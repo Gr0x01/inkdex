@@ -39,7 +39,7 @@ const STYLE_DISPLAY_NAMES: Record<string, string> = {
   'lettering': 'Lettering',
   'new-school': 'New School',
   'trash-polka': 'Trash Polka',
-  'chicano': 'Chicano',
+  'black-and-gray': 'Black & Gray',
   'biomechanical': 'Biomechanical',
   'ornamental': 'Ornamental',
   'sketch': 'Sketch',
