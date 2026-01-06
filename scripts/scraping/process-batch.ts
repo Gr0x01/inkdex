@@ -13,6 +13,7 @@ import { join, basename } from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { processLocalImage } from '../../lib/processing/image-processor';
 import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImages } from '../../lib/storage/supabase-storage';
+import { analyzeImageColor } from '../../lib/search/color-analyzer';
 
 /**
  * Sleep utility for retry delays
@@ -275,6 +276,16 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
           continue;
         }
 
+        // Analyze image color (use thumb320 for speed)
+        let isColor: boolean | null = null;
+        try {
+          const colorResult = await analyzeImageColor(buffers.thumb320);
+          isColor = colorResult.isColor;
+        } catch (colorError) {
+          // Non-fatal: continue without color data
+          console.warn(`      ⚠️  Color analysis failed: ${colorError}`);
+        }
+
         // Insert into database
         const { error: dbError } = await supabase
           .from('portfolio_images')
@@ -290,6 +301,7 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
             post_timestamp: meta.timestamp,
             likes_count: meta.likes,
             status: 'pending',  // Images start as pending until embeddings are generated
+            is_color: isColor,  // Color classification
           });
 
         if (dbError) {

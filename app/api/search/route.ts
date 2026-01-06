@@ -3,6 +3,8 @@ import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
 import { detectInstagramUrl, extractPostId } from '@/lib/instagram/url-detector'
+import { classifyQueryStyles, StyleMatch } from '@/lib/search/style-classifier'
+import { analyzeImageColor, analyzeUrlColor } from '@/lib/search/color-analyzer'
 import { fetchInstagramPostImage, downloadImageAsBuffer, InstagramError, ERROR_MESSAGES } from '@/lib/instagram/post-fetcher'
 import { fetchInstagramProfileImages, PROFILE_ERROR_MESSAGES } from '@/lib/instagram/profile-fetcher'
 import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
@@ -53,6 +55,8 @@ export async function POST(request: NextRequest) {
     let instagramUsername: string | null = null
     let instagramPostUrl: string | null = null
     let artistIdSource: string | null = null
+    let detectedStyles: StyleMatch[] = []
+    let isColorQuery: boolean | null = null  // null = unknown (text search), true = colorful, false = B&G
 
     // Handle multipart/form-data (image upload)
     if (contentType.includes('multipart/form-data')) {
@@ -94,8 +98,25 @@ export async function POST(request: NextRequest) {
 
       searchType = 'image'
 
-      // Generate image embedding
-      embedding = await generateImageEmbedding(imageFile)
+      // Convert file to buffer for color analysis
+      const imageArrayBuffer = await imageFile.arrayBuffer()
+      const imageBuffer = Buffer.from(imageArrayBuffer)
+
+      // Analyze color in parallel with embedding generation
+      const [embeddingResult, colorResult] = await Promise.all([
+        generateImageEmbedding(imageFile),
+        analyzeImageColor(imageBuffer)
+      ])
+
+      embedding = embeddingResult
+      isColorQuery = colorResult.isColor
+      console.log(`[Search] Color analysis: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
+
+      // Classify query image styles for style-weighted search
+      detectedStyles = await classifyQueryStyles(embedding)
+      if (detectedStyles.length > 0) {
+        console.log(`[Search] Detected styles: ${detectedStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
+      }
     }
     // Handle application/json (text search or Instagram post)
     else if (contentType.includes('application/json')) {
@@ -153,8 +174,21 @@ export async function POST(request: NextRequest) {
             type: 'image/jpeg'
           })
 
-          // Generate embedding
-          embedding = await generateImageEmbedding(imageFile)
+          // Generate embedding and analyze color in parallel
+          const [embeddingResult, colorResult] = await Promise.all([
+            generateImageEmbedding(imageFile),
+            analyzeImageColor(imageBuffer)
+          ])
+
+          embedding = embeddingResult
+          isColorQuery = colorResult.isColor
+          console.log(`[Search] IG post color: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
+
+          // Classify query image styles for style-weighted search
+          detectedStyles = await classifyQueryStyles(embedding)
+          if (detectedStyles.length > 0) {
+            console.log(`[Search] Detected styles from IG post: ${detectedStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
+          }
 
           // Store attribution data
           instagramUsername = postData.username
@@ -235,6 +269,27 @@ export async function POST(request: NextRequest) {
             // Aggregate embeddings
             embedding = aggregateEmbeddings(embeddings)
 
+            // For DB artists, check their color profile
+            const supabase = await createClient()
+            const { data: colorProfile } = await supabase
+              .from('artist_color_profiles')
+              .select('color_percentage')
+              .eq('artist_id', existingArtist.id)
+              .single()
+
+            if (colorProfile) {
+              // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
+              isColorQuery = colorProfile.color_percentage > 0.6 ? true :
+                             colorProfile.color_percentage < 0.4 ? false : null
+              console.log(`[Profile Search] Artist color profile: ${(colorProfile.color_percentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
+            }
+
+            // Classify aggregated embedding styles for style-weighted search
+            detectedStyles = await classifyQueryStyles(embedding)
+            if (detectedStyles.length > 0) {
+              console.log(`[Profile Search] Detected styles: ${detectedStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
+            }
+
             // Store attribution data
             instagramUsername = username
             queryText = `Artists similar to @${username}`
@@ -271,15 +326,29 @@ export async function POST(request: NextRequest) {
               })
             })
 
-            // Generate embeddings in parallel
-            const embeddings = await Promise.all(
-              imageFiles.map(file => generateImageEmbedding(file))
-            )
+            // Generate embeddings and analyze colors in parallel
+            const [embeddings, colorResults] = await Promise.all([
+              Promise.all(imageFiles.map(file => generateImageEmbedding(file))),
+              Promise.all(imageBuffers.map(buffer => analyzeImageColor(buffer)))
+            ])
 
             console.log(`[Profile Search] Generated ${embeddings.length} embeddings, aggregating...`)
 
             // Aggregate embeddings
             embedding = aggregateEmbeddings(embeddings)
+
+            // Determine overall color using majority vote
+            const colorCount = colorResults.filter(r => r.isColor).length
+            const colorPercentage = colorCount / colorResults.length
+            isColorQuery = colorPercentage > 0.6 ? true :
+                           colorPercentage < 0.4 ? false : null
+            console.log(`[Profile Search] Color analysis: ${colorCount}/${colorResults.length} color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
+
+            // Classify aggregated embedding styles for style-weighted search
+            detectedStyles = await classifyQueryStyles(embedding)
+            if (detectedStyles.length > 0) {
+              console.log(`[Profile Search] Detected styles: ${detectedStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
+            }
 
             // Store attribution data
             instagramUsername = username
@@ -367,6 +436,26 @@ export async function POST(request: NextRequest) {
           // Aggregate embeddings (same as Instagram profile search)
           embedding = aggregateEmbeddings(embeddings)
 
+          // Fetch artist's color profile
+          const { data: colorProfile } = await supabase
+            .from('artist_color_profiles')
+            .select('color_percentage')
+            .eq('artist_id', artistId)
+            .single()
+
+          if (colorProfile) {
+            // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
+            isColorQuery = colorProfile.color_percentage > 0.6 ? true :
+                           colorProfile.color_percentage < 0.4 ? false : null
+            console.log(`[Similar Artist] Artist color profile: ${(colorProfile.color_percentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
+          }
+
+          // Classify aggregated embedding styles for style-weighted search
+          detectedStyles = await classifyQueryStyles(embedding)
+          if (detectedStyles.length > 0) {
+            console.log(`[Similar Artist] Detected styles: ${detectedStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
+          }
+
           // Store attribution data
           queryText = `Artists similar to ${artist.name}`
           artistIdSource = artistId
@@ -417,18 +506,52 @@ export async function POST(request: NextRequest) {
     // Store in searches table
     const supabase = await createClient()
 
-    const { data, error } = await supabase
+    // Build insert payload with style and color data
+    const insertPayload: Record<string, unknown> = {
+      embedding: `[${embedding.join(',')}]`,
+      query_type: searchType,
+      query_text: queryText,
+      instagram_username: instagramUsername,
+      instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
+      artist_id_source: artistIdSource,
+      detected_styles: detectedStyles.length > 0 ? detectedStyles : null,
+      primary_style: detectedStyles[0]?.style_name || null,
+      is_color: isColorQuery,
+    }
+
+    console.log('[Search] Inserting with styles and color:', {
+      hasStyles: detectedStyles.length > 0,
+      primaryStyle: detectedStyles[0]?.style_name,
+      isColor: isColorQuery
+    })
+
+    let { data, error } = await supabase
       .from('searches')
-      .insert({
+      .insert(insertPayload)
+      .select('id')
+      .single()
+
+    console.log('[Search] Insert result:', { success: !error, errorCode: error?.code })
+
+    // Fallback: if schema cache is stale, retry without style columns
+    if (error?.code === 'PGRST204' && error?.message?.includes('detected_styles')) {
+      console.warn('[Search] Schema cache stale, retrying without style columns')
+      const fallbackPayload = {
         embedding: `[${embedding.join(',')}]`,
         query_type: searchType,
         query_text: queryText,
         instagram_username: instagramUsername,
         instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
         artist_id_source: artistIdSource,
-      })
-      .select('id')
-      .single()
+      }
+      const result = await supabase
+        .from('searches')
+        .insert(fallbackPayload)
+        .select('id')
+        .single()
+      data = result.data
+      error = result.error
+    }
 
     if (error) {
       console.error('Error storing search:', error)

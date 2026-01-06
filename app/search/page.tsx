@@ -59,13 +59,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   // Parse detected styles for style-weighted search
   let detectedStyles: StyleMatch[] | null = null
-  console.log('[Search Page] Raw detected_styles from DB:', search.detected_styles)
   if (search.detected_styles) {
     try {
       detectedStyles = typeof search.detected_styles === 'string'
         ? JSON.parse(search.detected_styles)
         : search.detected_styles
-      console.log('[Search Page] Parsed styles:', detectedStyles)
     } catch (error) {
       console.error('Failed to parse detected_styles:', error)
       // Continue without style weighting
@@ -74,7 +72,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   // Get is_color for color-weighted search
   const isColorQuery: boolean | null = search.is_color ?? null
-  console.log('[Search Page] is_color from DB:', isColorQuery)
 
   // Extract artist_id_source for exclusion (similar_artist searches)
   const excludeArtistId = search.artist_id_source || null
@@ -227,25 +224,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <ArtistCard
                 key={artist.artist_id}
                 artist={{
-                  id: artist.artist_id,
-                  name: artist.artist_name,
-                  slug: artist.artist_slug,
+                  artist_id: artist.artist_id,
+                  artist_name: artist.artist_name,
+                  artist_slug: artist.artist_slug,
                   city: artist.city,
-                  profileImageUrl: artist.profile_image_url,
-                  followerCount: artist.follower_count,
-                  instagramUrl: artist.instagram_url,
-                  isVerified: artist.is_verified,
-                  isPro: artist.is_pro,
-                  isFeatured: artist.is_featured,
-                  locationCount: artist.location_count,
+                  profile_image_url: artist.profile_image_url,
+                  follower_count: artist.follower_count,
+                  instagram_url: artist.instagram_url,
+                  is_verified: artist.is_verified,
+                  is_pro: artist.is_pro,
+                  is_featured: artist.is_featured,
+                  location_count: artist.location_count,
+                  similarity: artist.similarity,
+                  matching_images: artist.matching_images.map((img: any) => ({
+                    url: img.url,
+                    instagramUrl: img.instagramUrl,
+                    similarity: img.similarity,
+                    likes_count: img.likes_count,
+                  })),
                 }}
-                images={artist.matching_images.map((img: any) => ({
-                  url: img.url,
-                  instagramUrl: img.instagramUrl,
-                  similarity: img.similarity,
-                  likesCount: img.likes_count,
-                }))}
-                similarity={artist.similarity}
               />
             ))}
           </div>

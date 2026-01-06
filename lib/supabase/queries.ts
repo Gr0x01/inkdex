@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
+import type { StyleMatch } from '@/lib/search/style-classifier'
 
 /**
  * Internal types for RPC results
@@ -30,6 +31,15 @@ interface SearchArtistRpcResult {
   max_likes: number | null
   total_count?: number
   location_count?: number
+}
+
+/**
+ * Extended result type with style boost (from search_artists_with_style_boost RPC)
+ */
+interface SearchArtistWithStyleBoostRpcResult extends SearchArtistRpcResult {
+  style_boost: number
+  color_boost: number
+  boosted_score: number
 }
 
 interface ArtistLocationRow {
@@ -331,6 +341,134 @@ export async function searchArtistsWithCount(
       likes_count: img.likes_count,
     })),
     max_similarity: result.similarity,
+    max_likes: result.max_likes,
+    location_count: result.location_count,
+  }))
+
+  return { artists, totalCount }
+}
+
+/**
+ * Search artists by embedding with style-weighted ranking
+ * Boosts artists who specialize in detected query styles
+ * Falls back to regular search if no styles provided
+ */
+export async function searchArtistsWithStyleBoost(
+  embedding: number[],
+  options: {
+    threshold?: number
+    limit?: number
+    offset?: number
+    queryStyles?: StyleMatch[] | null
+    isColorQuery?: boolean | null
+  } & LocationFilter = {}
+) {
+  // Validate embedding
+  if (!Array.isArray(embedding) || embedding.length !== 768) {
+    throw new Error('Invalid embedding: must be an array of 768 numbers')
+  }
+  if (!embedding.every(n => typeof n === 'number' && Number.isFinite(n))) {
+    throw new Error('Invalid embedding: all elements must be finite numbers')
+  }
+
+  const supabase = await createClient()
+  const {
+    threshold = 0.7,
+    limit = 20,
+    country = null,
+    region = null,
+    city = null,
+    offset = 0,
+    queryStyles = null,
+    isColorQuery = null,
+  } = options
+
+  validateFloat(threshold, 'threshold', 0, 1)
+  validateInteger(limit, 'limit', 1, 100)
+  validateInteger(offset, 'offset', 0, 10000)
+  if (country !== null) validateString(country, 'country', 10)
+  if (region !== null) validateString(region, 'region', 100)
+  if (city !== null) validateString(city, 'city', 100)
+
+  const sanitizedEmbedding = embedding.map(n => {
+    if (!Number.isFinite(n)) throw new Error('Invalid embedding value')
+    return n.toString()
+  }).join(',')
+
+  // Log what we're passing
+  console.log('[Style Search] Passing query_styles:', queryStyles, 'is_color_query:', isColorQuery)
+
+  const { data, error } = await supabase.rpc('search_artists_with_style_boost', {
+    query_embedding: `[${sanitizedEmbedding}]`,
+    match_threshold: threshold,
+    match_count: limit,
+    city_filter: city,
+    region_filter: region,
+    country_filter: country,
+    offset_param: offset,
+    query_styles: queryStyles,  // Pass directly, Supabase client handles JSONB
+    is_color_query: isColorQuery,
+  })
+
+  if (error) {
+    console.error('Error searching artists with style boost:', error)
+    throw error
+  }
+
+  // Debug: log style and color boost values
+  if (data && data.length > 0) {
+    // Debug first result structure
+    console.log('[Debug] First result keys:', Object.keys(data[0]))
+    console.log('[Debug] First result matching_images:', data[0].matching_images)
+
+    const styleBoostsFound = data.filter((r: SearchArtistWithStyleBoostRpcResult) => r.style_boost > 0)
+    const colorBoostsFound = data.filter((r: SearchArtistWithStyleBoostRpcResult) => r.color_boost > 0)
+    console.log('[Style Search] Results with style boost:', styleBoostsFound.length, 'of', data.length)
+    console.log('[Color Search] Results with color boost:', colorBoostsFound.length, 'of', data.length)
+    if (styleBoostsFound.length > 0) {
+      console.log('[Style Search] Top style boosts:', styleBoostsFound.slice(0, 3).map((r: SearchArtistWithStyleBoostRpcResult) => ({
+        name: r.artist_name,
+        style_boost: r.style_boost,
+        similarity: r.similarity
+      })))
+    }
+    if (colorBoostsFound.length > 0) {
+      console.log('[Color Search] Top color boosts:', colorBoostsFound.slice(0, 3).map((r: SearchArtistWithStyleBoostRpcResult) => ({
+        name: r.artist_name,
+        color_boost: r.color_boost,
+        similarity: r.similarity
+      })))
+    }
+  }
+
+  // Extract total count from first row
+  const totalCount = data && data.length > 0 ? data[0].total_count : 0
+
+  // Transform results
+  const artists = ((data || []) as SearchArtistWithStyleBoostRpcResult[]).map((result) => ({
+    id: result.artist_id,
+    name: result.artist_name,
+    slug: result.artist_slug,
+    city: result.city,
+    region: result.region,
+    country_code: result.country_code,
+    profile_image_url: result.profile_image_url,
+    follower_count: result.follower_count,
+    shop_name: result.shop_name,
+    instagram_url: result.instagram_url,
+    is_verified: result.is_verified,
+    is_pro: result.is_pro ?? false,
+    is_featured: result.is_featured ?? false,
+    images: (result.matching_images || []).map((img) => ({
+      url: img.thumbnail_url,
+      instagramUrl: img.image_url,
+      similarity: img.similarity,
+      likes_count: img.likes_count,
+    })),
+    max_similarity: result.similarity,
+    style_boost: result.style_boost,
+    color_boost: result.color_boost,
+    boosted_score: result.boosted_score,
     max_likes: result.max_likes,
     location_count: result.location_count,
   }))
