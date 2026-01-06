@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import ProArtistCardMock from './ProArtistCardMock'
+import { PRICING } from '@/lib/pricing/config'
 
 const PRO_BENEFITS = [
   {
@@ -104,8 +105,8 @@ export default function ProShowcase() {
                 Upgrade to Pro
               </Link>
               <div className="flex items-baseline gap-1">
-                <span className="font-display text-2xl font-bold text-ink">$15</span>
-                <span className="font-mono text-sm text-gray-500">/month</span>
+                <span className="font-display text-2xl font-bold text-ink">${PRICING.monthly.amount}</span>
+                <span className="font-mono text-sm text-gray-500">/{PRICING.monthly.interval}</span>
               </div>
             </div>
           </div>

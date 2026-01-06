@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 import { useState } from 'react';
-import { Crown, MapPin, Globe, Plus, X } from 'lucide-react';
+import { Crown, MapPin, Globe, Plus, X, Check, Sparkles } from 'lucide-react';
 import Select from '@/components/ui/Select';
+import { PRICING, FREE_FEATURES, PRO_FEATURES } from '@/lib/pricing/config';
 
 // =============================================================================
 // MOCK DATA
@@ -153,42 +154,36 @@ interface Location {
 }
 
 // =============================================================================
-// STEP 1: BASIC INFO (Isolated Component)
+// STEP 1: BASIC INFO (Required)
 // =============================================================================
 
 interface Step1Props {
-  isPro?: boolean;
   initialEmail?: string;
   initialName?: string;
   initialBio?: string;
-  initialBookingLink?: string;
-  onContinue?: () => void;
+  onSubmit?: () => void;
 }
 
 function Step1BasicInfo({
-  isPro = false,
   initialEmail = '',
   initialName = '',
   initialBio = '',
-  initialBookingLink = '',
-  onContinue,
+  onSubmit,
 }: Step1Props) {
   const [email, setEmail] = useState(initialEmail);
   const [emailError, setEmailError] = useState('');
   const [name, setName] = useState(initialName);
   const [bio, setBio] = useState(initialBio);
-  const [bookingLink, setBookingLink] = useState(initialBookingLink);
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-  const [filterNonTattoo, setFilterNonTattoo] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const isValidEmail = (emailStr: string) => {
-    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$/;
-    return emailRegex.test(emailStr);
+    // Match production validation (case-insensitive, normalized to lowercase)
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+    return emailRegex.test(emailStr.toLowerCase());
   };
 
-  const handleContinue = () => {
+  const handleSubmit = () => {
     setEmailError('');
     setError('');
 
@@ -208,15 +203,11 @@ function Step1BasicInfo({
       setError('Name is required');
       return;
     }
-    if (bookingLink && !/^https?:\/\/.+/.test(bookingLink)) {
-      setError('Booking link must be a valid URL starting with http:// or https://');
-      return;
-    }
 
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onContinue?.();
+      onSubmit?.();
     }, 800);
   };
 
@@ -286,6 +277,300 @@ function Step1BasicInfo({
                 <p className="font-mono text-xs text-gray-500 mt-1">{bio.length}/500</p>
               </div>
 
+              {error && (
+                <div className="bg-status-error/10 border-2 border-status-error p-3">
+                  <p className="font-body text-status-error text-sm">{error}</p>
+                </div>
+              )}
+
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating Profile...' : 'Create Profile →'}
+              </button>
+
+              <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
+                Step 1 of 4
+              </p>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// STEP 2: PRO UPGRADE (Optional)
+// =============================================================================
+
+interface Step2UpgradeProps {
+  onUpgrade?: () => void;
+  onSkip?: () => void;
+}
+
+function Step2Upgrade({ onUpgrade, onSkip }: Step2UpgradeProps) {
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[var(--paper-white)] relative">
+      <div className="grain-overlay absolute inset-0 pointer-events-none" />
+      <div className="relative">
+        <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-3xl">
+          <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
+            {/* Header */}
+            <div className="mb-5 sm:mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" />
+                <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink">Upgrade to Pro</h1>
+              </div>
+              <p className="font-body text-sm sm:text-base text-gray-700">
+                Maximize your visibility and save time with auto-sync
+              </p>
+            </div>
+
+            {!showCheckout ? (
+              <>
+                {/* Plan Toggle */}
+                <div className="flex justify-center mb-6">
+                  <div className="inline-flex items-center gap-1 p-1 bg-gray-100 border-2 border-border-subtle">
+                    <button
+                      onClick={() => setSelectedPlan('monthly')}
+                      className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-colors ${
+                        selectedPlan === 'monthly'
+                          ? 'bg-paper text-ink shadow-sm'
+                          : 'text-gray-600 hover:text-ink'
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                    <button
+                      onClick={() => setSelectedPlan('yearly')}
+                      className={`px-4 py-2 font-mono text-xs uppercase tracking-wider transition-colors flex items-center gap-2 ${
+                        selectedPlan === 'yearly'
+                          ? 'bg-paper text-ink shadow-sm'
+                          : 'text-gray-600 hover:text-ink'
+                      }`}
+                    >
+                      Yearly
+                      <span className="text-[10px] text-green-600 font-semibold">
+                        Save ${PRICING.yearlySavings}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Comparison Cards */}
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  {/* Free Card */}
+                  <div className="border-2 border-gray-200 bg-white p-4 sm:p-5">
+                    <div className="mb-4">
+                      <h3 className="font-heading text-lg mb-1">Free</h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-display text-2xl font-bold">$0</span>
+                        <span className="font-mono text-xs text-gray-500">/forever</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-2">
+                      {FREE_FEATURES.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                          <span className="font-body text-sm text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Pro Card */}
+                  <div className="border-2 border-purple-500 bg-white p-4 sm:p-5 relative">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-600 text-white font-mono text-[10px] uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3" />
+                        Recommended
+                      </span>
+                    </div>
+                    <div className="mb-4 pt-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Crown className="w-4 h-4 text-purple-500" />
+                        <h3 className="font-heading text-lg">Pro</h3>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-display text-2xl font-bold">
+                          ${selectedPlan === 'monthly' ? PRICING.monthly.amount : PRICING.yearly.amount}
+                        </span>
+                        <span className="font-mono text-xs text-gray-500">
+                          /{selectedPlan === 'monthly' ? PRICING.monthly.interval : PRICING.yearly.interval}
+                        </span>
+                      </div>
+                    </div>
+                    <ul className="space-y-2">
+                      {PRO_FEATURES.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                          <span className="font-body text-sm text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                  <button
+                    onClick={onSkip}
+                    className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
+                  >
+                    Continue Free
+                  </button>
+                  <button
+                    onClick={() => setShowCheckout(true)}
+                    className="btn flex-1 py-2.5 sm:py-3 text-sm sm:text-base bg-purple-600 text-white hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Crown className="w-4 h-4" />
+                    Upgrade to Pro
+                  </button>
+                </div>
+
+                {/* Trust signals */}
+                <p className="font-body text-xs text-gray-500 text-center mt-4">
+                  Secure payment via Stripe. Cancel anytime.
+                </p>
+              </>
+            ) : (
+              <>
+                {/* Checkout View (Mock) */}
+                <div className="mb-4">
+                  <button
+                    onClick={() => setShowCheckout(false)}
+                    className="font-mono text-xs text-gray-600 hover:text-ink uppercase tracking-wider"
+                  >
+                    &larr; Back to plans
+                  </button>
+                </div>
+
+                <div className="bg-gray-50 border-2 border-border-subtle p-3 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-purple-600" />
+                      <span className="font-mono text-xs uppercase tracking-wider">
+                        Pro {selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'}
+                      </span>
+                    </div>
+                    <span className="font-display text-lg font-bold">
+                      ${selectedPlan === 'monthly' ? PRICING.monthly.amount : PRICING.yearly.amount}
+                      <span className="font-mono text-xs text-gray-500">
+                        /{selectedPlan === 'monthly' ? 'mo' : 'yr'}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* Mock Stripe Checkout Form */}
+                <div className="border-2 border-border-subtle p-6 bg-gray-50">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                        Card Number
+                      </label>
+                      <div className="input w-full bg-white text-gray-400">
+                        4242 4242 4242 4242
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                          Expiry
+                        </label>
+                        <div className="input w-full bg-white text-gray-400">12/28</div>
+                      </div>
+                      <div>
+                        <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                          CVC
+                        </label>
+                        <div className="input w-full bg-white text-gray-400">123</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={onUpgrade}
+                      className="w-full py-3 bg-purple-600 text-white font-mono text-xs uppercase tracking-wider hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Subscribe to Pro
+                    </button>
+                    <p className="text-center font-body text-xs text-gray-500">
+                      Demo only - no real payment processed
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step indicator */}
+            <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-4 mt-4 border-t border-border-subtle">
+              Step 2 of 4 <span className="text-gray-400">(Optional)</span>
+            </p>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// STEP 3: PORTFOLIO SETTINGS (Optional)
+// =============================================================================
+
+interface Step3Props {
+  isPro?: boolean;
+  initialBookingLink?: string;
+  onContinue?: () => void;
+  onSkip?: () => void;
+}
+
+function Step3PortfolioSettings({
+  isPro = false,
+  initialBookingLink = '',
+  onContinue,
+  onSkip,
+}: Step3Props) {
+  const [bookingLink, setBookingLink] = useState(initialBookingLink);
+  // Auto-sync defaults to OFF - free tier can't enable, Pro tier can toggle
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(false);
+  // Filter defaults to ON - free tier can't disable, Pro tier can toggle
+  const [filterNonTattoo, setFilterNonTattoo] = useState(true);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleContinue = () => {
+    setError('');
+
+    if (bookingLink && !/^https?:\/\/.+/.test(bookingLink)) {
+      setError('Booking link must be a valid URL starting with http:// or https://');
+      return;
+    }
+
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      onContinue?.();
+    }, 500);
+  };
+
+  return (
+    <div className="min-h-screen bg-[var(--paper-white)] relative">
+      <div className="grain-overlay absolute inset-0 pointer-events-none" />
+      <div className="relative">
+        <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
+          <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
+            <div className="mb-5 sm:mb-6">
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Portfolio Settings</h1>
+              <p className="font-body text-sm sm:text-base text-gray-700">Configure your booking link and sync preferences</p>
+            </div>
+
+            <div className="space-y-4 sm:space-y-5">
               {/* Booking Link */}
               <div>
                 <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
@@ -410,7 +695,6 @@ function Step1BasicInfo({
                     </button>
                   </div>
                 </div>
-
               </div>
 
               {error && (
@@ -419,16 +703,26 @@ function Step1BasicInfo({
                 </div>
               )}
 
-              <button
-                onClick={handleContinue}
-                disabled={loading}
-                className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Saving...' : 'Continue →'}
-              </button>
+              {/* Navigation buttons */}
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                <button
+                  onClick={onSkip}
+                  disabled={loading}
+                  className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleContinue}
+                  disabled={loading}
+                  className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Saving...' : 'Continue →'}
+                </button>
+              </div>
 
               <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-                Step 1 of 2
+                Step 3 of 4 <span className="text-gray-400">(Optional)</span>
               </p>
             </div>
           </div>
@@ -439,22 +733,22 @@ function Step1BasicInfo({
 }
 
 // =============================================================================
-// STEP 2: LOCATIONS (Isolated Component with Mock Data)
+// STEP 4: LOCATIONS (Optional)
 // =============================================================================
 
-interface Step2Props {
+interface Step4Props {
   isPro?: boolean;
   initialLocations?: Location[];
-  onContinue?: () => void;
-  onBack?: () => void;
+  onFinish?: () => void;
+  onSkip?: () => void;
 }
 
-function Step2Locations({
+function Step4Locations({
   isPro = false,
   initialLocations = [],
-  onContinue,
-  onBack,
-}: Step2Props) {
+  onFinish,
+  onSkip,
+}: Step4Props) {
   const [locations, setLocations] = useState<Location[]>(initialLocations);
   const [locationType, setLocationType] = useState<'city' | 'region'>('city');
   const [selectedCountry, setSelectedCountry] = useState<string>('US');
@@ -472,7 +766,6 @@ function Step2Locations({
 
   const handleCityChange = (city: string | null) => {
     setCityInput(city);
-    // Auto-fill state
     if (city) {
       const stateCode = CITY_STATE_MAP[city.toLowerCase()];
       if (stateCode) {
@@ -481,39 +774,13 @@ function Step2Locations({
     }
   };
 
-  const handleContinue = () => {
+  const handleFinish = () => {
     setLocationError('');
-
-    // For free tier, build location from form state
-    if (!isPro) {
-      if (locationType === 'city' && !cityInput) {
-        setLocationError('Please select a city');
-        return;
-      }
-      if (locationType === 'region' && !selectedState) {
-        setLocationError('Please select a state');
-        return;
-      }
-
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-        onContinue?.();
-      }, 800);
-      return;
-    }
-
-    // For Pro tier, check existing locations
-    if (locations.length === 0) {
-      setLocationError('Please add at least one location');
-      return;
-    }
-
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onContinue?.();
-    }, 800);
+      onFinish?.();
+    }, 500);
   };
 
   const formatLocation = (loc: Location): string => {
@@ -572,7 +839,7 @@ function Step2Locations({
           <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
             <div className="mb-5 sm:mb-6">
               <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Where Do You Work?</h1>
-              <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s)</p>
+              <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s) so clients can find you</p>
             </div>
 
             <div className="space-y-5 sm:space-y-6">
@@ -580,7 +847,7 @@ function Step2Locations({
               {!isPro && (
                 <div className="space-y-3">
                   <label className="block font-mono text-xs tracking-widest uppercase text-gray-700 mb-2">
-                    Where are you based? <span className="text-[var(--error)]">*</span>
+                    Where are you based?
                   </label>
 
                   {/* Country Selector */}
@@ -685,7 +952,7 @@ function Step2Locations({
                     <div className="space-y-3">
                       <div>
                         <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
-                          City <span className="text-[var(--error)]">*</span>
+                          City
                         </label>
                         <input
                           type="text"
@@ -890,22 +1157,23 @@ function Step2Locations({
               {/* Navigation buttons */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
                 <button
-                  onClick={onBack}
+                  onClick={onSkip}
+                  disabled={loading}
                   className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
                 >
-                  ← Back
+                  Skip
                 </button>
                 <button
-                  onClick={handleContinue}
+                  onClick={handleFinish}
                   disabled={loading}
                   className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Saving...' : 'Finish →'}
+                  {loading ? 'Finishing...' : 'Finish →'}
                 </button>
               </div>
 
               <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-                Step 2 of 2
+                Step 4 of 4 <span className="text-gray-400">(Optional)</span>
               </p>
             </div>
           </div>
@@ -921,37 +1189,65 @@ function Step2Locations({
 
 function OnboardingFlowSimulator() {
   const [currentStep, setCurrentStep] = useState(1);
+  const [isPro, setIsPro] = useState(false);
 
-  const handleReset = () => setCurrentStep(1);
+  const handleReset = () => {
+    setCurrentStep(1);
+    setIsPro(false);
+  };
+
+  const ResetButton = () => (
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
+      <button
+        onClick={handleReset}
+        className="font-mono text-xs text-gray-500 hover:text-ink uppercase tracking-wider underline transition-colors bg-white px-3 py-1 rounded shadow"
+      >
+        Reset Demo
+      </button>
+    </div>
+  );
 
   if (currentStep === 1) {
     return (
       <div>
-        <Step1BasicInfo onContinue={() => setCurrentStep(2)} />
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
-          <button
-            onClick={handleReset}
-            className="font-mono text-xs text-gray-500 hover:text-ink uppercase tracking-wider underline transition-colors bg-white px-3 py-1 rounded shadow"
-          >
-            Reset Demo
-          </button>
-        </div>
+        <Step1BasicInfo onSubmit={() => setCurrentStep(2)} />
+        <ResetButton />
       </div>
     );
   }
 
-  // Step 2 is the final step - "Finish" button completes onboarding
+  if (currentStep === 2) {
+    return (
+      <div>
+        <Step2Upgrade
+          onUpgrade={() => {
+            setIsPro(true);
+            setCurrentStep(3);
+          }}
+          onSkip={() => setCurrentStep(3)}
+        />
+        <ResetButton />
+      </div>
+    );
+  }
+
+  if (currentStep === 3) {
+    return (
+      <div>
+        <Step3PortfolioSettings
+          isPro={isPro}
+          onContinue={() => setCurrentStep(4)}
+          onSkip={() => setCurrentStep(4)}
+        />
+        <ResetButton />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <Step2Locations onContinue={handleReset} onBack={() => setCurrentStep(1)} />
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2">
-        <button
-          onClick={handleReset}
-          className="font-mono text-xs text-gray-500 hover:text-ink uppercase tracking-wider underline transition-colors bg-white px-3 py-1 rounded shadow"
-        >
-          Reset Demo
-        </button>
-      </div>
+      <Step4Locations isPro={isPro} onFinish={handleReset} onSkip={handleReset} />
+      <ResetButton />
     </div>
   );
 }
@@ -973,11 +1269,11 @@ export default meta;
 type Story = StoryObj;
 
 // =============================================================================
-// STORIES: INDIVIDUAL STEPS
+// STORIES: STEP 1 - BASIC INFO
 // =============================================================================
 
 /**
- * Step 1: Basic Info - Empty form state
+ * Step 1: Basic Info - Empty form state (required step)
  */
 export const Step1_BasicInfo: Story = {
   render: () => <Step1BasicInfo />,
@@ -985,15 +1281,14 @@ export const Step1_BasicInfo: Story = {
     docs: {
       description: {
         story: `
-**Step 1: Basic Info**
+**Step 1: Basic Info (Required)**
 
 The first step collects essential information:
 - **Email** (required) - Contact email for notifications
 - **Name** (required) - Display name on profile
 - **Bio** (optional) - Up to 500 characters
-- **Booking Link** (optional) - Any URL for booking
 
-Also shows Pro sync features (locked for free tier).
+On submit, the profile is created and Instagram sync begins.
         `,
       },
     },
@@ -1009,7 +1304,6 @@ export const Step1_Prefilled: Story = {
       initialEmail="artist@example.com"
       initialName="Luna Blackwood"
       initialBio="Specializing in blackwork and botanical designs. 10 years experience. Currently booking 2 months out."
-      initialBookingLink="https://calendly.com/lunablackwood"
     />
   ),
   parameters: {
@@ -1021,44 +1315,28 @@ export const Step1_Prefilled: Story = {
   },
 };
 
-/**
- * Step 1: Pro user with sync toggles enabled
- */
-export const Step1_ProUser: Story = {
-  render: () => (
-    <Step1BasicInfo
-      isPro={true}
-      initialEmail="pro@example.com"
-      initialName="Marcus Ink"
-    />
-  ),
-  parameters: {
-    docs: {
-      description: {
-        story: 'Pro user view with functional auto-sync and AI filter toggles.',
-      },
-    },
-  },
-};
+// =============================================================================
+// STORIES: STEP 2 - PRO UPGRADE
+// =============================================================================
 
 /**
- * Step 2: Location selection (Free tier - US)
+ * Step 2: Pro Upgrade - Plan comparison
  */
-export const Step2_Locations_US: Story = {
-  render: () => <Step2Locations />,
+export const Step2_Upgrade: Story = {
+  render: () => <Step2Upgrade />,
   parameters: {
     docs: {
       description: {
         story: `
-**Step 2: Locations (Free Tier - US)**
+**Step 2: Pro Upgrade (Optional)**
 
-Free tier users select a single location:
-- **Country dropdown** - Pre-populated with common countries
-- **City/State toggle** - Choose specific city or state-wide coverage
-- **City dropdown** - Searchable list of major US cities
-- **State dropdown** - Auto-fills when city is selected
+Shows side-by-side comparison of Free vs Pro tiers:
+- **Plan Toggle** - Monthly or Yearly (with savings indicator)
+- **Feature Comparison** - Lists benefits of each tier
+- **Continue Free** - Skips to Step 3
+- **Upgrade to Pro** - Shows embedded Stripe checkout
 
-The city dropdown uses mock data in Storybook but fetches from the API in production.
+Users can skip this step to continue with a free account.
         `,
       },
     },
@@ -1066,24 +1344,196 @@ The city dropdown uses mock data in Storybook but fetches from the API in produc
 };
 
 /**
- * Step 2: Location selection (Free tier - International)
+ * Step 2: Pro Upgrade - Checkout view
  */
-export const Step2_Locations_International: Story = {
+export const Step2_Upgrade_Checkout: Story = {
   render: () => {
-    const InternationalDemo = () => {
-      const [, setKey] = useState(0);
+    // Show checkout view by default
+    const UpgradeWithCheckout = () => {
+      const [showCheckout] = useState(true);
+      const [selectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+
       return (
-        <div key="intl">
-          <Step2Locations />
-          <div className="fixed top-4 right-4 bg-amber-100 border-2 border-amber-300 p-3 rounded shadow-lg max-w-xs">
-            <p className="font-mono text-xs text-amber-800 uppercase tracking-wider mb-1">Demo Tip</p>
-            <p className="font-body text-sm text-amber-900">Select a country other than US to see international location fields</p>
+        <div className="min-h-screen bg-[var(--paper-white)] relative">
+          <div className="grain-overlay absolute inset-0 pointer-events-none" />
+          <div className="relative">
+            <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-3xl">
+              <div className="bg-paper border-2 border-border-subtle p-4 sm:p-6 lg:p-8 shadow-md">
+                <div className="mb-5 sm:mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="w-6 h-6 sm:w-7 sm:h-7 text-purple-600" />
+                    <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink">Upgrade to Pro</h1>
+                  </div>
+                </div>
+
+                {showCheckout && (
+                  <>
+                    <div className="mb-4">
+                      <button className="font-mono text-xs text-gray-600 hover:text-ink uppercase tracking-wider">
+                        &larr; Back to plans
+                      </button>
+                    </div>
+
+                    <div className="bg-gray-50 border-2 border-border-subtle p-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-4 h-4 text-purple-600" />
+                          <span className="font-mono text-xs uppercase tracking-wider">
+                            Pro {selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'}
+                          </span>
+                        </div>
+                        <span className="font-display text-lg font-bold">
+                          ${selectedPlan === 'monthly' ? PRICING.monthly.amount : PRICING.yearly.amount}
+                          <span className="font-mono text-xs text-gray-500">
+                            /{selectedPlan === 'monthly' ? 'mo' : 'yr'}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="border-2 border-border-subtle p-6 bg-gray-50">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                            Card Number
+                          </label>
+                          <div className="input w-full bg-white text-gray-400">
+                            4242 4242 4242 4242
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                              Expiry
+                            </label>
+                            <div className="input w-full bg-white text-gray-400">12/28</div>
+                          </div>
+                          <div>
+                            <label className="block font-mono text-xs text-gray-600 mb-2 uppercase tracking-wider">
+                              CVC
+                            </label>
+                            <div className="input w-full bg-white text-gray-400">123</div>
+                          </div>
+                        </div>
+                        <button className="w-full py-3 bg-purple-600 text-white font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+                          <Crown className="w-4 h-4" />
+                          Subscribe to Pro
+                        </button>
+                        <p className="text-center font-body text-xs text-gray-500">
+                          Demo only - no real payment processed
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-4 mt-4 border-t border-border-subtle">
+                  Step 2 of 4 <span className="text-gray-400">(Optional)</span>
+                </p>
+              </div>
+            </main>
           </div>
         </div>
       );
     };
-    return <InternationalDemo />;
+    return <UpgradeWithCheckout />;
   },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Shows the embedded Stripe checkout form (mock) for Pro subscription.',
+      },
+    },
+  },
+};
+
+// =============================================================================
+// STORIES: STEP 3 - PORTFOLIO SETTINGS
+// =============================================================================
+
+/**
+ * Step 3: Portfolio Settings - Free tier
+ */
+export const Step3_PortfolioSettings: Story = {
+  render: () => <Step3PortfolioSettings />,
+  parameters: {
+    docs: {
+      description: {
+        story: `
+**Step 3: Portfolio Settings (Optional)**
+
+Configure booking and sync preferences:
+- **Booking Link** (optional) - Any URL for booking
+- **Daily Auto-Sync** (Pro only) - Auto-import new Instagram posts
+- **Filter Non-Tattoo** (Pro only) - AI filters non-tattoo content
+
+Users can Skip or Continue. Free tier sees grayed-out Pro features.
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Step 3: Portfolio Settings - Pro tier
+ */
+export const Step3_PortfolioSettings_Pro: Story = {
+  render: () => (
+    <Step3PortfolioSettings
+      isPro={true}
+      initialBookingLink="https://calendly.com/lunablackwood"
+    />
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story: 'Pro tier view with functional auto-sync and filter toggles.',
+      },
+    },
+  },
+};
+
+// =============================================================================
+// STORIES: STEP 4 - LOCATIONS
+// =============================================================================
+
+/**
+ * Step 4: Location selection - Free tier (US)
+ */
+export const Step4_Locations_US: Story = {
+  render: () => <Step4Locations />,
+  parameters: {
+    docs: {
+      description: {
+        story: `
+**Step 4: Locations (Optional)**
+
+Free tier users select a single location:
+- **Country dropdown** - Pre-populated with common countries
+- **City/State toggle** - Choose specific city or state-wide coverage
+- **City dropdown** - Searchable list of major US cities
+- **State dropdown** - Auto-fills when city is selected
+
+Users can Skip or Finish.
+        `,
+      },
+    },
+  },
+};
+
+/**
+ * Step 4: Location selection - Free tier (International)
+ */
+export const Step4_Locations_International: Story = {
+  render: () => (
+    <div>
+      <Step4Locations />
+      <div className="fixed top-4 right-4 bg-amber-100 border-2 border-amber-300 p-3 rounded shadow-lg max-w-xs">
+        <p className="font-mono text-xs text-amber-800 uppercase tracking-wider mb-1">Demo Tip</p>
+        <p className="font-body text-sm text-amber-900">Select a country other than US to see international location fields</p>
+      </div>
+    </div>
+  ),
   parameters: {
     docs: {
       description: {
@@ -1094,11 +1544,11 @@ export const Step2_Locations_International: Story = {
 };
 
 /**
- * Step 2: Location selection (Pro tier - multiple locations)
+ * Step 4: Location selection - Pro tier (multiple locations)
  */
-export const Step2_Locations_Pro: Story = {
+export const Step4_Locations_Pro: Story = {
   render: () => (
-    <Step2Locations
+    <Step4Locations
       isPro={true}
       initialLocations={[
         { city: 'Austin', region: 'TX', countryCode: 'US', locationType: 'city', isPrimary: true },
@@ -1110,15 +1560,13 @@ export const Step2_Locations_Pro: Story = {
     docs: {
       description: {
         story: `
-**Step 2: Locations (Pro Tier)**
+**Step 4: Locations (Pro Tier)**
 
 Pro users can add up to 20 locations:
 - View existing locations with primary indicator
 - Add new locations via expandable form
 - Set any location as primary
 - Remove locations (except when only one remains)
-
-Great for artists who travel or work at multiple studios.
         `,
       },
     },
@@ -1126,10 +1574,10 @@ Great for artists who travel or work at multiple studios.
 };
 
 /**
- * Step 2: Pro tier - Empty state
+ * Step 4: Pro tier - Empty state
  */
-export const Step2_Locations_Pro_Empty: Story = {
-  render: () => <Step2Locations isPro={true} />,
+export const Step4_Locations_Pro_Empty: Story = {
+  render: () => <Step4Locations isPro={true} />,
   parameters: {
     docs: {
       description: {
@@ -1154,22 +1602,23 @@ export const InteractiveFlow: Story = {
         story: `
 # Interactive Onboarding Flow
 
-Complete click-through simulation of the 2-step onboarding experience.
+Complete click-through simulation of the 4-step onboarding experience.
 
 ## How to Use
 
-1. **Step 1**: Fill in basic info (email, name, bio, booking link)
-2. **Step 2**: Add your location(s) and click "Finish"
-3. Click "Reset Demo" to start over
+1. **Step 1 (Required)**: Fill in basic info (email, name, bio) → "Create Profile"
+2. **Step 2 (Optional)**: Upgrade to Pro → "Upgrade to Pro" or "Continue Free"
+3. **Step 3 (Optional)**: Add booking link and sync settings → "Continue" or "Skip"
+4. **Step 4 (Optional)**: Add your location(s) → "Finish" or "Skip"
 
-## Features
+Click "Reset Demo" to start over.
 
-- Live form validation
-- Working dropdowns with mock data
-- City auto-fills state for US cities
-- Pro vs Free tier differences
-- Simulated API delays
-- Editorial design (paper & ink aesthetic)
+## Key Features
+
+- Step 1 creates the profile immediately (Instagram sync starts)
+- Step 2 offers Pro upgrade with embedded Stripe checkout
+- Steps 3 & 4 are optional - users can skip to dashboard
+- If user upgrades to Pro in Step 2, Step 3 toggles become functional
         `,
       },
     },

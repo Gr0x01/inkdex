@@ -4,25 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Crown, Check, Loader2, Sparkles } from 'lucide-react'
-
-const FREE_FEATURES = [
-  '20 portfolio images',
-  'Manual import from Instagram',
-  'Basic profile page',
-  'Verified artist badge',
-  '1 location listing',
-]
-
-const PRO_FEATURES = [
-  '100 portfolio images (vs 20 free)',
-  'Auto-sync new Instagram posts',
-  'Auto style tagging',
-  'Pin up to 6 images to top',
-  'Priority search placement',
-  'Pro badge on profile',
-  'Analytics dashboard',
-  'Up to 20 location listings',
-]
+import { PRICING, FREE_FEATURES, PRO_FEATURES } from '@/lib/pricing/config'
 
 type UserState = 'loading' | 'logged-out' | 'no-artist' | 'free' | 'pro'
 
@@ -85,9 +67,7 @@ export default function PricingCards() {
   }
 
   const showPlanToggle = userState === 'free'
-  const monthlyPrice = 15
-  const yearlyPrice = 150
-  const yearlySavings = monthlyPrice * 12 - yearlyPrice
+  const { monthly, yearly, yearlySavings } = PRICING
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -115,7 +95,7 @@ export default function PricingCards() {
             >
               Yearly
               <span className="text-[10px] text-green-600 font-semibold">
-                Save ${yearlySavings}
+                Save ${PRICING.yearlySavings}
               </span>
             </button>
           </div>
@@ -189,20 +169,20 @@ export default function PricingCards() {
             {showPlanToggle ? (
               <div className="flex items-baseline gap-1">
                 <span className="font-display text-4xl font-bold">
-                  ${selectedPlan === 'monthly' ? monthlyPrice : yearlyPrice}
+                  ${selectedPlan === 'monthly' ? monthly.amount : yearly.amount}
                 </span>
                 <span className="font-mono text-sm text-gray-500">
-                  /{selectedPlan === 'monthly' ? 'month' : 'year'}
+                  /{selectedPlan === 'monthly' ? monthly.interval : yearly.interval}
                 </span>
               </div>
             ) : (
               <div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display text-4xl font-bold">${monthlyPrice}</span>
-                  <span className="font-mono text-sm text-gray-500">/month</span>
+                  <span className="font-display text-4xl font-bold">${monthly.amount}</span>
+                  <span className="font-mono text-sm text-gray-500">/{monthly.interval}</span>
                 </div>
                 <p className="font-body text-xs text-gray-500 mt-1">
-                  or ${yearlyPrice}/year (save ${yearlySavings})
+                  or ${yearly.amount}/{yearly.interval} (save ${yearlySavings})
                 </p>
               </div>
             )}

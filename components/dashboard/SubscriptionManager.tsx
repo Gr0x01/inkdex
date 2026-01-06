@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Crown, Check, Loader2, ExternalLink } from 'lucide-react'
+import { PRICING, PRO_FEATURES } from '@/lib/pricing/config'
 
 interface SubscriptionData {
   id: string
@@ -17,18 +18,8 @@ interface SubscriptionManagerProps {
   subscription: SubscriptionData | null
 }
 
-const PRO_FEATURES = [
-  '100 portfolio images (vs 20 free)',
-  'Auto-sync new Instagram posts',
-  'Auto style tagging',
-  'Pin up to 6 images to top',
-  'Priority search placement',
-  'Pro badge on profile',
-  'Analytics dashboard',
-  'Up to 20 location listings',
-]
-
-const FREE_FEATURES = [
+// Abbreviated features for compact dashboard display
+const FREE_FEATURES_DASHBOARD = [
   '20 portfolio images',
   'Manual import only',
   'Basic profile',
@@ -178,7 +169,7 @@ export default function SubscriptionManager({
           You&apos;re on the free plan with limited features.
         </p>
         <ul className="space-y-2">
-          {FREE_FEATURES.map((feature) => (
+          {FREE_FEATURES_DASHBOARD.map((feature) => (
             <li key={feature} className="flex items-center gap-2 font-body text-sm text-gray-600">
               <Check className="w-4 h-4 text-gray-400 flex-shrink-0" />
               {feature}
@@ -213,9 +204,9 @@ export default function SubscriptionManager({
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           >
-            <p className="font-heading text-lg">$15</p>
+            <p className="font-heading text-lg">${PRICING.monthly.amount}</p>
             <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
-              per month
+              per {PRICING.monthly.interval}
             </p>
           </button>
           <button
@@ -227,11 +218,11 @@ export default function SubscriptionManager({
             }`}
           >
             <span className="absolute -top-2 right-2 px-2 py-0.5 bg-green-500 text-white font-mono text-[9px] uppercase tracking-wider">
-              Save $30
+              Save ${PRICING.yearlySavings}
             </span>
-            <p className="font-heading text-lg">$150</p>
+            <p className="font-heading text-lg">${PRICING.yearly.amount}</p>
             <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
-              per year
+              per {PRICING.yearly.interval}
             </p>
           </button>
         </div>
