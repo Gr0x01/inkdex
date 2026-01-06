@@ -3,13 +3,13 @@ import LegalPageLayout from '@/components/legal/LegalPageLayout'
 import { aboutContent } from '@/lib/content/legal/about'
 
 export const metadata: Metadata = {
-  title: 'About Inkdex | AI-Powered Tattoo Artist Discovery',
+  title: 'About Inkdex | Visual Tattoo Artist Discovery',
   description:
-    'Inkdex is an AI-powered tattoo artist discovery platform. Search by image, text, or Instagram link to find artists across 8 cities. No jargon required.',
+    'Inkdex is a visual search platform for tattoo artist discovery. Search by image, text, or Instagram link to find artists across 100+ cities. No jargon required.',
   openGraph: {
-    title: 'About Inkdex | AI-Powered Tattoo Artist Discovery',
+    title: 'About Inkdex | Visual Tattoo Artist Discovery',
     description:
-      'Inkdex uses AI to help you find tattoo artists by uploading reference images or describing what you want. Discover 1,500+ artists across 8 cities.',
+      'Find tattoo artists by uploading reference images or describing what you want. Discover 15,000+ artists across 100+ cities.',
     url: 'https://inkdex.io/about',
     type: 'website',
   },

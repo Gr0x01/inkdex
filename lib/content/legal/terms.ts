@@ -23,7 +23,7 @@ export const termsContent: LegalContent = {
     {
       heading: '2. Service Description',
       paragraphs: [
-        'Inkdex is an AI-powered tattoo artist discovery platform that helps users find tattoo artists through visual similarity search and natural language queries. We use multi-modal CLIP embeddings and vector similarity algorithms to match user searches with artist portfolios.',
+        'Inkdex is a tattoo artist discovery platform that helps users find tattoo artists through visual search and natural language queries.',
         'The Service includes: (a) public artist profiles aggregated from Instagram and other public sources; (b) visual and text search functionality; (c) city and style browse pages; (d) artist claiming and verification; and (e) optional Pro subscriptions for artists with enhanced features.',
         'We provide the Service on an "as is" and "as available" basis. We do not guarantee that the Service will be uninterrupted, error-free, or that search results will always be accurate or relevant.',
       ],

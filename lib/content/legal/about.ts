@@ -9,24 +9,23 @@ interface LegalContent {
 
 export const aboutContent: LegalContent = {
   title: 'About Inkdex',
-  description: 'AI-powered tattoo artist discovery for everyone.',
+  description: 'Visual search for tattoo artist discovery.',
   lastUpdated: 'January 3, 2026',
   sections: [
     {
       heading: 'What We Do',
       paragraphs: [
-        'Inkdex is an AI-powered discovery platform that helps you find the perfect tattoo artist without knowing industry jargon. Upload a reference image, describe what you want in plain language, or paste an Instagram link—our multi-modal search understands your vision and matches you with artists whose work aligns with your style.',
+        'Inkdex is a visual search platform that helps you find the perfect tattoo artist without knowing industry jargon. Upload a reference image, describe what you want in plain language, or paste an Instagram link—we match you with artists whose work aligns with your style.',
         'We solve a simple problem: you have Pinterest screenshots and vague vibes, but no idea what to call them. Traditional tattoo directories force you into dropdown menus of styles you don\'t understand. Inkdex lets you search in your language—visual and intuitive.',
-        'Whether you\'re looking for "dark floral sketchy" work in Austin or trying to find an artist who does realism like your favorite Instagram post, Inkdex translates your intent into artist matches using advanced computer vision.',
+        'Whether you\'re looking for "dark floral sketchy" work in Austin or trying to find an artist who does realism like your favorite Instagram post, we translate your intent into artist matches.',
       ],
     },
     {
       heading: 'How It Works',
       paragraphs: [
-        'Behind the scenes, Inkdex uses CLIP (Contrastive Language-Image Pre-training), a multi-modal AI model that understands both images and text in the same vector space. When you upload an image or type a description, we generate a semantic embedding—a mathematical representation of your search—and compare it against over 9,800 portfolio images from 1,500+ artists across 8 cities.',
-        'Our search engine uses vector similarity algorithms (pgvector with IVFFlat indexing) to find the closest visual matches in milliseconds. This is the same technology that powers reverse image search at Google, but optimized specifically for tattoo art discovery.',
-        'Artist portfolios are sourced from Instagram through two paths: automated scraping of public artist profiles (unclaimed pages), and direct OAuth integration for artists who claim their profiles. Claimed artists can import unlimited work, auto-sync new posts, and control exactly how their portfolio appears.',
-        'We currently cover 8 cities (Austin, Atlanta, Los Angeles, New York, Chicago, Portland, Seattle, and Miami) with plans to expand nationwide. Our library includes traditional, realism, Japanese, neo-traditional, blackwork, illustrative, watercolor, new-school, tribal, and Chicano styles—all searchable without knowing which is which.',
+        'When you upload an image or type a description, we compare it against tens of thousands of portfolio images from artists across 100+ cities and find the closest visual matches in milliseconds.',
+        'Artist portfolios are sourced from Instagram through two paths: automated discovery of public artist profiles (unclaimed pages), and direct OAuth integration for artists who claim their profiles. Claimed artists can import unlimited work, auto-sync new posts, and control exactly how their portfolio appears.',
+        'We currently cover 100+ cities across all 50 states with plans to expand internationally. Our library includes traditional, realism, Japanese, neo-traditional, blackwork, illustrative, watercolor, new-school, tribal, and Chicano styles—all searchable without knowing which is which.',
       ],
     },
     {

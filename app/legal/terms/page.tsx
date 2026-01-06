@@ -5,11 +5,11 @@ import { termsContent } from '@/lib/content/legal/terms'
 export const metadata: Metadata = {
   title: 'Terms of Service | Inkdex',
   description:
-    'Terms of Service for Inkdex, the AI-powered tattoo artist discovery platform. Subscription terms, no refund policy, content ownership, and user rights.',
+    'Terms of Service for Inkdex, a visual tattoo artist discovery platform. Subscription terms, no refund policy, content ownership, and user rights.',
   openGraph: {
     title: 'Terms of Service | Inkdex',
     description:
-      'Terms of Service for Inkdex, the AI-powered tattoo artist discovery platform. Subscription terms, no refund policy, and user rights.',
+      'Terms of Service for Inkdex, a visual tattoo artist discovery platform. Subscription terms, no refund policy, and user rights.',
     url: 'https://inkdex.io/legal/terms',
     type: 'website',
   },

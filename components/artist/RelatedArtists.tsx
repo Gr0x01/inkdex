@@ -56,7 +56,7 @@ export default async function RelatedArtists({
           Similar Artists{city ? ` in ${city}` : ''}
         </h3>
         <p className="font-body text-[0.9375rem] text-gray-600">
-          Artists with comparable styles based on portfolio similarity
+          Artists with comparable styles you might like
         </p>
       </div>
 

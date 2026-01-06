@@ -71,20 +71,19 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     ? instagram_url.split('/').filter(Boolean).pop()
     : null
 
-  // Convert boosted similarity (with Pro/Featured ranking boosts) to user-friendly percentage
-  // Raw CLIP scores are 0.15-0.40, but Pro (+0.05) and Featured (+0.02) boost the display score
-  // Rescale boosted range [0.15, 0.47] to [60%, 95%] for better user perception
-  const rescaleToUserFriendlyPercentage = (clipScore: number): number => {
-    const MIN_CLIP = 0.15  // Minimum search threshold
-    const MAX_CLIP = 0.47  // Excellent match + max boosts (0.40 + 0.05 Pro + 0.02 Featured)
+  // Convert raw similarity score to user-friendly percentage
+  // Rescale internal range to [60%, 95%] for better user perception
+  const rescaleToUserFriendlyPercentage = (score: number): number => {
+    const MIN_SCORE = 0.15  // Minimum search threshold
+    const MAX_SCORE = 0.47  // Excellent match + max boosts
     const MIN_DISPLAY = 60 // Display minimum
     const MAX_DISPLAY = 95 // Display maximum
 
     // Clamp to expected range
-    const clamped = Math.max(MIN_CLIP, Math.min(MAX_CLIP, clipScore))
+    const clamped = Math.max(MIN_SCORE, Math.min(MAX_SCORE, score))
 
-    // Linear rescaling: map [0.15, 0.47] → [60, 95]
-    const rescaled = MIN_DISPLAY + ((clamped - MIN_CLIP) / (MAX_CLIP - MIN_CLIP)) * (MAX_DISPLAY - MIN_DISPLAY)
+    // Linear rescaling
+    const rescaled = MIN_DISPLAY + ((clamped - MIN_SCORE) / (MAX_SCORE - MIN_SCORE)) * (MAX_DISPLAY - MIN_DISPLAY)
 
     return Math.round(rescaled)
   }
