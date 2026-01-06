@@ -71,14 +71,27 @@ async function acquireSyncLock(
   supabase: ReturnType<typeof getServiceClient>,
   artistId: string
 ): Promise<boolean> {
-  // Check current lock status
+  // Check current lock status from artist_sync_state
   const { data, error } = await supabase
-    .from('artists')
+    .from('artist_sync_state')
     .select('sync_in_progress, last_sync_started_at')
-    .eq('id', artistId)
+    .eq('artist_id', artistId)
     .single();
 
-  if (error || !data) return false;
+  // If no sync state exists, create one and acquire lock
+  if (error?.code === 'PGRST116' || !data) {
+    const now = new Date().toISOString();
+    const { error: insertError } = await supabase
+      .from('artist_sync_state')
+      .insert({
+        artist_id: artistId,
+        sync_in_progress: true,
+        last_sync_started_at: now,
+      });
+    return !insertError;
+  }
+
+  if (error) return false;
 
   // Check if sync already in progress (unless stale)
   const isLocked = data.sync_in_progress === true;
@@ -103,19 +116,19 @@ async function acquireSyncLock(
   const now = new Date().toISOString();
 
   let updateQuery = supabase
-    .from('artists')
+    .from('artist_sync_state')
     .update({
       sync_in_progress: true,
       last_sync_started_at: now,
     })
-    .eq('id', artistId);
+    .eq('artist_id', artistId);
 
   // If not overriding a stale lock, ensure we only acquire if unlocked
   if (!isStale) {
     updateQuery = updateQuery.or('sync_in_progress.is.null,sync_in_progress.eq.false');
   }
 
-  const { data: lockData, error: lockError } = await updateQuery.select('id');
+  const { data: lockData, error: lockError } = await updateQuery.select('artist_id');
 
   return !lockError && lockData && lockData.length > 0;
 }
@@ -128,9 +141,9 @@ async function releaseSyncLock(
   artistId: string
 ): Promise<void> {
   const { error } = await supabase
-    .from('artists')
+    .from('artist_sync_state')
     .update({ sync_in_progress: false })
-    .eq('id', artistId);
+    .eq('artist_id', artistId);
 
   if (error) {
     console.error('[AutoSync] Failed to release lock:', error);
@@ -553,16 +566,18 @@ async function processImages(
 }
 
 /**
- * Update last_instagram_sync_at timestamp
+ * Update last_sync_at timestamp in artist_sync_state
  */
 async function updateSyncTimestamp(
   supabase: ReturnType<typeof getServiceClient>,
   artistId: string
 ): Promise<void> {
   const { error } = await supabase
-    .from('artists')
-    .update({ last_instagram_sync_at: new Date().toISOString() })
-    .eq('id', artistId);
+    .from('artist_sync_state')
+    .upsert({
+      artist_id: artistId,
+      last_sync_at: new Date().toISOString(),
+    }, { onConflict: 'artist_id' });
 
   if (error) {
     console.error('[AutoSync] Failed to update sync timestamp:', error);
@@ -570,19 +585,19 @@ async function updateSyncTimestamp(
 }
 
 /**
- * Reset consecutive failure counter
+ * Reset consecutive failure counter in artist_sync_state
  */
 async function resetConsecutiveFailures(
   supabase: ReturnType<typeof getServiceClient>,
   artistId: string
 ): Promise<void> {
   const { error } = await supabase
-    .from('artists')
-    .update({
-      sync_consecutive_failures: 0,
-      sync_disabled_reason: null,
-    })
-    .eq('id', artistId);
+    .from('artist_sync_state')
+    .upsert({
+      artist_id: artistId,
+      consecutive_failures: 0,
+      disabled_reason: null,
+    }, { onConflict: 'artist_id' });
 
   if (error) {
     console.error('[AutoSync] Failed to reset failure counter:', error);
@@ -597,15 +612,22 @@ async function handleSyncFailure(
   artistId: string,
   reason: string
 ): Promise<void> {
-  // Get current failure count and artist info
-  const { data: artist } = await supabase
-    .from('artists')
-    .select('sync_consecutive_failures, name, slug, instagram_handle, claimed_by_user_id')
-    .eq('id', artistId)
+  // Get current failure count from artist_sync_state
+  const { data: syncState } = await supabase
+    .from('artist_sync_state')
+    .select('consecutive_failures')
+    .eq('artist_id', artistId)
     .single();
 
-  const currentFailures = artist?.sync_consecutive_failures || 0;
+  const currentFailures = syncState?.consecutive_failures || 0;
   const newFailures = currentFailures + 1;
+
+  // Get artist info for email
+  const { data: artist } = await supabase
+    .from('artists')
+    .select('name, slug, instagram_handle, claimed_by_user_id')
+    .eq('id', artistId)
+    .single();
 
   // Get user email if artist is claimed
   let userEmail: string | null = null;
@@ -622,14 +644,16 @@ async function handleSyncFailure(
   // Disable auto-sync if threshold reached
   if (newFailures >= MAX_CONSECUTIVE_FAILURES) {
     console.warn(`[AutoSync] Disabling auto-sync for ${artistId} after ${newFailures} failures`);
+
+    // Update sync state
     await supabase
-      .from('artists')
-      .update({
-        sync_consecutive_failures: newFailures,
+      .from('artist_sync_state')
+      .upsert({
+        artist_id: artistId,
+        consecutive_failures: newFailures,
         auto_sync_enabled: false,
-        sync_disabled_reason: `consecutive_failures:${reason}`,
-      })
-      .eq('id', artistId);
+        disabled_reason: `consecutive_failures:${reason}`,
+      }, { onConflict: 'artist_id' });
 
     // Send email notification for auto-sync disabled
     if (userEmail && artist) {
@@ -653,9 +677,11 @@ async function handleSyncFailure(
   } else if (newFailures >= 2) {
     // Send warning email after 2 failures (before auto-disable)
     await supabase
-      .from('artists')
-      .update({ sync_consecutive_failures: newFailures })
-      .eq('id', artistId);
+      .from('artist_sync_state')
+      .upsert({
+        artist_id: artistId,
+        consecutive_failures: newFailures,
+      }, { onConflict: 'artist_id' });
 
     if (userEmail && artist) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io';
@@ -676,9 +702,11 @@ async function handleSyncFailure(
   } else {
     // Just increment failure count
     await supabase
-      .from('artists')
-      .update({ sync_consecutive_failures: newFailures })
-      .eq('id', artistId);
+      .from('artist_sync_state')
+      .upsert({
+        artist_id: artistId,
+        consecutive_failures: newFailures,
+      }, { onConflict: 'artist_id' });
   }
 }
 
@@ -780,13 +808,20 @@ export async function getEligibleArtists(): Promise<
 > {
   const supabase = getServiceClient();
 
+  // Join with artist_sync_state to get auto_sync_enabled and last_sync_at
   const { data, error } = await supabase
     .from('artists')
-    .select('id, claimed_by_user_id, instagram_handle, filter_non_tattoo_content')
+    .select(`
+      id,
+      claimed_by_user_id,
+      instagram_handle,
+      filter_non_tattoo_content,
+      artist_sync_state!inner(auto_sync_enabled, last_sync_at)
+    `)
     .eq('is_pro', true)
-    .eq('auto_sync_enabled', true)
+    .eq('artist_sync_state.auto_sync_enabled', true)
     .is('deleted_at', null)
-    .order('last_instagram_sync_at', { ascending: true, nullsFirst: true });
+    .order('artist_sync_state(last_sync_at)', { ascending: true, nullsFirst: true });
 
   if (error) {
     console.error('[AutoSync] Failed to fetch eligible artists:', error);

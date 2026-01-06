@@ -109,7 +109,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     .from('artists')
     .update({
       is_pro: true,
-      auto_sync_enabled: true,
       updated_at: new Date().toISOString(),
     })
     .eq('id', artistId)
@@ -117,6 +116,21 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (artistError) {
     console.error('Error updating artist pro status:', artistError)
     throw artistError
+  }
+
+  // Enable auto-sync in artist_sync_state
+  const { error: syncStateError } = await supabase
+    .from('artist_sync_state')
+    .upsert({
+      artist_id: artistId,
+      auto_sync_enabled: true,
+      consecutive_failures: 0,
+      disabled_reason: null,
+    }, { onConflict: 'artist_id' })
+
+  if (syncStateError) {
+    console.error('Error enabling auto-sync:', syncStateError)
+    // Don't throw - subscription is more important
   }
 
   // Update user account type
@@ -222,7 +236,6 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription) {
     .from('artists')
     .update({
       is_pro: false,
-      auto_sync_enabled: false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', artistId)
@@ -230,6 +243,14 @@ async function handleSubscriptionCanceled(subscription: Stripe.Subscription) {
   if (artistError) {
     console.error('Error downgrading artist:', artistError)
   }
+
+  // Disable auto-sync in artist_sync_state
+  await supabase
+    .from('artist_sync_state')
+    .upsert({
+      artist_id: artistId,
+      auto_sync_enabled: false,
+    }, { onConflict: 'artist_id' })
 
   // Update user account type
   if (userId) {

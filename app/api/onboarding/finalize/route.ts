@@ -220,8 +220,6 @@ export async function POST(request: NextRequest) {
           verification_status: 'claimed',
           claimed_by_user_id: user.id,
           claimed_at: new Date().toISOString(),
-          // Pro-only: Auto-sync can only be enabled by Pro users
-          auto_sync_enabled: isPro ? (profileUpdates.autoSyncEnabled || false) : false,
           // Pro-only: Filter can only be disabled by Pro users (free users always filter)
           filter_non_tattoo_content: isPro
             ? (profileUpdates.filterNonTattoo !== undefined ? profileUpdates.filterNonTattoo : true)
@@ -238,6 +236,14 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Upsert sync state for claimed artist
+      await supabase
+        .from('artist_sync_state')
+        .upsert({
+          artist_id: artistId,
+          auto_sync_enabled: isPro ? (profileUpdates.autoSyncEnabled || false) : false,
+        }, { onConflict: 'artist_id' });
 
       artistSlug = artist.slug;
     } else {
@@ -300,8 +306,6 @@ export async function POST(request: NextRequest) {
           claimed_by_user_id: user.id,
           claimed_at: new Date().toISOString(),
           discovery_source: 'self_add',
-          // New artists are free tier - Pro features disabled regardless of preference
-          auto_sync_enabled: false, // Pro only
           filter_non_tattoo_content: true, // Free users always filter
         });
 
@@ -312,6 +316,14 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Create initial sync state for new artist (auto_sync disabled for free tier)
+      await supabase
+        .from('artist_sync_state')
+        .insert({
+          artist_id: artistId,
+          auto_sync_enabled: false,
+        });
     }
 
     // 9. Insert locations to artist_locations table

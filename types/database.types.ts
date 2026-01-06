@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -97,6 +122,41 @@ export type Database = {
           },
         ]
       }
+      artist_color_profiles: {
+        Row: {
+          artist_id: string
+          bw_image_count: number
+          color_image_count: number
+          color_percentage: number
+          total_image_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          bw_image_count?: number
+          color_image_count?: number
+          color_percentage: number
+          total_image_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          bw_image_count?: number
+          color_image_count?: number
+          color_percentage?: number
+          total_image_count?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_color_profiles_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: true
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_locations: {
         Row: {
           artist_id: string
@@ -136,6 +196,50 @@ export type Database = {
             foreignKeyName: "artist_locations_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_pipeline_state: {
+        Row: {
+          artist_id: string
+          blacklist_reason: string | null
+          created_at: string | null
+          exclude_from_scraping: boolean | null
+          last_scraped_at: string | null
+          pipeline_status: string | null
+          scrape_priority: number | null
+          scraping_blacklisted: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          blacklist_reason?: string | null
+          created_at?: string | null
+          exclude_from_scraping?: boolean | null
+          last_scraped_at?: string | null
+          pipeline_status?: string | null
+          scrape_priority?: number | null
+          scraping_blacklisted?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          blacklist_reason?: string | null
+          created_at?: string | null
+          exclude_from_scraping?: boolean | null
+          last_scraped_at?: string | null
+          pipeline_status?: string | null
+          scrape_priority?: number | null
+          scraping_blacklisted?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_pipeline_state_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: true
             referencedRelation: "artists"
             referencedColumns: ["id"]
           },
@@ -289,6 +393,50 @@ export type Database = {
           },
         ]
       }
+      artist_sync_state: {
+        Row: {
+          artist_id: string
+          auto_sync_enabled: boolean | null
+          consecutive_failures: number | null
+          created_at: string | null
+          disabled_reason: string | null
+          last_sync_at: string | null
+          last_sync_started_at: string | null
+          sync_in_progress: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          artist_id: string
+          auto_sync_enabled?: boolean | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          disabled_reason?: string | null
+          last_sync_at?: string | null
+          last_sync_started_at?: string | null
+          sync_in_progress?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          artist_id?: string
+          auto_sync_enabled?: boolean | null
+          consecutive_failures?: number | null
+          created_at?: string | null
+          disabled_reason?: string | null
+          last_sync_at?: string | null
+          last_sync_started_at?: string | null
+          sync_in_progress?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_sync_state_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: true
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artists: {
         Row: {
           auto_sync_enabled: boolean | null
@@ -298,7 +446,6 @@ export type Database = {
           blacklist_reason: string | null
           blacklisted_at: string | null
           booking_url: string | null
-          city: string | null
           claimed_at: string | null
           claimed_by_user_id: string | null
           contact_email: string | null
@@ -331,7 +478,6 @@ export type Database = {
           scraping_blacklisted: boolean | null
           shop_name: string | null
           slug: string
-          state: string | null
           sync_consecutive_failures: number | null
           sync_disabled_reason: string | null
           sync_in_progress: boolean | null
@@ -348,7 +494,6 @@ export type Database = {
           blacklist_reason?: string | null
           blacklisted_at?: string | null
           booking_url?: string | null
-          city?: string | null
           claimed_at?: string | null
           claimed_by_user_id?: string | null
           contact_email?: string | null
@@ -381,7 +526,6 @@ export type Database = {
           scraping_blacklisted?: boolean | null
           shop_name?: string | null
           slug: string
-          state?: string | null
           sync_consecutive_failures?: number | null
           sync_disabled_reason?: string | null
           sync_in_progress?: boolean | null
@@ -398,7 +542,6 @@ export type Database = {
           blacklist_reason?: string | null
           blacklisted_at?: string | null
           booking_url?: string | null
-          city?: string | null
           claimed_at?: string | null
           claimed_by_user_id?: string | null
           contact_email?: string | null
@@ -431,7 +574,6 @@ export type Database = {
           scraping_blacklisted?: boolean | null
           shop_name?: string | null
           slug?: string
-          state?: string | null
           sync_consecutive_failures?: number | null
           sync_disabled_reason?: string | null
           sync_in_progress?: boolean | null
@@ -786,6 +928,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      indexnow_submissions: {
+        Row: {
+          created_at: string | null
+          engine: string
+          id: string
+          response_body: Json | null
+          response_status: number | null
+          submitted_at: string | null
+          trigger_source: string
+          triggered_by: string | null
+          url_count: number
+          urls: string[]
+        }
+        Insert: {
+          created_at?: string | null
+          engine: string
+          id?: string
+          response_body?: Json | null
+          response_status?: number | null
+          submitted_at?: string | null
+          trigger_source: string
+          triggered_by?: string | null
+          url_count: number
+          urls: string[]
+        }
+        Update: {
+          created_at?: string | null
+          engine?: string
+          id?: string
+          response_body?: Json | null
+          response_status?: number | null
+          submitted_at?: string | null
+          trigger_source?: string
+          triggered_by?: string | null
+          url_count?: number
+          urls?: string[]
+        }
+        Relationships: []
       }
       instagram_sync_log: {
         Row: {
@@ -1205,12 +1386,14 @@ export type Database = {
           instagram_media_id: string | null
           instagram_post_id: string
           instagram_url: string
+          is_color: boolean | null
           is_pinned: boolean | null
           likes_count: number | null
           manually_added: boolean | null
           pinned_position: number | null
           post_caption: string | null
           post_timestamp: string | null
+          search_tier: Database["public"]["Enums"]["search_tier"] | null
           status: string
           storage_original_path: string | null
           storage_thumb_1280: string | null
@@ -1229,12 +1412,14 @@ export type Database = {
           instagram_media_id?: string | null
           instagram_post_id: string
           instagram_url: string
+          is_color?: boolean | null
           is_pinned?: boolean | null
           likes_count?: number | null
           manually_added?: boolean | null
           pinned_position?: number | null
           post_caption?: string | null
           post_timestamp?: string | null
+          search_tier?: Database["public"]["Enums"]["search_tier"] | null
           status?: string
           storage_original_path?: string | null
           storage_thumb_1280?: string | null
@@ -1253,12 +1438,14 @@ export type Database = {
           instagram_media_id?: string | null
           instagram_post_id?: string
           instagram_url?: string
+          is_color?: boolean | null
           is_pinned?: boolean | null
           likes_count?: number | null
           manually_added?: boolean | null
           pinned_position?: number | null
           post_caption?: string | null
           post_timestamp?: string | null
+          search_tier?: Database["public"]["Enums"]["search_tier"] | null
           status?: string
           storage_original_path?: string | null
           storage_thumb_1280?: string | null
@@ -1446,11 +1633,14 @@ export type Database = {
         Row: {
           artist_id_source: string | null
           created_at: string | null
+          detected_styles: Json | null
           embedding: string | null
           id: string
           image_url: string | null
           instagram_post_id: string | null
           instagram_username: string | null
+          is_color: boolean | null
+          primary_style: string | null
           query_text: string | null
           query_type: string
           user_id: string | null
@@ -1458,11 +1648,14 @@ export type Database = {
         Insert: {
           artist_id_source?: string | null
           created_at?: string | null
+          detected_styles?: Json | null
           embedding?: string | null
           id?: string
           image_url?: string | null
           instagram_post_id?: string | null
           instagram_username?: string | null
+          is_color?: boolean | null
+          primary_style?: string | null
           query_text?: string | null
           query_type: string
           user_id?: string | null
@@ -1470,11 +1663,14 @@ export type Database = {
         Update: {
           artist_id_source?: string | null
           created_at?: string | null
+          detected_styles?: Json | null
           embedding?: string | null
           id?: string
           image_url?: string | null
           instagram_post_id?: string | null
           instagram_username?: string | null
+          is_color?: boolean | null
+          primary_style?: string | null
           query_text?: string | null
           query_type?: string
           user_id?: string | null
@@ -1605,6 +1801,17 @@ export type Database = {
         }
         Returns: Json
       }
+      classify_embedding_styles: {
+        Args: {
+          p_embedding: string
+          p_max_styles?: number
+          p_min_confidence?: number
+        }
+        Returns: {
+          confidence: number
+          style_name: string
+        }[]
+      }
       cleanup_old_email_logs: { Args: never; Returns: number }
       count_artists_without_images: { Args: never; Returns: number }
       count_matching_artists: {
@@ -1723,10 +1930,10 @@ export type Database = {
         Args: {
           p_has_images?: boolean
           p_is_featured?: boolean
-          p_limit: number
+          p_limit?: number
           p_location_city?: string
           p_location_state?: string
-          p_offset: number
+          p_offset?: number
           p_search?: string
           p_sort_by?: string
           p_sort_order?: string
@@ -1763,6 +1970,14 @@ export type Database = {
           artist_count: number
           country_code: string
           country_name: string
+        }[]
+      }
+      get_homepage_stats: {
+        Args: never
+        Returns: {
+          artist_count: number
+          city_count: number
+          image_count: number
         }[]
       }
       get_mining_city_distribution: { Args: never; Returns: Json }
@@ -1830,6 +2045,7 @@ export type Database = {
         Args: { p_artist_ids: string[] }
         Returns: undefined
       }
+      is_gdpr_country: { Args: { country_code: string }; Returns: boolean }
       log_email_send: {
         Args: {
           p_artist_id: string
@@ -1842,6 +2058,17 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      matches_location_filter: {
+        Args: {
+          city_filter: string
+          country_filter: string
+          p_city: string
+          p_country_code: string
+          p_region: string
+          region_filter: string
+        }
+        Returns: boolean
       }
       search_artists_by_embedding: {
         Args: {
@@ -1901,6 +2128,42 @@ export type Database = {
           total_count: number
         }[]
       }
+      search_artists_with_style_boost: {
+        Args: {
+          city_filter?: string
+          country_filter?: string
+          is_color_query?: boolean
+          match_count?: number
+          match_threshold?: number
+          offset_param?: number
+          query_embedding: string
+          query_styles?: Json
+          region_filter?: string
+        }
+        Returns: {
+          artist_id: string
+          artist_name: string
+          artist_slug: string
+          boosted_score: number
+          city: string
+          color_boost: number
+          country_code: string
+          follower_count: number
+          instagram_url: string
+          is_featured: boolean
+          is_pro: boolean
+          is_verified: boolean
+          location_count: number
+          matching_images: Json
+          max_likes: number
+          profile_image_url: string
+          region: string
+          shop_name: string
+          similarity: number
+          style_boost: number
+          total_count: number
+        }[]
+      }
       track_search_appearances_with_details: {
         Args: { p_appearances: Json; p_search_id: string }
         Returns: undefined
@@ -1947,7 +2210,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      search_tier: "active" | "archive"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2073,7 +2336,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  public: {
+  graphql_public: {
     Enums: {},
+  },
+  public: {
+    Enums: {
+      search_tier: ["active", "archive"],
+    },
   },
 } as const

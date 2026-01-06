@@ -65,41 +65,50 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 4. Update settings
-    const updateData: Record<string, unknown> = {};
-
+    // 4. Update sync settings in artist_sync_state
     if (autoSyncEnabled !== undefined) {
-      updateData.auto_sync_enabled = autoSyncEnabled;
+      const syncStateData: Record<string, unknown> = {
+        artist_id: artist.id,
+        auto_sync_enabled: autoSyncEnabled,
+      };
+
       // If enabling, also reset consecutive failures
       if (autoSyncEnabled) {
-        updateData.sync_consecutive_failures = 0;
-        updateData.sync_disabled_reason = null;
+        syncStateData.consecutive_failures = 0;
+        syncStateData.disabled_reason = null;
+      }
+
+      const { error: syncError } = await supabase
+        .from('artist_sync_state')
+        .upsert(syncStateData, { onConflict: 'artist_id' });
+
+      if (syncError) {
+        console.error('[SyncSettings] Sync state update failed:', syncError);
+        return NextResponse.json({ error: 'Failed to update sync settings' }, { status: 500 });
       }
     }
 
+    // 5. Update filter setting in artists table (if provided)
     if (filterNonTattoo !== undefined) {
-      updateData.filter_non_tattoo_content = filterNonTattoo;
-    }
+      // Add is_pro constraint to prevent race condition
+      const { data: updateResult, error: updateError } = await supabase
+        .from('artists')
+        .update({ filter_non_tattoo_content: filterNonTattoo })
+        .eq('id', artist.id)
+        .eq('is_pro', true) // Only update if still Pro
+        .select('id');
 
-    // Add is_pro constraint to prevent race condition
-    // (user's Pro status could change between check and update)
-    const { data: updateResult, error: updateError } = await supabase
-      .from('artists')
-      .update(updateData)
-      .eq('id', artist.id)
-      .eq('is_pro', true) // Only update if still Pro
-      .select('id');
+      if (updateError) {
+        console.error('[SyncSettings] Filter update failed:', updateError);
+        return NextResponse.json({ error: 'Failed to update filter settings' }, { status: 500 });
+      }
 
-    if (updateError) {
-      console.error('[SyncSettings] Update failed:', updateError);
-      return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
-    }
-
-    if (!updateResult || updateResult.length === 0) {
-      return NextResponse.json(
-        { error: 'Pro subscription no longer active. Please renew to enable auto-sync.' },
-        { status: 403 }
-      );
+      if (!updateResult || updateResult.length === 0) {
+        return NextResponse.json(
+          { error: 'Pro subscription no longer active. Please renew to change settings.' },
+          { status: 403 }
+        );
+      }
     }
 
     const changes = [];

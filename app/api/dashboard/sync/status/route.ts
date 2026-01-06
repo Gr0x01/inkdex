@@ -41,12 +41,15 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Get artist
+    // 2. Get artist with sync state
     const { data: artist, error: artistError } = await supabase
       .from('artists')
-      .select(
-        'id, is_pro, auto_sync_enabled, filter_non_tattoo_content, last_instagram_sync_at, sync_consecutive_failures, sync_disabled_reason'
-      )
+      .select(`
+        id,
+        is_pro,
+        filter_non_tattoo_content,
+        artist_sync_state(auto_sync_enabled, last_sync_at, consecutive_failures, disabled_reason)
+      `)
       .eq('claimed_by_user_id', user.id)
       .eq('verification_status', 'claimed')
       .single();
@@ -54,6 +57,11 @@ export async function GET(_request: NextRequest) {
     if (artistError || !artist) {
       return NextResponse.json({ error: 'No claimed artist found' }, { status: 404 });
     }
+
+    // Extract sync state (may be null if no record exists yet)
+    const syncState = Array.isArray(artist.artist_sync_state)
+      ? artist.artist_sync_state[0]
+      : artist.artist_sync_state;
 
     // 3. Get recent sync logs (last 5)
     const { data: logs, error: logsError } = await supabase
@@ -81,11 +89,11 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json({
       isPro: artist.is_pro || false,
-      autoSyncEnabled: artist.auto_sync_enabled || false,
+      autoSyncEnabled: syncState?.auto_sync_enabled || false,
       filterNonTattoo: artist.filter_non_tattoo_content !== false, // Default true if null
-      lastSyncAt: artist.last_instagram_sync_at,
-      syncDisabledReason: artist.sync_disabled_reason,
-      consecutiveFailures: artist.sync_consecutive_failures || 0,
+      lastSyncAt: syncState?.last_sync_at || null,
+      syncDisabledReason: syncState?.disabled_reason || null,
+      consecutiveFailures: syncState?.consecutive_failures || 0,
       recentLogs,
     });
   } catch (error) {

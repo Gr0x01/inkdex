@@ -139,10 +139,9 @@ export async function POST(request: NextRequest) {
 
     const isPro = artist.is_pro || false;
 
-    // 7. Build update object
+    // 7. Build update object for artists table
     interface ArtistUpdate {
       booking_url?: string | null;
-      auto_sync_enabled?: boolean;
       filter_non_tattoo_content?: boolean;
     }
 
@@ -150,11 +149,6 @@ export async function POST(request: NextRequest) {
 
     if (bookingUrl !== undefined) {
       updateData.booking_url = bookingUrl || null;
-    }
-
-    if (autoSyncEnabled !== undefined) {
-      // Pro-only: Auto-sync can only be enabled by Pro users
-      updateData.auto_sync_enabled = isPro ? autoSyncEnabled : false;
     }
 
     if (filterNonTattoo !== undefined) {
@@ -175,6 +169,21 @@ export async function POST(request: NextRequest) {
           { error: 'Failed to update artist' },
           { status: 500 }
         );
+      }
+    }
+
+    // 8b. Update auto_sync_enabled in artist_sync_state
+    if (autoSyncEnabled !== undefined) {
+      const { error: syncStateError } = await supabase
+        .from('artist_sync_state')
+        .upsert({
+          artist_id: artistId,
+          auto_sync_enabled: isPro ? autoSyncEnabled : false,
+        }, { onConflict: 'artist_id' });
+
+      if (syncStateError) {
+        console.error('[UpdateArtist] Failed to update sync state:', syncStateError);
+        // Non-critical, continue
       }
     }
 
