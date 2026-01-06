@@ -106,25 +106,7 @@ BEGIN
     INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (
-        -- No location filters: return all
-        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
-        OR
-        -- Country-only filter
-        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter))
-        OR
-        -- Country + Region filter
-        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter)
-         AND LOWER(al.region) = LOWER(region_filter))
-        OR
-        -- City filter
-        (city_filter IS NOT NULL
-         AND LOWER(al.city) = LOWER(city_filter)
-         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-      )
+      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   -- Step 5: Rank images within each filtered artist
   artist_ranked_images AS (
@@ -290,25 +272,7 @@ BEGIN
     INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (
-        -- No location filters: return all
-        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
-        OR
-        -- Country-only filter
-        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter))
-        OR
-        -- Country + Region filter
-        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter)
-         AND LOWER(al.region) = LOWER(region_filter))
-        OR
-        -- City filter
-        (city_filter IS NOT NULL
-         AND LOWER(al.city) = LOWER(city_filter)
-         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-      )
+      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   -- Step 5: Rank images within each filtered artist
   artist_ranked_images AS (
@@ -458,25 +422,7 @@ BEGIN
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (
-        -- No location filters: return all
-        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
-        OR
-        -- Country-only filter
-        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter))
-        OR
-        -- Country + Region filter
-        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter)
-         AND LOWER(al.region) = LOWER(region_filter))
-        OR
-        -- City filter
-        (city_filter IS NOT NULL
-         AND LOWER(al.city) = LOWER(city_filter)
-         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-      )
+      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   artist_embeddings AS (
     SELECT
@@ -545,14 +491,7 @@ BEGIN
   END IF;
 
   -- Block GDPR countries entirely
-  IF UPPER(p_country_code) IN (
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-    'IS', 'LI', 'NO',
-    'GB', 'CH'
-  ) THEN
-    -- Return empty result for GDPR countries
+  IF is_gdpr_country(p_country_code) THEN
     RETURN;
   END IF;
 
@@ -608,13 +547,7 @@ AS $$
     INNER JOIN artists a ON a.id = al.artist_id
     WHERE a.deleted_at IS NULL
       -- Exclude GDPR countries
-      AND COALESCE(al.country_code, 'US') NOT IN (
-        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-        'IS', 'LI', 'NO',
-        'GB', 'CH'
-      )
+      AND NOT is_gdpr_country(COALESCE(al.country_code, 'US'))
     GROUP BY al.country_code
     HAVING COUNT(DISTINCT al.artist_id) >= 1
   )
@@ -662,14 +595,7 @@ BEGIN
   END IF;
 
   -- Block GDPR countries entirely
-  IF p_country_code IS NOT NULL AND UPPER(p_country_code) IN (
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-    'IS', 'LI', 'NO',
-    'GB', 'CH'
-  ) THEN
-    -- Return empty result for GDPR countries
+  IF p_country_code IS NOT NULL AND is_gdpr_country(p_country_code) THEN
     RETURN;
   END IF;
 
@@ -705,13 +631,7 @@ BEGIN
     AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
     AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
     -- Exclude GDPR countries
-    AND al.country_code NOT IN (
-      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-      'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-      'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-      'IS', 'LI', 'NO',
-      'GB', 'CH'
-    )
+    AND NOT is_gdpr_country(al.country_code)
   GROUP BY al.city, al.region, al.country_code
   HAVING COUNT(DISTINCT al.artist_id) >= min_count
   ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
@@ -1209,21 +1129,7 @@ BEGIN
     INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (
-        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
-        OR
-        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter))
-        OR
-        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-         AND al.country_code = UPPER(country_filter)
-         AND LOWER(al.region) = LOWER(region_filter))
-        OR
-        (city_filter IS NOT NULL
-         AND LOWER(al.city) = LOWER(city_filter)
-         AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
-         AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
-      )
+      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   -- Step 5: Compute style boost per artist
   artist_style_boost AS (
