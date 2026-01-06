@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-06
 Maintainer: RB
-Status: Launched - All 15 Phases Complete
+Status: Launched - All 15 Phases Complete + Color-Weighted Search
 ---
 
 # Progress Log: Inkdex
@@ -13,7 +13,8 @@ Status: Launched - All 15 Phases Complete
 | Cities | 116 |
 | States | 51 (50 states + DC) |
 | Artists | 15,626 |
-| Images | 68,440 (with embeddings) |
+| Images | 92,038 (with embeddings) |
+| Color Profiles | 10,704 artists |
 | Styles | 20 |
 | Static Pages | ~3,500+ |
 
@@ -73,6 +74,23 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 2 (Jan 6, 2026)
+- **Color-Weighted Search** ✅
+  - Analyzed 92,033 images for color vs B&G classification
+  - Generated color profiles for 10,704 artists
+  - Distribution: 71.4% color-heavy, 6.1% B&G-heavy, 22.5% mixed
+  - Search boosts artists matching query color profile (+0.10 max)
+- **SQL Refactor for 100k Scale**
+  - Split 1,365-line `search_functions.sql` into domain folders
+  - Extracted `is_gdpr_country()` + `matches_location_filter()` helpers
+  - Created `artist_sync_state` table (extracted from artists)
+  - Created `artist_pipeline_state` table (extracted from artists)
+  - Added `search_tier` column for HNSW prep at 1M+ images
+  - Reduced code duplication: 11 GDPR lists → 1 function, 4 location filters → 1 function
+- **Apify Cost Optimization**
+  - Dual-account strategy (free tier for ongoing ops)
+  - Reduces monthly costs from ~$40 to ~$0 after initial scraping
 
 ### Week 2 (Jan 4-5, 2026)
 - 50-state expansion complete (116 cities)

@@ -1,18 +1,20 @@
 ---
-Last-Updated: 2026-01-06 (Session 17 - Apify Cost Optimization)
+Last-Updated: 2026-01-06 (Session 19 - Color Search Complete)
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + SEO Enhancements
+Status: Launched - All 15 Phases Complete + Color-Weighted Search
 ---
 
 # Active Context: Inkdex
 
 ## Current State
 
-**Platform:** Production - 116 cities, 15,626 artists, 68,440 images with embeddings
+**Platform:** Production - 116 cities, 15,626 artists, 92,038 images with embeddings
 
 **Live Cities:** 116 cities across all 50 states + DC (see quickstart.md for full list)
 
 **Style System:** 20 styles with averaged CLIP embeddings from multiple seed images
+
+**Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
 
 **Pending Pipeline:** ~10,000+ artists need image scraping and embeddings
 
@@ -38,6 +40,97 @@ Status: Launched - All 15 Phases Complete + SEO Enhancements
 - Maine (Portland)
 - Alaska (Anchorage)
 - District of Columbia (Washington)
+
+## Color-Weighted Search (Jan 6, 2026) ✅ COMPLETE
+
+**Goal:** Improve search relevance by boosting images whose color profile matches the query image (color vs black-and-gray).
+
+**Status:** Fully deployed and operational.
+
+**Results:**
+| Metric | Value |
+|--------|-------|
+| Images analyzed | 92,033 |
+| Color images | ~71% |
+| B&G images | ~29% |
+
+**Implementation (Simplified):**
+- `portfolio_images.is_color` - boolean column set during scraping
+- Color analyzer: `lib/search/color-analyzer.ts` (HSL saturation analysis, threshold 0.15)
+- Scraping pipeline: New images classified at ingest (`scripts/scraping/process-batch.ts`)
+- SQL function: Image-level color boost in `search_artists_with_style_boost()`
+- **No artist-level aggregation needed** - color boost applied directly to matching images
+
+**Color Boost Logic (image-level):**
+- Query color matches image color → +0.05 boost to that image's similarity score
+- No match → no boost
+- Artist's final color boost = average of their matching images' color boosts
+
+**Architecture Decision:**
+- Removed `artist_color_profiles` table (over-engineering)
+- Color boosting now happens at image level in the search function
+- Simpler, no aggregation step needed, works automatically as images are added
+
+**Commands:**
+```bash
+# Check color analysis status
+npx tsx scripts/colors/check-status.ts
+
+# Re-analyze images if needed (run in Codespace for speed)
+while true; do npx tsx scripts/colors/analyze-image-colors.ts --limit 10000 --concurrency 100; sleep 2; done
+```
+
+---
+
+## SQL Refactor for 100k Scale (Jan 6, 2026)
+
+**Goal:** Refactor SQL infrastructure to support 100k+ artists and 1-2M images.
+
+**Completed Phases:**
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 0 | Git tag `pre-sql-refactor` + folder structure | ✅ |
+| 1 | Extract `is_gdpr_country()` + `matches_location_filter()` | ✅ |
+| 2 | Split SQL into `search/`, `location/`, `admin/` folders | ✅ |
+| 3 | Create `artist_sync_state` table (extracted from artists) | ✅ |
+| 4 | Create `artist_pipeline_state` table (extracted from artists) | ✅ |
+| 5 | Drop deprecated columns | ⏸️ Deferred |
+| 6 | Add `search_tier` column for HNSW prep | ✅ |
+
+**New SQL Structure:**
+```
+supabase/functions/
+├── _shared/
+│   ├── gdpr.sql              # is_gdpr_country()
+│   └── location_filter.sql   # matches_location_filter()
+├── search/
+│   └── vector_search.sql     # 5 search functions
+├── location/
+│   └── location_counts.sql   # 4 location count functions
+├── admin/
+│   └── admin_functions.sql   # Admin + homepage stats
+└── search_functions.sql      # Original (reference)
+```
+
+**New Tables:**
+- `artist_sync_state` - Instagram sync state (extracted from artists)
+- `artist_pipeline_state` - Scraping pipeline state (extracted from artists)
+
+**Scale Preparation:**
+- `portfolio_images.search_tier` column added ('active'/'archive')
+- At 1M+ images: active tier uses HNSW, archive uses IVFFlat
+- Reduces 46-column artists table to 34 columns (after Phase 5)
+
+**Next Steps:**
+1. Run split SQL files in SQL Editor to verify
+2. Update TypeScript files to use `artist_sync_state` (8 files)
+3. Update Python files to use `artist_pipeline_state` (3 files)
+4. Phase 5: Drop deprecated columns after code updates
+
+**Plan Document:** `/memory-bank/projects/sql-refactor-plan.md`
+
+---
 
 ## Apify Cost Optimization (Jan 6, 2026)
 

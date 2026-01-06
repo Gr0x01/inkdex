@@ -328,42 +328,8 @@ async function main() {
     console.log(`   ⚠️ No style profiles found`);
   }
 
-  // 6. Export artist_color_profiles (batched)
-  console.log('📦 Exporting artist_color_profiles...');
-  const allColorProfiles: Array<Record<string, unknown>> = [];
-  let colorProfileColumns: string[] = [];
-
-  for (let i = 0; i < artistIds.length; i += 200) {
-    const batch = artistIds.slice(i, i + 200);
-    const { data: colorProfiles, error: colorProfilesError } = await supabase
-      .from('artist_color_profiles')
-      .select('*')
-      .in('artist_id', batch);
-
-    if (colorProfilesError) {
-      // Table might not exist yet, just skip
-      if (i === 0) {
-        console.log(`   ⚠️ No color profiles found (table may not exist yet)`);
-      }
-      break;
-    }
-
-    if (colorProfileColumns.length === 0 && colorProfiles && colorProfiles.length > 0) {
-      colorProfileColumns = Object.keys(colorProfiles[0]);
-    }
-    if (colorProfiles) {
-      allColorProfiles.push(...colorProfiles);
-    }
-  }
-
-  if (allColorProfiles.length > 0) {
-    sqlStatements.push(`-- Artist Color Profiles (${allColorProfiles.length})`);
-    for (const profile of allColorProfiles) {
-      sqlStatements.push(generateInsert('artist_color_profiles', profile, colorProfileColumns));
-    }
-    sqlStatements.push(``);
-    console.log(`   ✅ ${allColorProfiles.length} color profiles`);
-  }
+  // 6. artist_color_profiles table removed - color is now stored at image level (portfolio_images.is_color)
+  // Color boosting happens directly in the search function using image-level is_color
 
   // 7. Export image_style_tags for the images we exported
   console.log('📦 Exporting image_style_tags...');

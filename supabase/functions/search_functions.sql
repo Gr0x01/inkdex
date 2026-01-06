@@ -1084,6 +1084,7 @@ BEGIN
 
   RETURN QUERY
   -- Step 1: Vector search FIRST (uses index, fast)
+  -- Color boost applied at image level: matching color adds to similarity
   WITH ranked_images AS (
     SELECT
       pi.artist_id as ri_artist_id,
@@ -1091,7 +1092,15 @@ BEGIN
       pi.instagram_url as ri_image_url,
       pi.storage_thumb_640 as ri_thumbnail_url,
       pi.likes_count as ri_likes_count,
-      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
+      pi.is_color as ri_is_color,
+      1 - (pi.embedding <=> query_embedding) as ri_base_similarity,
+      -- Color boost at image level: +0.05 if image color matches query color
+      (1 - (pi.embedding <=> query_embedding)) +
+        CASE
+          WHEN is_color_query IS NULL THEN 0.0
+          WHEN is_color_query = pi.is_color THEN v_color_weight * 0.5
+          ELSE 0.0
+        END as ri_similarity_score
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
@@ -1102,7 +1111,7 @@ BEGIN
   -- Step 2: Filter to images above threshold
   threshold_images AS (
     SELECT * FROM ranked_images
-    WHERE ri_similarity_score >= match_threshold
+    WHERE ri_base_similarity >= match_threshold
   ),
   -- Step 3: Get unique artists from matching images
   candidate_artists AS (
@@ -1152,27 +1161,19 @@ BEGIN
       END as asb_style_boost
     FROM filtered_artists fa
   ),
-  -- Step 5b: Compute color boost per artist
-  -- Boost artists whose color profile matches the query image color
+  -- Step 5b: Compute color boost per artist (aggregated from image-level boosts)
+  -- This calculates the average color boost from matching images
   artist_color_boost AS (
     SELECT
-      fa.fa_id as acb_artist_id,
+      ti.ri_artist_id as acb_artist_id,
       CASE
-        -- No color info: no boost
         WHEN is_color_query IS NULL THEN 0.0
-        -- Color query + color-heavy artist (>=70% color): full boost
-        WHEN is_color_query = TRUE AND acp.color_percentage >= 0.7 THEN v_color_weight
-        -- Color query + mixed artist (30-70%): partial boost
-        WHEN is_color_query = TRUE AND acp.color_percentage >= 0.3 THEN v_color_weight * 0.5
-        -- B&G query + B&G-heavy artist (<=30% color): full boost
-        WHEN is_color_query = FALSE AND acp.color_percentage <= 0.3 THEN v_color_weight
-        -- B&G query + mixed artist (30-70%): partial boost
-        WHEN is_color_query = FALSE AND acp.color_percentage <= 0.7 THEN v_color_weight * 0.5
-        -- Mismatch: no boost
-        ELSE 0.0
+        ELSE AVG(
+          CASE WHEN is_color_query = ti.ri_is_color THEN v_color_weight * 0.5 ELSE 0.0 END
+        )
       END as acb_color_boost
-    FROM filtered_artists fa
-    LEFT JOIN artist_color_profiles acp ON acp.artist_id = fa.fa_id
+    FROM threshold_images ti
+    GROUP BY ti.ri_artist_id
   ),
   -- Step 6: Rank images within each filtered artist
   artist_ranked_images AS (

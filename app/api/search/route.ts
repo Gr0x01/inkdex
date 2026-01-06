@@ -269,19 +269,22 @@ export async function POST(request: NextRequest) {
             // Aggregate embeddings
             embedding = aggregateEmbeddings(embeddings)
 
-            // For DB artists, check their color profile
+            // For DB artists, calculate color profile from portfolio images
             const supabase = await createClient()
-            const { data: colorProfile } = await supabase
-              .from('artist_color_profiles')
-              .select('color_percentage')
+            const { data: colorStats } = await supabase
+              .from('portfolio_images')
+              .select('is_color')
               .eq('artist_id', existingArtist.id)
-              .single()
+              .eq('status', 'active')
+              .not('is_color', 'is', null)
 
-            if (colorProfile) {
+            if (colorStats && colorStats.length > 0) {
+              const colorCount = colorStats.filter(img => img.is_color === true).length
+              const colorPercentage = colorCount / colorStats.length
               // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
-              isColorQuery = colorProfile.color_percentage > 0.6 ? true :
-                             colorProfile.color_percentage < 0.4 ? false : null
-              console.log(`[Profile Search] Artist color profile: ${(colorProfile.color_percentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
+              isColorQuery = colorPercentage > 0.6 ? true :
+                             colorPercentage < 0.4 ? false : null
+              console.log(`[Profile Search] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
             }
 
             // Classify aggregated embedding styles for style-weighted search
@@ -436,18 +439,21 @@ export async function POST(request: NextRequest) {
           // Aggregate embeddings (same as Instagram profile search)
           embedding = aggregateEmbeddings(embeddings)
 
-          // Fetch artist's color profile
-          const { data: colorProfile } = await supabase
-            .from('artist_color_profiles')
-            .select('color_percentage')
+          // Calculate artist's color profile from portfolio images
+          const { data: colorStats } = await supabase
+            .from('portfolio_images')
+            .select('is_color')
             .eq('artist_id', artistId)
-            .single()
+            .eq('status', 'active')
+            .not('is_color', 'is', null)
 
-          if (colorProfile) {
+          if (colorStats && colorStats.length > 0) {
+            const colorCount = colorStats.filter(img => img.is_color === true).length
+            const colorPercentage = colorCount / colorStats.length
             // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
-            isColorQuery = colorProfile.color_percentage > 0.6 ? true :
-                           colorProfile.color_percentage < 0.4 ? false : null
-            console.log(`[Similar Artist] Artist color profile: ${(colorProfile.color_percentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
+            isColorQuery = colorPercentage > 0.6 ? true :
+                           colorPercentage < 0.4 ? false : null
+            console.log(`[Similar Artist] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
           }
 
           // Classify aggregated embedding styles for style-weighted search
