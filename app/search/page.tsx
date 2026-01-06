@@ -7,7 +7,8 @@ import { StickyFilterBar } from '@/components/search/StickyFilterBar'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { generatePageNumbers } from '@/components/pagination/Pagination'
 import { createClient } from '@/lib/supabase/server'
-import { searchArtistsWithCount } from '@/lib/supabase/queries'
+import { searchArtistsWithStyleBoost } from '@/lib/supabase/queries'
+import type { StyleMatch } from '@/lib/search/style-classifier'
 import { getImageUrl } from '@/lib/utils/images'
 import { slugToName } from '@/lib/utils/location'
 
@@ -56,6 +57,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     throw new Error('Invalid embedding format')
   }
 
+  // Parse detected styles for style-weighted search
+  let detectedStyles: StyleMatch[] | null = null
+  console.log('[Search Page] Raw detected_styles from DB:', search.detected_styles)
+  if (search.detected_styles) {
+    try {
+      detectedStyles = typeof search.detected_styles === 'string'
+        ? JSON.parse(search.detected_styles)
+        : search.detected_styles
+      console.log('[Search Page] Parsed styles:', detectedStyles)
+    } catch (error) {
+      console.error('Failed to parse detected_styles:', error)
+      // Continue without style weighting
+    }
+  }
+
+  // Get is_color for color-weighted search
+  const isColorQuery: boolean | null = search.is_color ?? null
+  console.log('[Search Page] is_color from DB:', isColorQuery)
+
   // Extract artist_id_source for exclusion (similar_artist searches)
   const excludeArtistId = search.artist_id_source || null
 
@@ -65,14 +85,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Convert city slug to name using centralized utility
   const cityFilter = city ? slugToName(city) : null
 
-  // Search artists with count (single combined query)
-  const { artists: rawResults, totalCount } = await searchArtistsWithCount(embedding, {
+  // Search artists with style and color weighted ranking
+  const { artists: rawResults, totalCount } = await searchArtistsWithStyleBoost(embedding, {
     country: countryFilter,
     region: regionFilter,
     city: cityFilter,
     limit,
     offset,
     threshold: 0.15,
+    queryStyles: detectedStyles,
+    isColorQuery,
   })
 
   // Map results to expected format
@@ -94,7 +116,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       similarity: img.similarity,
       likes_count: img.likes_count || null,
     })),
-    similarity: result.max_similarity || 0,
+    similarity: result.boosted_score || result.max_similarity || 0,
+    raw_similarity: result.max_similarity || 0,
+    style_boost: result.style_boost || 0,
+    color_boost: result.color_boost || 0,
     location_count: result.location_count,
   }))
 
@@ -109,17 +134,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     void (async () => {
       try {
         const appearancesData = artists.map((artist, index) => {
-          // Calculate raw similarity by removing boosts
-          const boostedScore = artist.similarity
-          const rawSimilarity = boostedScore
-            - (artist.is_pro ? 0.05 : 0)
-            - (artist.is_featured ? 0.02 : 0)
-
+          // Use raw_similarity directly (style_boost already separated)
           return {
             artist_id: artist.artist_id,
             rank: index + 1,
-            similarity: rawSimilarity,
-            boosted_score: boostedScore,
+            similarity: artist.raw_similarity,
+            boosted_score: artist.similarity,
             image_count: artist.matching_images?.length || 3
           }
         })
@@ -134,18 +154,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     })()
   }
 
-  // Extract results for rendering
-  const total = totalCount  // ✓ FIXED: Use total count from count query
-  const queryType = search.query_type
-  const queryText = search.query_text
-  const instagramUsername = search.instagram_username
-  const instagramPostId = search.instagram_post_id
-  const hasResults = artists.length > 0
-  const totalPages = Math.ceil(total / limit)  // ✓ FIXED: Now calculates correctly
+  // Pagination calculations
+  const totalPages = Math.ceil(totalCount / limit)
 
-  // Build pagination URLs with proper sanitization
-  const buildSearchUrl = (pageNum: number) => {
-    const params = new URLSearchParams({ id })
+  // Helper to build pagination URL
+  const buildPageUrl = (pageNum: number) => {
+    const params = new URLSearchParams()
+    params.set('id', id)
     if (country) params.set('country', country)
     if (region) params.set('region', region)
     if (city) params.set('city', city)
@@ -158,7 +173,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       {/* COMPACT EDITORIAL FILTER BAR - Mobile Optimized */}
       <StickyFilterBar>
         <div className="w-full px-3 md:px-4 md:container md:mx-auto md:px-6">
-          <div className="flex items-center gap-1.5 md:gap-4 h-12 md:h-14 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1.5 md:gap-4 h-12 md:h-14 overflow-visible">
             {/* Back Link - Mobile Friendly */}
             <Link
               href="/"
@@ -167,355 +182,134 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <svg
                 className="w-3.5 h-3.5 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
                 fill="none"
-                stroke="currentColor"
                 viewBox="0 0 24 24"
-                aria-hidden="true"
+                stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span>New</span>
+              New
             </Link>
 
-            {/* Vertical Divider */}
-            <div className="h-3 md:h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+            {/* Separator */}
+            <div className="w-px h-4 md:h-5 bg-ink/10 flex-shrink-0" />
 
-            {/* Query Info - Mobile Responsive */}
-            {queryType === 'text' && queryText && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
-                  <svg
-                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <span className="truncate">
-                    Searched for: <span className="font-body-medium text-ink">&ldquo;{queryText}&rdquo;</span>
-                  </span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10" aria-hidden="true" />
-              </>
-            )}
-
-            {queryType === 'image' && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60">
-                  <svg
-                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>Image search</span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
-              </>
-            )}
-
-            {queryType === 'instagram_post' && instagramUsername && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
-                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
-                  <span className="truncate">
-                    Instagram post by{' '}
-                    {instagramPostId ? (
-                      <a
-                        href={`https://instagram.com/p/${instagramPostId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-body-medium text-ink hover:text-purple-600 transition-colors"
-                      >
-                        @{instagramUsername}
-                      </a>
-                    ) : (
-                      <span className="font-body-medium text-ink">@{instagramUsername}</span>
-                    )}
-                  </span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
-              </>
-            )}
-
-            {queryType === 'instagram_profile' && instagramUsername && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
-                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
-                  <span className="truncate">
-                    Artists similar to{' '}
-                    <a
-                      href={`https://instagram.com/${instagramUsername}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-body-medium text-ink hover:text-purple-600 transition-colors"
-                    >
-                      @{instagramUsername}
-                    </a>
-                  </span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
-              </>
-            )}
-
-            {queryType === 'similar_artist' && queryText && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0">
-                  <svg
-                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                  <span className="truncate">{queryText}</span>
-                </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
-              </>
-            )}
-
-            {/* Results Count - Desktop Only */}
-            <div className="hidden md:block font-mono text-xs font-medium text-ink/70 uppercase tracking-[0.15em] whitespace-nowrap flex-shrink-0">
-              {total} {total === 1 ? 'Artist' : 'Artists'}
-            </div>
-
-            {/* Vertical Divider - Desktop Only */}
-            <div className="hidden md:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
-
-            {/* City Filter - Mobile Optimized */}
-            <div className="flex-shrink-0 ml-auto">
-              <ErrorBoundary>
-                <LocationFilter />
+            {/* Location Filter - Scrollable on Mobile */}
+            <div className="flex-1 overflow-visible">
+              <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
+                <LocationFilter
+                  searchId={id}
+                  currentCountry={country || null}
+                  currentRegion={region || null}
+                  currentCity={city || null}
+                />
               </ErrorBoundary>
             </div>
           </div>
         </div>
       </StickyFilterBar>
 
-      {/* RESULTS GRID - Mobile Optimized */}
-      <div className="w-full px-4 md:container md:mx-auto md:px-6 pt-4 md:pt-8 lg:pt-16 pb-6 md:pb-12">
-        {hasResults ? (
-          <>
-            {/* Artist Grid - Unified, sorted by match percentage */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-4 mb-12 auto-rows-auto" style={{ gridAutoFlow: 'dense' }}>
-              {artists.map((artist) => (
-                <ArtistCard key={artist.artist_id} artist={artist} />
-              ))}
-            </div>
+      {/* CONTENT */}
+      <div className="container mx-auto px-4 md:px-6 py-8">
+        {/* Results count */}
+        <div className="mb-6">
+          <p className="text-sm font-mono text-ink/60">
+            {totalCount} {totalCount === 1 ? 'artist' : 'artists'} found
+            {cityFilter && ` in ${cityFilter}`}
+            {!cityFilter && regionFilter && ` in ${regionFilter}`}
+            {!cityFilter && !regionFilter && countryFilter && ` in ${countryFilter}`}
+          </p>
+        </div>
 
-            {/* Pagination - Editorial Magazine Style */}
-            {totalPages > 1 && (
-              <nav
-                className="flex items-center justify-center gap-3 flex-wrap mt-16"
-                role="navigation"
-                aria-label="Search results pagination"
-              >
-                {/* Previous Button - Editorial */}
-                {currentPage > 1 ? (
-                  <Link
-                    href={buildSearchUrl(currentPage - 1)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
-                    aria-label="Go to previous page"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                    <span>Previous</span>
-                  </Link>
-                ) : (
-                  <div
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-gray-400 border-2 border-gray-200 cursor-not-allowed"
-                    aria-disabled="true"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                    <span>Previous</span>
-                  </div>
-                )}
-
-                {/* Numbered Page Buttons - Clean Editorial */}
-                <div className="flex items-center gap-1.5">
-                  {generatePageNumbers(currentPage, totalPages).map((pageNum, index) => {
-                    if (pageNum === '...') {
-                      return (
-                        <span
-                          key={`ellipsis-${index}`}
-                          className="px-2 font-body text-lg text-gray-500"
-                          aria-hidden="true"
-                        >
-                          &hellip;
-                        </span>
-                      )
-                    }
-
-                    const page = pageNum as number
-                    const isActive = page === currentPage
-
-                    return (
-                      <Link
-                        key={page}
-                        href={buildSearchUrl(page)}
-                        className={`
-                          min-w-[44px] h-[44px] flex items-center justify-center
-                          font-body text-[17px] font-medium
-                          border-2 transition-all duration-fast
-                          ${isActive
-                            ? 'bg-ink border-ink text-paper shadow-sm cursor-default'
-                            : 'bg-paper border-ink/20 text-ink hover:border-ink hover:-translate-y-[2px] hover:shadow-md'
-                          }
-                        `}
-                        aria-label={`Go to page ${page}`}
-                        aria-current={isActive ? 'page' : undefined}
-                        tabIndex={isActive ? -1 : 0}
-                      >
-                        {page}
-                      </Link>
-                    )
-                  })}
-                </div>
-
-                {/* Next Button - Editorial */}
-                {currentPage < totalPages ? (
-                  <Link
-                    href={buildSearchUrl(currentPage + 1)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-ink border-2 border-ink/20 hover:border-ink hover:-translate-y-[2px] hover:shadow-md transition-all duration-fast group"
-                    aria-label="Go to next page"
-                  >
-                    <span>Next</span>
-                    <svg
-                      className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-fast"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </Link>
-                ) : (
-                  <div
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-body text-base text-gray-400 border-2 border-gray-200 cursor-not-allowed"
-                    aria-disabled="true"
-                  >
-                    <span>Next</span>
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2.5}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </div>
-                )}
-              </nav>
-            )}
-          </>
-        ) : (
-          // Empty State
-          <div className="max-w-md mx-auto text-center py-16 md:py-24">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl bg-gray-100 mb-8">
-              <svg
-                className="w-10 h-10 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-
-            <h2 className="font-heading text-3xl font-bold text-ink mb-4">
-              No Artists Found
-            </h2>
-            <p className="font-body text-base text-gray-600 mb-8 leading-relaxed">
-              We couldn&apos;t find any artists matching your search.
-              {city && ' Try expanding your search to all cities.'}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {city && (
-                <Link
-                  href={buildSearchUrl(1)}
-                  className="btn btn-primary py-3 px-6"
-                >
-                  View All Cities
-                </Link>
-              )}
-              <Link
-                href="/"
-                className="btn btn-secondary py-3 px-6"
-              >
-                New Search
-              </Link>
-            </div>
+        {/* Artist Grid */}
+        {artists.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+            {artists.map((artist) => (
+              <ArtistCard
+                key={artist.artist_id}
+                artist={{
+                  id: artist.artist_id,
+                  name: artist.artist_name,
+                  slug: artist.artist_slug,
+                  city: artist.city,
+                  profileImageUrl: artist.profile_image_url,
+                  followerCount: artist.follower_count,
+                  instagramUrl: artist.instagram_url,
+                  isVerified: artist.is_verified,
+                  isPro: artist.is_pro,
+                  isFeatured: artist.is_featured,
+                  locationCount: artist.location_count,
+                }}
+                images={artist.matching_images.map((img: any) => ({
+                  url: img.url,
+                  instagramUrl: img.instagramUrl,
+                  similarity: img.similarity,
+                  likesCount: img.likes_count,
+                }))}
+                similarity={artist.similarity}
+              />
+            ))}
           </div>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-ink/60">No matching artists found</p>
+            {(cityFilter || regionFilter) && (
+              <p className="text-sm text-ink/40 mt-2">
+                Try broadening your location filter
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <nav className="mt-8 flex justify-center" aria-label="Pagination">
+            <div className="flex items-center gap-1">
+              {/* Previous */}
+              {currentPage > 1 ? (
+                <Link
+                  href={buildPageUrl(currentPage - 1)}
+                  className="px-3 py-2 text-sm font-mono text-ink/60 hover:text-ink transition-colors"
+                >
+                  ←
+                </Link>
+              ) : (
+                <span className="px-3 py-2 text-sm font-mono text-ink/20">←</span>
+              )}
+
+              {/* Page numbers */}
+              {generatePageNumbers(currentPage, totalPages).map((pageNum, i) =>
+                pageNum === '...' ? (
+                  <span key={`ellipsis-${i}`} className="px-2 py-2 text-sm font-mono text-ink/40">
+                    ...
+                  </span>
+                ) : (
+                  <Link
+                    key={pageNum}
+                    href={buildPageUrl(pageNum as number)}
+                    className={`px-3 py-2 text-sm font-mono transition-colors ${
+                      currentPage === pageNum
+                        ? 'text-ink bg-ink/5 rounded'
+                        : 'text-ink/60 hover:text-ink'
+                    }`}
+                  >
+                    {pageNum}
+                  </Link>
+                )
+              )}
+
+              {/* Next */}
+              {currentPage < totalPages ? (
+                <Link
+                  href={buildPageUrl(currentPage + 1)}
+                  className="px-3 py-2 text-sm font-mono text-ink/60 hover:text-ink transition-colors"
+                >
+                  →
+                </Link>
+              ) : (
+                <span className="px-3 py-2 text-sm font-mono text-ink/20">→</span>
+              )}
+            </div>
+          </nav>
         )}
       </div>
     </main>
