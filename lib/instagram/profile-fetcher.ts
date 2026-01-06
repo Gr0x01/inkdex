@@ -87,10 +87,11 @@ export async function fetchInstagramProfileImages(
     throw new Error('Limit must be between 1 and 50');
   }
 
-  // Check for Apify API token
-  const apifyToken = process.env.APIFY_API_TOKEN;
+  // Check for Apify API token - prefer FREE tier for lightweight operations
+  // Falls back to main token if FREE not configured
+  const apifyToken = process.env.APIFY_API_TOKEN_FREE || process.env.APIFY_API_TOKEN;
   if (!apifyToken) {
-    console.error('[Apify] APIFY_API_TOKEN is not configured');
+    console.error('[Apify] Neither APIFY_API_TOKEN_FREE nor APIFY_API_TOKEN is configured');
     throw new InstagramError(
       'Profile scraping service temporarily unavailable. Please try again later.',
       'FETCH_FAILED'

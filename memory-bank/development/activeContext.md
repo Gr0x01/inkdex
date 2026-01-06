@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-05 (Session 16 - SEO Enhancements)
+Last-Updated: 2026-01-06 (Session 17 - Apify Cost Optimization)
 Maintainer: RB
 Status: Launched - All 15 Phases Complete + SEO Enhancements
 ---
@@ -38,6 +38,25 @@ Status: Launched - All 15 Phases Complete + SEO Enhancements
 - Maine (Portland)
 - Alaska (Anchorage)
 - District of Columbia (Washington)
+
+## Apify Cost Optimization (Jan 6, 2026)
+
+**Dual-Account Strategy** - Separate free/paid Apify accounts:
+- `APIFY_API_TOKEN_FREE` - Free tier ($5/mo credit) for lightweight ops
+- `APIFY_API_TOKEN` - Paid account for heavy pipeline scraping
+
+**Token Usage:**
+| Operation | Token |
+|-----------|-------|
+| Profile searches, Pro auto-sync | FREE (fallback to PAID) |
+| Hashtag/follower mining, bulk scraper | PAID only |
+
+**Files Changed:**
+- `lib/instagram/profile-fetcher.ts` - Uses FREE first
+- `lib/config/env.ts` - Added schema validation
+- `.env.example` - Documented new var
+
+**Result:** After initial bulk scraping, ongoing costs drop from ~$40/mo to ~$0 (free tier covers Pro auto-sync and profile searches).
 
 ## SEO Enhancements (Jan 5, 2026)
 
