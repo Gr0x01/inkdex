@@ -6,7 +6,7 @@
  * 1. Verify ownership
  * 2. Delete portfolio images from storage
  * 3. Delete database records (portfolio_images, analytics, subscriptions, artist)
- * 4. Add to scraping exclusion list (deleted_at + exclude_from_scraping)
+ * 4. Add to scraping exclusion list (deleted_at + artist_pipeline_state.exclude_from_scraping)
  * 5. Sign out user
  *
  * This action is irreversible
@@ -144,13 +144,27 @@ export async function POST(request: NextRequest) {
       .from('artists')
       .update({
         deleted_at: new Date().toISOString(),
-        exclude_from_scraping: true,
       })
       .eq('id', artistId);
 
     if (deleteError) {
       console.error('[ProfileDelete] Artist deletion error:', deleteError);
       return NextResponse.json({ error: 'Failed to delete profile' }, { status: 500 });
+    }
+
+    // 7. Mark artist as excluded from scraping in pipeline state
+    const { error: pipelineError } = await supabase
+      .from('artist_pipeline_state')
+      .upsert({
+        artist_id: artistId,
+        exclude_from_scraping: true,
+        blacklist_reason: 'Profile deleted by user',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'artist_id' });
+
+    if (pipelineError) {
+      // Log but don't fail - the artist is already soft-deleted
+      console.warn('[ProfileDelete] Pipeline state update warning:', pipelineError);
     }
 
     // 8. Sign out user (they no longer have an artist profile)

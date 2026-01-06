@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -117,41 +92,6 @@ export type Database = {
             foreignKeyName: "artist_analytics_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
-            referencedRelation: "artists"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      artist_color_profiles: {
-        Row: {
-          artist_id: string
-          bw_image_count: number
-          color_image_count: number
-          color_percentage: number
-          total_image_count: number
-          updated_at: string | null
-        }
-        Insert: {
-          artist_id: string
-          bw_image_count?: number
-          color_image_count?: number
-          color_percentage: number
-          total_image_count?: number
-          updated_at?: string | null
-        }
-        Update: {
-          artist_id?: string
-          bw_image_count?: number
-          color_image_count?: number
-          color_percentage?: number
-          total_image_count?: number
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "artist_color_profiles_artist_id_fkey"
-            columns: ["artist_id"]
-            isOneToOne: true
             referencedRelation: "artists"
             referencedColumns: ["id"]
           },
@@ -2336,9 +2276,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       search_tier: ["active", "archive"],

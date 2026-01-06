@@ -69,15 +69,17 @@ Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
 **Note:** All Python scripts now use `artist_pipeline_state` table with UPSERT pattern.
 
 ### Phase 5: Drop Deprecated Columns
-- [ ] Remove from artists table:
+- [x] Remove from artists table:
   - `city`, `state` (replaced by `artist_locations`)
   - Sync columns (moved to `artist_sync_state`)
   - Pipeline columns (moved to `artist_pipeline_state`)
-- [ ] Update admin components (critical only):
-  - `components/admin/ArtistTable.tsx`
-  - `components/admin/ArtistDetailView.tsx`
-- [ ] Regenerate types
-- [ ] Verify no broken references
+- [x] Update admin components (critical only):
+  - `components/admin/ArtistTable.tsx` - No changes needed (uses RPC with artist_locations)
+  - `components/admin/ArtistDetailView.tsx` - No changes needed (page fetches from artist_locations)
+  - `app/api/dashboard/profile/delete/route.ts` - Updated to use artist_pipeline_state
+- [x] Create migration `20260106240000_drop_deprecated_artist_columns.sql`
+- [x] Regenerate types
+- [x] Verify no broken references (type check passes)
 
 ### Phase 6: Add Search Tier Column
 - [x] Add `search_tier` enum ('active', 'archive') to `portfolio_images`

@@ -63,8 +63,8 @@ export async function GET() {
       // Searches count
       adminClient.from('searches').select('id', { count: 'exact', head: true }),
 
-      // Unique cities - get non-deleted artists with cities
-      adminClient.from('artists').select('city').not('city', 'is', null).is('deleted_at', null),
+      // Unique cities - get from artist_locations (single source of truth)
+      adminClient.from('artist_locations').select('city').not('city', 'is', null),
 
       // Recent claimed artists
       adminClient

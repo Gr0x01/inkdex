@@ -68,18 +68,22 @@ async function checkEmbeddings() {
 
   displayStats(stats);
 
-  // Get per-city breakdown
+  // Get per-city breakdown (using artist_locations as single source of truth)
   console.log('\n📍 Per-City Breakdown:');
   const { data: cityStats, error: cityError } = await supabase
     .from('portfolio_images')
-    .select('artists(city), embedding')
-    .not('artists.city', 'is', null);
+    .select('artist_id, embedding, artist_locations!inner(city)')
+    .not('artist_locations.city', 'is', null);
 
   if (cityStats && !cityError) {
     const cityCounts: Record<string, { total: number; with_embeddings: number }> = {};
 
     cityStats.forEach((row: any) => {
-      const city = row.artists?.city || 'Unknown';
+      // artist_locations returns array, get first location's city
+      const locations = row.artist_locations;
+      const city = Array.isArray(locations) && locations.length > 0
+        ? locations[0].city
+        : 'Unknown';
       if (!cityCounts[city]) {
         cityCounts[city] = { total: 0, with_embeddings: 0 };
       }

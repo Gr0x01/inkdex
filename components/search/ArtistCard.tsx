@@ -121,23 +121,25 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     }
   }, [hoverTimeout])
 
-  // Pro and Featured cards span 2 columns and use horizontal layout on desktop
-  const isProLayout = (is_pro || is_featured) && displayMode === 'search'
+  // Pro and Featured cards span 2 columns and use horizontal layout on desktop only
+  // On mobile, all cards use standard vertical layout for consistent grid
+  const isProOrFeatured = (is_pro || is_featured) && displayMode === 'search'
 
   return (
     <Link
       href={`/artist/${artist_slug}`}
-      className={`group block bg-paper border-2 border-ink/20 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast ${
-        isProLayout ? 'col-span-2' : ''
+      className={`group block w-full min-w-0 bg-paper border-2 border-ink/20 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast ${
+        isProOrFeatured ? 'lg:col-span-2' : ''
       }`}
     >
-      <div className={isProLayout ? 'flex flex-row h-full gap-2 md:gap-4 min-h-[200px]' : ''}>
+      {/* On mobile/tablet: vertical layout. On lg+: Pro/Featured use horizontal layout */}
+      <div className={isProOrFeatured ? 'lg:flex lg:flex-row lg:h-full lg:gap-4 lg:min-h-[200px]' : ''}>
         {/* Hero Image (tap to rotate) - Editorial */}
         {currentImage && (
           <div
             className={`relative overflow-hidden bg-gray-100 cursor-pointer ${
-              isProLayout
-                ? 'aspect-auto flex-1 h-auto'
+              isProOrFeatured
+                ? 'aspect-square lg:aspect-auto lg:flex-1 lg:h-auto'
                 : 'aspect-square'
             }`}
             onClick={handleImageClick}
@@ -150,9 +152,9 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
               className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
             />
 
-            {/* Featured badge on image - only for non-Pro/non-enhanced-layout (enhanced layout shows in details) */}
-            {is_featured && !isProLayout && (
-              <div className="absolute top-3 left-3">
+            {/* Featured badge on image - show on mobile/tablet, hide on lg+ for Pro/Featured (shown in details instead) */}
+            {is_featured && (
+              <div className={`absolute top-3 left-3 ${isProOrFeatured ? 'lg:hidden' : ''}`}>
                 <FeaturedBadge variant="badge" />
               </div>
             )}
@@ -168,36 +170,63 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           </div>
         )}
 
-        {/* Artist Info - Editorial Typography */}
-        <div className={`${isProLayout ? 'flex-1 flex flex-col justify-between p-0 py-2 sm:py-6 px-1' : 'p-3 sm:p-4 space-y-1'}`}>
-          {/* Pro layout - Editorial stats block */}
-          {isProLayout ? (
+        {/* Mobile/tablet info section for Pro/Featured cards - standard compact layout */}
+        {isProOrFeatured && (
+          <div className="p-3 space-y-1 min-w-0 lg:hidden">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-heading text-base font-bold text-ink tracking-tight truncate min-w-0">
+                @{instagramHandle}
+              </h3>
+              {is_pro && <ProBadge variant="icon-only" size="sm" />}
+              {is_featured && !is_pro && <FeaturedBadge variant="icon-only" size="sm" />}
+            </div>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em] truncate">
+                  {city}
+                </p>
+                {hasMultipleLocations && (
+                  <span
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 flex-shrink-0"
+                    title={`Works in ${locationCount} locations`}
+                  >
+                    +{locationCount - 1}
+                  </span>
+                )}
+              </div>
+              {displayMode === 'search' && (
+                <span className="font-mono text-xs font-semibold text-ink flex-shrink-0">
+                  {matchPercentage}%
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Artist Info - Editorial Typography (Desktop lg+ Pro layout OR standard layout) */}
+        <div className={`${isProOrFeatured ? 'hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between lg:p-0 lg:py-6 lg:px-1 min-w-0' : 'p-3 sm:p-4 space-y-1 min-w-0'}`}>
+          {/* Pro layout - Editorial stats block (md+ only) */}
+          {isProOrFeatured && (
             <>
               <div className="flex flex-col space-y-3 sm:space-y-5">
                 {/* Pro or Featured badge and percentage row */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-shrink-0">
                     {is_pro ? (
-                      <>
-                        <ProBadge variant="badge" size="sm" className="sm:hidden" />
-                        <ProBadge variant="badge" size="md" className="hidden sm:inline-flex" />
-                      </>
+                      <ProBadge variant="badge" size="md" />
                     ) : is_featured ? (
-                      <>
-                        <FeaturedBadge variant="badge" className="sm:hidden text-xs" />
-                        <FeaturedBadge variant="badge" className="hidden sm:inline-flex text-sm" />
-                      </>
+                      <FeaturedBadge variant="badge" className="text-sm" />
                     ) : null}
                   </div>
 
                   {/* Match percentage - top right */}
                   {displayMode === 'search' && (
                     <div
-                      className="relative flex-shrink-0 pr-2 sm:pr-4"
+                      className="relative flex-shrink-0 pr-4"
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
                     >
-                      <span className="font-mono text-xs sm:text-base font-semibold text-ink">
+                      <span className="font-mono text-base font-semibold text-ink">
                         {matchPercentage}%
                       </span>
 
@@ -219,14 +248,14 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
 
                 {/* Handle */}
                 {instagramHandle && (
-                  <h3 className="font-heading text-sm sm:text-base lg:text-xl font-bold text-ink tracking-tight truncate">
+                  <h3 className="font-heading text-base lg:text-xl font-bold text-ink tracking-tight truncate">
                     @{instagramHandle}
                   </h3>
                 )}
 
                 {/* Location */}
                 <div className="flex items-center gap-2">
-                  <p className="font-mono text-[0.65rem] sm:text-xs lg:text-sm font-medium text-gray-500 uppercase tracking-[0.15em]">
+                  <p className="font-mono text-xs lg:text-sm font-medium text-gray-500 uppercase tracking-[0.15em]">
                     {city}
                   </p>
                   {hasMultipleLocations && (
@@ -263,21 +292,22 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
                 </p>
               )}
             </>
-          ) : (
-            // Standard layout (non-enhanced cards)
-            <div className="space-y-1">
+          )}
+          {/* Standard layout (non-enhanced cards) */}
+          {!isProOrFeatured && (
+            <div className="space-y-1 min-w-0">
               {instagramHandle && (
-                <div className="flex items-center gap-1.5">
-                  <h3 className="font-heading text-base font-bold text-ink tracking-tight">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h3 className="font-heading text-base font-bold text-ink tracking-tight truncate min-w-0">
                     @{instagramHandle}
                   </h3>
                   {is_pro && <ProBadge variant="icon-only" size="sm" />}
                   {is_featured && !is_pro && <FeaturedBadge variant="icon-only" size="sm" />}
                 </div>
               )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em]">
+              <div className="flex items-center justify-between gap-2 min-w-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <p className="font-mono text-xs font-medium text-gray-500 uppercase tracking-[0.15em] truncate">
                     {city}
                   </p>
                   {hasMultipleLocations && (
