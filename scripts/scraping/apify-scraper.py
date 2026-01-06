@@ -299,14 +299,16 @@ def get_pending_artists(conn, limit=None):
     - Artists without any portfolio_images are included
     - Artists WITH images are excluded (already scraped successfully)
     - Failed scraping_jobs are retryable if artist still has no images
+    - Uses artist_pipeline_state for blacklist checks
     """
     cursor = conn.cursor()
 
     query = """
         SELECT a.id, a.instagram_handle, a.name
         FROM artists a
+        LEFT JOIN artist_pipeline_state ps ON ps.artist_id = a.id
         WHERE a.instagram_private != TRUE
-        AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
+        AND (ps.scraping_blacklisted IS NULL OR ps.scraping_blacklisted = FALSE)
         AND a.deleted_at IS NULL
         AND a.instagram_handle IS NOT NULL
         AND NOT EXISTS (
@@ -333,14 +335,16 @@ def get_artists_needing_profile_images(conn, limit=None):
     """Get artists that need profile image scraping (profile_storage_path is NULL)
 
     Used for --profile-only mode to backfill profile images without re-scraping portfolio.
+    Uses artist_pipeline_state for blacklist checks.
     """
     cursor = conn.cursor()
 
     query = """
         SELECT a.id, a.instagram_handle, a.name
         FROM artists a
+        LEFT JOIN artist_pipeline_state ps ON ps.artist_id = a.id
         WHERE a.instagram_private != TRUE
-        AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
+        AND (ps.scraping_blacklisted IS NULL OR ps.scraping_blacklisted = FALSE)
         AND a.deleted_at IS NULL
         AND a.instagram_handle IS NOT NULL
         AND a.profile_storage_path IS NULL
@@ -375,9 +379,15 @@ def create_scraping_job(conn, artist_id):
         cursor.execute(query, (artist_id,))
         job_id = cursor.fetchone()[0]
 
-        # Update artist pipeline status
+        # Update pipeline status in artist_pipeline_state (upsert)
         cursor.execute(
-            "UPDATE artists SET pipeline_status = 'scraping' WHERE id = %s",
+            """
+            INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+            VALUES (%s, 'scraping', NOW())
+            ON CONFLICT (artist_id) DO UPDATE SET
+                pipeline_status = 'scraping',
+                updated_at = NOW()
+            """,
             (artist_id,)
         )
 
@@ -402,16 +412,28 @@ def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=No
 
         cursor.execute(query, (status, images_scraped, error_message, status, job_id))
 
-        # Update artist pipeline status if artist_id provided
+        # Update pipeline status in artist_pipeline_state if artist_id provided
         if artist_id:
             if status == 'completed':
                 cursor.execute(
-                    "UPDATE artists SET pipeline_status = 'pending_embeddings' WHERE id = %s",
+                    """
+                    INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+                    VALUES (%s, 'pending_embeddings', NOW())
+                    ON CONFLICT (artist_id) DO UPDATE SET
+                        pipeline_status = 'pending_embeddings',
+                        updated_at = NOW()
+                    """,
                     (artist_id,)
                 )
             elif status == 'failed':
                 cursor.execute(
-                    "UPDATE artists SET pipeline_status = 'failed' WHERE id = %s",
+                    """
+                    INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+                    VALUES (%s, 'failed', NOW())
+                    ON CONFLICT (artist_id) DO UPDATE SET
+                        pipeline_status = 'failed',
+                        updated_at = NOW()
+                    """,
                     (artist_id,)
                 )
 
@@ -423,15 +445,29 @@ def update_artist_profile_metadata(conn, artist_id, profile_image_url, follower_
     with db_lock:
         cursor = conn.cursor()
 
+        # Update profile metadata on artists table
         query = """
             UPDATE artists
             SET profile_image_url = %s,
-                follower_count = %s,
-                last_scraped_at = NOW()
+                follower_count = %s
             WHERE id = %s
         """
-
         cursor.execute(query, (profile_image_url, follower_count, artist_id))
+
+        # Update last_scraped_at in artist_pipeline_state (upsert)
+        # NOTE: pipeline_status is intentionally NOT updated here -
+        # it's managed by create_scraping_job/update_scraping_job
+        cursor.execute(
+            """
+            INSERT INTO artist_pipeline_state (artist_id, last_scraped_at, updated_at)
+            VALUES (%s, NOW(), NOW())
+            ON CONFLICT (artist_id) DO UPDATE SET
+                last_scraped_at = NOW(),
+                updated_at = NOW()
+            """,
+            (artist_id,)
+        )
+
         conn.commit()
         cursor.close()
 

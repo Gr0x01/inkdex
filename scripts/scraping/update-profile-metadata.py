@@ -58,15 +58,25 @@ def update_artist_metadata(conn, artist_id, profile_pic_url, follower_count):
     with db_lock:
         cursor = conn.cursor()
 
-        query = """
+        # Update profile metadata on artists table
+        cursor.execute("""
             UPDATE artists
             SET profile_image_url = %s,
-                follower_count = %s,
-                last_scraped_at = NOW()
+                follower_count = %s
             WHERE id = %s
-        """
+        """, (profile_pic_url, follower_count, artist_id))
 
-        cursor.execute(query, (profile_pic_url, follower_count, artist_id))
+        # Update last_scraped_at in artist_pipeline_state (upsert)
+        # NOTE: pipeline_status is intentionally NOT updated here -
+        # this script only updates profile metadata, not pipeline state
+        cursor.execute("""
+            INSERT INTO artist_pipeline_state (artist_id, last_scraped_at, updated_at)
+            VALUES (%s, NOW(), NOW())
+            ON CONFLICT (artist_id) DO UPDATE SET
+                last_scraped_at = NOW(),
+                updated_at = NOW()
+        """, (artist_id,))
+
         conn.commit()
         cursor.close()
 

@@ -61,13 +61,12 @@ Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
 - [x] Create migration `20260106220001_create_artist_pipeline_state.sql`
 - [x] Migrate existing data from artists table
 - [x] Add RLS policies
-- [ ] Update Python files (3 files) - **DEFERRED to separate PR**
-  - `scripts/scraping/apify-scraper.py`
-  - `scripts/scraping/apify-scraper-batched.py`
-  - `scripts/scraping/update-profile-metadata.py`
-- [ ] Regenerate types
+- [x] Update Python files (3 files)
+  - `scripts/scraping/apify-scraper.py` - uses artist_pipeline_state for blacklist, pipeline_status, last_scraped_at
+  - `scripts/scraping/apify-scraper-batched.py` - uses artist_pipeline_state for blacklist, pipeline_status, last_scraped_at
+  - `scripts/scraping/update-profile-metadata.py` - uses artist_pipeline_state for last_scraped_at
 
-**Note:** Table created and data migrated. Python script updates deferred.
+**Note:** All Python scripts now use `artist_pipeline_state` table with UPSERT pattern.
 
 ### Phase 5: Drop Deprecated Columns
 - [ ] Remove from artists table:

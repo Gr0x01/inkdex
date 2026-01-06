@@ -164,14 +164,17 @@ def connect_db():
 
 
 def get_pending_artists(conn, limit=None):
-    """Get artists that need scraping (no portfolio images yet)"""
+    """Get artists that need scraping (no portfolio images yet)
+    Uses artist_pipeline_state for blacklist checks.
+    """
     cursor = conn.cursor()
 
     query = """
         SELECT a.id, a.instagram_handle, a.name
         FROM artists a
+        LEFT JOIN artist_pipeline_state ps ON ps.artist_id = a.id
         WHERE a.instagram_private != TRUE
-        AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
+        AND (ps.scraping_blacklisted IS NULL OR ps.scraping_blacklisted = FALSE)
         AND a.deleted_at IS NULL
         AND a.instagram_handle IS NOT NULL
         AND NOT EXISTS (
@@ -205,10 +208,14 @@ def create_scraping_jobs_batch(conn, artist_ids: List[str]) -> Dict[str, str]:
             job_id = cursor.fetchone()[0]
             job_mapping[artist_id] = job_id
 
-            cursor.execute(
-                "UPDATE artists SET pipeline_status = 'scraping' WHERE id = %s",
-                (artist_id,)
-            )
+            # Update pipeline status in artist_pipeline_state (upsert)
+            cursor.execute("""
+                INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+                VALUES (%s, 'scraping', NOW())
+                ON CONFLICT (artist_id) DO UPDATE SET
+                    pipeline_status = 'scraping',
+                    updated_at = NOW()
+            """, (artist_id,))
 
         conn.commit()
         cursor.close()
@@ -230,17 +237,24 @@ def update_scraping_job(conn, job_id, status, images_scraped=0, error_message=No
             WHERE id = %s
         """, (status, images_scraped, error_message, status, job_id))
 
+        # Update pipeline status in artist_pipeline_state if artist_id provided
         if artist_id:
             if status == 'completed':
-                cursor.execute(
-                    "UPDATE artists SET pipeline_status = 'pending_embeddings' WHERE id = %s",
-                    (artist_id,)
-                )
+                cursor.execute("""
+                    INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+                    VALUES (%s, 'pending_embeddings', NOW())
+                    ON CONFLICT (artist_id) DO UPDATE SET
+                        pipeline_status = 'pending_embeddings',
+                        updated_at = NOW()
+                """, (artist_id,))
             elif status == 'failed':
-                cursor.execute(
-                    "UPDATE artists SET pipeline_status = 'failed' WHERE id = %s",
-                    (artist_id,)
-                )
+                cursor.execute("""
+                    INSERT INTO artist_pipeline_state (artist_id, pipeline_status, updated_at)
+                    VALUES (%s, 'failed', NOW())
+                    ON CONFLICT (artist_id) DO UPDATE SET
+                        pipeline_status = 'failed',
+                        updated_at = NOW()
+                """, (artist_id,))
 
         conn.commit()
         cursor.close()
@@ -251,13 +265,24 @@ def update_artist_profile_metadata(conn, artist_id, profile_image_url, follower_
     with db_lock:
         cursor = conn.cursor()
 
+        # Update profile metadata on artists table
         cursor.execute("""
             UPDATE artists
             SET profile_image_url = %s,
-                follower_count = %s,
-                last_scraped_at = NOW()
+                follower_count = %s
             WHERE id = %s
         """, (profile_image_url, follower_count, artist_id))
+
+        # Update last_scraped_at in artist_pipeline_state (upsert)
+        # NOTE: pipeline_status is intentionally NOT updated here -
+        # it's managed by create_scraping_jobs_batch/update_scraping_job
+        cursor.execute("""
+            INSERT INTO artist_pipeline_state (artist_id, last_scraped_at, updated_at)
+            VALUES (%s, NOW(), NOW())
+            ON CONFLICT (artist_id) DO UPDATE SET
+                last_scraped_at = NOW(),
+                updated_at = NOW()
+        """, (artist_id,))
 
         conn.commit()
         cursor.close()
