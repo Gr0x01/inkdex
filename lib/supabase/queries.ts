@@ -1642,9 +1642,12 @@ export async function getHomepageStats(): Promise<{
     return { artistCount: 15000, imageCount: 65000, cityCount: 100 }
   }
 
+  // Cast data to expected shape from RPC function
+  const stats = data as { artist_count: number; image_count: number; city_count: number }
+
   return {
-    artistCount: data.artist_count,
-    imageCount: data.image_count,
-    cityCount: data.city_count,
+    artistCount: stats.artist_count,
+    imageCount: stats.image_count,
+    cityCount: stats.city_count,
   }
 }

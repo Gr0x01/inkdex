@@ -553,9 +553,9 @@ export async function POST(request: NextRequest) {
       error = result.error
     }
 
-    if (error) {
+    if (error || !data) {
       console.error('Error storing search:', error)
-      throw error
+      throw error || new Error('No data returned from search insert')
     }
 
     // Return search ID
