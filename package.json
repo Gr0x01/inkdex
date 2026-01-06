@@ -43,7 +43,12 @@
     "build-storybook": "storybook build",
     "db:lint": "/Users/rb/Library/Python/3.9/bin/sqlfluff lint supabase/migrations/",
     "db:push": "npm run db:lint && npx supabase db push",
-    "db:benchmark": "tsx scripts/benchmark-queries.ts"
+    "db:benchmark": "tsx scripts/benchmark-queries.ts",
+    "db:local:start": "supabase start",
+    "db:local:stop": "supabase stop",
+    "db:local:reset": "supabase db reset",
+    "db:local:seed": "tsx scripts/seed/dump-production-seed.ts",
+    "db:local:status": "supabase status"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.490.0",

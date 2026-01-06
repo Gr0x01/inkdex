@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-06
 Maintainer: RB
 Status: Launched
 ---
@@ -39,6 +39,23 @@ Status: Launched
 | Tavily | Artist discovery | ~$0.05/query |
 | Modal.com | GPU fallback | ~$0.60/hr |
 | OpenAI GPT-5-mini | Image classification | ~$0.02/profile |
+
+### Apify Dual-Account Strategy
+
+Two separate Apify accounts to optimize costs:
+
+| Account | Env Var | Use Case | Cost |
+|---------|---------|----------|------|
+| **Free** | `APIFY_API_TOKEN_FREE` | Profile searches, Pro auto-sync | $0 ($5/mo credit) |
+| **Paid** | `APIFY_API_TOKEN` | Heavy pipeline (hashtag/follower mining, bulk scraper) | Pay-as-you-go |
+
+**Token Selection Logic:**
+- `lib/instagram/profile-fetcher.ts` → Uses `FREE` first, falls back to `PAID`
+- `lib/instagram/hashtag-scraper.ts` → Uses `PAID` only
+- `lib/instagram/follower-scraper.ts` → Uses `PAID` only
+- `scripts/scraping/apify-scraper.py` → Uses `PAID` only
+
+**Rationale:** After initial bulk scraping, ongoing needs (Pro auto-sync, profile searches) fit within free tier. Paid account only needed for occasional large discovery batches.
 
 ---
 
@@ -151,6 +168,10 @@ LOCAL_CLIP_URL=https://clip.inkdex.io
 CLIP_API_KEY
 MODAL_FUNCTION_URL
 
+# Apify (Instagram scraping)
+APIFY_API_TOKEN          # Paid account - heavy pipeline
+APIFY_API_TOKEN_FREE     # Free account - lightweight ops (optional, falls back to PAID)
+
 # Stripe
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
@@ -166,3 +187,56 @@ RESEND_API_KEY
 ```
 
 See `.env.example` for full list.
+
+---
+
+## Local Supabase Development
+
+**Purpose:** Safely test `search_functions.sql` changes before deploying to production.
+
+### How It Works
+- Runs ~12 Docker containers locally (Postgres, PostgREST, Studio, etc.)
+- **Data persists** between restarts - no re-seeding needed
+- Switch between local/production by commenting env vars in `.env.local`
+
+### When to Use Local
+- **Schema changes** - ALTER TABLE, new columns, constraints
+- **New migrations** - Test before pushing to production
+- **Search functions** - `search_functions.sql` changes
+- **Risky SQL** - Destructive queries, complex joins, index changes
+- **Isolated testing** - Edge cases, debugging with known data
+
+### When to Stay on Production
+- **Admin panel** - Need real artist data
+- **Scraping/pipelines** - Writing to real database
+- **Marketing/outreach** - Real user data
+- **Normal dev work** - UI changes, API routes, reads
+
+### Switching (Manual Comment In/Out)
+In `.env.local`, comment/uncomment the Supabase credentials:
+```bash
+# PRODUCTION (default - use for admin, scraping, etc.)
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+# LOCAL (uncomment only when testing search functions)
+# NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+```
+
+### NPM Scripts
+```bash
+npm run db:local:seed    # Pull 500 artists from production (one-time)
+npm run db:local:start   # Start Docker containers
+npm run db:local:stop    # Stop (data persists)
+npm run db:local:reset   # Wipe & reload from seed.sql
+npm run db:local:status  # Check container status
+```
+
+### Local URLs
+- **API:** `http://127.0.0.1:54321`
+- **Studio (SQL editor):** `http://127.0.0.1:54323`
+- **Inbucket (emails):** `http://127.0.0.1:54324`
+
+### Seed Data
+- **Script:** `scripts/seed/dump-production-seed.ts`
+- **Default:** 500 artists, 6 images each (~3000 images)
+- **Output:** `supabase/seed.sql` (~24MB)
+- Only re-seed when you want fresh production data

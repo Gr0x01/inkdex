@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-06
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -69,10 +69,42 @@ npm run generate-embeddings              # CLIP embeddings (Modal)
 
 ### Database
 ```bash
-npm run db:push       # Lint + push migrations (PREFERRED)
+npm run db:push       # Lint + push to production (PREFERRED)
 npm run db:lint       # Lint only (sqlfluff)
 npx supabase db push  # Push without lint
 ```
+
+### Local Supabase Development
+**Use this to safely test search function changes before production.**
+
+```bash
+# One-time setup
+npm run db:local:seed         # Pull ~1000 artists from production
+
+# Daily workflow
+npm run db:local:start        # Start Docker containers
+npm run db:local:reset        # Apply migrations + load seed data
+# Edit supabase/functions/search_functions.sql
+supabase db push --local      # Test changes locally
+# Verify at localhost:3000 (with local env vars)
+npm run db:push               # Deploy to production when ready
+npm run db:local:stop         # Stop when done
+```
+
+**Local URLs:**
+- API: `http://127.0.0.1:54321`
+- Studio: `http://127.0.0.1:54323`
+- Inbucket (emails): `http://127.0.0.1:54324`
+
+**To use local DB with app:**
+1. Copy keys from `supabase start` output
+2. Update `.env.local`:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<from-start-output>
+   SUPABASE_SERVICE_ROLE_KEY=<from-start-output>
+   ```
+3. Run `npm run dev`
 
 ---
 
