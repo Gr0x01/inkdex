@@ -1,28 +1,14 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Select from '@/components/ui/Select'
 import { US_STATES } from '@/lib/constants/states'
 import { isValidCountryCode, isValidRegion, isValidCitySlug } from '@/lib/utils/location'
 
-interface CountryOption {
-  code: string
-  name: string
-  artist_count?: number
-}
-
-interface RegionOption {
-  region: string
-  region_name: string
-  artist_count: number
-}
-
-interface CityOption {
-  city: string
-  region: string
-  country_code: string
-  artist_count: number
+interface LocationFilterProps {
+  /** Search ID to filter locations by matching artists */
+  searchId?: string
 }
 
 interface FlatLocationOption {
@@ -36,23 +22,14 @@ interface FlatLocationOption {
 // US state name lookup
 const US_STATE_NAME_MAP = new Map(US_STATES.map(s => [s.code, s.name]))
 
-// Retry configuration
-const RETRY_CONFIG = {
-  MAX_RETRIES: 2,
-  INITIAL_DELAY_MS: 1000,
-  BACKOFF_MULTIPLIER: 1, // Linear backoff (use 2 for exponential)
-} as const
-
 // Debounce delay for filter updates
 const FILTER_DEBOUNCE_MS = 150
 
 /**
- * Cascading Location Filter
- * Country → Region/State → City
- *
- * URL params: ?country=us&region=tx&city=austin
+ * Location Filter with lazy loading
+ * Fetches location counts filtered by search embedding when dropdown opens
  */
-export default function LocationFilter() {
+export default function LocationFilter({ searchId }: LocationFilterProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -72,204 +49,117 @@ export default function LocationFilter() {
     return val && isValidCitySlug(val) ? val : ''
   })()
 
-  // Dynamic options loaded from API
-  const [countries, setCountries] = useState<CountryOption[]>([])
-  const [regions, setRegions] = useState<RegionOption[]>([])
-  const [cities, setCities] = useState<CityOption[]>([])
-  const [_loadingCountries, setLoadingCountries] = useState(true)
-  const [_loadingRegions, setLoadingRegions] = useState(false)
-  const [_loadingCities, setLoadingCities] = useState(false)
-  const [_countriesError, setCountriesError] = useState(false)
-  const [_regionsError, setRegionsError] = useState(false)
-  const [_citiesError, setCitiesError] = useState(false)
+  // State
   const [flatLocations, setFlatLocations] = useState<FlatLocationOption[]>([])
-  const [loadingFlatLocations, setLoadingFlatLocations] = useState(true)
-
-  // Refs for request cancellation and retry
-  const countriesAbortRef = useRef<AbortController | null>(null)
-  const regionsAbortRef = useRef<AbortController | null>(null)
-  const citiesAbortRef = useRef<AbortController | null>(null)
-  const countriesRetryCount = useRef(0)
-  const regionsRetryCount = useRef(0)
-  const citiesRetryCount = useRef(0)
+  const [loading, setLoading] = useState(false)
+  const [hasFetched, setHasFetched] = useState(false)
   const filterDebounceRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Generic fetch with retry logic
-  const fetchWithRetry = useCallback(<T,>(
-    url: string,
-    abortRef: React.MutableRefObject<AbortController | null>,
-    retryCountRef: React.MutableRefObject<number>,
-    setLoading: (loading: boolean) => void,
-    setError: (error: boolean) => void,
-    setData: (data: T[]) => void,
-    onRetry: () => void
-  ) => {
-    abortRef.current?.abort()
-    abortRef.current = new AbortController()
+  // Fetch filtered locations when dropdown opens
+  const fetchLocations = useCallback(async () => {
+    // Only fetch once per search
+    if (hasFetched || loading) return
 
     setLoading(true)
-    setError(false)
 
-    fetch(url, { signal: abortRef.current.signal })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then(data => {
-        setData(Array.isArray(data) ? data : [])
-        setLoading(false)
-        retryCountRef.current = 0
-      })
-      .catch(err => {
-        if (err.name === 'AbortError') return
+    try {
+      if (searchId) {
+        // Fetch locations filtered by search embedding
+        const res = await fetch(`/api/search/${searchId}/locations`)
+        if (!res.ok) throw new Error('Failed to fetch locations')
 
-        // Auto-retry with backoff
-        if (retryCountRef.current < RETRY_CONFIG.MAX_RETRIES) {
-          retryCountRef.current++
-          const delay = RETRY_CONFIG.INITIAL_DELAY_MS *
-            Math.pow(RETRY_CONFIG.BACKOFF_MULTIPLIER, retryCountRef.current)
-          setTimeout(onRetry, delay)
-          return
+        const data = await res.json()
+        const flattened: FlatLocationOption[] = []
+
+        // Add "United States" if we have US results
+        const hasUSResults = data.regions?.length > 0 || data.cities?.length > 0
+        if (hasUSResults) {
+          const usCount = data.countries?.find((c: { code: string }) => c.code === 'US')?.count
+          flattened.push({
+            value: 'country-US',
+            label: usCount ? `United States (${usCount})` : 'United States',
+            type: 'country',
+            country: 'US'
+          })
         }
 
-        console.error(`Failed to load data from ${url} after retries:`, err)
-        setData([])
-        setLoading(false)
-        setError(true)
-      })
-  }, [])
+        // Add regions/states (sorted by count)
+        const regions = (data.regions || []).sort((a: { count: number }, b: { count: number }) => b.count - a.count)
+        for (const r of regions) {
+          const stateName = US_STATE_NAME_MAP.get(r.code) || r.code
+          flattened.push({
+            value: `region-${r.code}`,
+            label: `${stateName} (${r.count})`,
+            type: 'region',
+            country: r.country,
+            region: r.code
+          })
+        }
 
-  // Fetch countries with retry logic
-  const fetchCountries = useCallback(() => {
-    fetchWithRetry(
-      '/api/locations/countries?with_artists=true',
-      countriesAbortRef,
-      countriesRetryCount,
-      setLoadingCountries,
-      setCountriesError,
-      setCountries,
-      fetchCountries
-    )
-  }, [fetchWithRetry])
+        // Add cities (sorted by count)
+        const cities = (data.cities || []).sort((a: { count: number }, b: { count: number }) => b.count - a.count)
+        for (const c of cities) {
+          const cityName = c.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          flattened.push({
+            value: `city-${c.slug}`,
+            label: `${cityName} (${c.count})`,
+            type: 'city',
+            country: c.country,
+            region: c.region
+          })
+        }
 
-  // Fetch regions with retry logic
-  const fetchRegions = useCallback((country: string) => {
-    fetchWithRetry(
-      `/api/locations/regions?country=${encodeURIComponent(country)}`,
-      regionsAbortRef,
-      regionsRetryCount,
-      setLoadingRegions,
-      setRegionsError,
-      setRegions,
-      () => fetchRegions(country)
-    )
-  }, [fetchWithRetry])
+        setFlatLocations(flattened)
+      } else {
+        // No searchId - fall back to fetching all locations
+        const [regionsRes, citiesRes] = await Promise.all([
+          fetch('/api/locations/regions?country=US').then(r => r.json()),
+          fetch('/api/cities/with-counts?country=US&min_count=1').then(r => r.json())
+        ])
 
-  // Fetch cities with retry logic
-  const fetchCities = useCallback((country: string, region: string | null) => {
-    const regionParam = region ? `&region=${encodeURIComponent(region)}` : ''
-    fetchWithRetry(
-      `/api/cities/with-counts?country=${encodeURIComponent(country)}${regionParam}&min_count=1`,
-      citiesAbortRef,
-      citiesRetryCount,
-      setLoadingCities,
-      setCitiesError,
-      setCities,
-      () => fetchCities(country, region)
-    )
-  }, [fetchWithRetry])
+        const flattened: FlatLocationOption[] = []
 
-  // Fetch all locations and flatten into single searchable list
-  const fetchFlatLocations = useCallback(async () => {
-    setLoadingFlatLocations(true)
-    try {
-      // Fetch all data in parallel
-      const [countriesRes, regionsRes, citiesRes] = await Promise.all([
-        fetch('/api/locations/countries').then(r => r.json()),
-        fetch('/api/locations/regions?country=US').then(r => r.json()),
-        fetch('/api/cities/with-counts?country=US&min_count=1').then(r => r.json())
-      ])
-
-      const flattened: FlatLocationOption[] = []
-
-      // Add countries
-      countriesRes.forEach((c: CountryOption) => {
+        // Add United States
         flattened.push({
-          value: `country-${c.code}`,
-          label: c.name,
+          value: 'country-US',
+          label: 'United States',
           type: 'country',
-          country: c.code
+          country: 'US'
         })
-      })
 
-      // Add regions/states
-      regionsRes.forEach((r: RegionOption) => {
-        const stateName = US_STATE_NAME_MAP.get(r.region) || r.region_name
-        flattened.push({
-          value: `region-${r.region}`,
-          label: `${stateName} (${r.artist_count})`,
-          type: 'region',
-          country: 'US',
-          region: r.region
-        })
-      })
+        // Add regions
+        for (const r of regionsRes) {
+          const stateName = US_STATE_NAME_MAP.get(r.region) || r.region_name
+          flattened.push({
+            value: `region-${r.region}`,
+            label: `${stateName} (${r.artist_count})`,
+            type: 'region',
+            country: 'US',
+            region: r.region
+          })
+        }
 
-      // Add cities
-      citiesRes.forEach((c: CityOption) => {
-        const _stateName = US_STATE_NAME_MAP.get(c.region) || c.region
-        flattened.push({
-          value: `city-${c.city}`,
-          label: `${c.city.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
-          type: 'city',
-          country: c.country_code,
-          region: c.region
-        })
-      })
+        // Add cities
+        for (const c of citiesRes) {
+          flattened.push({
+            value: `city-${c.city}`,
+            label: `${c.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
+            type: 'city',
+            country: c.country_code,
+            region: c.region
+          })
+        }
 
-      setFlatLocations(flattened)
-      setLoadingFlatLocations(false)
+        setFlatLocations(flattened)
+      }
+
+      setHasFetched(true)
     } catch (error) {
-      console.error('Failed to fetch flat locations:', error)
-      setLoadingFlatLocations(false)
+      console.error('Failed to fetch locations:', error)
+    } finally {
+      setLoading(false)
     }
-  }, [])
-
-  // Fetch flat locations on mount
-  useEffect(() => {
-    fetchFlatLocations()
-  }, [fetchFlatLocations])
-
-  // Fetch countries on mount
-  useEffect(() => {
-    fetchCountries()
-    return () => {
-      countriesAbortRef.current?.abort()
-    }
-  }, [fetchCountries])
-
-  // Fetch regions when country changes
-  useEffect(() => {
-    if (!currentCountry) {
-      setRegions([])
-      return
-    }
-    fetchRegions(currentCountry)
-    return () => {
-      regionsAbortRef.current?.abort()
-    }
-  }, [currentCountry, fetchRegions])
-
-  // Fetch cities when country or region changes
-  useEffect(() => {
-    if (!currentCountry) {
-      setCities([])
-      return
-    }
-    fetchCities(currentCountry, currentRegion || null)
-    return () => {
-      citiesAbortRef.current?.abort()
-    }
-  }, [currentCountry, currentRegion, fetchCities])
+  }, [searchId, hasFetched, loading])
 
   // Update URL with debouncing
   const updateFilters = useCallback((updates: {
@@ -277,23 +167,19 @@ export default function LocationFilter() {
     region?: string
     city?: string
   }) => {
-    // Clear existing debounce timer
     if (filterDebounceRef.current) {
       clearTimeout(filterDebounceRef.current)
     }
 
-    // Debounce the navigation
     filterDebounceRef.current = setTimeout(() => {
       const params = new URLSearchParams(searchParams.toString())
 
-      // Apply updates with cascading reset
       if ('country' in updates) {
         if (updates.country) {
           params.set('country', updates.country.toLowerCase())
         } else {
           params.delete('country')
         }
-        // Reset dependent filters
         params.delete('region')
         params.delete('city')
       }
@@ -304,7 +190,6 @@ export default function LocationFilter() {
         } else {
           params.delete('region')
         }
-        // Reset dependent filters
         params.delete('city')
       }
 
@@ -316,85 +201,12 @@ export default function LocationFilter() {
         }
       }
 
-      // Reset to page 1 when filters change
       params.delete('page')
-
-      // Navigate with new filters
       router.push(`/search?${params.toString()}`)
     }, FILTER_DEBOUNCE_MS)
   }, [searchParams, router])
 
-  // Helper: Get country display name
-  const getCountryDisplayName = (code: string): string => {
-    const country = countries.find(c => c.code === code)
-    return country?.name || code
-  }
-
-  // Helper: Get region display name
-  const getRegionDisplayName = (code: string): string => {
-    if (currentCountry === 'US') {
-      return US_STATE_NAME_MAP.get(code) || code
-    }
-    const region = regions.find(r => r.region === code)
-    return region?.region_name || code
-  }
-
-  // Helper: Format city name from slug
-  const formatCityName = (slug: string): string => {
-    return slug.split('-').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ')
-  }
-
-  // Helper: Get screen reader description
-  const _getFilterDescription = (): string => {
-    const parts: string[] = []
-    if (currentCountry) parts.push(getCountryDisplayName(currentCountry))
-    if (currentRegion) parts.push(getRegionDisplayName(currentRegion))
-    if (currentCity) parts.push(formatCityName(currentCity))
-    return parts.length > 0 ? `Filtered by: ${parts.join(', ')}` : 'No location filter applied'
-  }
-
-  // Retry button component
-  const _RetryButton = ({ onClick, label }: { onClick: () => void; label: string }) => (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2 md:px-2.5 py-1.5 border border-red-300 rounded font-body text-xs text-red-600 hover:border-red-400 hover:bg-red-50 focus:outline-none transition-all duration-fast"
-      aria-label={`Retry loading ${label}`}
-    >
-      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-      </svg>
-      Retry
-    </button>
-  )
-
-  // Convert to Select options format
-  const _countryOptions = [
-    { value: '', label: 'All Countries' },
-    ...countries.map(c => ({
-      value: c.code,
-      label: `${c.name}${c.artist_count ? ` (${c.artist_count})` : ''}`
-    }))
-  ]
-
-  const _regionOptions = [
-    { value: '', label: currentCountry === 'US' ? 'All States' : 'All Regions' },
-    ...regions.map(r => ({
-      value: r.region,
-      label: `${getRegionDisplayName(r.region)} (${r.artist_count})`
-    }))
-  ]
-
-  const _cityOptions = [
-    { value: '', label: 'All Cities' },
-    ...cities.map(c => ({
-      value: c.city.toLowerCase().replace(/\s+/g, '-'),
-      label: `${c.city} (${c.artist_count})`
-    }))
-  ]
-
-  // Get current selected value for single smart dropdown
+  // Get current selected value
   const getCurrentValue = (): string | null => {
     if (currentCity) return `city-${currentCity}`
     if (currentRegion) return `region-${currentRegion}`
@@ -402,8 +214,8 @@ export default function LocationFilter() {
     return null
   }
 
-  // Handle smart dropdown selection
-  const handleSmartSelection = (value: string | null) => {
+  // Handle selection
+  const handleSelection = (value: string | null) => {
     if (!value) {
       updateFilters({ country: '', region: '', city: '' })
       return
@@ -425,8 +237,8 @@ export default function LocationFilter() {
     }
   }
 
-  // Convert flat locations to Select options
-  const smartOptions = [
+  // Build options
+  const options = [
     { value: '', label: 'All Locations' },
     ...flatLocations.map(loc => ({
       value: loc.value,
@@ -437,13 +249,14 @@ export default function LocationFilter() {
   return (
     <Select
       value={getCurrentValue()}
-      onChange={handleSmartSelection}
-      options={smartOptions}
-      placeholder={loadingFlatLocations ? 'Loading...' : 'Select location'}
+      onChange={handleSelection}
+      options={options}
+      placeholder={loading ? 'Loading...' : 'Select location'}
       className="w-[140px] md:w-[200px]"
       searchable
       searchPlaceholder="Search locations..."
       size="sm"
+      onOpen={fetchLocations}
     />
   )
 }

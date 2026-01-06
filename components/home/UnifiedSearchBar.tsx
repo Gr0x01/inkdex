@@ -123,7 +123,7 @@ export default function UnifiedSearchBar({
     return () => clearInterval(interval)
   }, [isLoading, imageFile, detectedInstagramUrl])
 
-  const handleImageSelect = (file: File) => {
+  const handleImageSelect = async (file: File) => {
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
     }
@@ -132,6 +132,39 @@ export default function UnifiedSearchBar({
     setImageFile(file)
     setImagePreview(preview)
     setError(null)
+
+    // Auto-submit immediately when image is selected
+    setIsSubmitting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('type', 'image')
+      formData.append('image', file)
+
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Search failed')
+      }
+
+      const data = await response.json()
+
+      if (preview.startsWith('blob:')) {
+        URL.revokeObjectURL(preview)
+      }
+
+      router.push(`/search?id=${data.searchId}`)
+    } catch (err) {
+      console.error('Search error:', err)
+      setError(
+        err instanceof Error ? err.message : 'Failed to submit search. Please try again.'
+      )
+      setIsSubmitting(false)
+    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -267,7 +300,7 @@ export default function UnifiedSearchBar({
           {/* Input Field Container */}
           <div
             className={`
-              relative flex-1 flex items-center gap-4 px-4 bg-white/95
+              relative flex-1 flex items-center gap-4 px-4 bg-white/95 min-h-[44px]
               transition-all duration-150
               ${isLoading ? '' : 'border-2'}
               ${isLoading ? '' : displayError ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}

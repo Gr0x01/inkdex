@@ -61,7 +61,7 @@ BEGIN
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
     ORDER BY pi.embedding <=> query_embedding
-    LIMIT 500
+    LIMIT 2000
   ),
   threshold_images AS (
     SELECT * FROM ranked_images
@@ -214,7 +214,7 @@ BEGIN
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
     ORDER BY pi.embedding <=> query_embedding
-    LIMIT 500
+    LIMIT 2000
   ),
   threshold_images AS (
     SELECT * FROM ranked_images
@@ -541,7 +541,7 @@ BEGIN
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
     ORDER BY pi.embedding <=> query_embedding
-    LIMIT 500
+    LIMIT 2000
   ),
   threshold_images AS (
     SELECT * FROM ranked_images
@@ -693,3 +693,110 @@ $$;
 
 COMMENT ON FUNCTION search_artists_with_style_boost IS
   'Vector search with style and color weighted ranking.';
+
+
+-- ============================================
+-- get_search_location_counts
+-- Get location counts filtered by search embedding
+-- Returns only locations that have matching artists
+-- ============================================
+DROP FUNCTION IF EXISTS get_search_location_counts(vector, float);
+
+CREATE OR REPLACE FUNCTION get_search_location_counts(
+  query_embedding vector(768),
+  match_threshold float DEFAULT 0.15
+)
+RETURNS TABLE (
+  location_type text,
+  country_code text,
+  region text,
+  city text,
+  artist_count bigint
+)
+LANGUAGE plpgsql STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  -- Step 1: Vector search to find matching images (same as main search)
+  WITH ranked_images AS (
+    SELECT
+      pi.artist_id as ri_artist_id,
+      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.hidden, FALSE) = FALSE
+    ORDER BY pi.embedding <=> query_embedding
+    LIMIT 2000
+  ),
+  threshold_images AS (
+    SELECT DISTINCT ri_artist_id
+    FROM ranked_images
+    WHERE ri_similarity_score >= match_threshold
+  ),
+  -- Step 2: Get matching artists with their primary locations
+  matching_artists AS (
+    SELECT DISTINCT
+      a.id as artist_id,
+      al.country_code as al_country_code,
+      al.region as al_region,
+      al.city as al_city
+    FROM artists a
+    INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
+    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    WHERE a.deleted_at IS NULL
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+      AND NOT is_gdpr_country(al.country_code)
+  ),
+  -- Step 3: Aggregate by country
+  country_counts AS (
+    SELECT
+      'country'::text as loc_type,
+      ma.al_country_code,
+      NULL::text as loc_region,
+      NULL::text as loc_city,
+      COUNT(DISTINCT ma.artist_id) as cnt
+    FROM matching_artists ma
+    WHERE ma.al_country_code IS NOT NULL
+    GROUP BY ma.al_country_code
+  ),
+  -- Step 4: Aggregate by region (only US for now)
+  region_counts AS (
+    SELECT
+      'region'::text as loc_type,
+      ma.al_country_code,
+      ma.al_region as loc_region,
+      NULL::text as loc_city,
+      COUNT(DISTINCT ma.artist_id) as cnt
+    FROM matching_artists ma
+    WHERE ma.al_country_code = 'US'
+      AND ma.al_region IS NOT NULL
+    GROUP BY ma.al_country_code, ma.al_region
+  ),
+  -- Step 5: Aggregate by city
+  city_counts AS (
+    SELECT
+      'city'::text as loc_type,
+      ma.al_country_code,
+      ma.al_region as loc_region,
+      ma.al_city as loc_city,
+      COUNT(DISTINCT ma.artist_id) as cnt
+    FROM matching_artists ma
+    WHERE ma.al_city IS NOT NULL
+    GROUP BY ma.al_country_code, ma.al_region, ma.al_city
+  )
+  -- Combine all location types
+  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
+  FROM country_counts
+  UNION ALL
+  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
+  FROM region_counts
+  UNION ALL
+  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
+  FROM city_counts
+  ORDER BY cnt DESC;
+END;
+$$;
+
+COMMENT ON FUNCTION get_search_location_counts IS
+  'Returns location counts filtered by search embedding. Only includes locations with matching artists.';

@@ -27,6 +27,8 @@ interface SelectProps {
   searchPlaceholder?: string;
   size?: 'default' | 'sm';
   disabled?: boolean;
+  /** Called when dropdown opens - use for lazy loading */
+  onOpen?: () => void;
 }
 
 export default function Select({
@@ -39,6 +41,7 @@ export default function Select({
   searchPlaceholder = 'Type to search...',
   size = 'default',
   disabled = false,
+  onOpen,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,7 +220,14 @@ export default function Select({
         ref={buttonRef}
         type="button"
         disabled={disabled}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (disabled) return;
+          const willOpen = !isOpen;
+          setIsOpen(willOpen);
+          if (willOpen && onOpen) {
+            onOpen();
+          }
+        }}
         className={`w-full border-2 text-left font-body transition-all duration-150 flex items-center justify-between gap-2 ${triggerClasses} ${
           disabled
             ? 'bg-[var(--gray-100)] border-[var(--gray-300)] text-[var(--gray-500)] cursor-not-allowed'

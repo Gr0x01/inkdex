@@ -71,7 +71,7 @@ export default function NavbarSearch({
     setDetectedInstagramUrl(detected)
   }, [textQuery])
 
-  const handleImageSelect = (file: File) => {
+  const handleImageSelect = async (file: File) => {
     // Revoke previous blob URL if it exists
     if (imagePreview && imagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview)
@@ -81,6 +81,49 @@ export default function NavbarSearch({
     setImageFile(file)
     setImagePreview(preview)
     setError(null)
+
+    // Auto-submit immediately when image is selected
+    setIsSubmitting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('type', 'image')
+      formData.append('image', file)
+
+      const response = await fetch('/api/search', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Search failed')
+      }
+
+      const data = await response.json()
+
+      if (preview.startsWith('blob:')) {
+        URL.revokeObjectURL(preview)
+      }
+
+      router.push(`/search?id=${data.searchId}`)
+
+      // Reset form state after navigation
+      setIsSubmitting(false)
+      setImageFile(null)
+      setImagePreview('')
+      setTextQuery('')
+      setError(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (err) {
+      console.error('Search error:', err)
+      setError(
+        err instanceof Error ? err.message : 'Failed to submit search. Please try again.'
+      )
+      setIsSubmitting(false)
+    }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

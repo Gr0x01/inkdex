@@ -193,7 +193,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {/* Location Filter - Scrollable on Mobile */}
             <div className="flex-1 overflow-visible">
               <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
-                <LocationFilter />
+                <LocationFilter searchId={id} />
               </ErrorBoundary>
             </div>
           </div>
