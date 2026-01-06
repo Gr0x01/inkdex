@@ -48,7 +48,7 @@ function getFilteredEnv(): Record<string, string | undefined> {
   return filtered;
 }
 
-export type JobType = 'scraping' | 'processing' | 'embeddings' | 'index_rebuild';
+export type JobType = 'scraping' | 'processing' | 'embeddings';
 export type JobScope = 'pending' | 'failed' | 'all' | 'specific';
 
 interface JobConfig {
@@ -71,11 +71,6 @@ const JOB_CONFIGS: Record<JobType, JobConfig> = {
   embeddings: {
     command: 'python3',
     args: ['scripts/embeddings/dual_gpu_embeddings.py'],
-    cwd: process.cwd(),
-  },
-  index_rebuild: {
-    command: 'npx',
-    args: ['tsx', 'scripts/embeddings/create-vector-index.ts'],
     cwd: process.cwd(),
   },
 };

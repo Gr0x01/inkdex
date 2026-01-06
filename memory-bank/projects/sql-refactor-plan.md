@@ -2,14 +2,15 @@
 
 Last-Updated: 2026-01-06
 Maintainer: Claude
+Status: ✅ COMPLETE
 
 ## Summary
 
 Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
-1. Split `search_functions.sql` (1,365 lines) into domain folders
-2. Extract sync/pipeline state from `artists` table (46→34 columns)
-3. Drop deprecated `city/state` columns
-4. Prepare for 1M+ image scale with `search_tier` column
+1. ✅ Split `search_functions.sql` (1,365 lines) into domain folders
+2. ✅ Extract sync/pipeline state from `artists` table (46→34 columns)
+3. ✅ Drop deprecated `city/state` columns
+4. ✅ Prepare for 1M+ image scale with `search_tier` column
 
 ---
 
@@ -27,10 +28,11 @@ Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
 - [x] Run `npm run db:push` and verify
 
 ### Phase 2: Split SQL into Domain Folders
-- [x] Create `search/vector_search.sql` - all vector search functions
-- [x] Create `location/location_counts.sql` - location count functions
-- [x] Create `admin/admin_functions.sql` - admin utilities
-- [x] Run all split files in SQL Editor to verify
+- [x] Create `search/vector_search.sql` - all vector search functions (696 lines)
+- [x] Create `location/location_counts.sql` - location count functions (212 lines)
+- [x] Create `admin/admin_functions.sql` - admin utilities (276 lines)
+- [x] Convert `search_functions.sql` to index/documentation file (112 lines)
+- [x] Split files are now the source of truth for editing
 
 ### Phase 3: Extract Sync State Table
 - [x] Create `artist_sync_state` table with columns:
@@ -78,6 +80,8 @@ Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
   - `components/admin/ArtistDetailView.tsx` - No changes needed (page fetches from artist_locations)
   - `app/api/dashboard/profile/delete/route.ts` - Updated to use artist_pipeline_state
 - [x] Create migration `20260106240000_drop_deprecated_artist_columns.sql`
+- [x] Fix trigger name in migration (`trigger_update_pipeline_on_embedding`)
+- [x] Migration applied successfully (Jan 6, 2026)
 - [x] Regenerate types
 - [x] Verify no broken references (type check passes)
 
@@ -86,8 +90,8 @@ Refactor Inkdex's SQL infrastructure for 100k+ artist scale:
 - [x] Default all existing images to 'active'
 - [x] Document HNSW migration path for 1M+ images
 - [x] Create migration `20260106220002_add_search_tier.sql`
-- [ ] Create vector index on active tier (run in SQL Editor - takes time)
-- [ ] Update search functions to filter by tier (future optimization)
+- [x] Switch to HNSW index (m=16, ef_construction=128) - applied 2026-01-06
+- [ ] Update search functions to filter by tier (future optimization, ~1M+ images)
 
 ---
 

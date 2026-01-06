@@ -82,11 +82,11 @@ while true; do npx tsx scripts/colors/analyze-image-colors.ts --limit 10000 --co
 
 ---
 
-## SQL Refactor for 100k Scale (Jan 6, 2026)
+## SQL Refactor for 100k Scale (Jan 6, 2026) ✅ COMPLETE
 
 **Goal:** Refactor SQL infrastructure to support 100k+ artists and 1-2M images.
 
-**Completed Phases:**
+**All Phases Complete:**
 
 | Phase | Description | Status |
 |-------|-------------|--------|
@@ -95,23 +95,25 @@ while true; do npx tsx scripts/colors/analyze-image-colors.ts --limit 10000 --co
 | 2 | Split SQL into `search/`, `location/`, `admin/` folders | ✅ |
 | 3 | Create `artist_sync_state` table (extracted from artists) | ✅ |
 | 4 | Create `artist_pipeline_state` table (extracted from artists) | ✅ |
-| 5 | Drop deprecated columns | ⏸️ Deferred |
+| 5 | Drop deprecated columns from artists table | ✅ |
 | 6 | Add `search_tier` column for HNSW prep | ✅ |
 
 **New SQL Structure:**
 ```
 supabase/functions/
 ├── _shared/
-│   ├── gdpr.sql              # is_gdpr_country()
-│   └── location_filter.sql   # matches_location_filter()
+│   ├── gdpr.sql              # is_gdpr_country() - 15 lines
+│   └── location_filter.sql   # matches_location_filter() - 27 lines
 ├── search/
-│   └── vector_search.sql     # 5 search functions
+│   └── vector_search.sql     # 5 search functions - 696 lines (SOURCE OF TRUTH)
 ├── location/
-│   └── location_counts.sql   # 4 location count functions
+│   └── location_counts.sql   # 4 location count functions - 212 lines
 ├── admin/
-│   └── admin_functions.sql   # Admin + homepage stats
-└── search_functions.sql      # Original (reference)
+│   └── admin_functions.sql   # Admin + homepage stats - 276 lines
+└── search_functions.sql      # INDEX FILE - documentation only (112 lines)
 ```
+
+**Result:** 1,272 line monolith → 5 domain files + 1 index file
 
 **New Tables:**
 - `artist_sync_state` - Instagram sync state (extracted from artists)
@@ -120,13 +122,7 @@ supabase/functions/
 **Scale Preparation:**
 - `portfolio_images.search_tier` column added ('active'/'archive')
 - At 1M+ images: active tier uses HNSW, archive uses IVFFlat
-- Reduces 46-column artists table to 34 columns (after Phase 5)
-
-**Next Steps:**
-1. Run split SQL files in SQL Editor to verify
-2. Update TypeScript files to use `artist_sync_state` (8 files)
-3. Update Python files to use `artist_pipeline_state` (3 files)
-4. Phase 5: Drop deprecated columns after code updates
+- Reduced 46-column artists table to 34 columns
 
 **Plan Document:** `/memory-bank/projects/sql-refactor-plan.md`
 

@@ -21,10 +21,19 @@ npm run db:push       # For migrations (runs sqlfluff first)
 
 ## Critical Rules
 
-### Search Functions - SINGLE SOURCE OF TRUTH
-**File:** `supabase/functions/search_functions.sql`
+### Search Functions - SPLIT STRUCTURE
+**Index File:** `supabase/functions/search_functions.sql` (documentation only)
 
-**DO NOT create migrations that rewrite search functions.** Edit the file directly, then run `npx supabase db push`.
+**Source of Truth Files:**
+- `_shared/gdpr.sql` - GDPR helper
+- `_shared/location_filter.sql` - Location filter helper
+- `search/vector_search.sql` - 5 search functions
+- `location/location_counts.sql` - 4 location count functions
+- `admin/admin_functions.sql` - Admin functions
+
+**To apply changes:** Run files in Supabase SQL Editor in dependency order (shared → search → location → admin).
+
+**DO NOT create migrations that rewrite search functions.**
 
 ### SQL Naming Convention (Prevents Ambiguous Column Errors)
 CTE columns MUST be prefixed:
@@ -74,6 +83,21 @@ npm run db:lint       # Lint only (sqlfluff)
 npx supabase db push  # Push without lint
 ```
 
+### Manual Vector Index Rebuild
+If the vector index becomes corrupted or needs rebuilding:
+
+```sql
+-- Run in Supabase SQL Editor
+DROP INDEX CONCURRENTLY IF EXISTS idx_portfolio_embeddings;
+
+CREATE INDEX CONCURRENTLY idx_portfolio_embeddings
+ON portfolio_images
+USING hnsw (embedding vector_cosine_ops)
+WITH (m = 16, ef_construction = 128);
+```
+
+Wait 10-20 minutes for completion on large datasets (~100k images).
+
 ### Local Supabase Development
 **Use this to safely test search function changes before production.**
 
@@ -110,12 +134,15 @@ npm run db:local:stop         # Stop when done
 
 ## Pipeline Status Lifecycle
 
-`artists.pipeline_status`:
-- `pending_scrape` → New artist, needs scraping
+`artist_pipeline_state.scrape_status`:
+- `pending` → New artist, needs scraping
 - `scraping` → Currently being scraped
-- `pending_embeddings` → Scraped, awaiting embeddings
-- `complete` → Fully searchable
+- `complete` → Scraped successfully
 - `failed` → Scraping failed
+
+`artist_pipeline_state.embedding_status`:
+- `pending` → Needs embeddings
+- `complete` → Embeddings generated
 
 ---
 

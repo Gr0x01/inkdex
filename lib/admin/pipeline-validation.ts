@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 
-export const JOB_TYPES = ['scraping', 'processing', 'embeddings', 'index_rebuild'] as const;
+export const JOB_TYPES = ['scraping', 'processing', 'embeddings'] as const;
 export const JOB_SCOPES = ['pending', 'failed', 'all', 'specific'] as const;
 
 export type JobType = (typeof JOB_TYPES)[number];

@@ -161,8 +161,8 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
 
             {/* Image counter - Top-right */}
             {allImages.length > 1 && (
-              <div className="absolute top-3 right-3 px-2.5 py-1.5 bg-ink/80 backdrop-blur-sm">
-                <span className="font-mono text-xs font-medium text-paper tracking-[0.1em] uppercase">
+              <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-1.5 py-1 sm:px-2.5 sm:py-1.5 bg-ink/80 backdrop-blur-sm">
+                <span className="font-mono text-[10px] sm:text-xs font-medium text-paper tracking-[0.1em] uppercase">
                   {currentIndex + 1}/{allImages.length}
                 </span>
               </div>
@@ -174,7 +174,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
         {isProOrFeatured && (
           <div className="p-3 space-y-1 min-w-0 lg:hidden">
             <div className="flex items-center gap-1.5 min-w-0">
-              <h3 className="font-heading text-base font-bold text-ink tracking-tight truncate min-w-0">
+              <h3 className="font-heading text-sm font-bold text-ink tracking-tight truncate min-w-0">
                 @{instagramHandle}
               </h3>
               {is_pro && <ProBadge variant="icon-only" size="sm" />}
@@ -298,7 +298,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             <div className="space-y-1 min-w-0">
               {instagramHandle && (
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <h3 className="font-heading text-base font-bold text-ink tracking-tight truncate min-w-0">
+                  <h3 className="font-heading text-sm sm:text-base font-bold text-ink tracking-tight truncate min-w-0">
                     @{instagramHandle}
                   </h3>
                   {is_pro && <ProBadge variant="icon-only" size="sm" />}

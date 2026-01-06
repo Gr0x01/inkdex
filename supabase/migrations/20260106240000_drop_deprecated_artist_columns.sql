@@ -19,6 +19,7 @@ DROP INDEX IF EXISTS idx_artists_city;
 
 -- Drop trigger that references pipeline_status (if still exists)
 DROP TRIGGER IF EXISTS update_pipeline_on_embedding ON portfolio_images;
+DROP TRIGGER IF EXISTS trigger_update_pipeline_on_embedding ON portfolio_images;
 DROP FUNCTION IF EXISTS update_artist_pipeline_on_embedding();
 
 -- Drop sync columns (now in artist_sync_state)

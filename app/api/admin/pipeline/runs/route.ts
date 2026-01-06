@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (jobType && ['scraping', 'processing', 'embeddings', 'index_rebuild'].includes(jobType)) {
+    if (jobType && ['scraping', 'processing', 'embeddings'].includes(jobType)) {
       query = query.eq('job_type', jobType);
     }
 

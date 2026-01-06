@@ -12,7 +12,6 @@ import {
   Loader2,
   Image,
   Cpu,
-  Database,
   Cog,
   X,
   Heart,
@@ -100,7 +99,6 @@ function JobTypeBadge({ jobType }: { jobType: string }) {
     scraping: Image,
     processing: Cog,
     embeddings: Cpu,
-    index_rebuild: Database,
   };
   const Icon = icons[jobType] || Cog;
   return <Icon className="w-2.5 h-2.5 text-gray-400" />;
@@ -111,7 +109,6 @@ function formatJobType(jobType: string): string {
     scraping: 'Scraping',
     processing: 'Processing',
     embeddings: 'Embeddings',
-    index_rebuild: 'Index Rebuild',
   };
   return labels[jobType] || jobType;
 }

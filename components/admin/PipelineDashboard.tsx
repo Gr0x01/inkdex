@@ -45,7 +45,7 @@ interface PipelineRun {
   isStale: boolean;
 }
 
-type JobType = 'scraping' | 'processing' | 'embeddings' | 'index_rebuild';
+type JobType = 'scraping' | 'processing' | 'embeddings';
 
 interface ConfirmState {
   isOpen: boolean;
@@ -66,10 +66,6 @@ const JOB_DESCRIPTIONS: Record<JobType | 'retry', { title: string; message: stri
   embeddings: {
     title: 'Generate Embeddings',
     message: 'This will generate CLIP embeddings for all images without embeddings. This requires GPU resources and may take significant time. Continue?',
-  },
-  index_rebuild: {
-    title: 'Rebuild Vector Index',
-    message: 'This will rebuild the vector search index. Search may be temporarily slower during rebuild. Continue?',
   },
   retry: {
     title: 'Retry Failed Jobs',
@@ -391,7 +387,7 @@ export default function PipelineDashboard() {
                 <Database className="w-3.5 h-3.5 text-gray-500" />
                 <h3 className="font-heading text-[13px] font-semibold text-ink">Searchable</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="grid grid-cols-2 gap-2">
                 <MetricItem label="With Embeddings" value={status.images.withEmbeddings} />
                 <MetricItem
                   label="Coverage"
@@ -402,19 +398,6 @@ export default function PipelineDashboard() {
                   }
                 />
               </div>
-              <button
-                onClick={() => requestTriggerJob('index_rebuild')}
-                disabled={triggering === 'index_rebuild'}
-                className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 text-[11px] font-body
-                         hover:bg-gray-200 disabled:opacity-50 transition-colors"
-              >
-                {triggering === 'index_rebuild' ? (
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                ) : (
-                  <Database className="w-2.5 h-2.5" />
-                )}
-                Rebuild Index
-              </button>
             </div>
           </div>
 
