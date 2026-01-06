@@ -3,7 +3,7 @@ import StyleExplorer from '@/components/home/StyleExplorer'
 import VisualSearchPromo from '@/components/home/VisualSearchPromo'
 import FreeClaimShowcase from '@/components/home/FreeClaimShowcase'
 import ProShowcase from '@/components/home/ProShowcase'
-import { getStyleSeeds } from '@/lib/supabase/queries'
+import { getStyleSeeds, getHomepageStats } from '@/lib/supabase/queries'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 
@@ -11,14 +11,17 @@ import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 export const revalidate = 3600 // 1 hour
 
 export default async function Home() {
-  // Fetch style seeds for the Style Explorer
-  let styleSeeds: Awaited<ReturnType<typeof getStyleSeeds>> = []
-
-  try {
-    styleSeeds = await getStyleSeeds()
-  } catch (error) {
-    console.error('Failed to fetch homepage data:', error)
-  }
+  // Fetch style seeds and stats in parallel
+  const [styleSeeds, stats] = await Promise.all([
+    getStyleSeeds().catch((error) => {
+      console.error('Failed to fetch style seeds:', error)
+      return []
+    }),
+    getHomepageStats().catch((error) => {
+      console.error('Failed to fetch homepage stats:', error)
+      return { artistCount: 15000, imageCount: 65000, cityCount: 100 }
+    }),
+  ])
 
   // Organization schema for homepage
   const organizationSchema = {
@@ -122,21 +125,21 @@ export default async function Home() {
               className="font-mono text-sm uppercase tracking-[0.15em]"
               style={{ color: 'rgba(255, 255, 255, 0.6)' }}
             >
-              15,600+ Artists
+              {stats.artistCount.toLocaleString()}+ Artists
             </span>
             <span className="text-white/20 hidden sm:inline">•</span>
             <span
               className="font-mono text-sm uppercase tracking-[0.15em]"
               style={{ color: 'rgba(255, 255, 255, 0.6)' }}
             >
-              116 Cities
+              {stats.imageCount.toLocaleString()}+ Portfolio Pieces
             </span>
             <span className="text-white/20 hidden sm:inline">•</span>
             <span
               className="font-mono text-sm uppercase tracking-[0.15em]"
               style={{ color: 'rgba(255, 255, 255, 0.6)' }}
             >
-              All 50 States + DC
+              {stats.cityCount} Cities
             </span>
           </div>
         </div>

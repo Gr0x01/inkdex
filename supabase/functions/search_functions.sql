@@ -1042,3 +1042,30 @@ DROP FUNCTION IF EXISTS sync_artist_to_locations();
 -- ============================================
 CREATE INDEX IF NOT EXISTS idx_artist_locations_artist_primary
 ON artist_locations(artist_id) WHERE is_primary = TRUE;
+
+
+-- ============================================
+-- get_homepage_stats
+-- Returns aggregate counts for homepage hero section
+-- Single query, all counts in parallel subqueries
+-- ============================================
+CREATE OR REPLACE FUNCTION get_homepage_stats()
+RETURNS TABLE (
+  artist_count bigint,
+  image_count bigint,
+  city_count bigint
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    (SELECT COUNT(*) FROM artists WHERE deleted_at IS NULL)::bigint AS artist_count,
+    (SELECT COUNT(*) FROM portfolio_images WHERE status = 'active')::bigint AS image_count,
+    (SELECT COUNT(DISTINCT city) FROM artist_locations WHERE country_code = 'US')::bigint AS city_count;
+END;
+$$;
+
+COMMENT ON FUNCTION get_homepage_stats IS
+  'Returns aggregate counts (artists, images, cities) for homepage hero section. Single DB call with parallel subqueries.';

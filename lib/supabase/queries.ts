@@ -1475,3 +1475,38 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
 
   return data || []
 }
+
+/**
+ * Get aggregate stats for homepage hero section
+ * Returns artist count, image count, and city count in a single DB call
+ */
+export async function getHomepageStats(): Promise<{
+  artistCount: number
+  imageCount: number
+  cityCount: number
+}> {
+  // Use service client for build-time static generation (no cookies available)
+  let supabase
+  try {
+    supabase = await createClient()
+  } catch (_error) {
+    // If cookies() fails (build time), use service client
+    const { createServiceClient } = await import('@/lib/supabase/service')
+    supabase = createServiceClient()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC function not in generated types yet
+  const { data, error } = await supabase.rpc('get_homepage_stats' as any).single()
+
+  if (error || !data) {
+    console.error('Error fetching homepage stats:', error)
+    // Fallback to reasonable defaults
+    return { artistCount: 15000, imageCount: 65000, cityCount: 100 }
+  }
+
+  return {
+    artistCount: data.artist_count,
+    imageCount: data.image_count,
+    cityCount: data.city_count,
+  }
+}
