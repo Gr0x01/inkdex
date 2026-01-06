@@ -14,7 +14,7 @@ Status: Launched
 | Language | TypeScript (strict) | Path alias: `@/*` → `./` |
 | Styling | Tailwind CSS v3 | |
 | Database | Supabase PostgreSQL | pgvector for embeddings |
-| Vector Index | IVFFlat | `lists = sqrt(rows)` |
+| Vector Index | HNSW | `m=16, ef_construction=128` |
 | Caching | Redis (Railway) | Rate limiting, analytics |
 | Storage | Supabase Storage | WebP images, CDN |
 | Auth | Supabase Auth | Instagram OAuth |
@@ -75,9 +75,11 @@ npm run storybook     # Component dev (localhost:6006)
 ## Database Schema (Key Tables)
 
 ```sql
-artists              -- 15,626 rows, artist profiles
-portfolio_images     -- 68,440 rows, images with embeddings
-artist_locations     -- Multi-location support
+artists              -- 15,626 rows, artist profiles (34 columns after refactor)
+portfolio_images     -- 92,038 rows, images with embeddings
+artist_locations     -- Multi-location support (source of truth for location)
+artist_sync_state    -- Instagram sync state (extracted from artists)
+artist_pipeline_state -- Scraping pipeline state (extracted from artists)
 artist_subscriptions -- Stripe subscription tracking
 searches             -- Search session storage
 style_seeds          -- 20 style embeddings
@@ -85,10 +87,31 @@ style_seeds          -- 20 style embeddings
 
 **Vector Index:**
 ```sql
--- IVFFlat for 68k images (lists = 261)
+-- HNSW for 92k images (switched from IVFFlat Jan 7, 2026)
 CREATE INDEX idx_portfolio_embeddings ON portfolio_images
-USING ivfflat (embedding vector_cosine_ops) WITH (lists = 261);
+USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 128);
 ```
+
+**Index Stats:** 359 MB, ~400ms search latency
+
+**Rebuilding the Vector Index:**
+HNSW index creation takes 5-15 minutes and exceeds Supabase SQL Editor timeout.
+Must use `psql` with session pooler (port 5432):
+
+```bash
+# Install psql if needed
+brew install libpq && brew link --force libpq
+
+# Connect via session pooler (not transaction pooler on 6543)
+/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres.aerereukzoflvybygolb:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres" << 'EOF'
+SET statement_timeout = '60min';
+DROP INDEX IF EXISTS idx_portfolio_embeddings;
+CREATE INDEX idx_portfolio_embeddings ON portfolio_images
+USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 128);
+EOF
+```
+
+**Note:** Direct connection (port 5432 on db.*.supabase.co) requires IPv6 or IPv4 add-on.
 
 ---
 
@@ -101,9 +124,39 @@ supabase/migrations/
 └── _archive/                     # 86 historical migrations
 ```
 
-**RPC functions:** `supabase/functions/search_functions.sql` (single source of truth)
-
 **New migrations:** Add to `supabase/migrations/` with timestamp prefix (e.g., `20260106_001_feature.sql`)
+
+---
+
+## SQL Functions (Split Structure)
+
+**Index/Documentation:** `supabase/functions/search_functions.sql` (89 lines, DO NOT RUN)
+
+**Source of Truth Files:**
+```
+supabase/functions/
+├── _shared/
+│   ├── gdpr.sql              # is_gdpr_country() - 15 lines
+│   └── location_filter.sql   # matches_location_filter() - 27 lines
+├── search/
+│   └── vector_search.sql     # 5 search functions - 696 lines
+├── location/
+│   └── location_counts.sql   # 4 location functions - 212 lines
+├── admin/
+│   └── admin_functions.sql   # 3 admin functions - 276 lines
+└── search_functions.sql      # INDEX FILE (documentation only)
+```
+
+**To apply changes:**
+1. Edit the domain file (e.g., `search/vector_search.sql`)
+2. Run in Supabase SQL Editor in dependency order:
+   - `_shared/gdpr.sql`
+   - `_shared/location_filter.sql`
+   - `search/vector_search.sql`
+   - `location/location_counts.sql`
+   - `admin/admin_functions.sql`
+
+**DO NOT create migrations that rewrite search functions.**
 
 ---
 

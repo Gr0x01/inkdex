@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-06
 Maintainer: Claude
 Status: Active Reference
 ---
@@ -49,7 +49,11 @@ Database (Supabase PostgreSQL + pgvector)
 └── supabase/
     ├── migrations/         # 30+ migrations
     └── functions/
-        └── search_functions.sql  # Single source of truth
+        ├── _shared/        # Helpers (gdpr.sql, location_filter.sql)
+        ├── search/         # vector_search.sql (SOURCE OF TRUTH)
+        ├── location/       # location_counts.sql
+        ├── admin/          # admin_functions.sql
+        └── search_functions.sql  # INDEX (documentation only)
 ```
 
 ---
@@ -62,9 +66,14 @@ All database access in `lib/supabase/queries.ts`:
 - Complex queries: RPC functions
 
 ### 2. RPC-First for Search
-Vector search uses PostgreSQL RPC functions:
-- Single source of truth: `supabase/functions/search_functions.sql`
-- **NEVER create migrations that rewrite search functions**
+Vector search uses PostgreSQL RPC functions split into domain files:
+- `search/vector_search.sql` - 5 search functions (696 lines)
+- `location/location_counts.sql` - 4 location functions (212 lines)
+- `admin/admin_functions.sql` - 3 admin functions (276 lines)
+- `_shared/` - Helper functions used by multiple domains
+
+**To apply changes:** Run files in Supabase SQL Editor in dependency order (shared → search → location → admin)
+**NEVER create migrations that rewrite search functions**
 
 ### 3. Supabase Client Singleton
 Three clients for different contexts:
@@ -100,7 +109,10 @@ WITH ranked_images AS (
 | Purpose | File |
 |---------|------|
 | All DB queries | `lib/supabase/queries.ts` |
-| Search RPC functions | `supabase/functions/search_functions.sql` |
+| Search functions | `supabase/functions/search/vector_search.sql` |
+| Location functions | `supabase/functions/location/location_counts.sql` |
+| Admin functions | `supabase/functions/admin/admin_functions.sql` |
+| SQL index/docs | `supabase/functions/search_functions.sql` |
 | Type definitions | `types/database.ts` (generated) |
 | Countries/GDPR | `lib/constants/countries.ts` |
 | Redis caching | `lib/redis/cache.ts` |

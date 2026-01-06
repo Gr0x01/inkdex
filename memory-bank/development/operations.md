@@ -84,19 +84,28 @@ npx supabase db push  # Push without lint
 ```
 
 ### Manual Vector Index Rebuild
-If the vector index becomes corrupted or needs rebuilding:
+HNSW index creation takes 5-15 minutes and **exceeds Supabase SQL Editor timeout**.
+Must use `psql` with session pooler (port 5432, not transaction pooler on 6543):
 
-```sql
--- Run in Supabase SQL Editor
-DROP INDEX CONCURRENTLY IF EXISTS idx_portfolio_embeddings;
+```bash
+# Install psql if needed
+brew install libpq && brew link --force libpq
 
-CREATE INDEX CONCURRENTLY idx_portfolio_embeddings
-ON portfolio_images
-USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 128);
+# Connect via session pooler and rebuild
+/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres.aerereukzoflvybygolb:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres" << 'EOF'
+SET statement_timeout = '60min';
+DROP INDEX IF EXISTS idx_portfolio_embeddings;
+CREATE INDEX idx_portfolio_embeddings ON portfolio_images
+USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 128);
+EOF
 ```
 
-Wait 10-20 minutes for completion on large datasets (~100k images).
+**Why not SQL Editor or migrations?**
+- SQL Editor has ~60s upstream timeout
+- Migrations run in transactions (can't use CONCURRENTLY)
+- Session pooler allows long-running statements
+
+**Note:** Direct connection (db.*.supabase.co:5432) requires IPv6 or IPv4 add-on.
 
 ### Local Supabase Development
 **Use this to safely test search function changes before production.**
