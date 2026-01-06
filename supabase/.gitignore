@@ -2,6 +2,9 @@
 .branches
 .temp
 
+# Generated seed file (24MB+, regenerate with npm run db:local:seed)
+seed.sql
+
 # dotenvx
 .env.keys
 .env.local
