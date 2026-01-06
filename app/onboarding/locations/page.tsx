@@ -8,17 +8,18 @@ function LocationsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  const artistId = searchParams.get('artist_id');
 
   const [locations, setLocations] = useState<Location[]>([]);
+  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
   const [locationError, setLocationError] = useState('');
 
-  // Load existing session data
+  // Load existing data
   useEffect(() => {
-    const fetchSessionData = async () => {
+    const fetchData = async () => {
       if (!sessionId) {
         setError('No session ID found');
         setInitialLoading(false);
@@ -26,11 +27,19 @@ function LocationsContent() {
         return;
       }
 
+      if (!artistId) {
+        // Missing artist ID means Step 1 wasn't completed - redirect back
+        setError('Please complete Step 1 first');
+        setInitialLoading(false);
+        setTimeout(() => router.push(`/onboarding/info?session_id=${sessionId}`), 3000);
+        return;
+      }
+
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
 
-        // Get current user to validate session ownership
+        // Get current user to validate ownership
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setError('Please log in to continue');
@@ -38,10 +47,10 @@ function LocationsContent() {
           return;
         }
 
-        // Fetch session data
+        // Validate session belongs to user and matches artist_id
         const { data: session, error: sessionError } = await supabase
           .from('onboarding_sessions')
-          .select('profile_data, profile_updates, user_id')
+          .select('user_id, artist_id')
           .eq('id', sessionId)
           .single();
 
@@ -52,7 +61,6 @@ function LocationsContent() {
           return;
         }
 
-        // Validate session belongs to current user
         if (session.user_id !== user.id) {
           setError('Invalid session. Please start over.');
           setInitialLoading(false);
@@ -60,52 +68,81 @@ function LocationsContent() {
           return;
         }
 
-        // Pre-populate locations if available
-        const updates = session.profile_updates || {};
-        if (updates.locations && Array.isArray(updates.locations)) {
-          setLocations(updates.locations);
-        } else if (updates.city && updates.state) {
-          // Legacy format: convert city/state to location
-          setLocations([{
-            city: updates.city,
-            region: updates.state,
-            countryCode: 'US',
-            locationType: 'city',
-            isPrimary: true,
-          }]);
+        if (session.artist_id !== artistId) {
+          setError('Artist ID mismatch. Please start over.');
+          setInitialLoading(false);
+          setTimeout(() => router.push('/add-artist'), 3000);
+          return;
+        }
+
+        // Fetch artist data to check Pro status
+        const { data: artist, error: artistError } = await supabase
+          .from('artists')
+          .select('is_pro, claimed_by_user_id')
+          .eq('id', artistId)
+          .single();
+
+        if (artistError || !artist) {
+          setError('Artist not found. Please start over.');
+          setInitialLoading(false);
+          setTimeout(() => router.push('/add-artist'), 3000);
+          return;
+        }
+
+        // Validate artist belongs to current user (defense in depth)
+        if (artist.claimed_by_user_id !== user.id) {
+          setError('Invalid artist. Please start over.');
+          setInitialLoading(false);
+          setTimeout(() => router.push('/add-artist'), 3000);
+          return;
+        }
+
+        setIsPro(artist.is_pro || false);
+
+        // Fetch existing locations
+        const { data: existingLocations } = await supabase
+          .from('artist_locations')
+          .select('city, region, country_code, location_type, is_primary')
+          .eq('artist_id', artistId)
+          .order('display_order', { ascending: true });
+
+        if (existingLocations && existingLocations.length > 0) {
+          setLocations(existingLocations.map(loc => ({
+            city: loc.city,
+            region: loc.region,
+            countryCode: loc.country_code,
+            locationType: loc.location_type as 'city' | 'region' | 'country',
+            isPrimary: loc.is_primary,
+          })));
         }
 
         setInitialLoading(false);
       } catch (err: any) {
-        console.error('[Locations] Error fetching session:', err);
-        setError('Failed to load session. Please try again.');
+        console.error('[Locations] Error fetching data:', err);
+        setError('Failed to load data. Please try again.');
         setInitialLoading(false);
       }
     };
 
-    fetchSessionData();
-  }, [sessionId, router]);
+    fetchData();
+  }, [sessionId, artistId, router]);
 
-  const handleContinue = async () => {
-    // Validate location
-    if (locations.length === 0) {
-      setLocationError('Please add at least one location');
-      return;
-    }
-
-    // Validate location has required fields
-    const primaryLocation = locations[0];
-    if (primaryLocation.locationType === 'city' && !primaryLocation.city) {
-      setLocationError('City is required');
-      return;
-    }
-    if (primaryLocation.locationType === 'region' && !primaryLocation.region) {
-      setLocationError('State is required');
-      return;
-    }
-    if (primaryLocation.countryCode !== 'US' && !primaryLocation.city) {
-      setLocationError('City is required for international locations');
-      return;
+  const handleFinish = async () => {
+    // Validate location if provided
+    if (locations.length > 0) {
+      const primaryLocation = locations[0];
+      if (primaryLocation.locationType === 'city' && !primaryLocation.city) {
+        setLocationError('City is required');
+        return;
+      }
+      if (primaryLocation.locationType === 'region' && !primaryLocation.region) {
+        setLocationError('State is required');
+        return;
+      }
+      if (primaryLocation.countryCode !== 'US' && !primaryLocation.city) {
+        setLocationError('City is required for international locations');
+        return;
+      }
     }
 
     setError('');
@@ -113,40 +150,56 @@ function LocationsContent() {
     setLoading(true);
 
     try {
-      // Step 1: Save locations to session
-      const res = await fetch('/api/onboarding/update-session', {
+      // Update artist with locations and delete session
+      const res = await fetch('/api/onboarding/update-artist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          artistId,
           sessionId,
-          step: 'locations',
-          data: {
-            locations,
-          },
+          locations: locations.length > 0 ? locations : undefined,
+          deleteSession: true,
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to save locations');
-
-      // Step 2: Finalize onboarding
-      setLoading(false);
-      setFinalizing(true);
-
-      const finalizeRes = await fetch('/api/onboarding/finalize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId }),
-      });
-
-      const finalizeData = await finalizeRes.json();
-      if (!finalizeRes.ok) throw new Error(finalizeData.error || 'Failed to finalize');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save');
+      }
 
       // Success - redirect to dashboard
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
-      setFinalizing(false);
+    }
+  };
+
+  const handleSkip = async () => {
+    setLoading(true);
+
+    try {
+      // Just delete the session without saving locations
+      const res = await fetch('/api/onboarding/update-artist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId,
+          sessionId,
+          deleteSession: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to complete');
+      }
+
+      // Success - redirect to dashboard
+      router.push('/dashboard');
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
     }
   };
 
@@ -163,19 +216,7 @@ function LocationsContent() {
     );
   }
 
-  if (finalizing) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-paper border-2 border-border-subtle p-6 sm:p-8 lg:p-10 shadow-md text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-2 border-ink border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-5" />
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Creating Your Profile...</h1>
-          <p className="font-body text-sm sm:text-base text-gray-700">Setting up your profile and importing your portfolio</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && locations.length === 0) {
+  if (error && !artistId) {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-paper border-2 border-status-error p-6 text-center">
@@ -192,13 +233,13 @@ function LocationsContent() {
         {/* Header */}
         <div className="mb-5 sm:mb-6">
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Where Do You Work?</h1>
-          <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s)</p>
+          <p className="font-body text-sm sm:text-base text-gray-700">Add your shop location(s) so clients can find you</p>
         </div>
 
         <div className="space-y-5 sm:space-y-6">
           {/* Locations */}
           <LocationPicker
-            isPro={false}
+            isPro={isPro}
             locations={locations}
             onChange={setLocations}
             error={locationError}
@@ -213,23 +254,24 @@ function LocationsContent() {
           {/* Navigation buttons */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
             <button
-              onClick={() => router.push(`/onboarding/info?session_id=${sessionId}`)}
+              onClick={handleSkip}
+              disabled={loading}
               className="btn btn-secondary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
             >
-              ← Back
+              Skip
             </button>
             <button
-              onClick={handleContinue}
+              onClick={handleFinish}
               disabled={loading}
               className="btn btn-primary flex-1 py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : 'Finish →'}
+              {loading ? 'Finishing...' : 'Finish →'}
             </button>
           </div>
 
-          {/* Subtle helper text */}
+          {/* Step indicator */}
           <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-            Step 2 of 2
+            Step 4 of 4 <span className="text-gray-400">(Optional)</span>
           </p>
         </div>
       </div>

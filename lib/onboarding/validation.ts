@@ -134,7 +134,8 @@ const realEmailSchema = z
   );
 
 /**
- * Step 1 (NEW): Info Step - Combined profile data + booking link
+ * Step 1 (NEW): Info Step - Basic profile info only
+ * Location and booking link are collected in optional Steps 2 & 3
  */
 export const infoStepSchema = z.object({
   email: realEmailSchema,
@@ -143,37 +144,13 @@ export const infoStepSchema = z.object({
     .min(2, 'Name must be at least 2 characters')
     .max(100, 'Name cannot exceed 100 characters')
     .trim(),
-  locations: z
-    .array(locationSchema)
-    .min(1, 'At least one location is required')
-    .max(20, 'Maximum 20 locations allowed')
-    .optional(),
-  city: z.string().trim().optional(),
-  state: z.string().trim().optional(),
   bio: z
     .string()
     .max(500, 'Bio cannot exceed 500 characters')
     .trim()
     .optional()
     .or(z.literal('')),
-  bookingLink: z
-    .string()
-    .url('Must be a valid URL')
-    .refine(
-      (url) => !url || /^https?:\/\/.+/.test(url),
-      'URL must start with http:// or https://'
-    )
-    .optional()
-    .or(z.literal('')),
-}).refine(
-  (data) => {
-    // Either locations array OR city/state must be provided
-    const hasLocations = data.locations && data.locations.length > 0;
-    const hasLegacy = data.city && data.city.length > 0;
-    return hasLocations || hasLegacy;
-  },
-  { message: 'At least one location is required' }
-);
+});
 
 export type InfoStepData = z.infer<typeof infoStepSchema>;
 
@@ -205,9 +182,30 @@ export type UpdateSessionRequest = z.infer<typeof updateSessionSchema>;
  */
 export const finalizeOnboardingSchema = z.object({
   sessionId: z.string().uuid('Invalid session ID'),
+  keepSession: z.boolean().optional().default(false),
 });
 
 export type FinalizeOnboardingRequest = z.infer<typeof finalizeOnboardingSchema>;
+
+/**
+ * Update Artist Request (for optional steps after finalize)
+ */
+export const updateArtistSchema = z.object({
+  artistId: z.string().uuid('Invalid artist ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+  bookingUrl: z
+    .string()
+    .url('Must be a valid URL')
+    .optional()
+    .or(z.literal(''))
+    .or(z.literal(null)),
+  autoSyncEnabled: z.boolean().optional(),
+  filterNonTattoo: z.boolean().optional(),
+  locations: z.array(locationSchema).optional(),
+  deleteSession: z.boolean().optional().default(false),
+});
+
+export type UpdateArtistRequest = z.infer<typeof updateArtistSchema>;
 
 /**
  * Instagram Fetch Response (from Step 1)

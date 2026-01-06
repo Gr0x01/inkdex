@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    const { sessionId } = validatedData;
+    const { sessionId, keepSession } = validatedData;
 
     // 4. Fetch session data
     const { data: session, error: sessionError } = await supabase
@@ -105,6 +105,24 @@ export async function POST(request: NextRequest) {
         { error: 'Onboarding session has expired. Please start over.' },
         { status: 410 } // Gone
       );
+    }
+
+    // 6b. Idempotency check: If session already has artist_id, return it (prevents duplicate creation)
+    if (session.artist_id) {
+      const { data: existingArtist } = await supabase
+        .from('artists')
+        .select('id, slug')
+        .eq('id', session.artist_id)
+        .single();
+
+      if (existingArtist) {
+        console.log(`[Onboarding] Idempotent finalize: returning existing artist ${existingArtist.id}`);
+        return NextResponse.json({
+          success: true,
+          artistId: existingArtist.id,
+          artistSlug: existingArtist.slug,
+        });
+      }
     }
 
     // 7. Validate required data is present
@@ -475,14 +493,28 @@ export async function POST(request: NextRequest) {
     }
 
     // 10. Delete onboarding session (AFTER email update to preserve state on failure)
-    const { error: deleteError } = await supabase
-      .from('onboarding_sessions')
-      .delete()
-      .eq('id', sessionId);
+    // Skip deletion if keepSession=true (for multi-step flows where optional steps follow)
+    if (!keepSession) {
+      const { error: deleteError } = await supabase
+        .from('onboarding_sessions')
+        .delete()
+        .eq('id', sessionId);
 
-    if (deleteError) {
-      console.error('[Onboarding] Failed to delete session:', deleteError);
-      // Non-critical error, continue
+      if (deleteError) {
+        console.error('[Onboarding] Failed to delete session:', deleteError);
+        // Non-critical error, continue
+      }
+    } else {
+      // Update session with artist_id for subsequent steps
+      const { error: updateError } = await supabase
+        .from('onboarding_sessions')
+        .update({ artist_id: artistId })
+        .eq('id', sessionId);
+
+      if (updateError) {
+        console.error('[Onboarding] Failed to update session with artist_id:', updateError);
+        // Non-critical error, continue
+      }
     }
 
     console.log(`[Onboarding] Finalized for user ${user.id}: ${isNewArtist ? 'created' : 'updated'} artist ${artistId}`);

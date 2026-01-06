@@ -2,8 +2,6 @@
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Crown } from 'lucide-react';
 
 function InfoContent() {
   const router = useRouter();
@@ -14,10 +12,6 @@ function InfoContent() {
   const [emailError, setEmailError] = useState('');
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
-  const [bookingLink, setBookingLink] = useState('');
-  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
-  const [filterNonTattoo, setFilterNonTattoo] = useState(true);
-  const [isPro, setIsPro] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState('');
@@ -47,7 +41,7 @@ function InfoContent() {
         // Fetch session data
         const { data: session, error: sessionError } = await supabase
           .from('onboarding_sessions')
-          .select('profile_data, profile_updates, user_id, current_step, booking_link, artist_id')
+          .select('profile_data, profile_updates, user_id, artist_id')
           .eq('id', sessionId)
           .single();
 
@@ -73,18 +67,16 @@ function InfoContent() {
         // If claiming an existing artist, fetch their bio and name
         let existingArtistBio = '';
         let existingArtistName = '';
-        let existingBookingUrl = '';
         if (session.artist_id) {
           const { data: claimedArtist } = await supabase
             .from('artists')
-            .select('bio, name, booking_url')
+            .select('bio, name')
             .eq('id', session.artist_id)
             .single();
 
           if (claimedArtist) {
             existingArtistBio = claimedArtist.bio || '';
             existingArtistName = claimedArtist.name || '';
-            existingBookingUrl = claimedArtist.booking_url || '';
           }
         }
 
@@ -93,19 +85,7 @@ function InfoContent() {
         setName(updates.name || existingArtistName || profileData.username || '');
         // Priority: user edits > existing artist bio > Instagram bio
         setBio(updates.bio || existingArtistBio || profileData.bio || '');
-        // Priority: session booking link > existing artist booking url
-        setBookingLink(session.booking_link || existingBookingUrl || '');
-        setAutoSyncEnabled(updates.autoSyncEnabled || false);
-        setFilterNonTattoo(updates.filterNonTattoo !== undefined ? updates.filterNonTattoo : true);
 
-        // Check if user has Pro subscription
-        const { data: artist } = await supabase
-          .from('artists')
-          .select('is_pro')
-          .eq('claimed_by_user_id', user.id)
-          .single();
-
-        setIsPro(artist?.is_pro || false);
         setInitialLoading(false);
       } catch (err: any) {
         console.error('[Info] Error fetching session:', err);
@@ -129,26 +109,20 @@ function InfoContent() {
           body: JSON.stringify({ sessionId }),
         });
         console.log('[Info] Background fetch started');
-        // Don't wait for response - it runs in background
       } catch (err) {
         console.error('[Info] Background fetch failed to start:', err);
-        // Non-critical - user can still complete onboarding
       }
     };
 
     startBackgroundFetch();
   }, [sessionId]);
 
-  const isValidUrl = (url: string) => {
-    return !url || /^https?:\/\/.+/.test(url);
-  };
-
   const isValidEmail = (emailStr: string) => {
     const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
     return emailRegex.test(emailStr);
   };
 
-  const handleContinue = async () => {
+  const handleSubmit = async () => {
     // Clear previous errors
     setEmailError('');
     setError('');
@@ -180,16 +154,11 @@ function InfoContent() {
       return;
     }
 
-    // Validate booking link if provided
-    if (bookingLink && !isValidUrl(bookingLink)) {
-      setError('Please enter a valid URL (starting with http:// or https://)');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const res = await fetch('/api/onboarding/update-session', {
+      // Step 1: Save basic info to session
+      const updateRes = await fetch('/api/onboarding/update-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,15 +168,24 @@ function InfoContent() {
             email: normalizedEmail,
             name,
             bio,
-            bookingLink,
-            autoSyncEnabled: isPro ? autoSyncEnabled : false,
-            filterNonTattoo: isPro ? filterNonTattoo : true,
           },
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to save');
-      router.push(`/onboarding/locations?session_id=${sessionId}`);
+      if (!updateRes.ok) throw new Error('Failed to save info');
+
+      // Step 2: Finalize (create profile, import images) but keep session for optional steps
+      const finalizeRes = await fetch('/api/onboarding/finalize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, keepSession: true }),
+      });
+
+      const finalizeData = await finalizeRes.json();
+      if (!finalizeRes.ok) throw new Error(finalizeData.error || 'Failed to create profile');
+
+      // Redirect to Step 2 (upgrade) with artistId
+      router.push(`/onboarding/upgrade?session_id=${sessionId}&artist_id=${finalizeData.artistId}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -244,7 +222,7 @@ function InfoContent() {
         {/* Header */}
         <div className="mb-5 sm:mb-6">
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl text-ink mb-2">Basic Info</h1>
-          <p className="font-body text-sm sm:text-base text-gray-700">Let's start with the essentials</p>
+          <p className="font-body text-sm sm:text-base text-gray-700">Let&apos;s start with the essentials</p>
         </div>
 
         <div className="space-y-4 sm:space-y-5">
@@ -302,151 +280,24 @@ function InfoContent() {
             <p className="font-mono text-xs text-gray-500 mt-1">{bio.length}/500</p>
           </div>
 
-          {/* Booking Link */}
-          <div>
-            <label className="block font-mono text-xs text-gray-700 mb-2 uppercase tracking-widest">
-              Booking Link <span className="font-body text-gray-500 normal-case tracking-normal">(optional)</span>
-            </label>
-            <input
-              type="url"
-              value={bookingLink}
-              onChange={(e) => setBookingLink(e.target.value)}
-              className="input w-full"
-              placeholder="https://instagram.com/yourhandle"
-            />
-            <p className="font-body text-sm text-gray-500 mt-1.5 leading-relaxed">
-              Instagram DM link, website, Calendly, or any booking method
-            </p>
-          </div>
-
-          {/* Sync Preferences - Pro Only */}
-          <div className="border-t-2 border-border-subtle pt-5">
-            <h3 className="font-mono text-xs text-gray-700 mb-4 uppercase tracking-widest">
-              Portfolio Sync <span className="font-body text-gray-500 normal-case tracking-normal">(Pro)</span>
-            </h3>
-
-            {/* Auto-Sync Toggle */}
-            <div className="mb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="font-mono text-xs text-gray-900 uppercase tracking-widest">
-                      Daily Auto-Sync
-                    </label>
-                    {!isPro && <Crown className="h-3.5 w-3.5 text-purple-600" />}
-                  </div>
-                  <p className="font-body text-sm text-gray-600 leading-relaxed">
-                    Automatically sync your latest Instagram posts daily at 2am UTC
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => isPro && setAutoSyncEnabled(!autoSyncEnabled)}
-                  disabled={!isPro}
-                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
-                    isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
-                  }`}
-                  role="switch"
-                  aria-checked={autoSyncEnabled}
-                  aria-label="Toggle auto-sync"
-                >
-                  <div
-                    className={`absolute top-0 bottom-0 transition-all duration-300 ease-out ${isPro ? 'bg-ink' : 'bg-gray-400'}`}
-                    style={{
-                      width: '50%',
-                      left: autoSyncEnabled ? '50%' : '0'
-                    }}
-                  />
-                  <span
-                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-                      !autoSyncEnabled ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
-                    }`}
-                  >
-                    OFF
-                  </span>
-                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
-                  <span
-                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-                      autoSyncEnabled ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
-                    }`}
-                  >
-                    ON
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Non-Tattoo Toggle */}
-            <div>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <label className="font-mono text-xs text-gray-900 uppercase tracking-widest">
-                      Filter Non-Tattoo Content
-                    </label>
-                    {!isPro && <Crown className="h-3.5 w-3.5 text-purple-600" />}
-                  </div>
-                  <p className="font-body text-sm text-gray-600 leading-relaxed">
-                    Filter out lifestyle photos and non-tattoo posts
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => isPro && setFilterNonTattoo(!filterNonTattoo)}
-                  disabled={!isPro}
-                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
-                    isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
-                  }`}
-                  role="switch"
-                  aria-checked={filterNonTattoo}
-                  aria-label="Toggle filter non-tattoo content"
-                >
-                  <div
-                    className={`absolute top-0 bottom-0 transition-all duration-300 ease-out ${isPro ? 'bg-ink' : 'bg-gray-400'}`}
-                    style={{
-                      width: '50%',
-                      left: filterNonTattoo ? '50%' : '0'
-                    }}
-                  />
-                  <span
-                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-                      !filterNonTattoo ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
-                    }`}
-                  >
-                    OFF
-                  </span>
-                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
-                  <span
-                    className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
-                      filterNonTattoo ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
-                    }`}
-                  >
-                    ON
-                  </span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-
           {error && (
             <div className="bg-status-error/10 border-2 border-status-error p-3">
               <p className="font-body text-status-error text-sm">{error}</p>
             </div>
           )}
 
-          {/* Primary CTA */}
+          {/* Submit Button */}
           <button
-            onClick={handleContinue}
+            onClick={handleSubmit}
             disabled={loading}
             className="btn btn-primary w-full py-2.5 sm:py-3 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Continue →'}
+            {loading ? 'Creating Profile...' : 'Create Profile →'}
           </button>
 
-          {/* Subtle helper text */}
+          {/* Step indicator */}
           <p className="font-mono text-[10px] sm:text-xs text-gray-500 text-center uppercase tracking-wider pt-1">
-            Step 1 of 2
+            Step 1 of 4
           </p>
         </div>
       </div>
