@@ -1,0 +1,2 @@
+# Migration files are deployed code - skip linting
+supabase/migrations/
