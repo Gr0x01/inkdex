@@ -19,7 +19,7 @@ export default async function Home() {
     }),
     getHomepageStats().catch((error) => {
       console.error('Failed to fetch homepage stats:', error)
-      return { artistCount: 15000, imageCount: 65000, cityCount: 100 }
+      return { artistCount: 15000, imageCount: 65000, cityCount: 100, countryCount: 1 }
     }),
   ])
 
@@ -141,6 +141,17 @@ export default async function Home() {
             >
               {stats.cityCount} Cities
             </span>
+            {stats.countryCount > 1 && (
+              <>
+                <span className="text-white/20 hidden sm:inline">•</span>
+                <span
+                  className="font-mono text-sm uppercase tracking-[0.15em]"
+                  style={{ color: 'rgba(255, 255, 255, 0.6)' }}
+                >
+                  {stats.countryCount} Countries
+                </span>
+              </>
+            )}
           </div>
         </div>
 
