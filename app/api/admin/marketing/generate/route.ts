@@ -2,12 +2,15 @@
  * Marketing Post Generation API
  *
  * POST /api/admin/marketing/generate - Generate post content for outreach records
+ *
+ * Generates AI captions + hashtags and syncs to Airtable
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminUser, createAdminClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import OpenAI from 'openai';
+import { findRecordByHandle, updateRecords, isAirtableConfigured } from '@/lib/airtable/client';
 
 // POST body schema
 const generateSchema = z.object({
@@ -51,6 +54,12 @@ interface ArtistData {
   portfolio_images: ArtistDataRaw['portfolio_images'];
 }
 
+interface GeneratedContent {
+  caption: string;
+  hashtags: string;
+  combined: string;
+}
+
 // Extract top styles from image style tags
 function getTopStyles(images: ArtistData['portfolio_images']): string[] {
   const styleCounts = new Map<string, number>();
@@ -69,13 +78,20 @@ function getTopStyles(images: ArtistData['portfolio_images']): string[] {
     .map(([style]) => style);
 }
 
-// Generate caption using GPT-4.1
-async function generateCaption(artist: ArtistData): Promise<string> {
+// Generate caption and hashtags using GPT-4.1
+async function generateContent(artist: ArtistData): Promise<GeneratedContent> {
   const apiKey = process.env.OPENAI_API_KEY;
+
+  // Fallback if no API key
   if (!apiKey) {
-    // Fallback to simple template if no API key
     const location = artist.state ? `${artist.city}, ${artist.state}` : artist.city || '';
-    return `Featured work from @${artist.instagram_handle}${location ? ` (${location})` : ''}.`;
+    const fallbackCaption = `Featured work from @${artist.instagram_handle}${location ? ` based in ${location}` : ''}. Check out their incredible tattoo artistry.`;
+    const fallbackHashtags = '#tattoo #tattooartist #inked #tattoos #tattooideas';
+    return {
+      caption: fallbackCaption,
+      hashtags: fallbackHashtags,
+      combined: `${fallbackCaption}\n\n${fallbackHashtags}`,
+    };
   }
 
   const openai = new OpenAI({ apiKey });
@@ -86,43 +102,80 @@ async function generateCaption(artist: ArtistData): Promise<string> {
 
   const styles = getTopStyles(artist.portfolio_images);
 
-  console.log(`[Marketing Generate] Artist: @${artist.instagram_handle}`);
-  console.log(`[Marketing Generate] Styles found: ${styles.length ? styles.join(', ') : 'NONE'}`);
-  console.log(`[Marketing Generate] Bio: ${artist.bio?.slice(0, 100) || 'NONE'}`);
+  // Create city hashtag (lowercase, no spaces)
+  const cityTag = artist.city
+    ? `#${artist.city.toLowerCase().replace(/\s+/g, '')}tattoo`
+    : '';
 
-  const prompt = `Write a short Instagram caption (2-3 sentences max) for a tattoo art feature post, followed by relevant hashtags.
+  console.log(`[Marketing Generate] Artist: @${artist.instagram_handle}`);
+  console.log(`[Marketing Generate] Styles: ${styles.length ? styles.join(', ') : 'NONE'}`);
+  console.log(`[Marketing Generate] Location: ${location || 'Unknown'}`);
+
+  const prompt = `Generate Instagram content for a tattoo art feature post.
 
 Artist context:
 - Handle: @${artist.instagram_handle}
 - Location: ${location || 'Unknown'}
-- Styles: ${styles.join(', ') || 'various'}
+- Styles: ${styles.join(', ') || 'various tattoo styles'}
 - Bio excerpt: ${artist.bio?.slice(0, 200) || 'N/A'}
 
-Requirements:
-- Showcase their work as a curator would
-- Include @${artist.instagram_handle} naturally to credit their work
-- Don't mention joining Inkdex or any platform
-- Keep caption concise (2-3 sentences)
-- End with 5-8 relevant hashtags (tattoo-related, location, style)
+Generate TWO things:
 
-Format:
-[Caption text]
+1. CAPTION: Write 2-3 casual, engaging sentences showcasing their work as a curator discovering talent.
+   - Credit @${artist.instagram_handle} naturally in the text
+   - Reference their location if known
+   - Don't mention Inkdex or any platform
+   - Casual tone like you're sharing a cool find with friends
 
-#hashtag1 #hashtag2 #hashtag3...`;
+2. HASHTAGS: Generate 10-12 hashtags with this strategic mix:
+   - 3-4 high-volume: #tattoo #tattooartist #inked #tattoos #tattooideas
+   - 2-3 style-specific based on "${styles.join(', ') || 'tattoo'}": (e.g., blackwork → #blackworktattoo #blackwork, traditional → #traditionaltattoo #americantraditional)
+   - 1-2 location tags: ${cityTag || '#tattooart'} or state-based
+   - 2-3 niche/discovery: #tattooinspo #inkspiration #tattoolovers #tattoocommunity
+
+Format your response EXACTLY like this (including the labels):
+CAPTION: [Your caption here - no line breaks within caption]
+HASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8 #tag9 #tag10`;
 
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4.1',
       messages: [{ role: 'user', content: prompt }],
-      max_tokens: 150,
+      max_tokens: 300,
       temperature: 0.8,
     });
 
-    return response.choices[0]?.message?.content?.trim() || `Featured work from @${artist.instagram_handle}.`;
+    const content = response.choices[0]?.message?.content || '';
+
+    // Parse structured response
+    // Use [\s\S] instead of . with s flag for cross-line matching
+    const captionMatch = content.match(/CAPTION:\s*([\s\S]+?)(?=HASHTAGS:|$)/);
+    const hashtagsMatch = content.match(/HASHTAGS:\s*([\s\S]+)$/);
+
+    const caption = captionMatch?.[1]?.trim() || `Featured work from @${artist.instagram_handle}. Their style is absolutely stunning.`;
+    const hashtags = hashtagsMatch?.[1]?.trim() || '#tattoo #tattooartist #inked #tattoos #tattooideas';
+
+    // Clean up hashtags - ensure they're space-separated and start with #
+    const cleanHashtags = hashtags
+      .split(/\s+/)
+      .filter(t => t.startsWith('#'))
+      .join(' ');
+
+    return {
+      caption,
+      hashtags: cleanHashtags || '#tattoo #tattooartist #inked #tattoos',
+      combined: `${caption}\n\n${cleanHashtags || hashtags}`,
+    };
   } catch (error) {
     console.error('[Marketing Generate] OpenAI error:', error);
     // Fallback on error
-    return `Featured work from @${artist.instagram_handle}.`;
+    const fallbackCaption = `Featured work from @${artist.instagram_handle}. Check out their incredible tattoo artistry.`;
+    const fallbackHashtags = '#tattoo #tattooartist #inked #tattoos #tattooideas';
+    return {
+      caption: fallbackCaption,
+      hashtags: fallbackHashtags,
+      combined: `${fallbackCaption}\n\n${fallbackHashtags}`,
+    };
   }
 }
 
@@ -141,6 +194,42 @@ function selectBestImages(artist: ArtistData, count: number = 4): string[] {
       return path ? `${supabaseUrl}/storage/v1/object/public/portfolio-images/${path}` : null;
     })
     .filter((url): url is string => url !== null);
+}
+
+// Sync generated content to Airtable
+async function syncToAirtable(
+  handle: string,
+  caption: string,
+  hashtags: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!isAirtableConfigured()) {
+    return { success: false, error: 'Airtable not configured' };
+  }
+
+  try {
+    const existingRecord = await findRecordByHandle(handle);
+    if (!existingRecord) {
+      return { success: false, error: 'Record not found in Airtable' };
+    }
+
+    await updateRecords([
+      {
+        id: existingRecord.id,
+        fields: {
+          caption,
+          hashtags,
+        },
+      },
+    ]);
+
+    return { success: true };
+  } catch (error) {
+    console.error(`[Marketing Generate] Airtable sync error for @${handle}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Airtable sync failed'
+    };
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -205,7 +294,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate posts for each record
-    const results: Array<{ id: string; success: boolean; error?: string }> = [];
+    const results: Array<{
+      id: string;
+      success: boolean;
+      error?: string;
+      airtableSynced?: boolean;
+    }> = [];
 
     for (const record of outreachRecords) {
       const artistRaw = record.artists as unknown as ArtistDataRaw;
@@ -220,14 +314,14 @@ export async function POST(request: NextRequest) {
         ? artistRaw.artist_locations.find(l => l.is_primary) || artistRaw.artist_locations[0]
         : null;
 
-      // Transform to ArtistData format expected by generateCaption
+      // Transform to ArtistData format expected by generateContent
       const artist: ArtistData = {
         ...artistRaw,
         city: primaryLoc?.city || null,
         state: primaryLoc?.region || null,
       };
 
-      const caption = await generateCaption(artist);
+      const generated = await generateContent(artist);
       const imageUrls = selectBestImages(artist, 4);
 
       if (imageUrls.length < 1) {
@@ -235,12 +329,12 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Update the record
+      // Update the DB record
       const { error: updateError } = await adminClient
         .from('marketing_outreach')
         .update({
           status: 'generated',
-          post_text: caption,
+          post_text: generated.combined,
           post_images: imageUrls,
           generated_at: new Date().toISOString(),
         })
@@ -248,16 +342,34 @@ export async function POST(request: NextRequest) {
 
       if (updateError) {
         results.push({ id: record.id, success: false, error: updateError.message });
-      } else {
-        results.push({ id: record.id, success: true });
+        continue;
+      }
+
+      // Sync to Airtable
+      const airtableResult = await syncToAirtable(
+        artist.instagram_handle,
+        generated.caption,
+        generated.hashtags
+      );
+
+      results.push({
+        id: record.id,
+        success: true,
+        airtableSynced: airtableResult.success,
+      });
+
+      if (!airtableResult.success) {
+        console.warn(`[Marketing Generate] Airtable sync failed for @${artist.instagram_handle}: ${airtableResult.error}`);
       }
     }
 
     const successCount = results.filter((r) => r.success).length;
+    const airtableSyncedCount = results.filter((r) => r.airtableSynced).length;
 
     return NextResponse.json({
       success: true,
       generated: successCount,
+      airtableSynced: airtableSyncedCount,
       failed: results.length - successCount,
       results,
     });

@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
       const { minFollowers, maxFollowers, city, limit } = criteria
 
       // Build query for artists not already in marketing_outreach
+      // Fetch a larger pool to enable true random selection across the range
       const query = supabase
         .from('artists')
         .select(
@@ -124,8 +125,7 @@ export async function POST(request: NextRequest) {
         .is('deleted_at', null)
         .gte('follower_count', minFollowers)
         .lte('follower_count', maxFollowers)
-        .order('follower_count', { ascending: false })
-        .limit(limit * 2) // Fetch extra to account for filtering
+        .limit(500) // Fetch large pool for random selection
 
       const { data: artistData, error } = await query
 

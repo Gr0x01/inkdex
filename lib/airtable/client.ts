@@ -46,6 +46,8 @@ export interface AirtableOutreachFields {
   dm_date?: string
   response_notes?: string
   priority?: string
+  caption?: string    // AI-generated Instagram caption
+  hashtags?: string   // AI-generated hashtags (space-separated)
 }
 
 export interface AirtableOutreachRecord {
@@ -255,7 +257,7 @@ export function formatArtistForAirtable(
   appUrl: string = 'https://inkdex.io'
 ): AirtableOutreachFields {
   // Convert storage paths to full Supabase URLs
-  const storageBaseUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/portfolio`
+  const storageBaseUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/portfolio-images`
 
   // Get top 4 portfolio images as full URLs
   const images = artist.portfolio_images
@@ -269,7 +271,6 @@ export function formatArtistForAirtable(
     city: artist.city || undefined,
     state: artist.state || undefined,
     follower_count: artist.follower_count || undefined,
-    bio: artist.bio?.slice(0, 500) || undefined, // Truncate bio
     profile_url: `${appUrl}/artist/${artist.slug}`,
     image_1: images[0],
     image_2: images[1],
