@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, FileText, Users, MessageSquare, Send, Download } from 'lucide-react';
+import { RefreshCw, Upload, Download, ExternalLink } from 'lucide-react';
 import StatsCard from './StatsCard';
-import OutreachTable from './OutreachTable';
 import OutreachFunnel from './OutreachFunnel';
 import AdminSelect from './AdminSelect';
 
@@ -13,8 +12,10 @@ interface OutreachStats {
     generated: number;
     posted: number;
     dm_sent: number;
+    responded: number;
     claimed: number;
     converted: number;
+    skipped: number;
   };
   totals: {
     total: number;
@@ -27,74 +28,62 @@ interface OutreachStats {
   };
 }
 
-interface OutreachRecord {
-  id: string;
-  artist_id: string;
-  campaign_name: string;
-  status: 'pending' | 'generated' | 'posted' | 'dm_sent' | 'claimed' | 'converted';
-  post_text: string | null;
-  post_images: string[] | null;
-  generated_at: string | null;
-  posted_at: string | null;
-  dm_sent_at: string | null;
-  claimed_at: string | null;
-  created_at: string;
-  artists: {
-    id: string;
-    name: string;
-    instagram_handle: string;
-    city: string | null;
-    state: string | null;
-    follower_count: number | null;
-    slug: string;
+interface AirtableStatus {
+  configured: boolean;
+  baseId: string | null;
+  lastSync: {
+    timestamp: string;
   } | null;
 }
 
+// Follower range presets
+const FOLLOWER_RANGES = [
+  { value: '5k-10k', label: '5K–10K', min: 5000, max: 10000 },
+  { value: '10k-25k', label: '10K–25K', min: 10000, max: 25000 },
+  { value: '25k-50k', label: '25K–50K', min: 25000, max: 50000 },
+  { value: '50k-100k', label: '50K–100K', min: 50000, max: 100000 },
+];
 
-type TabType = 'all' | 'pending' | 'generated' | 'posted' | 'dm_sent';
+const LIMIT_OPTIONS = [
+  { value: '5', label: '5' },
+  { value: '10', label: '10' },
+  { value: '20', label: '20' },
+];
 
 export default function MarketingDashboard() {
   const [stats, setStats] = useState<OutreachStats | null>(null);
-  const [records, setRecords] = useState<OutreachRecord[]>([]);
+  const [airtableStatus, setAirtableStatus] = useState<AirtableStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('all');
-  const [actionLoading, setActionLoading] = useState(false);
-  const [followerRange, setFollowerRange] = useState<string>('10k-50k');
 
-  // Follower range presets
-  const followerRanges: { value: string; label: string; min: number; max: number }[] = [
-    { value: '5k-10k', label: '5K–10K', min: 5000, max: 10000 },
-    { value: '10k-25k', label: '10K–25K', min: 10000, max: 25000 },
-    { value: '10k-50k', label: '10K–50K', min: 10000, max: 50000 },
-    { value: '25k-50k', label: '25K–50K', min: 25000, max: 50000 },
-    { value: '50k-100k', label: '50K–100K', min: 50000, max: 100000 },
-    { value: '100k+', label: '100K+', min: 100000, max: 10000000 },
-  ];
+  // Action states
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pullLoading, setPullLoading] = useState(false);
+  const [followerRange, setFollowerRange] = useState('5k-10k');
+  const [limit, setLimit] = useState('10');
+  const [lastAction, setLastAction] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [statsRes, recordsRes] = await Promise.all([
+      const [statsRes, statusRes] = await Promise.all([
         fetch('/api/admin/marketing/stats'),
-        fetch('/api/admin/marketing/outreach?limit=100'),
+        fetch('/api/admin/airtable/status'),
       ]);
 
-      if (!statsRes.ok || !recordsRes.ok) {
+      if (!statsRes.ok) {
         throw new Error('Failed to fetch marketing data');
       }
 
-      const [statsData, recordsData] = await Promise.all([
+      const [statsData, statusData] = await Promise.all([
         statsRes.json(),
-        recordsRes.json(),
+        statusRes.ok ? statusRes.json() : null,
       ]);
 
       setStats(statsData);
-      setRecords(recordsData.records || []);
-      setLastRefresh(new Date());
+      setAirtableStatus(statusData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -106,137 +95,68 @@ export default function MarketingDashboard() {
     fetchData();
   }, [fetchData]);
 
-  // Filter records by tab
-  const filteredRecords = records.filter((record) => {
-    if (activeTab === 'all') return true;
-    return record.status === activeTab;
-  });
+  const handlePush = async () => {
+    const range = FOLLOWER_RANGES.find((r) => r.value === followerRange);
+    if (!range) return;
 
-  // Select new candidates
-  const selectCandidates = async (limit: number = 5) => {
-    setActionLoading(true);
-    const range = followerRanges.find((r) => r.value === followerRange) || followerRanges[2];
+    setPushLoading(true);
+    setLastAction(null);
+
     try {
-      const res = await fetch('/api/admin/marketing/outreach', {
+      const res = await fetch('/api/admin/airtable/push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          limit,
-          minFollowers: range.min,
-          maxFollowers: range.max,
+          criteria: {
+            minFollowers: range.min,
+            maxFollowers: range.max,
+            limit: parseInt(limit),
+          },
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to select candidates');
-      }
-
       const data = await res.json();
-      alert(`Selected ${data.inserted} new candidates`);
-      fetchData();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error selecting candidates');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Generate posts for selected records
-  // Generate post for a single artist
-  const generatePost = async (id: string) => {
-    const res = await fetch('/api/admin/marketing/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ outreachIds: [id] }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to generate post');
-    }
-
-    await fetchData();
-  };
-
-  // Update status
-  const updateStatus = async (id: string, status: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/marketing/outreach/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to update status');
-      }
-
-      fetchData();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error updating status');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Delete outreach record
-  const deleteRecord = async (id: string) => {
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/admin/marketing/outreach/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to delete record');
-      }
-
-      // Optimistically update UI
-      setRecords(prev => prev.filter(r => r.id !== id));
-
-      // Refresh stats
+      setLastAction(`Pushed ${data.pushed || 0} artists`);
       await fetchData();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Error deleting record');
+      setLastAction(`Error: ${err instanceof Error ? err.message : 'Push failed'}`);
     } finally {
-      setActionLoading(false);
+      setPushLoading(false);
     }
   };
 
-  // Export generated posts as Buffer CSV
-  const exportBufferCSV = () => {
-    const generatedRecords = records.filter(
-      (r) => r.status === 'generated' && r.post_text && r.post_images?.length
-    );
+  const handlePull = async () => {
+    setPullLoading(true);
+    setLastAction(null);
 
-    if (generatedRecords.length === 0) {
-      alert('No generated posts to export');
-      return;
+    try {
+      const res = await fetch('/api/admin/airtable/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      const data = await res.json();
+      setLastAction(`Synced ${data.processed || 0} records`);
+      await fetchData();
+    } catch (err) {
+      setLastAction(`Error: ${err instanceof Error ? err.message : 'Sync failed'}`);
+    } finally {
+      setPullLoading(false);
     }
+  };
 
-    // CSV header
-    const rows = ['"Text","Image URL","Tags","Posting Time"'];
+  const formatRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
 
-    // One row per artist, using their best image (first one)
-    for (const record of generatedRecords) {
-      const text = (record.post_text || '').replace(/"/g, '""');
-      const bestImage = record.post_images?.[0] || '';
-      rows.push(`"${text}","${bestImage}",,`);
-    }
-
-    // Download CSV
-    const csv = rows.join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `buffer-posts-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffMs / 86400000)}d ago`;
   };
 
   if (loading && !stats) {
@@ -244,7 +164,7 @@ export default function MarketingDashboard() {
       <div className="flex items-center justify-center h-64">
         <div className="flex items-center gap-2 text-gray-500">
           <RefreshCw className="w-4 h-4 animate-spin" />
-          <span className="text-sm font-body">Loading marketing data...</span>
+          <span className="text-sm font-body">Loading...</span>
         </div>
       </div>
     );
@@ -258,14 +178,6 @@ export default function MarketingDashboard() {
     );
   }
 
-  const tabs: { id: TabType; label: string; icon: React.ElementType; count: number }[] = [
-    { id: 'all', label: 'All', icon: Users, count: records.length },
-    { id: 'pending', label: 'Pending', icon: FileText, count: stats?.funnel.pending || 0 },
-    { id: 'generated', label: 'Generated', icon: FileText, count: stats?.funnel.generated || 0 },
-    { id: 'posted', label: 'Posted', icon: Send, count: stats?.funnel.posted || 0 },
-    { id: 'dm_sent', label: 'DM Sent', icon: MessageSquare, count: stats?.funnel.dm_sent || 0 },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -274,132 +186,138 @@ export default function MarketingDashboard() {
           <h1 className="font-heading text-xl font-bold text-ink">
             Marketing Outreach
           </h1>
-          <p className="text-sm text-gray-500 font-body mt-0.5">
-            Artist outreach campaigns
-          </p>
         </div>
-        <div className="flex items-center gap-3">
-          {lastRefresh && (
-            <span className="text-xs text-gray-500 font-mono">
-              {lastRefresh.toLocaleTimeString()}
-            </span>
-          )}
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-paper border-2 border-ink/10
-                     text-ink text-sm font-body hover:border-ink/30 transition-colors
-                     disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-ink text-sm font-body
+                   hover:bg-gray-100 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
       {stats && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatsCard
-              label="Total Outreach"
-              value={stats.totals.total}
-              compact
-            />
-            <StatsCard
-              label="Claim Rate"
-              value={`${stats.totals.claimRate.toFixed(1)}%`}
-              subValue="of DM'd artists"
-              variant={stats.totals.claimRate > 20 ? 'success' : 'default'}
-              compact
-            />
-            <StatsCard
-              label="Claims (7d)"
-              value={stats.recent.claimedLast7Days}
-              variant={stats.recent.claimedLast7Days > 0 ? 'success' : 'default'}
-              compact
-            />
-            <StatsCard
-              label="Posts (7d)"
-              value={stats.recent.postedLast7Days}
-              compact
-            />
-          </div>
+          {/* Stats Section */}
+          <div className="space-y-4">
+            {/* Funnel */}
+            <OutreachFunnel funnel={stats.funnel} />
 
-          {/* Funnel */}
-          <OutreachFunnel funnel={stats.funnel} />
-
-          {/* Actions */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <AdminSelect
-              value={followerRange}
-              onChange={setFollowerRange}
-              options={followerRanges.map((r) => ({ value: r.value, label: r.label }))}
-              className="w-32"
-            />
-
-            <button
-              onClick={() => selectCandidates(5)}
-              disabled={actionLoading}
-              className="h-9 flex items-center gap-1.5 px-3 bg-ink text-paper text-sm font-body
-                       hover:bg-gray-800 transition-colors disabled:opacity-50"
-            >
-              <Users className="w-3.5 h-3.5" />
-              Select 5
-            </button>
-
-            <button
-              onClick={exportBufferCSV}
-              disabled={!records.some((r) => r.status === 'generated')}
-              className="h-9 flex items-center gap-1.5 px-3 bg-paper border-2 border-ink/20
-                       text-ink text-sm font-body hover:border-ink/40 transition-colors disabled:opacity-50"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Export CSV for Buffer
-            </button>
-          </div>
-
-          {/* Tabs + Table */}
-          <div className="bg-paper border border-ink/10">
-            {/* Tabs */}
-            <div className="border-b border-ink/10 px-2">
-              <nav className="flex gap-3">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`
-                        flex items-center gap-1 py-2 border-b text-[13px] font-body transition-colors -mb-px
-                        ${
-                          isActive
-                            ? 'border-ink text-ink'
-                            : 'border-transparent text-gray-500 hover:text-gray-700'
-                        }
-                      `}
-                    >
-                      <Icon className="w-2.5 h-2.5" />
-                      {tab.label}
-                      <span className="font-mono text-[11px] text-gray-400">
-                        {tab.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </nav>
+            {/* Key Metrics */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatsCard
+                label="Total Outreach"
+                value={stats.totals.total}
+                compact
+              />
+              <StatsCard
+                label="Claim Rate"
+                value={`${stats.totals.claimRate.toFixed(1)}%`}
+                subValue="of DM'd artists"
+                variant={stats.totals.claimRate > 20 ? 'success' : 'default'}
+                compact
+              />
+              <StatsCard
+                label="Claims (7d)"
+                value={stats.recent.claimedLast7Days}
+                variant={stats.recent.claimedLast7Days > 0 ? 'success' : 'default'}
+                compact
+              />
+              <StatsCard
+                label="Posts (7d)"
+                value={stats.recent.postedLast7Days}
+                compact
+              />
             </div>
+          </div>
 
-            {/* Table */}
-            <OutreachTable
-              records={filteredRecords}
-              onUpdateStatus={updateStatus}
-              onGenerate={generatePost}
-              onDelete={deleteRecord}
-              loading={loading && records.length === 0}
-            />
+          {/* Actions Section */}
+          <div className="bg-paper border border-ink/10 p-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {/* Push */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Push</span>
+                <AdminSelect
+                  value={followerRange}
+                  onChange={setFollowerRange}
+                  options={FOLLOWER_RANGES.map((r) => ({ value: r.value, label: r.label }))}
+                  className="w-28"
+                />
+                <AdminSelect
+                  value={limit}
+                  onChange={setLimit}
+                  options={LIMIT_OPTIONS}
+                  className="w-16"
+                />
+                <button
+                  onClick={handlePush}
+                  disabled={pushLoading}
+                  className="h-[30px] flex items-center gap-1.5 px-3 bg-ink text-paper text-[13px] font-body
+                           hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {pushLoading ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Upload className="w-3 h-3" />
+                  )}
+                  Push
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="hidden sm:block w-px h-6 bg-ink/10" />
+
+              {/* Pull */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">Sync</span>
+                <button
+                  onClick={handlePull}
+                  disabled={pullLoading}
+                  className="h-[30px] flex items-center gap-1.5 px-3 bg-paper border border-ink/20 text-ink text-[13px] font-body
+                           hover:border-ink/40 transition-colors disabled:opacity-50"
+                >
+                  {pullLoading ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Download className="w-3 h-3" />
+                  )}
+                  Pull
+                </button>
+                {airtableStatus?.lastSync && (
+                  <span className="text-[11px] text-gray-400 font-mono">
+                    {formatRelativeTime(airtableStatus.lastSync.timestamp)}
+                  </span>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="hidden sm:block w-px h-6 bg-ink/10" />
+
+              {/* Open Airtable */}
+              {airtableStatus?.configured && (
+                <a
+                  href="https://airtable.com/appaGh4aKp9sEswAW"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-ink transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Open Airtable
+                </a>
+              )}
+
+              {/* Last Action Feedback */}
+              {lastAction && (
+                <>
+                  <div className="hidden sm:block w-px h-6 bg-ink/10" />
+                  <span className={`text-[12px] font-body ${lastAction.startsWith('Error') ? 'text-status-error' : 'text-status-success'}`}>
+                    {lastAction}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </>
       )}

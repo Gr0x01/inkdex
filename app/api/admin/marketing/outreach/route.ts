@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const adminClient = createAdminClient();
 
     // Build query - specify FK to avoid ambiguity (paired_artist_id also references artists)
+    // Note: city/state are in artist_locations, not artists table
     let query = adminClient
       .from('marketing_outreach')
       .select(`
@@ -59,10 +60,13 @@ export async function GET(request: NextRequest) {
           id,
           name,
           instagram_handle,
-          city,
-          state,
           follower_count,
-          slug
+          slug,
+          artist_locations (
+            city,
+            region,
+            is_primary
+          )
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -119,20 +123,23 @@ export async function POST(request: NextRequest) {
 
     const existingIds = new Set(existingOutreach?.map((o) => o.artist_id) || []);
 
-    // Find candidates
-    let query = adminClient
+    // Find candidates - city/state are in artist_locations table
+    const query = adminClient
       .from('artists')
       .select(`
         id,
         name,
         instagram_handle,
-        city,
-        state,
         follower_count,
         slug,
         portfolio_images!inner (
           id,
           embedding
+        ),
+        artist_locations!inner (
+          city,
+          region,
+          is_primary
         )
       `)
       .gte('follower_count', params.minFollowers)
@@ -140,12 +147,9 @@ export async function POST(request: NextRequest) {
       .eq('verification_status', 'unclaimed')
       .is('deleted_at', null)
       .not('portfolio_images.embedding', 'is', null)
+      .eq('artist_locations.is_primary', true)
       .order('follower_count', { ascending: false })
       .limit(params.limit * 3); // Fetch extra to filter
-
-    if (params.city) {
-      query = query.eq('city', params.city);
-    }
 
     const { data: artists, error: artistError } = await query;
 
@@ -202,14 +206,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       inserted: candidates.length,
-      candidates: candidates.map((c) => ({
-        id: c.id,
-        name: c.name,
-        instagram_handle: c.instagram_handle,
-        city: c.city,
-        state: c.state,
-        follower_count: c.follower_count,
-      })),
+      candidates: candidates.map((c) => {
+        const primaryLocation = Array.isArray(c.artist_locations)
+          ? c.artist_locations.find((loc: { is_primary: boolean }) => loc.is_primary)
+          : c.artist_locations;
+        return {
+          id: c.id,
+          name: c.name,
+          instagram_handle: c.instagram_handle,
+          city: primaryLocation?.city || null,
+          state: primaryLocation?.region || null,
+          follower_count: c.follower_count,
+        };
+      }),
     });
   } catch (error) {
     console.error('[Marketing Outreach] Error:', error);

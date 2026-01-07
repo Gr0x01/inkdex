@@ -50,6 +50,11 @@ const envSchema = z.object({
   // Google Analytics (Optional - for Phase 8)
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().regex(/^G-[A-Z0-9]+$/, 'Invalid GA4 Measurement ID (format: G-XXXXXXXXXX)').optional(),
 
+  // Airtable (Optional - for marketing sync)
+  AIRTABLE_PAT: z.string().startsWith('pat').optional(),
+  AIRTABLE_BASE_ID: z.string().startsWith('app').optional(),
+  AIRTABLE_OUTREACH_TABLE_ID: z.string().startsWith('tbl').optional(),
+
   // App Configuration
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),

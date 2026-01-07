@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-06 (Session 19 - Color Search Complete)
+Last-Updated: 2026-01-07 (Session 21 - Airtable Marketing Integration)
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + Color-Weighted Search
+Status: Launched - All 15 Phases Complete + Color-Weighted Search + Airtable Marketing
 ---
 
 # Active Context: Inkdex
@@ -82,6 +82,38 @@ while true; do npx tsx scripts/colors/analyze-image-colors.ts --limit 10000 --co
 
 ---
 
+## Airtable Marketing Integration (Jan 7, 2026) ✅ COMPLETE
+
+**Goal:** Flexible marketing workflow via Airtable as source of truth.
+
+**Features:**
+- **Push to Airtable**: Select artist candidates by follower range, push with full data (photos, bio, stats)
+- **Pull from Airtable**: Sync status updates, featured flags, notes back to DB
+- **Auto-sync**: Vercel cron every 5 minutes pulls changes
+- **Featured expiration**: `featured_expires_at` auto-clears `is_featured` via pg_cron
+
+**New Files:**
+- `lib/airtable/client.ts` - Airtable API wrapper
+- `app/api/admin/airtable/push/route.ts` - Push artists to Airtable
+- `app/api/admin/airtable/pull/route.ts` - Pull updates from Airtable
+- `app/api/admin/airtable/status/route.ts` - Sync status endpoint
+- `app/api/cron/airtable-sync/route.ts` - Auto-sync cron job
+- `components/admin/AirtableSyncPanel.tsx` - Admin UI panel
+
+**Database Changes:**
+- `artists.featured_at`, `artists.featured_expires_at` - Featured expiration
+- `marketing_outreach.airtable_record_id`, `airtable_synced_at` - Sync tracking
+- `airtable_sync_log` table - Audit trail
+- `expire_featured_artists()` function - Auto-expire via pg_cron
+
+**Airtable Schema (Outreach table):**
+- DB-pushed fields: instagram_handle, name, city, follower_count, bio, profile_url, image_1-4
+- User-editable: status, featured, feature_days, post_date, dm_date, response_notes
+
+**Env vars:** `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, `AIRTABLE_OUTREACH_TABLE_ID`
+
+---
+
 ## SQL Refactor for 100k Scale (Jan 6, 2026) ✅ COMPLETE
 
 **Goal:** Refactor SQL infrastructure to support 100k+ artists and 1-2M images.
@@ -105,15 +137,21 @@ supabase/functions/
 │   ├── gdpr.sql              # is_gdpr_country() - 15 lines
 │   └── location_filter.sql   # matches_location_filter() - 27 lines
 ├── search/
-│   └── vector_search.sql     # 5 search functions - 696 lines (SOURCE OF TRUTH)
+│   └── vector_search.sql     # 4 search functions - 519 lines (SOURCE OF TRUTH)
 ├── location/
 │   └── location_counts.sql   # 4 location count functions - 212 lines
 ├── admin/
 │   └── admin_functions.sql   # Admin + homepage stats - 276 lines
-└── search_functions.sql      # INDEX FILE - documentation only (112 lines)
+└── search_functions.sql      # INDEX FILE - documentation only
 ```
 
 **Result:** 1,272 line monolith → 5 domain files + 1 index file
+
+**Search Function Consolidation (Jan 7, 2026):**
+- Merged `search_artists_by_embedding`, `search_artists_with_count`, `search_artists_with_style_boost` → single `search_artists()`
+- Style/color params are optional (default NULL)
+- Reduced `vector_search.sql` from 803 → 519 lines
+- TS wrapper: unified `searchArtists()` in `lib/supabase/queries.ts`
 
 **New Tables:**
 - `artist_sync_state` - Instagram sync state (extracted from artists)

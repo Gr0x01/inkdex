@@ -7,8 +7,10 @@ interface FunnelData {
   generated: number;
   posted: number;
   dm_sent: number;
+  responded: number;
   claimed: number;
   converted: number;
+  skipped: number;
 }
 
 interface OutreachFunnelProps {
@@ -16,11 +18,12 @@ interface OutreachFunnelProps {
 }
 
 export default function OutreachFunnel({ funnel }: OutreachFunnelProps) {
+  // Main funnel steps (skipped is excluded from visualization)
   const steps = [
     { label: 'Pending', value: funnel.pending, color: '#8B8985' },
-    { label: 'Generated', value: funnel.generated, color: '#6B6965' },
-    { label: 'Posted', value: funnel.posted, color: '#4A4845' },
-    { label: 'DM Sent', value: funnel.dm_sent, color: '#2A2826' },
+    { label: 'Posted', value: funnel.posted, color: '#6B6965' },
+    { label: 'DM Sent', value: funnel.dm_sent, color: '#4A4845' },
+    { label: 'Responded', value: funnel.responded, color: '#2A2826' },
     { label: 'Claimed', value: funnel.claimed, color: '#10b981' },
     { label: 'Converted', value: funnel.converted, color: '#059669' },
   ];
@@ -29,9 +32,16 @@ export default function OutreachFunnel({ funnel }: OutreachFunnelProps) {
 
   return (
     <div className="bg-paper border border-ink/10 p-4">
-      <h3 className="font-heading text-[13px] font-semibold text-ink mb-3">
-        Outreach Funnel
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-heading text-[13px] font-semibold text-ink">
+          Outreach Funnel
+        </h3>
+        {funnel.skipped > 0 && (
+          <span className="text-[11px] font-mono text-gray-400">
+            {funnel.skipped} skipped
+          </span>
+        )}
+      </div>
 
       <div className="flex items-center gap-1">
         {steps.map((step, index) => {
@@ -66,14 +76,14 @@ export default function OutreachFunnel({ funnel }: OutreachFunnelProps) {
       {/* Conversion rates */}
       <div className="flex gap-4 mt-3 text-[11px] font-mono text-gray-500">
         <span>
-          Post → Claim:{' '}
-          {funnel.dm_sent > 0
-            ? `${(((funnel.claimed + funnel.converted) / funnel.dm_sent) * 100).toFixed(0)}%`
+          DM → Claim:{' '}
+          {funnel.dm_sent + funnel.responded > 0
+            ? `${(((funnel.claimed + funnel.converted) / (funnel.dm_sent + funnel.responded + funnel.claimed + funnel.converted)) * 100).toFixed(0)}%`
             : '—'}
         </span>
         <span>
           Claim → Convert:{' '}
-          {funnel.claimed > 0
+          {funnel.claimed + funnel.converted > 0
             ? `${((funnel.converted / (funnel.claimed + funnel.converted)) * 100).toFixed(0)}%`
             : '—'}
         </span>

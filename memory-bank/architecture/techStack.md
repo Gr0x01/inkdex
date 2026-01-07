@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-07 (Search SQL Consolidation)
 Maintainer: RB
 Status: Launched
 ---
@@ -137,7 +137,7 @@ supabase/migrations/
 
 ## SQL Functions (Split Structure)
 
-**Index/Documentation:** `supabase/functions/search_functions.sql` (89 lines, DO NOT RUN)
+**Index/Documentation:** `supabase/functions/search_functions.sql` (DO NOT RUN)
 
 **Source of Truth Files:**
 ```
@@ -146,13 +146,19 @@ supabase/functions/
 │   ├── gdpr.sql              # is_gdpr_country() - 15 lines
 │   └── location_filter.sql   # matches_location_filter() - 27 lines
 ├── search/
-│   └── vector_search.sql     # 5 search functions - 696 lines
+│   └── vector_search.sql     # 4 search functions - 519 lines
 ├── location/
 │   └── location_counts.sql   # 4 location functions - 212 lines
 ├── admin/
 │   └── admin_functions.sql   # 3 admin functions - 276 lines
 └── search_functions.sql      # INDEX FILE (documentation only)
 ```
+
+**Consolidated Jan 2026:** Merged 3 search functions into unified `search_artists()`:
+- `search_artists_by_embedding` → removed
+- `search_artists_with_count` → removed
+- `search_artists_with_style_boost` → renamed to `search_artists`
+- Style/color params are optional (default NULL)
 
 **To apply changes:**
 1. Edit the domain file (e.g., `search/vector_search.sql`)
