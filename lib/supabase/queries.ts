@@ -1456,12 +1456,13 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
 
 /**
  * Get aggregate stats for homepage hero section
- * Returns artist count, image count, and city count in a single DB call
+ * Returns artist count, image count, city count, and country count in a single DB call
  */
 export async function getHomepageStats(): Promise<{
   artistCount: number
   imageCount: number
   cityCount: number
+  countryCount: number
 }> {
   // Use service client for build-time static generation (no cookies available)
   let supabase
@@ -1479,15 +1480,88 @@ export async function getHomepageStats(): Promise<{
   if (error || !data) {
     console.error('Error fetching homepage stats:', error)
     // Fallback to reasonable defaults
-    return { artistCount: 15000, imageCount: 65000, cityCount: 100 }
+    return { artistCount: 15000, imageCount: 65000, cityCount: 100, countryCount: 1 }
   }
 
   // Cast data to expected shape from RPC function
-  const stats = data as { artist_count: number; image_count: number; city_count: number }
+  const stats = data as {
+    artist_count: number
+    image_count: number
+    city_count: number
+    country_count: number
+  }
 
   return {
     artistCount: stats.artist_count,
     imageCount: stats.image_count,
     cityCount: stats.city_count,
+    countryCount: stats.country_count,
+  }
+}
+
+/**
+ * Country editorial content shape returned from database
+ */
+export interface CountryEditorialContent {
+  countryCode: string
+  heroText: string
+  sceneHeading: string | null
+  sceneText: string
+  tipsHeading: string | null
+  tipsText: string
+  keywords: string[]
+  majorCities: string[]
+}
+
+/**
+ * Get editorial content for a country page
+ * Returns null if no content exists for this country
+ */
+export async function getCountryEditorialContent(
+  countryCode: string
+): Promise<CountryEditorialContent | null> {
+  // Use service client for build-time static generation (no cookies available)
+  let supabase
+  try {
+    supabase = await createClient()
+  } catch (_error) {
+    // If cookies() fails (build time), use service client
+    const { createServiceClient } = await import('@/lib/supabase/service')
+    supabase = createServiceClient()
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Table not in generated types yet
+  const { data, error } = await (supabase as any)
+    .from('country_editorial_content')
+    .select('*')
+    .eq('country_code', countryCode.toUpperCase())
+    .single()
+
+  if (error || !data) {
+    // No content for this country - not an error condition
+    return null
+  }
+
+  // Cast to expected shape
+  const content = data as {
+    country_code: string
+    hero_text: string
+    scene_heading: string | null
+    scene_text: string
+    tips_heading: string | null
+    tips_text: string
+    keywords: string[] | null
+    major_cities: string[] | null
+  }
+
+  return {
+    countryCode: content.country_code,
+    heroText: content.hero_text,
+    sceneHeading: content.scene_heading,
+    sceneText: content.scene_text,
+    tipsHeading: content.tips_heading,
+    tipsText: content.tips_text,
+    keywords: content.keywords || [],
+    majorCities: content.major_cities || [],
   }
 }

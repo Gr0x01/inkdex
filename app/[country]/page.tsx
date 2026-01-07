@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { getRegionsWithCounts } from '@/lib/supabase/queries'
+import { getRegionsWithCounts, getCountryEditorialContent } from '@/lib/supabase/queries'
 import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
 import { getCountryName, getRegionName } from '@/lib/utils/location'
 
@@ -72,8 +72,11 @@ export default async function CountryPage({
   const countryCode = countrySlug.toUpperCase()
   const countryName = getCountryName(countryCode)
 
-  // Fetch regions with artist counts
-  const regions = await getRegionsWithCounts(countryCode)
+  // Fetch regions with artist counts and editorial content in parallel
+  const [regions, editorialContent] = await Promise.all([
+    getRegionsWithCounts(countryCode),
+    getCountryEditorialContent(countryCode),
+  ])
 
   // If no regions found, return 404
   if (!regions || regions.length === 0) {
@@ -141,8 +144,56 @@ export default async function CountryPage({
               Search by Image
             </Link>
           </div>
+
+          {/* Editorial Content (if available) */}
+          {editorialContent && (
+            <div className="mt-10 max-w-3xl">
+              <p className="font-body text-base text-text-secondary leading-relaxed">
+                {editorialContent.heroText}
+              </p>
+            </div>
+          )}
         </div>
       </header>
+
+      {/* Editorial Scene Section (if available) */}
+      {editorialContent && (
+        <section className="border-b border-border-subtle">
+          <div className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+            <div className="max-w-3xl">
+              {editorialContent.sceneHeading && (
+                <h2 className="font-display text-2xl font-bold text-text-primary mb-4">
+                  {editorialContent.sceneHeading}
+                </h2>
+              )}
+              <p className="font-body text-base text-text-secondary leading-relaxed mb-6">
+                {editorialContent.sceneText}
+              </p>
+
+              {editorialContent.tipsHeading && (
+                <h3 className="font-display text-xl font-bold text-text-primary mb-3">
+                  {editorialContent.tipsHeading}
+                </h3>
+              )}
+              <p className="font-body text-base text-text-secondary leading-relaxed">
+                {editorialContent.tipsText}
+              </p>
+
+              {/* Major Cities */}
+              {editorialContent.majorCities && editorialContent.majorCities.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-border-subtle">
+                  <p className="font-mono text-xs uppercase tracking-wider text-text-tertiary mb-2">
+                    Major Tattoo Cities
+                  </p>
+                  <p className="font-body text-sm text-text-secondary">
+                    {editorialContent.majorCities.join(' • ')}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Regions Grid */}
       <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">

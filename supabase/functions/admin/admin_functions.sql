@@ -266,7 +266,8 @@ CREATE OR REPLACE FUNCTION get_homepage_stats()
 RETURNS TABLE (
   artist_count bigint,
   image_count bigint,
-  city_count bigint
+  city_count bigint,
+  country_count bigint
 )
 LANGUAGE plpgsql STABLE
 AS $$
@@ -275,12 +276,18 @@ BEGIN
   SELECT
     (SELECT COUNT(*) FROM artists WHERE deleted_at IS NULL)::bigint AS artist_count,
     (SELECT COUNT(*) FROM portfolio_images WHERE status = 'active')::bigint AS image_count,
-    (SELECT COUNT(DISTINCT city) FROM artist_locations WHERE country_code = 'US')::bigint AS city_count;
+    (SELECT COUNT(DISTINCT city) FROM artist_locations WHERE country_code = 'US')::bigint AS city_count,
+    (SELECT COUNT(DISTINCT al.country_code)
+     FROM artist_locations al
+     INNER JOIN artists a ON a.id = al.artist_id
+     WHERE a.deleted_at IS NULL
+       AND al.country_code IS NOT NULL
+       AND NOT is_gdpr_country(al.country_code))::bigint AS country_count;
 END;
 $$;
 
 COMMENT ON FUNCTION get_homepage_stats IS
-  'Returns aggregate counts (artists, images, cities) for homepage hero section.';
+  'Returns aggregate counts (artists, images, cities, countries) for homepage hero section.';
 
 
 -- ============================================
