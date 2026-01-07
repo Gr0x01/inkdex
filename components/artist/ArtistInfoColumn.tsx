@@ -8,6 +8,7 @@ import { sanitizeText } from '@/lib/utils/sanitize'
 import { getProfileImageUrl } from '@/lib/utils/images'
 import { ArtistLocation } from '@/types/search'
 import { US_STATES } from '@/lib/constants/states'
+import { DISPLAY_STYLES, STYLE_DISPLAY_NAMES, MIN_STYLE_PERCENTAGE } from '@/lib/constants/styles'
 
 interface PortfolioImage {
   id: string
@@ -23,28 +24,6 @@ interface StyleProfile {
   percentage: number
 }
 
-const STYLE_DISPLAY_NAMES: Record<string, string> = {
-  'traditional': 'Traditional',
-  'neo-traditional': 'Neo-Traditional',
-  'fine-line': 'Fine Line',
-  'blackwork': 'Blackwork',
-  'geometric': 'Geometric',
-  'realism': 'Realism',
-  'japanese': 'Japanese',
-  'watercolor': 'Watercolor',
-  'dotwork': 'Dotwork',
-  'tribal': 'Tribal',
-  'illustrative': 'Illustrative',
-  'surrealism': 'Surrealism',
-  'minimalist': 'Minimalist',
-  'lettering': 'Lettering',
-  'new-school': 'New School',
-  'trash-polka': 'Trash Polka',
-  'black-and-gray': 'Black & Gray',
-  'biomechanical': 'Biomechanical',
-  'ornamental': 'Ornamental',
-  'sketch': 'Sketch',
-}
 
 interface ArtistInfoColumnProps {
   artist: {
@@ -252,7 +231,10 @@ export default function ArtistInfoColumn({
             {/* Style Badges - ink-stamped look */}
             {artist.style_profiles && artist.style_profiles.length > 0 && (
               <div className="flex items-center justify-center gap-2.5 flex-wrap">
-                {artist.style_profiles.slice(0, 3).map((style) => (
+                {artist.style_profiles
+                  .filter((s) => DISPLAY_STYLES.has(s.style_name) && s.percentage >= MIN_STYLE_PERCENTAGE)
+                  .slice(0, 3)
+                  .map((style) => (
                   <span
                     key={style.style_name}
                     className="font-mono text-[11px] uppercase tracking-[0.15em] font-semibold text-ink border border-ink px-2.5 py-1"

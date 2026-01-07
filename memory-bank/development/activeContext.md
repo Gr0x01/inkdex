@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07 (Session 21 - Airtable Marketing Integration)
+Last-Updated: 2026-01-07 (Session 22 - Style Taxonomy Refactor)
 Maintainer: RB
 Status: Launched - All 15 Phases Complete + Color-Weighted Search + Airtable Marketing
 ---
@@ -8,11 +8,11 @@ Status: Launched - All 15 Phases Complete + Color-Weighted Search + Airtable Mar
 
 ## Current State
 
-**Platform:** Production - 116 cities, 15,626 artists, 92,038 images with embeddings
+**Platform:** Production - 116 cities, 16,324 artists, 92,013 images with embeddings
 
 **Live Cities:** 116 cities across all 50 states + DC (see quickstart.md for full list)
 
-**Style System:** 20 styles with averaged CLIP embeddings from multiple seed images
+**Style System:** 14 seeds (8 display + 6 search-only) with averaged CLIP embeddings
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
 
@@ -305,31 +305,48 @@ Access via `/dev/login` (development only):
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
 
-## Style System
+## Style System (Refactored Jan 7, 2026)
 
-**20 Styles** with averaged CLIP embeddings (multiple seed images per style):
+**Philosophy:** Only display styles that artists genuinely specialize in. Other seeds kept for search relevance but hidden from profiles.
 
-| Category | Styles |
-|----------|--------|
-| Classic | traditional, neo-traditional, japanese, tribal, chicano |
-| Modern | blackwork, illustrative, realism, watercolor, minimalist |
-| Specialty | anime, horror, stick-and-poke, new-school, surrealism |
-| Technique | dotwork/ornamental, sketch, lettering, biomechanical, trash-polka |
+**Display Styles (8)** - shown on artist profile badges:
 
-**Top Styles by Coverage:**
-- blackwork: 40.9% of images, 6,825 artists
-- stick-and-poke: 26.5% of images, 5,199 artists
-- illustrative: 26.1% of images, 6,172 artists
+| Style | Artists | % of Images |
+|-------|---------|-------------|
+| neo-traditional | 6,480 | 17.1% |
+| traditional | 4,847 | 13.4% |
+| realism | 4,681 | 8.9% |
+| new-school | 4,560 | 10.7% |
+| watercolor | 4,480 | 11.7% |
+| blackwork | 4,162 | 8.1% |
+| ornamental | 4,105 | 8.7% |
+| black-and-gray | 3,736 | 9.3% |
+
+**Search-Only Seeds** (kept for relevance, not displayed):
+- tribal, trash-polka, biomechanical, sketch (niche techniques)
+- japanese, anime (need threshold tuning - over-matching at 60-80%)
+
+**Removed Seeds:**
+- horror, surrealism (subject matter, not technique - over-matched everything)
+
+**Key Files:**
+- `lib/constants/styles.ts` - `DISPLAY_STYLES` set + `MIN_STYLE_PERCENTAGE` (25%)
+- `scripts/styles/tag-images.ts` - `STYLE_THRESHOLD_OVERRIDES` for per-style thresholds
+- `components/artist/ArtistInfoColumn.tsx` - filters to DISPLAY_STYLES + min 25% threshold
 
 **Style Pipeline:**
 ```bash
-# Add new style:
-# 1. Add seed images to tmp/seeds/{style}-1.jpg, {style}-2.jpg, etc.
-# 2. Add style definition to scripts/styles/generate-averaged-seeds.ts
-# 3. Run pipeline:
-npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seeds
+# Re-tag all images with current seeds
 npx tsx scripts/styles/tag-images.ts --clear
+
+# Recompute artist style profiles
 npx tsx scripts/styles/compute-artist-profiles.ts --clear
+
+# Add new style:
+# 1. Add seed images to assets/seeds/{style}/*.webp
+# 2. Add style definition to scripts/styles/generate-averaged-seeds.ts
+# 3. Run: npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./assets/seeds/{style}
+# 4. Re-run tagging pipeline above
 ```
 
 ## Key Architecture

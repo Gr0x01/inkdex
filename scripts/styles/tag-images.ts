@@ -41,6 +41,13 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 type StyleTaxonomy = 'technique' | 'theme';
 
+// Per-style threshold overrides (when different from default)
+// These styles need higher thresholds to avoid over-matching
+const STYLE_THRESHOLD_OVERRIDES: Record<string, number> = {
+  'japanese': 0.75,  // Traditional irezumi is distinct - needs high threshold
+  'anime': 0.70,     // Anime characters are distinctive - avoid over-matching
+};
+
 interface StyleSeed {
   style_name: string;
   embedding: number[];
@@ -271,7 +278,9 @@ async function main() {
     const themeMatches: { style_name: string; confidence: number }[] = [];
     for (const theme of themes) {
       const similarity = cosineSimilarity(embedding, theme.embedding);
-      if (similarity >= themeThreshold) {
+      // Use per-style threshold override if defined, otherwise default
+      const threshold = STYLE_THRESHOLD_OVERRIDES[theme.style_name] ?? themeThreshold;
+      if (similarity >= threshold) {
         themeMatches.push({ style_name: theme.style_name, confidence: similarity });
       }
     }

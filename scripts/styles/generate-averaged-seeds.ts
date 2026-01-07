@@ -77,6 +77,11 @@ const STYLE_INFO: Record<string, StyleInfo> = {
     description: 'Pure black ink designs from geometric patterns to heavy coverage.',
     taxonomy: 'technique',
   },
+  'black-and-gray': {
+    displayName: 'Black & Gray',
+    description: 'Grayscale tattoo work using black ink in varying shades. Often used for portraits and realism.',
+    taxonomy: 'technique',
+  },
   'watercolor': {
     displayName: 'Watercolor',
     description: 'Mimics watercolor painting with splashes, drips, and soft color bleeds.',

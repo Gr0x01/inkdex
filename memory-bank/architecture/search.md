@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-07 (Style Taxonomy Refactor)
 Maintainer: RB
 Status: Production
 ---
@@ -215,11 +215,34 @@ END
 
 ## Style System
 
+### Two-Tier Taxonomy (Jan 2026 Refactor)
+
+**Display Styles (8)** - shown on artist profile badges:
+- traditional, neo-traditional, realism, black-and-gray
+- blackwork, new-school, watercolor, ornamental
+
+**Search-Only Seeds (6)** - kept for relevance, hidden from profiles:
+- tribal, trash-polka, biomechanical, sketch (niche techniques)
+- japanese, anime (need threshold tuning)
+
+**Removed:**
+- horror, surrealism (subject matter, not technique - over-matched)
+
 ### Style Seeds
-- 19 styles with averaged CLIP embeddings
+- 14 active seeds with averaged CLIP embeddings
 - Each style has 5-22 seed images
 - Seeds stored in `style_seeds` table
 - Seed images in `assets/seeds/{style}/`
+
+### Per-Style Threshold Overrides
+Some styles need higher thresholds to avoid over-matching:
+```typescript
+// scripts/styles/tag-images.ts
+const STYLE_THRESHOLD_OVERRIDES: Record<string, number> = {
+  'japanese': 0.75,  // vs default 0.45 for themes
+  'anime': 0.70,
+};
+```
 
 ### Style Tagging Pipeline
 ```bash
@@ -231,8 +254,10 @@ npx tsx scripts/styles/compute-artist-profiles.ts --clear
 ```
 
 ### Style Profile Display
-- Artist pages show top 3 styles
-- Ordered by percentage of portfolio
+- Artist pages show top 3 styles from DISPLAY_STYLES only
+- Minimum 25% of portfolio required to display (`MIN_STYLE_PERCENTAGE`)
+- Controlled by `lib/constants/styles.ts`
+- Filter applied in `components/artist/ArtistInfoColumn.tsx`
 
 ## Design Decisions
 
