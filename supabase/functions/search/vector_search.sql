@@ -85,7 +85,7 @@ BEGIN
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
@@ -240,7 +240,7 @@ BEGIN
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
@@ -382,7 +382,7 @@ BEGIN
            a.follower_count as fa_follower_count,
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
     FROM artists a
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
@@ -567,7 +567,7 @@ BEGIN
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
@@ -743,10 +743,10 @@ BEGIN
       al.city as al_city
     FROM artists a
     INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND NOT is_gdpr_country(al.country_code)
+      AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code))
   ),
   -- Step 3: Aggregate by country
   country_counts AS (

@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-06
+Last-Updated: 2026-01-07
 Maintainer: RB
 Status: Launched
 ---
@@ -14,7 +14,7 @@ Status: Launched
 | Language | TypeScript (strict) | Path alias: `@/*` → `./` |
 | Styling | Tailwind CSS v3 | |
 | Database | Supabase PostgreSQL | pgvector for embeddings |
-| Vector Index | HNSW | `m=16, ef_construction=128` |
+| Vector Index | IVFFlat | `lists=300` (see note below) |
 | Caching | Redis (Railway) | Rate limiting, analytics |
 | Storage | Supabase Storage | WebP images, CDN |
 | Auth | Supabase Auth | Instagram OAuth |
@@ -87,31 +87,38 @@ style_seeds          -- 20 style embeddings
 
 **Vector Index:**
 ```sql
--- HNSW for 92k images (switched from IVFFlat Jan 7, 2026)
+-- IVFFlat for 92k images (reverted from HNSW Jan 7, 2026)
 CREATE INDEX idx_portfolio_embeddings ON portfolio_images
-USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 128);
+USING ivfflat (embedding vector_cosine_ops) WITH (lists = 300);
 ```
 
-**Index Stats:** 359 MB, ~400ms search latency
+**Why IVFFlat instead of HNSW:**
+HNSW requires `SET hnsw.ef_search = N` to control recall (default ~40 results).
+Supabase uses PgBouncer transaction pooling, which doesn't persist session-level
+`SET` commands across queries. Even `SET LOCAL` within transactions didn't work
+reliably. IVFFlat doesn't have this issue - it returns full results by default.
+
+**Index Stats:** ~200ms search latency, good recall
 
 **Rebuilding the Vector Index:**
-HNSW index creation takes 5-15 minutes and exceeds Supabase SQL Editor timeout.
-Must use `psql` with session pooler (port 5432):
+Index creation may timeout in Supabase SQL Editor.
+Use `psql` with session pooler (port 5432):
 
 ```bash
 # Install psql if needed
 brew install libpq && brew link --force libpq
 
-# Connect via session pooler (not transaction pooler on 6543)
-/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres.aerereukzoflvybygolb:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres" << 'EOF'
-SET statement_timeout = '60min';
-DROP INDEX IF EXISTS idx_portfolio_embeddings;
-CREATE INDEX idx_portfolio_embeddings ON portfolio_images
-USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 128);
-EOF
+# Connect via session pooler (port 5432, not transaction pooler on 6543)
+/opt/homebrew/opt/libpq/bin/psql "postgresql://postgres.aerereukzoflvybygolb:[PASSWORD]@aws-0-us-west-2.pooler.supabase.com:5432/postgres" -c "SET statement_timeout = '60min'; DROP INDEX IF EXISTS idx_portfolio_embeddings; CREATE INDEX idx_portfolio_embeddings ON portfolio_images USING ivfflat (embedding vector_cosine_ops) WITH (lists = 300);"
 ```
 
 **Note:** Direct connection (port 5432 on db.*.supabase.co) requires IPv6 or IPv4 add-on.
+
+**Scaling the index:** When image count grows, adjust `lists` parameter:
+- ~100k images: `lists = 300` (current)
+- ~500k images: `lists = 700`
+- ~1M images: `lists = 1000`
+Rule of thumb: `lists ≈ sqrt(num_images)`
 
 ---
 
