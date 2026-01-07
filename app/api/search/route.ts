@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
 import { detectInstagramUrl, extractPostId } from '@/lib/instagram/url-detector'
 import { classifyQueryStyles, StyleClassification } from '@/lib/search/style-classifier'
@@ -364,10 +365,10 @@ export async function POST(request: NextRequest) {
             // Save artist to database for future instant searches
             console.log(`[Profile Search] Saving @${username} to database...`)
             try {
-              const supabaseAdmin = await createClient()
+              const supabaseService = createServiceClient()
               const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
 
-              const { data: newArtist, error: artistError } = await supabaseAdmin
+              const { data: newArtist, error: artistError } = await supabaseService
                 .from('artists')
                 .insert({
                   instagram_handle: username,
@@ -385,7 +386,7 @@ export async function POST(request: NextRequest) {
                 console.log(`[Profile Search] Created artist ${newArtist.id}`)
 
                 // Create scraping job to get full portfolio later
-                await supabaseAdmin.from('scraping_jobs').insert({
+                await supabaseService.from('scraping_jobs').insert({
                   artist_id: newArtist.id,
                   status: 'pending',
                   images_scraped: 0,
