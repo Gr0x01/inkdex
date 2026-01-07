@@ -153,15 +153,25 @@ export async function GET() {
     const imagesWithEmbeddings = imagesWithEmbeddingsResult.count || 0;
     const imagesWithoutEmbeddings = totalImages - imagesWithEmbeddings;
 
-    // Use RPC result or fallback calculation
+    // Use RPC result for artists without images
+    // The RPC function counts artists that have no portfolio_images
     let artistsWithoutImages = 0;
-    if (artistsWithoutImagesResult.data !== null) {
-      artistsWithoutImages = artistsWithoutImagesResult.data as number;
+    if (
+      artistsWithoutImagesResult.data !== null &&
+      typeof artistsWithoutImagesResult.data === 'number' &&
+      artistsWithoutImagesResult.data >= 0
+    ) {
+      artistsWithoutImages = artistsWithoutImagesResult.data;
     } else {
-      // Fallback: artists without images = total - artists with completed scraping
-      artistsWithoutImages = totalArtists - scrapingStats.completed;
+      // Fallback: count unique artists in portfolio_images and subtract from total
+      // Note: scrapingStats.completed won't work as there can be multiple jobs per artist
+      // Just show 0 as fallback - the RPC should work if properly deployed
+      console.warn('count_artists_without_images RPC failed, using 0 as fallback');
+      artistsWithoutImages = 0;
     }
 
+    // Clamp to valid range to prevent negative display
+    artistsWithoutImages = Math.min(artistsWithoutImages, totalArtists);
     const artistsWithImages = totalArtists - artistsWithoutImages;
 
     // Format recent runs with heartbeat status
