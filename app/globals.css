@@ -69,7 +69,7 @@
   /* Navbar Heights (for sticky positioning) */
   --navbar-height: 80px;
   --navbar-height-compact: 56px; /* Mobile compact when scrolled */
-  --navbar-height-desktop: 96px;
+  --navbar-height-desktop: 80px; /* Same as mobile - h-20 in Navbar.tsx */
 
   /* Timing Functions */
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
