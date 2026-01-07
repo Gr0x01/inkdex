@@ -361,6 +361,48 @@ export async function POST(request: NextRequest) {
             instagramUsername = username
             queryText = `Artists similar to @${username}`
 
+            // Save artist to database for future instant searches
+            console.log(`[Profile Search] Saving @${username} to database...`)
+            try {
+              const supabaseAdmin = await createClient()
+              const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+              const { data: newArtist, error: artistError } = await supabaseAdmin
+                .from('artists')
+                .insert({
+                  instagram_handle: username,
+                  name: profileData.username || username,
+                  slug,
+                  city: 'pending',
+                  bio: profileData.bio || null,
+                  follower_count: profileData.followerCount || null,
+                  discovery_source: 'profile_search',
+                  verification_status: 'pending',
+                })
+                .select('id')
+                .single()
+
+              if (newArtist) {
+                console.log(`[Profile Search] Created artist ${newArtist.id}`)
+
+                // Create scraping job to get full portfolio later
+                await supabaseAdmin.from('scraping_jobs').insert({
+                  artist_id: newArtist.id,
+                  status: 'pending',
+                  images_scraped: 0,
+                })
+                console.log(`[Profile Search] Created scraping job for @${username}`)
+              } else if (artistError?.code === '23505') {
+                // Duplicate - someone else added them, that's fine
+                console.log(`[Profile Search] @${username} already exists (race condition)`)
+              } else if (artistError) {
+                console.error(`[Profile Search] Failed to save artist:`, artistError.message)
+              }
+            } catch (saveError) {
+              // Don't fail the search if saving fails
+              console.error(`[Profile Search] Error saving artist:`, saveError)
+            }
+
             console.log(`[Profile Search] Apify scraping completed`)
           }
         } catch (error) {
