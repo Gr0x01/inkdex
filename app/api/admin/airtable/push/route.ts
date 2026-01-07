@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
           bio,
           slug,
           portfolio_images (
+            storage_original_path,
             storage_thumb_640
           )
         `
@@ -116,6 +117,7 @@ export async function POST(request: NextRequest) {
           bio,
           slug,
           portfolio_images!inner (
+            storage_original_path,
             storage_thumb_640,
             embedding
           )

@@ -1,44 +1,140 @@
 -- ============================================================================
--- VECTOR SEARCH FUNCTIONS
+-- MULTI-AXIS STYLE TAXONOMY
 -- ============================================================================
--- Main vector similarity search functions for artist discovery.
--- Depends on: _shared/gdpr.sql, _shared/location_filter.sql
+-- Introduces separate axes for style classification:
+--   - Palette: Color vs Black & Gray (already implemented via is_color)
+--   - Technique: HOW the tattoo is done (ONE per image, threshold 0.35)
+--   - Theme: WHAT the tattoo depicts (0-2 per image, threshold 0.45)
 --
--- Functions:
---   - search_artists: Unified vector search with technique/theme/color boosts
---   - find_related_artists: Find similar artists by portfolio
---   - classify_embedding_styles: Classify embedding against style seeds (with taxonomy)
---   - get_search_location_counts: Location counts for filter UI
---
--- Updated Jan 2026: Multi-axis taxonomy (technique + theme + color)
---   - Techniques (HOW): ONE per image, 0.20 weight
---   - Themes (WHAT): 0-2 per image, 0.10 weight
+-- This fixes over-representation issues (e.g., horror matching normal B&G portraits)
+-- by separating the artistic technique from the subject matter.
 -- ============================================================================
 
+-- Create taxonomy enum type
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'style_taxonomy') THEN
+    CREATE TYPE style_taxonomy AS ENUM ('technique', 'theme');
+  END IF;
+END$$;
+
 -- ============================================
--- search_artists
--- Unified vector similarity search function with multi-axis taxonomy
+-- style_seeds: Add taxonomy column
 -- ============================================
--- OPTIMIZED: Vector search FIRST (uses index), then filter artists
---
--- Parameters:
---   query_embedding: 768-dim CLIP embedding
---   match_threshold: Minimum similarity score (default 0.5)
---   match_count: Max results to return (default 20)
---   city_filter/region_filter/country_filter: Location filters (optional)
---   offset_param: Pagination offset (default 0)
---   query_techniques: JSONB array of {style_name, confidence} for technique boost (optional)
---   is_color_query: true=color, false=B&G, null=no preference (optional)
---   query_themes: JSONB array of {style_name, confidence} for theme boost (optional)
---
--- Returns: style_boost (technique), theme_boost, color_boost, boosted_score, total_count
+ALTER TABLE style_seeds
+  ADD COLUMN IF NOT EXISTS taxonomy style_taxonomy DEFAULT 'technique';
+
+-- ============================================
+-- image_style_tags: Add taxonomy and is_primary columns
+-- ============================================
+ALTER TABLE image_style_tags
+  ADD COLUMN IF NOT EXISTS taxonomy style_taxonomy DEFAULT 'technique',
+  ADD COLUMN IF NOT EXISTS is_primary boolean DEFAULT false;
+
+-- ============================================
+-- artist_style_profiles: Add taxonomy column
+-- ============================================
+ALTER TABLE artist_style_profiles
+  ADD COLUMN IF NOT EXISTS taxonomy style_taxonomy DEFAULT 'technique';
+
+-- ============================================
+-- Constraint: Only ONE primary technique per image
+-- ============================================
+-- Drop existing index if it exists (in case of re-run)
+DROP INDEX IF EXISTS idx_one_primary_technique;
+
+-- Create partial unique index ensuring only one primary technique per image
+CREATE UNIQUE INDEX idx_one_primary_technique
+  ON image_style_tags (image_id)
+  WHERE taxonomy = 'technique' AND is_primary = true;
+
+-- ============================================
+-- Classify existing style seeds
+-- ============================================
+-- Mark technique seeds (artistic styles - HOW it's done)
+UPDATE style_seeds SET taxonomy = 'technique'
+WHERE style_name IN (
+  'realism',
+  'traditional',
+  'neo-traditional',
+  'new-school',
+  'blackwork',
+  'fine-line',
+  'dotwork',
+  'watercolor',
+  'tribal',
+  'biomechanical',
+  'trash-polka',
+  'sketch',
+  'ornamental',
+  'geometric'
+);
+
+-- Mark theme seeds (subject matter - WHAT it depicts)
+UPDATE style_seeds SET taxonomy = 'theme'
+WHERE style_name IN (
+  'horror',
+  'japanese',
+  'anime',
+  'surrealism'
+);
+
+-- Remove deprecated/redundant styles that don't fit cleanly
+-- (these are either merged into techniques or too vague)
+-- Note: 'black-and-gray' is now handled by is_color boolean
+-- Note: 'minimalist' is merged into 'fine-line'
+-- Note: 'illustrative' was too vague - use specific techniques instead
+-- Note: 'stick-and-poke' is a method, not a style visible in final result
+DELETE FROM style_seeds
+WHERE style_name IN (
+  'black-and-gray',
+  'minimalist',
+  'illustrative',
+  'stick-and-poke',
+  'lettering'
+);
+
+-- ============================================
+-- Update classify_embedding_styles to support taxonomy filtering
+-- ============================================
+DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float);
+DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float, style_taxonomy);
+
+CREATE OR REPLACE FUNCTION classify_embedding_styles(
+  p_embedding vector(768),
+  p_max_styles int DEFAULT 3,
+  p_min_confidence float DEFAULT 0.35,
+  p_taxonomy style_taxonomy DEFAULT NULL
+)
+RETURNS TABLE (
+  style_name text,
+  confidence float,
+  taxonomy style_taxonomy
+)
+LANGUAGE plpgsql STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    ss.style_name,
+    (1 - (p_embedding <=> ss.embedding))::FLOAT as confidence,
+    ss.taxonomy
+  FROM style_seeds ss
+  WHERE ss.embedding IS NOT NULL
+    AND (1 - (p_embedding <=> ss.embedding)) >= p_min_confidence
+    AND (p_taxonomy IS NULL OR ss.taxonomy = p_taxonomy)
+  ORDER BY p_embedding <=> ss.embedding ASC
+  LIMIT p_max_styles;
+END;
+$$;
+
+COMMENT ON FUNCTION classify_embedding_styles IS
+  'Classifies an embedding against style seeds. Optionally filter by taxonomy (technique/theme). Returns top N styles with confidence scores above threshold.';
+
+-- ============================================
+-- Update search_artists to use separate technique/theme boosts
 -- ============================================
 DROP FUNCTION IF EXISTS search_artists(vector, float, int, text, text, text, int, jsonb, boolean);
-DROP FUNCTION IF EXISTS search_artists(vector, float, int, text, text, text, int, jsonb, boolean, jsonb);
-DROP FUNCTION IF EXISTS search_artists_with_style_boost(vector, float, int, text, text, text, int, jsonb, boolean);
-DROP FUNCTION IF EXISTS search_artists_with_style_boost(vector, float, int, text, text, text, int, jsonb);
-DROP FUNCTION IF EXISTS search_artists_by_embedding(vector, float, int, text, text, text, int);
-DROP FUNCTION IF EXISTS search_artists_with_count(vector, float, int, text, text, text, int);
 
 CREATE OR REPLACE FUNCTION search_artists(
   query_embedding vector(768),
@@ -164,7 +260,7 @@ BEGIN
             INNER JOIN artist_style_profiles asp
               ON asp.artist_id = fa.fa_id
               AND asp.style_name = qt.style_name
-              AND (asp.taxonomy IS NULL OR asp.taxonomy = 'technique')
+              AND asp.taxonomy = 'technique'
           ),
           0.0
         )
@@ -306,254 +402,72 @@ $$;
 COMMENT ON FUNCTION search_artists IS
   'Unified vector similarity search with technique + theme + color boosts. Techniques (0.20 weight) match artistic style, themes (0.10 weight) match subject matter.';
 
-
 -- ============================================
--- find_related_artists
--- Find similar artists based on portfolio style
+-- Update compute_image_style_tags trigger for multi-axis
 -- ============================================
-DROP FUNCTION IF EXISTS find_related_artists(uuid, text, text, text, int);
+DROP FUNCTION IF EXISTS compute_image_style_tags() CASCADE;
 
-CREATE OR REPLACE FUNCTION find_related_artists(
-  source_artist_id uuid,
-  city_filter text DEFAULT NULL,
-  region_filter text DEFAULT NULL,
-  country_filter text DEFAULT NULL,
-  match_count int DEFAULT 3
-)
-RETURNS TABLE (
-  artist_id uuid,
-  artist_name text,
-  artist_slug text,
-  city text,
-  region text,
-  country_code text,
-  profile_image_url text,
-  instagram_url text,
-  shop_name text,
-  is_verified boolean,
-  follower_count int,
-  similarity float,
-  location_count bigint
-)
-LANGUAGE plpgsql
-AS $$
+CREATE OR REPLACE FUNCTION compute_image_style_tags()
+RETURNS TRIGGER AS $$
 DECLARE
-  source_avg_embedding vector(768);
+  technique_record RECORD;
+  theme_record RECORD;
+  v_technique_threshold float := 0.35;
+  v_theme_threshold float := 0.45;  -- Tighter threshold for themes
+  v_theme_count int := 0;
 BEGIN
-  -- Get average embedding for source artist
-  SELECT avg(embedding)::vector(768) INTO source_avg_embedding
-  FROM portfolio_images
-  WHERE portfolio_images.artist_id = source_artist_id
-    AND status = 'active'
-    AND embedding IS NOT NULL;
-
-  IF source_avg_embedding IS NULL THEN
-    RETURN;
+  -- Only process if embedding is set
+  IF NEW.embedding IS NULL THEN
+    RETURN NEW;
   END IF;
 
-  RETURN QUERY
-  WITH filtered_artists AS (
-    SELECT DISTINCT ON (a.id)
-           a.id as fa_id, a.name as fa_name, a.slug as fa_slug,
-           al.city as fa_city,
-           al.region as fa_region,
-           al.country_code as fa_country_code,
-           a.profile_image_url as fa_profile_image_url,
-           a.instagram_url as fa_instagram_url,
-           a.shop_name as fa_shop_name,
-           a.follower_count as fa_follower_count,
-           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
-    FROM artists a
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
-    WHERE a.id != source_artist_id
-      AND a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
-  ),
-  artist_embeddings AS (
-    SELECT
-      fa.fa_id as ae_artist_id,
-      avg(pi.embedding)::vector(768) as ae_avg_embedding
-    FROM filtered_artists fa
-    INNER JOIN portfolio_images pi ON pi.artist_id = fa.fa_id
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-    GROUP BY fa.fa_id
-  ),
-  artist_location_counts AS (
-    SELECT
-      al.artist_id,
-      COUNT(*) as loc_count
-    FROM artist_locations al
-    GROUP BY al.artist_id
-  )
-  SELECT
-    fa.fa_id,
-    fa.fa_name,
-    fa.fa_slug,
-    fa.fa_city,
-    fa.fa_region,
-    fa.fa_country_code,
-    fa.fa_profile_image_url,
-    fa.fa_instagram_url,
-    fa.fa_shop_name,
-    fa.fa_is_verified,
-    fa.fa_follower_count,
-    (1 - (ae.ae_avg_embedding <=> source_avg_embedding))::float as similarity,
-    COALESCE(alc.loc_count, 1) as location_count
-  FROM filtered_artists fa
-  INNER JOIN artist_embeddings ae ON ae.ae_artist_id = fa.fa_id
-  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
-  ORDER BY ae.ae_avg_embedding <=> source_avg_embedding
-  LIMIT match_count;
+  -- Delete existing tags for this image
+  DELETE FROM image_style_tags WHERE image_id = NEW.id;
+
+  -- Step 1: Find ONE best technique (exclusive, lower threshold)
+  SELECT style_name, (1 - (NEW.embedding <=> embedding)) as similarity
+  INTO technique_record
+  FROM style_seeds
+  WHERE taxonomy = 'technique' AND embedding IS NOT NULL
+  ORDER BY NEW.embedding <=> embedding ASC
+  LIMIT 1;
+
+  IF technique_record IS NOT NULL AND technique_record.similarity >= v_technique_threshold THEN
+    INSERT INTO image_style_tags
+      (image_id, style_name, confidence, taxonomy, is_primary)
+    VALUES
+      (NEW.id, technique_record.style_name, technique_record.similarity,
+       'technique', true);
+  END IF;
+
+  -- Step 2: Find top 2 themes (higher threshold to reduce false positives)
+  FOR theme_record IN (
+    SELECT style_name, (1 - (NEW.embedding <=> embedding)) as similarity
+    FROM style_seeds
+    WHERE taxonomy = 'theme' AND embedding IS NOT NULL
+      AND (1 - (NEW.embedding <=> embedding)) >= v_theme_threshold
+    ORDER BY NEW.embedding <=> embedding ASC
+    LIMIT 2
+  ) LOOP
+    INSERT INTO image_style_tags
+      (image_id, style_name, confidence, taxonomy, is_primary)
+    VALUES
+      (NEW.id, theme_record.style_name, theme_record.similarity,
+       'theme', false);
+    v_theme_count := v_theme_count + 1;
+  END LOOP;
+
+  RETURN NEW;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION find_related_artists IS
-  'Find artists with similar style based on average portfolio embedding. Excludes EU/GDPR artists for compliance.';
+-- Recreate trigger
+DROP TRIGGER IF EXISTS compute_image_style_tags_trigger ON portfolio_images;
 
+CREATE TRIGGER compute_image_style_tags_trigger
+  AFTER INSERT OR UPDATE OF embedding ON portfolio_images
+  FOR EACH ROW
+  EXECUTE FUNCTION compute_image_style_tags();
 
--- ============================================
--- classify_embedding_styles
--- Classify an embedding against style seeds (with taxonomy support)
--- ============================================
-DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float);
-DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float, style_taxonomy);
-
-CREATE OR REPLACE FUNCTION classify_embedding_styles(
-  p_embedding vector(768),
-  p_max_styles int DEFAULT 3,
-  p_min_confidence float DEFAULT 0.35,
-  p_taxonomy style_taxonomy DEFAULT NULL  -- NULL = all styles, 'technique' or 'theme' to filter
-)
-RETURNS TABLE (
-  style_name text,
-  confidence float,
-  taxonomy style_taxonomy
-)
-LANGUAGE plpgsql STABLE
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    ss.style_name,
-    (1 - (p_embedding <=> ss.embedding))::FLOAT as confidence,
-    ss.taxonomy
-  FROM style_seeds ss
-  WHERE ss.embedding IS NOT NULL
-    AND (1 - (p_embedding <=> ss.embedding)) >= p_min_confidence
-    AND (p_taxonomy IS NULL OR ss.taxonomy = p_taxonomy)
-  ORDER BY p_embedding <=> ss.embedding ASC
-  LIMIT p_max_styles;
-END;
-$$;
-
-COMMENT ON FUNCTION classify_embedding_styles IS
-  'Classifies an embedding against style seeds. Optionally filter by taxonomy (technique/theme). Returns top N styles with confidence scores above threshold.';
-
-
--- ============================================
--- get_search_location_counts
--- Get location counts filtered by search embedding
--- Returns only locations that have matching artists
--- ============================================
-DROP FUNCTION IF EXISTS get_search_location_counts(vector, float);
-
-CREATE OR REPLACE FUNCTION get_search_location_counts(
-  query_embedding vector(768),
-  match_threshold float DEFAULT 0.15
-)
-RETURNS TABLE (
-  location_type text,
-  country_code text,
-  region text,
-  city text,
-  artist_count bigint
-)
-LANGUAGE plpgsql STABLE
-AS $$
-BEGIN
-  RETURN QUERY
-  -- Step 1: Vector search to find matching images (same as main search)
-  WITH ranked_images AS (
-    SELECT
-      pi.artist_id as ri_artist_id,
-      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-      AND COALESCE(pi.hidden, FALSE) = FALSE
-    ORDER BY pi.embedding <=> query_embedding
-    LIMIT 2000
-  ),
-  threshold_images AS (
-    SELECT DISTINCT ri_artist_id
-    FROM ranked_images
-    WHERE ri_similarity_score >= match_threshold
-  ),
-  -- Step 2: Get matching artists with their primary locations
-  matching_artists AS (
-    SELECT DISTINCT
-      a.id as artist_id,
-      al.country_code as al_country_code,
-      al.region as al_region,
-      al.city as al_city
-    FROM artists a
-    INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
-    WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code))
-  ),
-  -- Step 3: Aggregate by country
-  country_counts AS (
-    SELECT
-      'country'::text as loc_type,
-      ma.al_country_code,
-      NULL::text as loc_region,
-      NULL::text as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_country_code IS NOT NULL
-    GROUP BY ma.al_country_code
-  ),
-  -- Step 4: Aggregate by region (only US for now)
-  region_counts AS (
-    SELECT
-      'region'::text as loc_type,
-      ma.al_country_code,
-      ma.al_region as loc_region,
-      NULL::text as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_country_code = 'US'
-      AND ma.al_region IS NOT NULL
-    GROUP BY ma.al_country_code, ma.al_region
-  ),
-  -- Step 5: Aggregate by city
-  city_counts AS (
-    SELECT
-      'city'::text as loc_type,
-      ma.al_country_code,
-      ma.al_region as loc_region,
-      ma.al_city as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_city IS NOT NULL
-    GROUP BY ma.al_country_code, ma.al_region, ma.al_city
-  )
-  -- Combine all location types
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM country_counts
-  UNION ALL
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM region_counts
-  UNION ALL
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM city_counts
-  ORDER BY cnt DESC;
-END;
-$$;
-
-COMMENT ON FUNCTION get_search_location_counts IS
-  'Returns location counts filtered by search embedding. Only includes locations with matching artists.';
+COMMENT ON FUNCTION compute_image_style_tags IS
+  'Auto-tags images with ONE technique (threshold 0.35) and up to 2 themes (threshold 0.45). Themes have higher threshold to reduce false positives like horror matching normal portraits.';

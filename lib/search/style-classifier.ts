@@ -6,21 +6,69 @@ import { createClient } from '@/lib/supabase/server'
 export interface StyleMatch {
   style_name: string
   confidence: number
+  taxonomy?: 'technique' | 'theme'
 }
 
 /**
- * Classifies a query embedding against style seeds
- * Returns top N styles with confidence scores above threshold
+ * Multi-axis style classification result
+ */
+export interface StyleClassification {
+  techniques: StyleMatch[]  // Max 1, threshold 0.35
+  themes: StyleMatch[]       // Max 2, threshold 0.45
+}
+
+/**
+ * Classifies a query embedding against style seeds using multi-axis taxonomy
+ * Returns separate technique and theme classifications
  *
- * Uses the same cosine similarity math as compute_image_style_tags trigger
- * so results are consistent with how portfolio images are classified
+ * - Techniques (HOW): ONE best match above 0.35 threshold
+ * - Themes (WHAT): Up to 2 matches above 0.45 threshold (tighter to reduce false positives)
  *
  * @param embedding - 768-dim CLIP embedding to classify
- * @param maxStyles - Maximum number of styles to return (default: 3)
- * @param minConfidence - Minimum confidence threshold (default: 0.35)
- * @returns Array of style matches sorted by confidence descending
+ * @returns StyleClassification with separate techniques and themes arrays
  */
 export async function classifyQueryStyles(
+  embedding: number[]
+): Promise<StyleClassification> {
+  const supabase = await createClient()
+
+  // Classify techniques (max 1, threshold 0.35)
+  const { data: techniques, error: techError } = await supabase.rpc('classify_embedding_styles', {
+    p_embedding: `[${embedding.join(',')}]`,
+    p_max_styles: 1,
+    p_min_confidence: 0.35,
+    p_taxonomy: 'technique',
+  })
+
+  if (techError) {
+    console.error('[Style Classifier] Technique classification failed:', techError)
+  }
+
+  // Classify themes (max 2, higher threshold 0.45)
+  const { data: themes, error: themeError } = await supabase.rpc('classify_embedding_styles', {
+    p_embedding: `[${embedding.join(',')}]`,
+    p_max_styles: 2,
+    p_min_confidence: 0.45,
+    p_taxonomy: 'theme',
+  })
+
+  if (themeError) {
+    console.error('[Style Classifier] Theme classification failed:', themeError)
+  }
+
+  return {
+    techniques: (techniques as StyleMatch[]) || [],
+    themes: (themes as StyleMatch[]) || [],
+  }
+}
+
+/**
+ * Legacy function for backward compatibility
+ * Returns flat array of all style matches (techniques + themes)
+ *
+ * @deprecated Use classifyQueryStyles() for multi-axis support
+ */
+export async function classifyQueryStylesFlat(
   embedding: number[],
   maxStyles = 3,
   minConfidence = 0.35
@@ -31,11 +79,11 @@ export async function classifyQueryStyles(
     p_embedding: `[${embedding.join(',')}]`,
     p_max_styles: maxStyles,
     p_min_confidence: minConfidence,
+    // No p_taxonomy = returns all styles
   })
 
   if (error) {
     console.error('[Style Classifier] Classification failed:', error)
-    // Return empty array on error - search will proceed without style boost
     return []
   }
 

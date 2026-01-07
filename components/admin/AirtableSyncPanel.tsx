@@ -20,6 +20,7 @@ import {
   Clock,
   ChevronDown,
   AlertCircle,
+  Sparkles,
 } from 'lucide-react';
 import AdminSelect from './AdminSelect';
 
@@ -72,6 +73,21 @@ interface PullResult {
   errors?: Array<{ handle: string; error: string }>;
 }
 
+interface GenerateResult {
+  success: boolean;
+  generated: number;
+  airtableSynced: number;
+  failed: number;
+  message?: string;
+  errors?: Array<{ handle: string; error: string }>;
+}
+
+interface PendingRecord {
+  id: string;
+  instagram_handle: string;
+  name: string | null;
+}
+
 // Follower range presets
 const FOLLOWER_RANGES = [
   { value: '5k-10k', label: '5K–10K', min: 5000, max: 10000 },
@@ -81,10 +97,16 @@ const FOLLOWER_RANGES = [
 ];
 
 const LIMIT_OPTIONS = [
-  { value: '5', label: '5 artists' },
-  { value: '10', label: '10 artists' },
-  { value: '20', label: '20 artists' },
-  { value: '50', label: '50 artists' },
+  { value: '5', label: '5' },
+  { value: '10', label: '10' },
+  { value: '20', label: '20' },
+  { value: '50', label: '50' },
+];
+
+const GENERATE_LIMIT_OPTIONS = [
+  { value: '5', label: '5' },
+  { value: '10', label: '10' },
+  { value: '20', label: '20' },
 ];
 
 export default function AirtableSyncPanel() {
@@ -92,12 +114,15 @@ export default function AirtableSyncPanel() {
   const [loading, setLoading] = useState(true);
   const [pushLoading, setPushLoading] = useState(false);
   const [pullLoading, setPullLoading] = useState(false);
+  const [generateLoading, setGenerateLoading] = useState(false);
   const [followerRange, setFollowerRange] = useState('5k-10k');
   const [limit, setLimit] = useState('10');
+  const [generateLimit, setGenerateLimit] = useState('10');
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [lastResult, setLastResult] = useState<{
-    type: 'push' | 'pull';
-    data: PushResult | PullResult;
+    type: 'push' | 'pull' | 'generate';
+    data: PushResult | PullResult | GenerateResult;
   } | null>(null);
 
   const fetchStatus = useCallback(async () => {
@@ -114,9 +139,22 @@ export default function AirtableSyncPanel() {
     }
   }, []);
 
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/marketing/pending');
+      if (res.ok) {
+        const data = await res.json();
+        setPendingCount(data.count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch pending count:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchStatus();
-  }, [fetchStatus]);
+    fetchPendingCount();
+  }, [fetchStatus, fetchPendingCount]);
 
   const handlePush = async () => {
     const range = FOLLOWER_RANGES.find((r) => r.value === followerRange);
@@ -187,6 +225,62 @@ export default function AirtableSyncPanel() {
       });
     } finally {
       setPullLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setGenerateLoading(true);
+    setLastResult(null);
+
+    try {
+      // First fetch pending outreach IDs
+      const pendingRes = await fetch(
+        `/api/admin/marketing/pending?limit=${generateLimit}`
+      );
+      if (!pendingRes.ok) {
+        throw new Error('Failed to fetch pending records');
+      }
+      const pendingData = await pendingRes.json();
+      const outreachIds = pendingData.records?.map((r: PendingRecord) => r.id) || [];
+
+      if (outreachIds.length === 0) {
+        setLastResult({
+          type: 'generate',
+          data: {
+            success: true,
+            generated: 0,
+            airtableSynced: 0,
+            failed: 0,
+            message: 'No pending records to generate',
+          },
+        });
+        return;
+      }
+
+      // Generate captions for those records
+      const res = await fetch('/api/admin/marketing/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ outreachIds }),
+      });
+
+      const data: GenerateResult = await res.json();
+      setLastResult({ type: 'generate', data });
+      await fetchPendingCount();
+    } catch (error) {
+      console.error('Generate failed:', error);
+      setLastResult({
+        type: 'generate',
+        data: {
+          success: false,
+          generated: 0,
+          airtableSynced: 0,
+          failed: 0,
+          message: String(error),
+        },
+      });
+    } finally {
+      setGenerateLoading(false);
     }
   };
 
@@ -298,6 +392,45 @@ export default function AirtableSyncPanel() {
           </div>
         </div>
 
+        {/* Generate Captions Section */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-gray-500" />
+            <span className="text-xs font-mono text-gray-500 uppercase tracking-wider">
+              Generate Captions
+            </span>
+            {pendingCount !== null && pendingCount > 0 && (
+              <span className="text-[10px] font-mono bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                {pendingCount} pending
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <AdminSelect
+              value={generateLimit}
+              onChange={setGenerateLimit}
+              options={GENERATE_LIMIT_OPTIONS}
+              className="w-20"
+            />
+            <button
+              onClick={handleGenerate}
+              disabled={generateLoading || pendingCount === 0}
+              className="h-[30px] flex items-center gap-1.5 px-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-[13px] font-body
+                       hover:from-violet-700 hover:to-purple-700 transition-colors disabled:opacity-50"
+            >
+              {generateLoading ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Sparkles className="w-3 h-3" />
+              )}
+              Generate
+            </button>
+            <span className="text-[11px] text-gray-400 font-body">
+              AI captions + hashtags → Airtable
+            </span>
+          </div>
+        </div>
+
         {/* Pull Section */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -344,7 +477,7 @@ export default function AirtableSyncPanel() {
                 <XCircle className="w-4 h-4 text-status-error flex-shrink-0" />
               )}
               <div className="text-xs font-body">
-                {lastResult.type === 'push' ? (
+                {lastResult.type === 'push' && (
                   <p>
                     Pushed {(lastResult.data as PushResult).pushed} artists
                     {(lastResult.data as PushResult).created > 0 &&
@@ -352,7 +485,8 @@ export default function AirtableSyncPanel() {
                     {(lastResult.data as PushResult).updated > 0 &&
                       ` (${(lastResult.data as PushResult).updated} updated)`}
                   </p>
-                ) : (
+                )}
+                {lastResult.type === 'pull' && (
                   <p>
                     Processed {(lastResult.data as PullResult).processed} records,
                     updated {(lastResult.data as PullResult).updated}
@@ -360,6 +494,14 @@ export default function AirtableSyncPanel() {
                       `, +${(lastResult.data as PullResult).featured_added} featured`}
                     {(lastResult.data as PullResult).featured_removed > 0 &&
                       `, -${(lastResult.data as PullResult).featured_removed} unfeatured`}
+                  </p>
+                )}
+                {lastResult.type === 'generate' && (
+                  <p>
+                    {(lastResult.data as GenerateResult).message ||
+                      `Generated ${(lastResult.data as GenerateResult).generated} captions, ${(lastResult.data as GenerateResult).airtableSynced} synced to Airtable`}
+                    {(lastResult.data as GenerateResult).failed > 0 &&
+                      `, ${(lastResult.data as GenerateResult).failed} failed`}
                   </p>
                 )}
                 {lastResult.data.errors && lastResult.data.errors.length > 0 && (

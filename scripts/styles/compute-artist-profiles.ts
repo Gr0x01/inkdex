@@ -1,9 +1,13 @@
 #!/usr/bin/env npx tsx
 /**
- * Compute Artist Style Profiles
+ * Compute Artist Style Profiles - Multi-Axis Taxonomy
  *
- * Aggregates image_style_tags into artist-level style profiles.
- * Each artist gets a breakdown: "60% traditional, 25% blackwork, 15% realism"
+ * Aggregates image_style_tags into artist-level style profiles, now with
+ * separate aggregation for techniques vs themes.
+ *
+ * Artist profile breakdown:
+ *   - Techniques: "60% realism, 25% blackwork, 15% traditional"
+ *   - Themes: "45% portrait, 30% horror, 25% floral"
  *
  * Usage:
  *   npx tsx scripts/styles/compute-artist-profiles.ts
@@ -28,11 +32,14 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+type StyleTaxonomy = 'technique' | 'theme';
+
 interface ArtistProfile {
   artist_id: string;
   style_name: string;
   percentage: number;
   image_count: number;
+  taxonomy: StyleTaxonomy;
 }
 
 function parseArgs() {
@@ -125,7 +132,7 @@ async function main() {
 async function computeManually(dryRun: boolean, artistId: string | null) {
   const startTime = Date.now();
 
-  // Step 1: Get all image tags with artist info (paginated)
+  // Step 1: Get all image tags with artist info and taxonomy (paginated)
   console.log('Fetching image tags with artist data...');
 
   const PAGE_SIZE = 5000;
@@ -139,6 +146,7 @@ async function computeManually(dryRun: boolean, artistId: string | null) {
       .select(`
         style_name,
         confidence,
+        taxonomy,
         portfolio_images!inner(artist_id)
       `)
       .range(offset, offset + PAGE_SIZE - 1);
@@ -168,11 +176,13 @@ async function computeManually(dryRun: boolean, artistId: string | null) {
     return;
   }
 
-  // Step 2: Aggregate by artist + style
-  console.log('Aggregating by artist...');
+  // Step 2: Aggregate by artist + style + taxonomy
+  // Percentages are calculated WITHIN each taxonomy (techniques sum to 100%, themes sum to 100%)
+  console.log('Aggregating by artist and taxonomy...');
 
-  const artistStyles: Map<string, Map<string, number>> = new Map();
-  const artistTotals: Map<string, number> = new Map();
+  // Structure: artist_id -> taxonomy -> style_name -> count
+  const artistStylesByTaxonomy: Map<string, Map<StyleTaxonomy, Map<string, number>>> = new Map();
+  const artistTotalsByTaxonomy: Map<string, Map<StyleTaxonomy, number>> = new Map();
 
   for (const tag of tags) {
     const aid = (tag.portfolio_images as any)?.artist_id;
@@ -180,45 +190,74 @@ async function computeManually(dryRun: boolean, artistId: string | null) {
 
     if (artistId && aid !== artistId) continue;
 
-    if (!artistStyles.has(aid)) {
-      artistStyles.set(aid, new Map());
-      artistTotals.set(aid, 0);
+    const taxonomy = (tag.taxonomy || 'technique') as StyleTaxonomy;
+
+    if (!artistStylesByTaxonomy.has(aid)) {
+      artistStylesByTaxonomy.set(aid, new Map());
+      artistTotalsByTaxonomy.set(aid, new Map());
     }
 
-    const styles = artistStyles.get(aid)!;
+    const artistTax = artistStylesByTaxonomy.get(aid)!;
+    const artistTotals = artistTotalsByTaxonomy.get(aid)!;
+
+    if (!artistTax.has(taxonomy)) {
+      artistTax.set(taxonomy, new Map());
+      artistTotals.set(taxonomy, 0);
+    }
+
+    const styles = artistTax.get(taxonomy)!;
     styles.set(tag.style_name, (styles.get(tag.style_name) || 0) + 1);
-    artistTotals.set(aid, artistTotals.get(aid)! + 1);
+    artistTotals.set(taxonomy, artistTotals.get(taxonomy)! + 1);
   }
 
-  console.log(`Found ${artistStyles.size} artists with style tags\n`);
+  console.log(`Found ${artistStylesByTaxonomy.size} artists with style tags\n`);
 
   // Step 3: Calculate percentages and build profiles
   const profiles: ArtistProfile[] = [];
 
-  for (const [aid, styles] of artistStyles) {
-    const total = artistTotals.get(aid) || 1;
+  for (const [aid, taxonomyStyles] of artistStylesByTaxonomy) {
+    const artistTotals = artistTotalsByTaxonomy.get(aid)!;
 
-    for (const [styleName, count] of styles) {
-      const percentage = (count / total) * 100;
-      profiles.push({
-        artist_id: aid,
-        style_name: styleName,
-        percentage,
-        image_count: count,
-      });
+    for (const [taxonomy, styles] of taxonomyStyles) {
+      const total = artistTotals.get(taxonomy) || 1;
+
+      for (const [styleName, count] of styles) {
+        const percentage = (count / total) * 100;
+        profiles.push({
+          artist_id: aid,
+          style_name: styleName,
+          percentage,
+          image_count: count,
+          taxonomy,
+        });
+      }
     }
   }
 
   const elapsed = (Date.now() - startTime) / 1000;
-  console.log(`Computed ${profiles.length} profiles for ${artistStyles.size} artists in ${elapsed.toFixed(1)}s\n`);
+  console.log(`Computed ${profiles.length} profiles for ${artistStylesByTaxonomy.size} artists in ${elapsed.toFixed(1)}s\n`);
 
-  // Show distribution
-  const styleCounts: Record<string, number> = {};
+  // Show distribution by taxonomy
+  const techniqueCounts: Record<string, number> = {};
+  const themeCounts: Record<string, number> = {};
   for (const p of profiles) {
-    styleCounts[p.style_name] = (styleCounts[p.style_name] || 0) + 1;
+    if (p.taxonomy === 'technique') {
+      techniqueCounts[p.style_name] = (techniqueCounts[p.style_name] || 0) + 1;
+    } else {
+      themeCounts[p.style_name] = (themeCounts[p.style_name] || 0) + 1;
+    }
   }
-  console.log('Artists per style:');
-  Object.entries(styleCounts)
+
+  console.log('TECHNIQUE profiles (artists per technique):');
+  Object.entries(techniqueCounts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([style, count]) => {
+      console.log(`  ${style}: ${count} artists`);
+    });
+  console.log('');
+
+  console.log('THEME profiles (artists per theme):');
+  Object.entries(themeCounts)
     .sort((a, b) => b[1] - a[1])
     .forEach(([style, count]) => {
       console.log(`  ${style}: ${count} artists`);
@@ -228,7 +267,8 @@ async function computeManually(dryRun: boolean, artistId: string | null) {
   // Show sample
   console.log('Sample profiles (first 10):');
   for (const p of profiles.slice(0, 10)) {
-    console.log(`  ${p.artist_id.slice(0, 8)}... → ${p.style_name}: ${p.percentage.toFixed(1)}% (${p.image_count} images)`);
+    const taxLabel = p.taxonomy === 'technique' ? '[T]' : '[S]';
+    console.log(`  ${p.artist_id.slice(0, 8)}... → ${taxLabel} ${p.style_name}: ${p.percentage.toFixed(1)}% (${p.image_count} images)`);
   }
   console.log('');
 

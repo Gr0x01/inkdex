@@ -5,12 +5,17 @@
  * Takes multiple seed images per style and creates a single averaged "centroid"
  * embedding that better represents the style's visual diversity.
  *
+ * Supports multi-axis taxonomy:
+ *   - technique: HOW the tattoo is done (ONE per image, threshold 0.35)
+ *   - theme: WHAT the tattoo depicts (0-2 per image, threshold 0.45)
+ *
  * Usage:
- *   npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seed-embeddings
- *   npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seed-embeddings --dry-run
+ *   npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seeds
+ *   npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seeds --taxonomy theme
+ *   npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./tmp/seeds --dry-run
  *
  * Expected file naming: {style-slug}-{number}.{ext}
- * Example: traditional-1.jpg, traditional-2.jpg, new-school-1.jpg
+ * Example: traditional-1.jpg, horror-2.jpg, anime-1.png
  */
 
 import * as fs from 'fs';
@@ -32,111 +37,154 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// Style display names and descriptions
-const STYLE_INFO: Record<string, { displayName: string; description: string }> = {
+// Taxonomy types
+type StyleTaxonomy = 'technique' | 'theme';
+
+// Style display names, descriptions, and taxonomy classification
+interface StyleInfo {
+  displayName: string;
+  description: string;
+  taxonomy: StyleTaxonomy;
+}
+
+const STYLE_INFO: Record<string, StyleInfo> = {
+  // ============================================
+  // TECHNIQUES - HOW the tattoo is done
+  // ONE per image, threshold 0.35
+  // ============================================
   'traditional': {
     displayName: 'Traditional',
     description: 'Bold lines, bright colors, and iconic designs like roses, anchors, and gorgeous lady heads. Classic American tattoo style.',
+    taxonomy: 'technique',
   },
   'neo-traditional': {
     displayName: 'Neo Traditional',
     description: 'Evolution of traditional with pronounced linework and extremely vibrant colors plus illustrative qualities.',
+    taxonomy: 'technique',
   },
   'new-school': {
     displayName: 'New School',
     description: 'Cartoonish and wacky, featuring caricatures and exaggerated figures. Vibrant colors and playful subjects.',
+    taxonomy: 'technique',
   },
   'realism': {
     displayName: 'Realism',
     description: 'Photo-realistic imagery in black & grey or color. Portraits and detailed scenes.',
+    taxonomy: 'technique',
   },
   'blackwork': {
     displayName: 'Blackwork',
     description: 'Pure black ink designs from geometric patterns to heavy coverage.',
-  },
-  'japanese': {
-    displayName: 'Japanese',
-    description: 'Traditional Irezumi: koi, dragons, cherry blossoms, waves. Originated during Edo period.',
+    taxonomy: 'technique',
   },
   'watercolor': {
     displayName: 'Watercolor',
     description: 'Mimics watercolor painting with splashes, drips, and soft color bleeds.',
+    taxonomy: 'technique',
   },
   'tribal': {
     displayName: 'Tribal',
     description: 'Bold black patterns inspired by Polynesian, Maori, or indigenous traditions.',
-  },
-  'illustrative': {
-    displayName: 'Illustrative',
-    description: 'Storybook or comic-style artwork with artistic interpretation and fine details.',
-  },
-  'black-and-gray': {
-    displayName: 'Black & Gray',
-    description: 'Smooth grayscale shading using only black ink diluted to various gray tones. Portraits, nature, and realistic subjects.',
+    taxonomy: 'technique',
   },
   'biomechanical': {
     displayName: 'Biomechanical',
     description: 'Fusion of organic and mechanical. Machinery beneath skin aesthetic.',
-  },
-  'surrealism': {
-    displayName: 'Surrealism',
-    description: 'Dreamlike, impossible imagery. Melting forms and optical illusions.',
-  },
-  'minimalist': {
-    displayName: 'Minimalist',
-    description: 'Simple, understated designs with clean lines and minimal elements.',
-  },
-  'lettering': {
-    displayName: 'Lettering/Script',
-    description: 'Typography-focused work from elegant scripts to graffiti-inspired.',
+    taxonomy: 'technique',
   },
   'trash-polka': {
     displayName: 'Trash Polka',
     description: 'Chaotic collage mixing realism, typography, and abstract. Red and black.',
+    taxonomy: 'technique',
   },
   'ornamental': {
     displayName: 'Ornamental',
     description: 'Decorative patterns inspired by jewelry, lace, or architectural elements.',
+    taxonomy: 'technique',
   },
   'sketch': {
     displayName: 'Sketch/Line Art',
     description: 'Intentionally unfinished with visible sketch lines and raw aesthetic.',
+    taxonomy: 'technique',
   },
   'dotwork': {
     displayName: 'Dotwork',
     description: 'Images created entirely from dots. Often geometric or mandala-based.',
+    taxonomy: 'technique',
   },
   'geometric': {
     displayName: 'Geometric',
     description: 'Mathematical precision with shapes, patterns, and sacred geometry.',
+    taxonomy: 'technique',
   },
   'fine-line': {
     displayName: 'Fine Line',
     description: 'Delicate, thin lines with minimal shading. Often single-needle work.',
+    taxonomy: 'technique',
+  },
+
+  // ============================================
+  // THEMES - WHAT the tattoo depicts
+  // 0-2 per image, threshold 0.45 (tighter to reduce false positives)
+  // ============================================
+  'horror': {
+    displayName: 'Horror',
+    description: 'Dark and macabre imagery featuring horror movie icons, skulls, demons, and nightmarish scenes.',
+    taxonomy: 'theme',
+  },
+  'japanese': {
+    displayName: 'Japanese',
+    description: 'Traditional Irezumi subjects: koi, dragons, cherry blossoms, waves, oni masks, samurai.',
+    taxonomy: 'theme',
   },
   'anime': {
     displayName: 'Anime',
-    description: 'Japanese animation style featuring characters from anime and manga. Vibrant colors, expressive eyes, and dynamic compositions.',
+    description: 'Japanese animation style featuring characters from anime and manga. Expressive eyes and dynamic compositions.',
+    taxonomy: 'theme',
   },
-  'horror': {
-    displayName: 'Horror',
-    description: 'Dark and macabre imagery featuring horror movie icons, skulls, demons, and nightmarish scenes. Often in black and grey realism or blackwork.',
+  'portrait': {
+    displayName: 'Portrait',
+    description: 'Human faces and expressions, from realistic portraits to stylized faces.',
+    taxonomy: 'theme',
   },
-  'stick-and-poke': {
-    displayName: 'Stick and Poke',
-    description: 'Hand-poked tattoos with a raw, DIY aesthetic. Simple designs, dotwork, and intentionally imperfect lines with punk and indie roots.',
+  'floral': {
+    displayName: 'Floral',
+    description: 'Flowers, botanicals, roses, and nature-inspired plant designs.',
+    taxonomy: 'theme',
+  },
+  'animal': {
+    displayName: 'Animal',
+    description: 'Creatures, wildlife, pets, insects, and animal imagery.',
+    taxonomy: 'theme',
+  },
+  'lettering': {
+    displayName: 'Lettering',
+    description: 'Typography-focused work from elegant scripts to graffiti-inspired text.',
+    taxonomy: 'theme',
+  },
+  'abstract': {
+    displayName: 'Abstract',
+    description: 'Non-representational, conceptual, and surreal imagery.',
+    taxonomy: 'theme',
+  },
+  'spiritual': {
+    displayName: 'Spiritual',
+    description: 'Religious symbols, memorial pieces, cultural heritage, and spiritual imagery.',
+    taxonomy: 'theme',
   },
 };
 
 interface ParsedArgs {
   dir: string;
   dryRun: boolean;
+  taxonomy: StyleTaxonomy | null;  // null = use STYLE_INFO taxonomy, or override
 }
 
 function parseArgs(): ParsedArgs {
   const args = process.argv.slice(2);
   let dir = '';
   let dryRun = false;
+  let taxonomy: StyleTaxonomy | null = null;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--dir' && args[i + 1]) {
@@ -144,17 +192,28 @@ function parseArgs(): ParsedArgs {
       i++;
     } else if (args[i] === '--dry-run') {
       dryRun = true;
+    } else if (args[i] === '--taxonomy' && args[i + 1]) {
+      const val = args[i + 1].toLowerCase();
+      if (val === 'technique' || val === 'theme') {
+        taxonomy = val;
+      } else {
+        console.error(`Invalid taxonomy: ${val}. Must be 'technique' or 'theme'.`);
+        process.exit(1);
+      }
+      i++;
     }
   }
 
   if (!dir) {
-    console.error('Usage: npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./path/to/seeds [--dry-run]');
+    console.error('Usage: npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./path/to/seeds [--taxonomy technique|theme] [--dry-run]');
     console.error('\nExpected file naming: {style-slug}-{number}.{ext}');
-    console.error('Example: traditional-1.jpg, new-school-2.png');
+    console.error('Example: traditional-1.jpg, horror-2.png');
+    console.error('\nOptions:');
+    console.error('  --taxonomy  Force all seeds to be technique or theme (overrides STYLE_INFO)');
     process.exit(1);
   }
 
-  return { dir, dryRun };
+  return { dir, dryRun, taxonomy };
 }
 
 async function generateEmbedding(imagePath: string): Promise<number[] | null> {
@@ -216,12 +275,15 @@ function averageEmbeddings(embeddings: number[][]): number[] {
 }
 
 async function main() {
-  const { dir, dryRun } = parseArgs();
+  const { dir, dryRun, taxonomy: taxonomyOverride } = parseArgs();
 
   console.log('Averaged Style Seed Embedding Generator');
   console.log('=======================================');
   console.log(`Directory: ${dir}`);
   console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
+  if (taxonomyOverride) {
+    console.log(`Taxonomy override: ${taxonomyOverride} (all seeds will be marked as ${taxonomyOverride})`);
+  }
   console.log('');
 
   // Check directory exists
@@ -349,8 +411,11 @@ async function main() {
     const imageUrl = urlData.publicUrl;
     console.log(`  Image URL: ${imageUrl}`);
 
+    // Determine taxonomy (override or from STYLE_INFO)
+    const styleTaxonomy = taxonomyOverride || styleInfo?.taxonomy || 'technique';
+
     // Upsert to style_seeds table
-    console.log(`  Updating style_seeds table...`);
+    console.log(`  Updating style_seeds table (taxonomy: ${styleTaxonomy})...`);
     const { error: upsertError } = await supabase
       .from('style_seeds')
       .upsert(
@@ -360,6 +425,7 @@ async function main() {
           description: styleInfo?.description || `${styleName} style tattoos`,
           seed_image_url: imageUrl,
           embedding: `[${avgEmbedding.join(',')}]`,
+          taxonomy: styleTaxonomy,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'style_name' }

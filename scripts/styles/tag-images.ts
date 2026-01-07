@@ -1,23 +1,26 @@
 #!/usr/bin/env npx tsx
 /**
- * Image Style Tagging Script
+ * Image Style Tagging Script - Multi-Axis Taxonomy
  *
- * Tags all portfolio images with style labels based on CLIP embedding similarity.
- * Pure vector math on existing embeddings - no GPU required.
+ * Tags all portfolio images with style labels using a multi-axis taxonomy:
+ *   - Technique: HOW the tattoo is done (ONE per image, threshold 0.35)
+ *   - Theme: WHAT the tattoo depicts (0-2 per image, threshold 0.45)
+ *
+ * This reduces false positives (e.g., horror matching normal B&G portraits)
+ * by separating artistic technique from subject matter.
  *
  * Usage:
  *   npx tsx scripts/styles/tag-images.ts
  *   npx tsx scripts/styles/tag-images.ts --dry-run
  *   npx tsx scripts/styles/tag-images.ts --limit 100
- *   npx tsx scripts/styles/tag-images.ts --min-confidence 0.3
- *   npx tsx scripts/styles/tag-images.ts --top-n 3
+ *   npx tsx scripts/styles/tag-images.ts --clear
  *
  * Options:
- *   --dry-run         Don't insert, just show what would be tagged
- *   --limit N         Process only first N images (for testing)
- *   --min-confidence  Minimum similarity to tag (default: 0.35)
- *   --top-n           Max styles per image (default: 3)
- *   --clear           Clear existing tags before running
+ *   --dry-run            Don't insert, just show what would be tagged
+ *   --limit N            Process only first N images (for testing)
+ *   --technique-threshold  Min similarity for techniques (default: 0.35)
+ *   --theme-threshold      Min similarity for themes (default: 0.45)
+ *   --clear              Clear existing tags before running
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -36,9 +39,12 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
+type StyleTaxonomy = 'technique' | 'theme';
+
 interface StyleSeed {
   style_name: string;
   embedding: number[];
+  taxonomy: StyleTaxonomy;
 }
 
 interface PortfolioImage {
@@ -50,6 +56,8 @@ interface StyleTag {
   image_id: string;
   style_name: string;
   confidence: number;
+  taxonomy: StyleTaxonomy;
+  is_primary: boolean;
 }
 
 // Parse command line args
@@ -57,8 +65,8 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let dryRun = false;
   let limit: number | null = null;
-  let minConfidence = 0.35;
-  let topN = 3;
+  let techniqueThreshold = 0.35;
+  let themeThreshold = 0.45;  // Higher threshold to reduce false positives
   let clear = false;
 
   for (let i = 0; i < args.length; i++) {
@@ -67,18 +75,18 @@ function parseArgs() {
     } else if (args[i] === '--limit' && args[i + 1]) {
       limit = parseInt(args[i + 1], 10);
       i++;
-    } else if (args[i] === '--min-confidence' && args[i + 1]) {
-      minConfidence = parseFloat(args[i + 1]);
+    } else if (args[i] === '--technique-threshold' && args[i + 1]) {
+      techniqueThreshold = parseFloat(args[i + 1]);
       i++;
-    } else if (args[i] === '--top-n' && args[i + 1]) {
-      topN = parseInt(args[i + 1], 10);
+    } else if (args[i] === '--theme-threshold' && args[i + 1]) {
+      themeThreshold = parseFloat(args[i + 1]);
       i++;
     } else if (args[i] === '--clear') {
       clear = true;
     }
   }
 
-  return { dryRun, limit, minConfidence, topN, clear };
+  return { dryRun, limit, techniqueThreshold, themeThreshold, clear };
 }
 
 // Cosine similarity between two vectors
@@ -126,13 +134,13 @@ function parseEmbedding(raw: unknown): number[] | null {
 }
 
 async function main() {
-  const { dryRun, limit, minConfidence, topN, clear } = parseArgs();
+  const { dryRun, limit, techniqueThreshold, themeThreshold, clear } = parseArgs();
 
-  console.log('Image Style Tagging Script');
-  console.log('==========================');
+  console.log('Image Style Tagging Script - Multi-Axis Taxonomy');
+  console.log('=================================================');
   console.log(`Mode: ${dryRun ? 'DRY RUN' : 'LIVE'}`);
-  console.log(`Min confidence: ${minConfidence}`);
-  console.log(`Top N styles per image: ${topN}`);
+  console.log(`Technique threshold: ${techniqueThreshold} (ONE per image)`);
+  console.log(`Theme threshold: ${themeThreshold} (0-2 per image)`);
   if (limit) console.log(`Limit: ${limit} images`);
   console.log('');
 
@@ -150,29 +158,35 @@ async function main() {
     console.log('Cleared.\n');
   }
 
-  // Fetch all style seeds
+  // Fetch all style seeds with taxonomy
   console.log('Fetching style seeds...');
   const { data: styleSeeds, error: seedError } = await supabase
     .from('style_seeds')
-    .select('style_name, embedding');
+    .select('style_name, embedding, taxonomy');
 
   if (seedError || !styleSeeds) {
     console.error('Failed to fetch style seeds:', seedError?.message);
     process.exit(1);
   }
 
-  // Parse seed embeddings
-  const styles: StyleSeed[] = styleSeeds
+  // Parse seed embeddings and split by taxonomy
+  const allStyles: StyleSeed[] = styleSeeds
     .map((s) => ({
       style_name: s.style_name,
       embedding: parseEmbedding(s.embedding),
+      taxonomy: (s.taxonomy || 'technique') as StyleTaxonomy,
     }))
     .filter((s): s is StyleSeed => s.embedding !== null);
 
-  console.log(`Found ${styles.length} style seeds: ${styles.map((s) => s.style_name).join(', ')}\n`);
+  const techniques = allStyles.filter((s) => s.taxonomy === 'technique');
+  const themes = allStyles.filter((s) => s.taxonomy === 'theme');
 
-  if (styles.length === 0) {
-    console.error('No style seeds found. Upload seed images first.');
+  console.log(`Found ${allStyles.length} style seeds:`);
+  console.log(`  Techniques (${techniques.length}): ${techniques.map((s) => s.style_name).join(', ')}`);
+  console.log(`  Themes (${themes.length}): ${themes.map((s) => s.style_name).join(', ')}\n`);
+
+  if (techniques.length === 0) {
+    console.error('No technique seeds found. Upload seed images first.');
     process.exit(1);
   }
 
@@ -219,39 +233,62 @@ async function main() {
   const images = allImages;
   console.log(`Found ${images.length} images with embeddings\n`);
 
-  // Process images and compute style tags
-  console.log('Computing style similarities...');
+  // Process images and compute style tags using multi-axis taxonomy
+  console.log('Computing style similarities (multi-axis)...');
   const allTags: StyleTag[] = [];
   let processed = 0;
+  let techniqueCount = 0;
+  let themeCount = 0;
   const startTime = Date.now();
 
   for (const image of images) {
     const embedding = parseEmbedding(image.embedding);
     if (!embedding) continue;
 
-    // Compute similarity to each style
-    const similarities: { style_name: string; confidence: number }[] = [];
-
-    for (const style of styles) {
-      const similarity = cosineSimilarity(embedding, style.embedding);
-      if (similarity >= minConfidence) {
-        similarities.push({
-          style_name: style.style_name,
-          confidence: similarity,
-        });
+    // Step 1: Find ONE best technique (exclusive)
+    let bestTechnique: { style_name: string; confidence: number } | null = null;
+    for (const technique of techniques) {
+      const similarity = cosineSimilarity(embedding, technique.embedding);
+      if (similarity >= techniqueThreshold) {
+        if (!bestTechnique || similarity > bestTechnique.confidence) {
+          bestTechnique = { style_name: technique.style_name, confidence: similarity };
+        }
       }
     }
 
-    // Sort by confidence and take top N
-    similarities.sort((a, b) => b.confidence - a.confidence);
-    const topStyles = similarities.slice(0, topN);
-
-    for (const tag of topStyles) {
+    if (bestTechnique) {
       allTags.push({
         image_id: image.id,
-        style_name: tag.style_name,
-        confidence: tag.confidence,
+        style_name: bestTechnique.style_name,
+        confidence: bestTechnique.confidence,
+        taxonomy: 'technique',
+        is_primary: true,
       });
+      techniqueCount++;
+    }
+
+    // Step 2: Find top 2 themes (higher threshold to reduce false positives)
+    const themeMatches: { style_name: string; confidence: number }[] = [];
+    for (const theme of themes) {
+      const similarity = cosineSimilarity(embedding, theme.embedding);
+      if (similarity >= themeThreshold) {
+        themeMatches.push({ style_name: theme.style_name, confidence: similarity });
+      }
+    }
+
+    // Sort and take top 2 themes
+    themeMatches.sort((a, b) => b.confidence - a.confidence);
+    const topThemes = themeMatches.slice(0, 2);
+
+    for (const themeMatch of topThemes) {
+      allTags.push({
+        image_id: image.id,
+        style_name: themeMatch.style_name,
+        confidence: themeMatch.confidence,
+        taxonomy: 'theme',
+        is_primary: false,
+      });
+      themeCount++;
     }
 
     processed++;
@@ -264,22 +301,40 @@ async function main() {
 
   const totalTime = (Date.now() - startTime) / 1000;
   console.log(`\nProcessed ${processed} images in ${totalTime.toFixed(1)}s`);
-  console.log(`Generated ${allTags.length} style tags (avg ${(allTags.length / processed).toFixed(1)} tags/image)\n`);
+  console.log(`Generated ${allTags.length} style tags:`);
+  console.log(`  Techniques: ${techniqueCount} (${((techniqueCount / processed) * 100).toFixed(1)}% of images)`);
+  console.log(`  Themes: ${themeCount} (avg ${(themeCount / processed).toFixed(2)} per image)\n`);
 
   // Show sample tags
   console.log('Sample tags (first 10):');
   for (const tag of allTags.slice(0, 10)) {
-    console.log(`  ${tag.image_id.slice(0, 8)}... → ${tag.style_name} (${(tag.confidence * 100).toFixed(1)}%)`);
+    const taxLabel = tag.taxonomy === 'technique' ? '[T]' : '[S]';  // T=technique, S=subject/theme
+    const primaryLabel = tag.is_primary ? '*' : '';
+    console.log(`  ${tag.image_id.slice(0, 8)}... → ${taxLabel}${primaryLabel} ${tag.style_name} (${(tag.confidence * 100).toFixed(1)}%)`);
   }
   console.log('');
 
-  // Show distribution by style
-  const styleCounts: Record<string, number> = {};
+  // Show distribution by taxonomy
+  const techniqueCounts: Record<string, number> = {};
+  const themeCounts: Record<string, number> = {};
   for (const tag of allTags) {
-    styleCounts[tag.style_name] = (styleCounts[tag.style_name] || 0) + 1;
+    if (tag.taxonomy === 'technique') {
+      techniqueCounts[tag.style_name] = (techniqueCounts[tag.style_name] || 0) + 1;
+    } else {
+      themeCounts[tag.style_name] = (themeCounts[tag.style_name] || 0) + 1;
+    }
   }
-  console.log('Tags per style:');
-  Object.entries(styleCounts)
+
+  console.log('TECHNIQUES (one per image):');
+  Object.entries(techniqueCounts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([style, count]) => {
+      console.log(`  ${style}: ${count} (${((count / processed) * 100).toFixed(1)}% of images)`);
+    });
+  console.log('');
+
+  console.log('THEMES (0-2 per image):');
+  Object.entries(themeCounts)
     .sort((a, b) => b[1] - a[1])
     .forEach(([style, count]) => {
       console.log(`  ${style}: ${count} (${((count / processed) * 100).toFixed(1)}% of images)`);

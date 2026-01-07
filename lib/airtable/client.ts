@@ -66,7 +66,10 @@ export interface ArtistForAirtable {
   follower_count: number | null
   bio: string | null
   slug: string
-  portfolio_images: Array<{ storage_thumb_640: string | null }>
+  portfolio_images: Array<{
+    storage_original_path: string | null
+    storage_thumb_640: string | null
+  }>
 }
 
 /**
@@ -260,10 +263,15 @@ export function formatArtistForAirtable(
   const storageBaseUrl = `${env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/portfolio-images`
 
   // Get top 4 portfolio images as full URLs
+  // Use original JPG images (not WebP thumbnails) for Instagram compatibility
   const images = artist.portfolio_images
-    .filter((img) => img.storage_thumb_640)
+    .filter((img) => img.storage_original_path || img.storage_thumb_640)
     .slice(0, 4)
-    .map((img) => `${storageBaseUrl}/${img.storage_thumb_640}`)
+    .map((img) => {
+      // Prefer original (JPG) over thumbnail (WebP) for Instagram posting
+      const path = img.storage_original_path || img.storage_thumb_640
+      return `${storageBaseUrl}/${path}`
+    })
 
   return {
     instagram_handle: artist.instagram_handle,
