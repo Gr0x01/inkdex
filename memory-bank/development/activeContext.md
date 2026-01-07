@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-08 (Session 23 - ML Style Classifier Deployed)
+Last-Updated: 2026-01-08
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + ML Style Classifier
+Status: Launched - Production
 ---
 
 # Active Context: Inkdex
@@ -17,8 +17,6 @@ Status: Launched - All 15 Phases Complete + ML Style Classifier
 **Display Styles:** 11 styles (added japanese + anime after ML accuracy improved)
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
-
-**Pending Pipeline:** ~10,000+ artists need image scraping and embeddings
 
 ## Recent Expansion (Jan 4, 2026)
 
@@ -205,14 +203,6 @@ supabase/functions/
 - Generation: `scripts/seo/generate-guide-content.ts`
 - Includes Schema.org Article markup, breadcrumbs, FAQ integration
 
-**Next Actions:**
-- Add `INDEXNOW_KEY` to Vercel environment
-- Run `npm run db:push` to apply IndexNow migration
-- Generate more city guide content: `npx tsx scripts/seo/generate-guide-content.ts --limit 20`
-- Run image scraping pipeline for new artists (via admin panel)
-- Generate embeddings for new portfolio images
-- Monitor search performance across new cities
-
 **Core Features Working:**
 - Multi-modal search (image, text, Instagram post/profile links)
 - Artist profiles with claim flow
@@ -242,15 +232,6 @@ supabase/functions/
 | 13 | ✅ | Analytics dashboard (Redis caching, tracking, Recharts visualization) |
 | 14 | ✅ | Admin panel (mining dashboard, featured artist management) |
 | 15 | ✅ | Multi-location support (international, tier-based limits) |
-
-## Pending Phases
-
-All 15 phases complete!
-
-**Production Stripe Setup Required:**
-- Add env vars to Vercel: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- Create webhook in Stripe Dashboard → `https://inkdex.io/api/stripe/webhook`
-- Switch from test keys (`sk_test_`, `pk_test_`) to live keys (`sk_live_`, `pk_live_`) when ready
 
 ## Ready-to-Run Pipelines
 

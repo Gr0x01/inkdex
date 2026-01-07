@@ -31,10 +31,6 @@ All 15 implementation phases complete:
 - GDPR compliance (EU artist filtering)
 - 20 styles with averaged seed embeddings
 
-**Remaining Production Tasks:**
-- Deploy Stripe live keys to Vercel
-- Run image scraping for ~10k pending artists
-
 ---
 
 ## Implementation Phases
