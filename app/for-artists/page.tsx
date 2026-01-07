@@ -91,26 +91,6 @@ export default async function ForArtistsPage() {
     ],
   }
 
-  // Product schema for Pro tier
-  const productSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: 'Inkdex Pro',
-    description:
-      'Professional tattoo artist profile with auto-sync from Instagram, priority search placement, analytics dashboard, and up to 100 portfolio images.',
-    brand: {
-      '@type': 'Organization',
-      name: 'Inkdex',
-    },
-    offers: {
-      '@type': 'Offer',
-      price: PRICING.monthly.amount.toFixed(2),
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      priceValidUntil: '2027-12-31',
-    },
-  }
-
   return (
     <>
       <script
@@ -120,10 +100,6 @@ export default async function ForArtistsPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productSchema) }}
       />
 
       <main className="min-h-screen bg-bg-primary">
