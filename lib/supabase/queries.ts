@@ -1464,15 +1464,10 @@ export async function getHomepageStats(): Promise<{
   cityCount: number
   countryCount: number
 }> {
-  // Use service client for build-time static generation (no cookies available)
-  let supabase
-  try {
-    supabase = await createClient()
-  } catch (_error) {
-    // If cookies() fails (build time), use service client
-    const { createServiceClient } = await import('@/lib/supabase/service')
-    supabase = createServiceClient()
-  }
+  // Use service client directly - stats are public data and this avoids
+  // cookies() which breaks static generation in Next.js 15
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const supabase = createServiceClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC function not in generated types yet
   const { data, error } = await supabase.rpc('get_homepage_stats' as any).single()
@@ -1520,15 +1515,10 @@ export interface CountryEditorialContent {
 export async function getCountryEditorialContent(
   countryCode: string
 ): Promise<CountryEditorialContent | null> {
-  // Use service client for build-time static generation (no cookies available)
-  let supabase
-  try {
-    supabase = await createClient()
-  } catch (_error) {
-    // If cookies() fails (build time), use service client
-    const { createServiceClient } = await import('@/lib/supabase/service')
-    supabase = createServiceClient()
-  }
+  // Use service client directly - editorial content is public data and this avoids
+  // cookies() which breaks static generation in Next.js 15
+  const { createServiceClient } = await import('@/lib/supabase/service')
+  const supabase = createServiceClient()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Table not in generated types yet
   const { data, error } = await (supabase as any)
