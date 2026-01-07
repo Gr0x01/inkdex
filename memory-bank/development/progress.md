@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-06
+Last-Updated: 2026-01-07
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + Color-Weighted Search
+Status: Launched - All 15 Phases Complete + Style System Overhaul
 ---
 
 # Progress Log: Inkdex
@@ -12,10 +12,10 @@ Status: Launched - All 15 Phases Complete + Color-Weighted Search
 |--------|-------|
 | Cities | 116 |
 | States | 51 (50 states + DC) |
-| Artists | 15,626 |
-| Images | 92,038 (with embeddings) |
+| Artists | 16,324 |
+| Images | 92,012 (with embeddings) |
 | Color Profiles | 10,704 artists |
-| Styles | 20 |
+| Display Styles | 9 (fine-line added) |
 | Static Pages | ~3,500+ |
 
 ## Launch Milestone
@@ -74,6 +74,23 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 2 (Jan 7, 2026)
+- **Style System Overhaul** ✅
+  - Fixed broken tagging model (forced ONE technique per image was causing wrong tags)
+  - Added fine-line style (16 seed images, 27.7% of images now tagged)
+  - Changed to allow 0-3 styles per image (no forced assignment)
+  - Raised anime/japanese thresholds to 0.40 (reduced false positives)
+  - Example fix: @lilsilhouett went from 85% anime → 3% anime, now correctly shows 24% fine-line
+- **ML Labeling System Built**
+  - Admin UI at `/admin/styles/label` with keyboard shortcuts
+  - Database: `style_training_labels` table for training data
+  - 17 styles for labeling (9 core + 6 niche + anime + japanese)
+  - Target: 500 labels per style to train ML classifier
+- **Re-tagged all 92k images**
+  - 98.4% have at least 1 tag (vs 100% forced before)
+  - 1.6% correctly have 0 tags (didn't match any style well)
+  - 270,640 total tags generated
 
 ### Week 2 (Jan 6, 2026)
 - **Color-Weighted Search** ✅

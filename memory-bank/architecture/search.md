@@ -215,34 +215,67 @@ END
 
 ## Style System
 
-### Two-Tier Taxonomy (Jan 2026 Refactor)
+### Two-Tier Taxonomy (Updated Jan 7, 2026)
 
-**Display Styles (8)** - shown on artist profile badges:
+**Display Styles (9)** - shown on artist profile badges:
 - traditional, neo-traditional, realism, black-and-gray
 - blackwork, new-school, watercolor, ornamental
+- **fine-line** (added Jan 7, 2026)
 
 **Search-Only Seeds (6)** - kept for relevance, hidden from profiles:
 - tribal, trash-polka, biomechanical, sketch (niche techniques)
-- japanese, anime (need threshold tuning)
+- japanese, anime (threshold 0.40 to reduce false positives)
 
 **Removed:**
 - horror, surrealism (subject matter, not technique - over-matched)
 
 ### Style Seeds
-- 14 active seeds with averaged CLIP embeddings
+- 15 active seeds with averaged CLIP embeddings
 - Each style has 5-22 seed images
 - Seeds stored in `style_seeds` table
 - Seed images in `assets/seeds/{style}/`
 
+### Tagging Model (Simplified Jan 7, 2026)
+
+**Previous (broken)**: Force ONE technique per image + 0-2 themes
+- Problem: Images got wrong tags because *something* had to be assigned
+- Example: @lilsilhouett (fine-line artist) tagged 85% anime, 33% watercolor
+
+**Current (fixed)**: Allow 0-3 styles per image
+- No forced assignment - if nothing matches threshold, 0 tags
+- Default threshold: 0.30, with per-style overrides
+- 98.4% of images have tags, 1.6% correctly have 0 tags
+
 ### Per-Style Threshold Overrides
-Some styles need higher thresholds to avoid over-matching:
 ```typescript
 // scripts/styles/tag-images.ts
 const STYLE_THRESHOLD_OVERRIDES: Record<string, number> = {
-  'japanese': 0.75,  // vs default 0.45 for themes
-  'anime': 0.70,
+  'japanese': 0.40,   // Higher to avoid over-matching
+  'anime': 0.40,      // Content-based, needs higher threshold
+  'watercolor': 0.35, // Can over-match soft/delicate work
+  'tribal': 0.38,     // Bold patterns match other blackwork
 };
 ```
+
+### ML Classifier (In Progress)
+
+Zero-shot CLIP doesn't understand tattoo conventions well. Building ML classifier trained on human-labeled data.
+
+**Why ML is better:**
+- CLIP embeddings capture visual features (768-dim)
+- Human labels teach classifier what "fine-line" means in tattoo context
+- 500-1000 examples per style is sufficient
+
+**Labeling System:**
+- Admin UI: `/admin/styles/label`
+- Keyboard shortcuts: 1-9 (core), Q-I (niche/content)
+- Database: `style_training_labels` table
+- Target: ~8,500 labeled images (500/style × 17 styles)
+
+**Key Files:**
+- `app/admin/(authenticated)/styles/label/page.tsx` - Labeling UI
+- `app/api/admin/label/route.ts` - Labeling API
+- `lib/constants/styles.ts` - `ALL_LABELING_STYLES` (17 styles)
 
 ### Style Tagging Pipeline
 ```bash
@@ -251,6 +284,12 @@ npx tsx scripts/styles/tag-images.ts --clear
 
 # 2. Aggregate into artist profiles
 npx tsx scripts/styles/compute-artist-profiles.ts --clear
+
+# 3. (Future) Train ML classifier
+npx tsx scripts/styles/train-classifier.ts
+
+# 4. (Future) Re-tag with ML model
+npx tsx scripts/styles/tag-images-ml.ts --clear
 ```
 
 ### Style Profile Display
@@ -297,7 +336,7 @@ SUM(query_confidence × artist_percentage × 0.15)
 5. Aggregate into artist profiles (% of portfolio per style)
 6. At search time: classify query → boost matching artists
 
-### Japanese Over-Tagging Incident (Jan 2026)
+### Japanese Over-1ging Incident (Jan 2026)
 
 **Symptom**: 30.7% of artists were tagged as "Japanese" style - way too high for a specific traditional style.
 

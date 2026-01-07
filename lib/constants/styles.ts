@@ -17,11 +17,41 @@ export const DISPLAY_STYLES = new Set([
   'new-school',
   'watercolor',
   'ornamental',
-  // japanese and anime excluded until threshold tuning is done
+  'fine-line',
+  // japanese and anime excluded - need ML classifier for accurate detection
 ])
 
 // Minimum percentage of portfolio to display a style on profile
 export const MIN_STYLE_PERCENTAGE = 25
+
+/**
+ * All styles available for labeling in admin UI
+ * Used to train ML classifier
+ */
+export const ALL_LABELING_STYLES = [
+  // Core display styles (9)
+  'traditional',
+  'neo-traditional',
+  'realism',
+  'black-and-gray',
+  'blackwork',
+  'new-school',
+  'watercolor',
+  'ornamental',
+  'fine-line',
+  // Niche styles (6)
+  'tribal',
+  'biomechanical',
+  'trash-polka',
+  'sketch',
+  'geometric',
+  'dotwork',
+  // Content-based (2) - need ML for accurate detection
+  'anime',
+  'japanese',
+] as const
+
+export type LabelingStyle = typeof ALL_LABELING_STYLES[number]
 
 /**
  * Human-readable display names for styles

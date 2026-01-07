@@ -309,30 +309,45 @@ Access via `/dev/login` (development only):
 
 **Philosophy:** Only display styles that artists genuinely specialize in. Other seeds kept for search relevance but hidden from profiles.
 
-**Display Styles (8)** - shown on artist profile badges:
+**Display Styles (9)** - shown on artist profile badges:
 
 | Style | Artists | % of Images |
 |-------|---------|-------------|
-| neo-traditional | 6,480 | 17.1% |
-| traditional | 4,847 | 13.4% |
-| realism | 4,681 | 8.9% |
-| new-school | 4,560 | 10.7% |
-| watercolor | 4,480 | 11.7% |
-| blackwork | 4,162 | 8.1% |
-| ornamental | 4,105 | 8.7% |
-| black-and-gray | 3,736 | 9.3% |
+| neo-traditional | 9,295 | 45.9% |
+| traditional | 7,671 | 31.9% |
+| **fine-line** | **6,732** | **27.7%** |
+| realism | 8,259 | 26.2% |
+| new-school | 7,191 | 24.5% |
+| watercolor | 6,600 | 22.3% |
+| ornamental | 6,644 | 19.8% |
+| blackwork | 7,135 | 19.2% |
+| black-and-gray | 5,962 | 18.6% |
 
 **Search-Only Seeds** (kept for relevance, not displayed):
 - tribal, trash-polka, biomechanical, sketch (niche techniques)
-- japanese, anime (need threshold tuning - over-matching at 60-80%)
+- japanese, anime (higher thresholds: 0.40 to reduce false positives)
 
 **Removed Seeds:**
 - horror, surrealism (subject matter, not technique - over-matched everything)
 
+**Key Changes (Jan 7, 2026 Session 23):**
+1. **Added fine-line style** - Renamed `assets/seeds/minimalist/` → `assets/seeds/fine-line/`, 16 seed images
+2. **Fixed tagging to allow 0-3 styles** - No more forced "one technique per image" rule
+3. **Raised anime/japanese thresholds** - 0.40 (vs 0.30 default) to reduce false positives
+4. **Built ML labeling system** - `/admin/styles/label` for training data collection
+
+**ML Classifier (In Progress):**
+- Admin UI at `/admin/styles/label` with keyboard shortcuts (1-9, Q-I)
+- Database: `style_training_labels` table for human-labeled examples
+- Target: 500 labels per style (17 styles = ~8,500 total)
+- Once labeled, train classifier on CLIP embeddings for better accuracy
+
 **Key Files:**
-- `lib/constants/styles.ts` - `DISPLAY_STYLES` set + `MIN_STYLE_PERCENTAGE` (25%)
+- `lib/constants/styles.ts` - `DISPLAY_STYLES` set, `ALL_LABELING_STYLES`, `MIN_STYLE_PERCENTAGE` (25%)
 - `scripts/styles/tag-images.ts` - `STYLE_THRESHOLD_OVERRIDES` for per-style thresholds
 - `components/artist/ArtistInfoColumn.tsx` - filters to DISPLAY_STYLES + min 25% threshold
+- `app/admin/(authenticated)/styles/label/page.tsx` - Labeling admin UI
+- `app/api/admin/label/route.ts` - Labeling API
 
 **Style Pipeline:**
 ```bash
