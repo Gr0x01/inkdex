@@ -204,10 +204,10 @@ export default async function ForArtistsPage() {
                   {/* Search section - Card comparison */}
                   {section.id === 'search' && (
                     <div className="mt-8">
-                      {/* Mock search grid - 3 columns: Free (1) + Pro (2) */}
-                      <div className="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
-                        {/* Free card mock - 1 column, vertical layout */}
-                        <div className="col-span-1">
+                      {/* Mock search grid - stacked on mobile, side-by-side on md+ */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
+                        {/* Free card mock - full width on mobile, 1 col on md+ */}
+                        <div className="md:col-span-1">
                           <p className="font-mono text-[10px] uppercase tracking-wider text-gray-400 mb-2 text-center">Free</p>
                           <div className="bg-paper border-2 border-ink/20 overflow-hidden h-[280px] flex flex-col">
                             <div className="flex-1 bg-gray-200 relative">
@@ -227,8 +227,8 @@ export default async function ForArtistsPage() {
                           </div>
                         </div>
 
-                        {/* Pro card mock - 2 columns, horizontal layout */}
-                        <div className="col-span-2">
+                        {/* Pro card mock - full width on mobile, 2 cols on md+ */}
+                        <div className="md:col-span-2">
                           <p className="font-mono text-[10px] uppercase tracking-wider text-purple-600 mb-2 text-center">Pro</p>
                           <ProArtistCardMock />
                         </div>
