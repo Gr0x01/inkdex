@@ -39,6 +39,7 @@ Status: Launched
 | Tavily | Artist discovery | ~$0.05/query |
 | Modal.com | GPU fallback | ~$0.60/hr |
 | OpenAI GPT-5-mini | Image classification | ~$0.02/profile |
+| Airtable | Marketing outreach hub | $20/mo (Team tier) |
 
 ### Apify Dual-Account Strategy
 
@@ -200,6 +201,29 @@ Key optimizations:
 - `GET /api/admin/artists` - Paginated list
 - `PATCH /api/admin/artists/[id]/featured` - Toggle featured
 
+### Airtable Marketing Integration
+
+**Source of truth:** Airtable Outreach table (not DB)
+
+**Flow:**
+1. Push artists from admin panel → Airtable (with photos, bio, stats)
+2. Edit in Airtable (status, featured, notes, dates)
+3. Auto-sync pulls changes back to DB every 5 minutes
+
+**Key files:**
+- `lib/airtable/client.ts` - API wrapper with rate limiting
+- `app/api/admin/airtable/push/route.ts` - Push artists
+- `app/api/admin/airtable/pull/route.ts` - Pull updates
+- `app/api/cron/airtable-sync/route.ts` - Vercel cron (5 min)
+
+**Env vars:** `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, `AIRTABLE_OUTREACH_TABLE_ID`
+
+**Airtable schema:**
+- DB-pushed: instagram_handle, name, city, follower_count, bio, profile_url, image_1-4
+- User-editable: status, featured, feature_days, post_date, dm_date, response_notes, priority
+
+**Status options:** pending → posted → dm_sent → responded → claimed → converted (or skipped)
+
 ---
 
 ## Stripe Integration
@@ -250,6 +274,11 @@ REDIS_URL
 
 # Email
 RESEND_API_KEY
+
+# Airtable (Marketing)
+AIRTABLE_PAT
+AIRTABLE_BASE_ID
+AIRTABLE_OUTREACH_TABLE_ID
 ```
 
 See `.env.example` for full list.
