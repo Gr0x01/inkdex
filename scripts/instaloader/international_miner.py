@@ -490,10 +490,10 @@ def create_portfolio_image(supabase: Client, artist_id: str, image_url: str, sto
     try:
         supabase.table("portfolio_images").insert({
             "artist_id": artist_id,
-            "original_url": image_url,
+            "instagram_post_id": shortcode,
+            "instagram_url": f"https://instagram.com/p/{shortcode}/",
             "storage_thumb_640": storage_url,
-            "instagram_shortcode": shortcode,
-            "source": "instagram",
+            "import_source": "scrape",
             "status": "active",
         }).execute()
         return True

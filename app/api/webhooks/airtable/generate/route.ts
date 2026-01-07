@@ -6,6 +6,9 @@
  * Called by Airtable button field to generate AI caption + hashtags for a single artist.
  * Updates the Airtable record directly with the generated content.
  *
+ * Required header:
+ *   x-webhook-secret: <AIRTABLE_WEBHOOK_SECRET>
+ *
  * Expected body (from Airtable):
  * {
  *   "record_id": "recXXXXX",
@@ -17,6 +20,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import { updateRecords, isAirtableConfigured } from '@/lib/airtable/client';
+
+// Webhook secret for auth - set in Vercel env vars
+const WEBHOOK_SECRET = process.env.AIRTABLE_WEBHOOK_SECRET;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -146,6 +152,15 @@ HASHTAGS: #tag1 #tag2 #tag3 #tag4 #tag5 #tag6 #tag7 #tag8 #tag9 #tag10`;
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify webhook secret
+    const secret = request.headers.get('x-webhook-secret');
+    if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     // Verify Airtable is configured
     if (!isAirtableConfigured()) {
       return NextResponse.json(
