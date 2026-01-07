@@ -181,9 +181,8 @@ export default async function Home() {
 
       {/* ═══════════════════════════════════════════════════════════════
           PRO SHOWCASE - Paid Features & Upgrade
-          Hidden until Stripe integration (NEXT_PUBLIC_SHOW_PRO_SECTION=true)
           ═══════════════════════════════════════════════════════════════ */}
-      {process.env.NEXT_PUBLIC_SHOW_PRO_SECTION === 'true' && <ProShowcase />}
+      <ProShowcase />
 
       {/* ═══════════════════════════════════════════════════════════════
           FOOTER CTA - Dramatic Editorial Statement
