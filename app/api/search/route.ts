@@ -373,7 +373,6 @@ export async function POST(request: NextRequest) {
                   instagram_handle: username,
                   name: profileData.username || username,
                   slug,
-                  city: 'pending',
                   bio: profileData.bio || null,
                   follower_count: profileData.followerCount || null,
                   discovery_source: 'profile_search',
