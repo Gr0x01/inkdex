@@ -1,48 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { searchArtistsByEmbedding } from '@/lib/supabase/queries'
+import { searchArtistsWithStyleBoost } from '@/lib/supabase/queries'
 import { getImageUrl } from '@/lib/utils/images'
+import { slugToName } from '@/lib/utils/location'
+import type { StyleMatch } from '@/lib/search/style-classifier'
 
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Validation patterns
 const COUNTRY_CODE_REGEX = /^[A-Za-z]{2}$/
-const REGION_REGEX = /^[A-Za-z0-9][A-Za-z0-9\s-]*[A-Za-z0-9]$|^[A-Za-z0-9]$/  // Must start/end with alphanumeric
-const CITY_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/  // No consecutive/leading/trailing hyphens
-
-// Database result interface (matches what search_artists_by_embedding returns)
-interface DbSearchResult {
-  id: string
-  name: string
-  slug: string
-  city: string
-  region: string
-  country_code: string
-  profile_image_url: string | null
-  follower_count: number | null
-  instagram_url: string | null
-  is_verified: boolean
-  images: Array<{
-    url: string
-    instagramUrl: string
-    similarity: number
-  }> | null
-  max_similarity: number
-  location_count?: number
-}
+const REGION_REGEX = /^[A-Za-z0-9][A-Za-z0-9\s-]*[A-Za-z0-9]$|^[A-Za-z0-9]$/
+const CITY_SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 /**
  * GET /api/search/[searchId]
  *
- * Fetches search from database, runs vector similarity search,
- * returns ranked artist results
+ * Fetches search from database, runs vector similarity search with style/color boosts,
+ * returns ranked artist results.
  *
  * Query params:
  * - country: ISO 3166-1 alpha-2 country code (e.g., 'us', 'uk')
  * - region: State/province code (e.g., 'tx', 'ontario')
  * - city: City name slug (e.g., 'austin', 'los-angeles')
- * - page: Page number (default: 1)
+ * - offset: Number of results to skip (for infinite scroll)
+ * - page: Page number (legacy, converted to offset)
  * - limit: Results per page (default: 20, max: 100)
  */
 export async function GET(
@@ -66,8 +48,40 @@ export async function GET(
     const countryParam = searchParams.get('country')
     const regionParam = searchParams.get('region')
     const cityParam = searchParams.get('city')
-    const page = parseInt(searchParams.get('page') || '1', 10)
+
+    // Support both offset (infinite scroll) and page (legacy)
+    const offsetParam = searchParams.get('offset')
+    const pageParam = searchParams.get('page')
     const limit = parseInt(searchParams.get('limit') || '20', 10)
+
+    // Validate limit
+    if (isNaN(limit)) {
+      return NextResponse.json(
+        { error: 'Invalid limit parameter' },
+        { status: 400 }
+      )
+    }
+
+    // Calculate offset: prefer explicit offset, fall back to page calculation
+    let offset: number
+    if (offsetParam !== null) {
+      offset = parseInt(offsetParam, 10)
+      if (isNaN(offset)) {
+        return NextResponse.json(
+          { error: 'Invalid offset parameter' },
+          { status: 400 }
+        )
+      }
+    } else {
+      const page = parseInt(pageParam || '1', 10)
+      if (isNaN(page)) {
+        return NextResponse.json(
+          { error: 'Invalid page parameter' },
+          { status: 400 }
+        )
+      }
+      offset = (page - 1) * limit
+    }
 
     // Validate country code if provided
     let countryFilter: string | null = null
@@ -102,22 +116,17 @@ export async function GET(
           { status: 400 }
         )
       }
-      // Convert slug to name (e.g., 'los-angeles' -> 'Los Angeles')
-      cityFilter = cityParam
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ')
+      cityFilter = slugToName(cityParam)
     }
 
-    // Validate pagination
-    if (page < 1 || limit < 1 || limit > 100) {
+    // Validate pagination (MAX_OFFSET prevents DoS via deep pagination)
+    const MAX_OFFSET = 10000
+    if (offset < 0 || offset > MAX_OFFSET || limit < 1 || limit > 100) {
       return NextResponse.json(
         { error: 'Invalid pagination parameters' },
         { status: 400 }
       )
     }
-
-    const offset = (page - 1) * limit
 
     // Fetch search from database
     const supabase = await createClient()
@@ -139,8 +148,7 @@ export async function GET(
     let embedding: number[]
     try {
       embedding = JSON.parse(search.embedding)
-    } catch (error) {
-      console.error('Failed to parse embedding:', error)
+    } catch {
       return NextResponse.json(
         { error: 'Invalid embedding format' },
         { status: 500 }
@@ -155,59 +163,72 @@ export async function GET(
       )
     }
 
-    // Search artists by embedding with location filters
+    // Parse detected styles for style-weighted search
+    let detectedStyles: StyleMatch[] | null = null
+    if (search.detected_styles) {
+      try {
+        detectedStyles = typeof search.detected_styles === 'string'
+          ? JSON.parse(search.detected_styles)
+          : search.detected_styles
+      } catch {
+        // Continue without style weighting
+      }
+    }
+
+    // Get is_color for color-weighted search
+    const isColorQuery: boolean | null = search.is_color ?? null
+
+    // Search artists with style and color boosts
     const startTime = Date.now()
-    const results = await searchArtistsByEmbedding(embedding, {
+    const { artists: rawResults, totalCount } = await searchArtistsWithStyleBoost(embedding, {
       country: countryFilter,
       region: regionFilter,
       city: cityFilter,
       limit,
       offset,
-      threshold: 0.15, // Lowered to capture niche queries (CLIP cosine similarity range: 0.15-0.4)
+      threshold: 0.15,
+      queryStyles: detectedStyles,
+      isColorQuery,
     })
     const queryTime = Date.now() - startTime
 
-    // Ensure results is an array (handle null/undefined)
-    const rawResults = Array.isArray(results) ? results : []
-
-    // Map database response to match TypeScript types
-    const artists = (rawResults as DbSearchResult[])
-      .map((result) => {
-        // Validate required fields
-        if (!result.id || !result.name || !result.slug) {
-          console.warn('Invalid artist result:', result)
-          return null
-        }
-
-        return {
-          artist_id: result.id,
-          artist_name: result.name,
-          artist_slug: result.slug,
-          city: result.city,
-          region: result.region,
-          country_code: result.country_code,
-          profile_image_url: result.profile_image_url,
-          follower_count: result.follower_count,
-          instagram_url: result.instagram_url,
-          is_verified: result.is_verified,
-          matching_images: (result.images || []).map((img: { url: string; instagramUrl?: string; similarity?: number }) => ({
-            url: getImageUrl(img.url),
-            instagramUrl: img.instagramUrl,
-            similarity: img.similarity,
-          })),
-          similarity: result.max_similarity || 0,
-          location_count: result.location_count,
-        }
-      })
-      .filter((artist): artist is NonNullable<typeof artist> => artist !== null)
+    // Map results to SearchResult format
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const artists = (Array.isArray(rawResults) ? rawResults : []).map((result: any) => ({
+      artist_id: result.id,
+      artist_name: result.name,
+      artist_slug: result.slug,
+      city: result.city,
+      region: result.region,
+      country_code: result.country_code,
+      profile_image_url: result.profile_image_url,
+      follower_count: result.follower_count || null,
+      instagram_url: result.instagram_url,
+      is_verified: result.is_verified,
+      is_pro: result.is_pro ?? false,
+      is_featured: result.is_featured ?? false,
+      max_likes: result.max_likes || 0,
+      matching_images: (result.images || []).map((img: { url: string; instagramUrl?: string; similarity?: number; likes_count?: number }) => ({
+        url: getImageUrl(img.url),
+        instagramUrl: img.instagramUrl,
+        similarity: img.similarity,
+        likes_count: img.likes_count || null,
+      })),
+      similarity: result.boosted_score || result.max_similarity || 0,
+      raw_similarity: result.max_similarity || 0,
+      style_boost: result.style_boost || 0,
+      color_boost: result.color_boost || 0,
+      location_count: result.location_count,
+    }))
 
     // Return results with metadata
     return NextResponse.json(
       {
         artists,
-        total: artists.length,
-        page,
+        totalCount,
+        offset,
         limit,
+        hasMore: offset + artists.length < totalCount,
         queryTime,
         queryType: search.query_type,
         queryText: search.query_text,
