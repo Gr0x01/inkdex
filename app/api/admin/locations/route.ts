@@ -18,13 +18,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get unique city/state combinations with counts
+    // Get unique city/state combinations with counts from artist_locations
     const { data, error } = await supabase
-      .from('artists')
-      .select('city, state')
-      .is('deleted_at', null)
+      .from('artist_locations')
+      .select('city, region, artist_id')
+      .eq('is_primary', true)
       .not('city', 'is', null)
-      .not('state', 'is', null);
+      .not('region', 'is', null);
 
     if (error) {
       console.error('[Admin Locations] Query error:', error);
@@ -35,10 +35,10 @@ export async function GET() {
     const locationCounts: Record<string, { city: string; state: string; count: number }> = {};
 
     for (const row of data || []) {
-      if (row.city && row.state) {
-        const key = `${row.city}|${row.state}`;
+      if (row.city && row.region) {
+        const key = `${row.city}|${row.region}`;
         if (!locationCounts[key]) {
-          locationCounts[key] = { city: row.city, state: row.state, count: 0 };
+          locationCounts[key] = { city: row.city, state: row.region, count: 0 };
         }
         locationCounts[key].count++;
       }

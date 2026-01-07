@@ -234,6 +234,32 @@ COMMENT ON FUNCTION get_artists_with_image_counts IS
 
 
 -- ============================================
+-- get_artist_stats
+-- Used for admin dashboard tier counts
+-- ============================================
+CREATE OR REPLACE FUNCTION get_artist_stats()
+RETURNS json
+LANGUAGE plpgsql STABLE
+AS $$
+BEGIN
+  RETURN (
+    SELECT json_build_object(
+      'total', COUNT(*),
+      'unclaimed', COUNT(*) FILTER (WHERE verification_status = 'unclaimed'),
+      'free', COUNT(*) FILTER (WHERE verification_status = 'claimed' AND is_pro = false),
+      'pro', COUNT(*) FILTER (WHERE verification_status = 'claimed' AND is_pro = true)
+    )
+    FROM artists
+    WHERE deleted_at IS NULL
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION get_artist_stats IS
+  'Returns aggregate counts by tier for admin dashboard (total, unclaimed, free, pro).';
+
+
+-- ============================================
 -- get_homepage_stats
 -- ============================================
 CREATE OR REPLACE FUNCTION get_homepage_stats()

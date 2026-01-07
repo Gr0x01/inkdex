@@ -15,7 +15,7 @@
  * Options:
  *   --dry-run         Don't insert, just show what would be tagged
  *   --limit N         Process only first N images (for testing)
- *   --min-confidence  Minimum similarity to tag (default: 0.25)
+ *   --min-confidence  Minimum similarity to tag (default: 0.35)
  *   --top-n           Max styles per image (default: 3)
  *   --clear           Clear existing tags before running
  */
@@ -57,7 +57,7 @@ function parseArgs() {
   const args = process.argv.slice(2);
   let dryRun = false;
   let limit: number | null = null;
-  let minConfidence = 0.25;
+  let minConfidence = 0.35;
   let topN = 3;
   let clear = false;
 

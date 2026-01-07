@@ -17,13 +17,13 @@ export interface StyleMatch {
  *
  * @param embedding - 768-dim CLIP embedding to classify
  * @param maxStyles - Maximum number of styles to return (default: 3)
- * @param minConfidence - Minimum confidence threshold (default: 0.25)
+ * @param minConfidence - Minimum confidence threshold (default: 0.35)
  * @returns Array of style matches sorted by confidence descending
  */
 export async function classifyQueryStyles(
   embedding: number[],
   maxStyles = 3,
-  minConfidence = 0.25
+  minConfidence = 0.35
 ): Promise<StyleMatch[]> {
   const supabase = await createClient()
 

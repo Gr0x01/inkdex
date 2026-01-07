@@ -386,7 +386,7 @@ DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float);
 CREATE OR REPLACE FUNCTION classify_embedding_styles(
   p_embedding vector(768),
   p_max_styles int DEFAULT 3,
-  p_min_confidence float DEFAULT 0.25
+  p_min_confidence float DEFAULT 0.35
 )
 RETURNS TABLE (
   style_name text,

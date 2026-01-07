@@ -39,7 +39,7 @@ Status: Launched
 | Tavily | Artist discovery | ~$0.05/query |
 | Modal.com | GPU fallback | ~$0.60/hr |
 | OpenAI GPT-5-mini | Image classification | ~$0.02/profile |
-| Airtable | Marketing outreach hub | $20/mo (Team tier) |
+| Airtable | Marketing outreach hub | $24/mo (Team tier) |
 
 ### Apify Dual-Account Strategy
 
