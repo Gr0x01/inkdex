@@ -1,18 +1,20 @@
 ---
-Last-Updated: 2026-01-07 (Session 22 - Style Taxonomy Refactor)
+Last-Updated: 2026-01-08 (Session 23 - ML Style Classifier Deployed)
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + Color-Weighted Search + Airtable Marketing
+Status: Launched - All 15 Phases Complete + ML Style Classifier
 ---
 
 # Active Context: Inkdex
 
 ## Current State
 
-**Platform:** Production - 116 cities, 16,324 artists, 92,013 images with embeddings
+**Platform:** Production - 116 cities, 16,324 artists, 99,258 images with embeddings
 
 **Live Cities:** 116 cities across all 50 states + DC (see quickstart.md for full list)
 
-**Style System:** 14 seeds (8 display + 6 search-only) with averaged CLIP embeddings
+**Style System:** ML classifier (sklearn logistic regression) trained on 15k GPT-labeled images
+
+**Display Styles:** 11 styles (added japanese + anime after ML accuracy improved)
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
 
@@ -305,63 +307,62 @@ Access via `/dev/login` (development only):
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
 
-## Style System (Refactored Jan 7, 2026)
+## ML Style Classifier (Deployed Jan 8, 2026) ✅
 
-**Philosophy:** Only display styles that artists genuinely specialize in. Other seeds kept for search relevance but hidden from profiles.
+**Philosophy:** ML classifier trained on GPT-labeled data is more accurate than CLIP seed comparison.
 
-**Display Styles (9)** - shown on artist profile badges:
+**Display Styles (11)** - shown on artist profile badges:
 
-| Style | Artists | % of Images |
-|-------|---------|-------------|
-| neo-traditional | 9,295 | 45.9% |
-| traditional | 7,671 | 31.9% |
-| **fine-line** | **6,732** | **27.7%** |
-| realism | 8,259 | 26.2% |
-| new-school | 7,191 | 24.5% |
-| watercolor | 6,600 | 22.3% |
-| ornamental | 6,644 | 19.8% |
-| blackwork | 7,135 | 19.2% |
-| black-and-gray | 5,962 | 18.6% |
+| Style | % of Images | Artists |
+|-------|-------------|---------|
+| black-and-gray | 49.0% | 10,296 |
+| fine-line | 34.3% | 7,707 |
+| realism | 30.4% | 8,616 |
+| blackwork | 24.8% | 8,529 |
+| neo-traditional | 23.1% | 6,673 |
+| traditional | 19.4% | 6,211 |
+| new-school | 15.0% | 5,694 |
+| watercolor | 10.0% | 4,599 |
+| **japanese** | **7.4%** | 3,809 |
+| **anime** | **5.4%** | 2,625 |
+| ornamental | 13.0% | 6,013 |
 
-**Search-Only Seeds** (kept for relevance, not displayed):
-- tribal, trash-polka, biomechanical, sketch (niche techniques)
-- japanese, anime (higher thresholds: 0.40 to reduce false positives)
+**Search-Only Styles** (kept for relevance, not displayed):
+- tribal, trash-polka, biomechanical, sketch, geometric, dotwork, surrealism, lettering
 
-**Removed Seeds:**
-- horror, surrealism (subject matter, not technique - over-matched everything)
+**Key Improvement (ML vs CLIP seeds):**
+| Style | CLIP Seeds | ML Classifier |
+|-------|------------|---------------|
+| Surrealism | 28% | 12.4% |
+| Anime | ~30% | 5.4% |
+| Japanese | ~30% | 7.4% |
 
-**Key Changes (Jan 7, 2026 Session 23):**
-1. **Added fine-line style** - Renamed `assets/seeds/minimalist/` → `assets/seeds/fine-line/`, 16 seed images
-2. **Fixed tagging to allow 0-3 styles** - No more forced "one technique per image" rule
-3. **Raised anime/japanese thresholds** - 0.40 (vs 0.30 default) to reduce false positives
-4. **Built ML labeling system** - `/admin/styles/label` for training data collection
+Japanese and anime now accurate enough to display as badges.
 
-**ML Classifier (In Progress):**
-- Admin UI at `/admin/styles/label` with keyboard shortcuts (1-9, Q-I)
-- Database: `style_training_labels` table for human-labeled examples
-- Target: 500 labels per style (17 styles = ~8,500 total)
-- Once labeled, train classifier on CLIP embeddings for better accuracy
+**ML Training Pipeline:**
+1. GPT-4.1-mini labeled ~15k images via `scripts/styles/batch-label-gpt.ts` (~$1.50/10k)
+2. Exported to `scripts/styles/training-data.json` via `export-training-data.ts`
+3. Trained sklearn LogisticRegression via `train-classifier.py`
+4. Model saved to `models/style-classifier.json`
+5. Tagged 99k images via `tag-images-ml.ts` (~11 minutes)
 
 **Key Files:**
-- `lib/constants/styles.ts` - `DISPLAY_STYLES` set, `ALL_LABELING_STYLES`, `MIN_STYLE_PERCENTAGE` (25%)
-- `scripts/styles/tag-images.ts` - `STYLE_THRESHOLD_OVERRIDES` for per-style thresholds
-- `components/artist/ArtistInfoColumn.tsx` - filters to DISPLAY_STYLES + min 25% threshold
-- `app/admin/(authenticated)/styles/label/page.tsx` - Labeling admin UI
-- `app/api/admin/label/route.ts` - Labeling API
+- `lib/constants/styles.ts` - `DISPLAY_STYLES` (11), `MIN_STYLE_PERCENTAGE` (25%)
+- `models/style-classifier.json` - Trained weights (768 coef + intercept per style)
+- `scripts/styles/tag-images-ml.ts` - ML-based tagging (recommended)
+- `scripts/styles/tag-images.ts` - CLIP seed tagging (legacy)
+- `app/admin/(authenticated)/styles/label/page.tsx` - Manual labeling UI (backup)
 
 **Style Pipeline:**
 ```bash
-# Re-tag all images with current seeds
-npx tsx scripts/styles/tag-images.ts --clear
-
-# Recompute artist style profiles
+# ML Classifier (recommended)
+npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200
 npx tsx scripts/styles/compute-artist-profiles.ts --clear
 
-# Add new style:
-# 1. Add seed images to assets/seeds/{style}/*.webp
-# 2. Add style definition to scripts/styles/generate-averaged-seeds.ts
-# 3. Run: npx tsx scripts/styles/generate-averaged-seeds.ts --dir ./assets/seeds/{style}
-# 4. Re-run tagging pipeline above
+# To retrain (if more labels needed):
+npx tsx scripts/styles/batch-label-gpt.ts --limit 10000
+npx tsx scripts/styles/export-training-data.ts
+python3 scripts/styles/train-classifier.py
 ```
 
 ## Key Architecture

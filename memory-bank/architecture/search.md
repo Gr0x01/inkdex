@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07 (Style Taxonomy Refactor)
+Last-Updated: 2026-01-08 (ML Style Classifier Deployed)
 Maintainer: RB
 Status: Production
 ---
@@ -215,81 +215,62 @@ END
 
 ## Style System
 
-### Two-Tier Taxonomy (Updated Jan 7, 2026)
+### Two-Tier Taxonomy (Updated Jan 8, 2026)
 
-**Display Styles (9)** - shown on artist profile badges:
+**Display Styles (11)** - shown on artist profile badges:
 - traditional, neo-traditional, realism, black-and-gray
-- blackwork, new-school, watercolor, ornamental
-- **fine-line** (added Jan 7, 2026)
+- blackwork, new-school, watercolor, ornamental, fine-line
+- **japanese, anime** (added Jan 8, 2026 - ML classifier now accurate enough)
 
-**Search-Only Seeds (6)** - kept for relevance, hidden from profiles:
-- tribal, trash-polka, biomechanical, sketch (niche techniques)
-- japanese, anime (threshold 0.40 to reduce false positives)
+**Search-Only Styles (7)** - kept for relevance, hidden from profiles:
+- tribal, trash-polka, biomechanical, sketch, geometric, dotwork, surrealism
 
-**Removed:**
-- horror, surrealism (subject matter, not technique - over-matched)
+### ML Classifier (Deployed Jan 8, 2026) ✅
 
-### Style Seeds
-- 15 active seeds with averaged CLIP embeddings
-- Each style has 5-22 seed images
-- Seeds stored in `style_seeds` table
-- Seed images in `assets/seeds/{style}/`
-
-### Tagging Model (Simplified Jan 7, 2026)
-
-**Previous (broken)**: Force ONE technique per image + 0-2 themes
-- Problem: Images got wrong tags because *something* had to be assigned
-- Example: @lilsilhouett (fine-line artist) tagged 85% anime, 33% watercolor
-
-**Current (fixed)**: Allow 0-3 styles per image
-- No forced assignment - if nothing matches threshold, 0 tags
-- Default threshold: 0.30, with per-style overrides
-- 98.4% of images have tags, 1.6% correctly have 0 tags
-
-### Per-Style Threshold Overrides
-```typescript
-// scripts/styles/tag-images.ts
-const STYLE_THRESHOLD_OVERRIDES: Record<string, number> = {
-  'japanese': 0.40,   // Higher to avoid over-matching
-  'anime': 0.40,      // Content-based, needs higher threshold
-  'watercolor': 0.35, // Can over-match soft/delicate work
-  'tribal': 0.38,     // Bold patterns match other blackwork
-};
-```
-
-### ML Classifier (In Progress)
-
-Zero-shot CLIP doesn't understand tattoo conventions well. Building ML classifier trained on human-labeled data.
+Zero-shot CLIP seed comparison was replaced with trained ML classifier.
 
 **Why ML is better:**
 - CLIP embeddings capture visual features (768-dim)
-- Human labels teach classifier what "fine-line" means in tattoo context
-- 500-1000 examples per style is sufficient
+- Logistic regression learns what "fine-line" means in tattoo context
+- Trained on ~15k GPT-4.1-mini labeled images
 
-**Labeling System:**
-- Admin UI: `/admin/styles/label`
-- Keyboard shortcuts: 1-9 (core), Q-I (niche/content)
-- Database: `style_training_labels` table
-- Target: ~8,500 labeled images (500/style × 17 styles)
+**Results:**
+| Metric | CLIP Seeds | ML Classifier |
+|--------|------------|---------------|
+| Surrealism | 28% | 12.4% |
+| Anime | ~30% | 5.4% |
+| Japanese | ~30% | 7.4% |
+
+**Training Pipeline:**
+1. GPT-4.1-mini vision labeled ~15k images (~$1.50/10k images)
+2. Exported embeddings + labels to JSON
+3. Trained sklearn LogisticRegression with balanced class weights
+4. Best F1: black-and-gray (0.86), fine-line (0.77), realism (0.75)
 
 **Key Files:**
-- `app/admin/(authenticated)/styles/label/page.tsx` - Labeling UI
-- `app/api/admin/label/route.ts` - Labeling API
-- `lib/constants/styles.ts` - `ALL_LABELING_STYLES` (17 styles)
+| File | Purpose |
+|------|---------|
+| `scripts/styles/batch-label-gpt.ts` | GPT-4.1-mini batch labeling |
+| `scripts/styles/export-training-data.ts` | Export embeddings + labels for Python |
+| `scripts/styles/train-classifier.py` | sklearn logistic regression training |
+| `scripts/styles/tag-images-ml.ts` | ML-based image tagging |
+| `models/style-classifier.json` | Trained classifier weights (768 coef + intercept per style) |
+| `app/admin/(authenticated)/styles/label/page.tsx` | Manual labeling UI (backup) |
 
 ### Style Tagging Pipeline
 ```bash
-# 1. Tag all images (compares to style seeds)
+# Option 1: ML Classifier (recommended)
+npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200
+
+# Option 2: CLIP seed comparison (legacy)
 npx tsx scripts/styles/tag-images.ts --clear
 
-# 2. Aggregate into artist profiles
+# After tagging, regenerate artist profiles
 npx tsx scripts/styles/compute-artist-profiles.ts --clear
 
-# 3. (Future) Train ML classifier
-npx tsx scripts/styles/train-classifier.ts
-
-# 4. (Future) Re-tag with ML model
-npx tsx scripts/styles/tag-images-ml.ts --clear
+# To retrain classifier (if more labels added):
+npx tsx scripts/styles/export-training-data.ts
+python3 scripts/styles/train-classifier.py
 ```
 
 ### Style Profile Display
@@ -336,23 +317,23 @@ SUM(query_confidence × artist_percentage × 0.15)
 5. Aggregate into artist profiles (% of portfolio per style)
 6. At search time: classify query → boost matching artists
 
-### Japanese Over-1ging Incident (Jan 2026)
+### Japanese/Anime Over-Tagging Incident (Jan 2026)
 
-**Symptom**: 30.7% of artists were tagged as "Japanese" style - way too high for a specific traditional style.
+**Symptom**: 30% of artists tagged as "Japanese" or "Anime" - way too high for specific styles.
 
-**Investigation**: Artist Steve Rieck (@steverieckratc) was showing Japanese in his top 3 styles, but his portfolio was clearly New School/Neo-Traditional pop culture work (Fallout, Star Wars, Gundam).
+**Root cause**: Zero-shot CLIP seed comparison matched visual features (clean lines, detailed linework) rather than actual style intent.
 
-**Root cause**: The 0.25 confidence threshold was too permissive. His Gundam + cherry blossoms piece had visual elements (flowers, detailed linework) that partially matched Japanese seeds without being actual irezumi.
+**Fix (Jan 8, 2026)**: Replaced CLIP seeds with ML classifier trained on GPT-4.1-mini labeled data.
 
-**Fix**: Raised threshold from 0.25 → 0.35 across:
-- `scripts/styles/tag-images.ts`
-- `lib/search/style-classifier.ts`
-- `supabase/functions/search/vector_search.sql`
-- DB trigger `compute_image_style_tags()`
+| Style | Before (CLIP) | After (ML) |
+|-------|---------------|------------|
+| Surrealism | 28% | 12.4% |
+| Anime | ~30% | 5.4% |
+| Japanese | ~30% | 7.4% |
 
-**Result**: Steve Rieck now correctly shows as New School, Neo-Traditional, Anime. Japanese dropped from his top 3.
+**Result**: Japanese and anime now accurate enough to display as badges on artist profiles.
 
-**Lesson**: CLIP matches visual features, not cultural/artistic intent. Thresholds need tuning per the discriminability of each style.
+**Lesson**: CLIP matches visual features, not cultural/artistic intent. ML trained on labeled examples understands tattoo conventions better.
 
 ### Why Color Analysis Exists
 

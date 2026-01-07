@@ -1,10 +1,10 @@
 /**
  * Style Constants for Display
  *
- * DISPLAY_STYLES: Styles shown on artist profile badges.
+ * DISPLAY_STYLES: Styles shown on artist profile badges (11 styles).
  * These are styles that artists genuinely specialize in.
  *
- * Other seeds (tribal, trash-polka, biomechanical, sketch, anime)
+ * Other styles (tribal, trash-polka, biomechanical, sketch, etc.)
  * are kept for search relevance but not displayed on profiles.
  */
 
@@ -18,7 +18,8 @@ export const DISPLAY_STYLES = new Set([
   'watercolor',
   'ornamental',
   'fine-line',
-  // japanese and anime excluded - need ML classifier for accurate detection
+  'japanese',
+  'anime',
 ])
 
 // Minimum percentage of portfolio to display a style on profile

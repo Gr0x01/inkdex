@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-08
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + Style System Overhaul
+Status: Launched - All 15 Phases Complete + ML Style Classifier
 ---
 
 # Progress Log: Inkdex
@@ -13,9 +13,9 @@ Status: Launched - All 15 Phases Complete + Style System Overhaul
 | Cities | 116 |
 | States | 51 (50 states + DC) |
 | Artists | 16,324 |
-| Images | 92,012 (with embeddings) |
+| Images | 99,258 (with embeddings) |
 | Color Profiles | 10,704 artists |
-| Display Styles | 9 (fine-line added) |
+| Display Styles | 11 (added japanese + anime) |
 | Static Pages | ~3,500+ |
 
 ## Launch Milestone
@@ -75,6 +75,27 @@ All 15 implementation phases complete:
 
 ## Development Timeline
 
+### Week 2 (Jan 8, 2026)
+- **ML Style Classifier Deployed** ✅
+  - Replaced CLIP seed comparison with trained ML classifier
+  - GPT-4.1-mini labeled ~15k images for training (~$1.50/10k)
+  - sklearn LogisticRegression with balanced class weights
+  - Best F1 scores: black-and-gray (0.86), fine-line (0.77), realism (0.75)
+  - Tagged all 99k images in ~11 minutes
+- **Major Accuracy Improvements**
+  - Surrealism: 28% → 12.4% (fixed over-tagging)
+  - Anime: ~30% → 5.4%
+  - Japanese: ~30% → 7.4%
+- **Japanese + Anime Now Display Styles**
+  - Added to `DISPLAY_STYLES` set (11 total)
+  - ML accuracy now good enough for artist profile badges
+- **Key Files Created**
+  - `scripts/styles/batch-label-gpt.ts` - GPT vision labeling
+  - `scripts/styles/export-training-data.ts` - Export for Python
+  - `scripts/styles/train-classifier.py` - sklearn training
+  - `scripts/styles/tag-images-ml.ts` - ML-based tagging
+  - `models/style-classifier.json` - Trained weights
+
 ### Week 2 (Jan 7, 2026)
 - **Style System Overhaul** ✅
   - Fixed broken tagging model (forced ONE technique per image was causing wrong tags)
@@ -86,7 +107,6 @@ All 15 implementation phases complete:
   - Admin UI at `/admin/styles/label` with keyboard shortcuts
   - Database: `style_training_labels` table for training data
   - 17 styles for labeling (9 core + 6 niche + anime + japanese)
-  - Target: 500 labels per style to train ML classifier
 - **Re-tagged all 92k images**
   - 98.4% have at least 1 tag (vs 100% forced before)
   - 1.6% correctly have 0 tags (didn't match any style well)
