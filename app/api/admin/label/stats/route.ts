@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { isAdminEmail } from '@/lib/admin/whitelist';
+
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
 
 /**
  * GET /api/admin/label/stats - Get labeling progress statistics
@@ -18,6 +32,9 @@ export async function GET() {
   }
 
   try {
+    // Use service client to read style_training_labels (RLS blocks regular client)
+    const serviceClient = getServiceClient();
+
     // Get total images with embeddings
     const { count: totalImages } = await supabase
       .from('portfolio_images')
@@ -26,19 +43,19 @@ export async function GET() {
       .not('embedding', 'is', null);
 
     // Get labeled count
-    const { count: labeledCount } = await supabase
+    const { count: labeledCount } = await serviceClient
       .from('style_training_labels')
       .select('*', { count: 'exact', head: true })
       .eq('skipped', false);
 
     // Get skipped count
-    const { count: skippedCount } = await supabase
+    const { count: skippedCount } = await serviceClient
       .from('style_training_labels')
       .select('*', { count: 'exact', head: true })
       .eq('skipped', true);
 
     // Get style distribution from labels
-    const { data: labels } = await supabase
+    const { data: labels } = await serviceClient
       .from('style_training_labels')
       .select('styles')
       .eq('skipped', false);
@@ -56,7 +73,7 @@ export async function GET() {
       .map(([style, count]) => ({ style, count }));
 
     // Get labels per user
-    const { data: userStats } = await supabase
+    const { data: userStats } = await serviceClient
       .from('style_training_labels')
       .select('labeled_by')
       .eq('skipped', false);

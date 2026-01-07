@@ -127,6 +127,11 @@ const STYLE_INFO: Record<string, StyleInfo> = {
     description: 'Delicate, thin lines with minimal shading. Often single-needle work.',
     taxonomy: 'technique',
   },
+  'surrealism': {
+    displayName: 'Surrealism',
+    description: 'Dreamlike, impossible imagery with distorted reality. Multiple eyes, melting forms, and fantastical compositions.',
+    taxonomy: 'technique',
+  },
 
   // ============================================
   // THEMES - WHAT the tattoo depicts

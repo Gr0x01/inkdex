@@ -42,6 +42,7 @@ const STYLE_THRESHOLD_OVERRIDES: Record<string, number> = {
   'anime': 0.40,         // Anime characters - avoid over-matching
   'watercolor': 0.35,    // Can over-match light/soft work
   'tribal': 0.38,        // Bold patterns can match other blackwork
+  'surrealism': 0.38,    // Dreamlike imagery - avoid over-matching dark art
 };
 
 interface StyleSeed {

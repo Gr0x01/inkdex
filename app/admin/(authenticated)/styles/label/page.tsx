@@ -44,8 +44,10 @@ const STYLE_SHORTCUTS: Record<string, string> = {
   'r': 'sketch',
   't': 'geometric',
   'y': 'dotwork',
-  'u': 'anime',
-  'i': 'japanese',
+  'u': 'surrealism',
+  'i': 'lettering',
+  'o': 'anime',
+  'p': 'japanese',
 };
 
 export default function StyleLabelingPage() {
@@ -394,7 +396,7 @@ export default function StyleLabelingPage() {
             {/* Niche styles */}
             <div>
               <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Niche Styles (Q-Y)
+                Niche Styles (Q-I)
               </h3>
               <div className="flex flex-wrap gap-1.5">
                 {renderStyleButton('tribal', 'Q')}
@@ -403,17 +405,19 @@ export default function StyleLabelingPage() {
                 {renderStyleButton('sketch', 'R')}
                 {renderStyleButton('geometric', 'T')}
                 {renderStyleButton('dotwork', 'Y')}
+                {renderStyleButton('surrealism', 'U')}
+                {renderStyleButton('lettering', 'I')}
               </div>
             </div>
 
             {/* Content-based styles */}
             <div>
               <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Content-Based (U-I)
+                Content-Based (O-P)
               </h3>
               <div className="flex flex-wrap gap-1.5">
-                {renderStyleButton('anime', 'U')}
-                {renderStyleButton('japanese', 'I')}
+                {renderStyleButton('anime', 'O')}
+                {renderStyleButton('japanese', 'P')}
               </div>
             </div>
 
@@ -478,7 +482,7 @@ export default function StyleLabelingPage() {
             {/* Keyboard shortcuts reference */}
             <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
               <div className="font-semibold mb-1">Shortcuts:</div>
-              <div>1-9: Core styles · Q-I: Other styles</div>
+              <div>1-9: Core styles · Q-P: Other styles</div>
               <div>Space/Enter: Save · S: Skip · D: Delete</div>
             </div>
           </div>

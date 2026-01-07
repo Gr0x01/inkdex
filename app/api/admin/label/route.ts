@@ -39,8 +39,11 @@ export async function GET(request: NextRequest) {
   const focusStyle = searchParams.get('style');
 
   try {
+    // Use service client to read labeled images (RLS blocks anon/auth reads)
+    const serviceClient = getServiceClient();
+
     // First, get already-labeled image IDs
-    const { data: labeledImages } = await supabase
+    const { data: labeledImages } = await serviceClient
       .from('style_training_labels')
       .select('image_id');
 
@@ -233,8 +236,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'styles must be an array' }, { status: 400 });
     }
 
+    // Use service client to bypass RLS
+    const serviceClient = getServiceClient();
+
+    console.log('[Label POST] Saving label:', { imageId, styles, skipped, email: user.email });
+
     // Upsert the label
-    const { data, error } = await supabase
+    const { data, error } = await serviceClient
       .from('style_training_labels')
       .upsert(
         {
@@ -250,10 +258,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error saving label:', error);
+      console.error('[Label POST] Error saving label:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    console.log('[Label POST] Saved successfully:', data?.id);
     return NextResponse.json({ success: true, label: data });
   } catch (error) {
     console.error('Error in label POST:', error);

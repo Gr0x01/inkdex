@@ -39,13 +39,15 @@ export const ALL_LABELING_STYLES = [
   'watercolor',
   'ornamental',
   'fine-line',
-  // Niche styles (6)
+  // Niche styles (8)
   'tribal',
   'biomechanical',
   'trash-polka',
   'sketch',
   'geometric',
   'dotwork',
+  'surrealism',
+  'lettering',
   // Content-based (2) - need ML for accurate detection
   'anime',
   'japanese',
