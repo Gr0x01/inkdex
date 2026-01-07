@@ -9,11 +9,12 @@
 --
 --   _shared/gdpr.sql              - is_gdpr_country() helper
 --   _shared/location_filter.sql   - matches_location_filter() helper
---   search/vector_search.sql      - 5 vector search functions (SOURCE OF TRUTH)
+--   search/vector_search.sql      - 4 vector search functions (SOURCE OF TRUTH)
 --   location/location_counts.sql  - 4 location count functions
 --   admin/admin_functions.sql     - 3 admin + homepage functions
 --
--- TOTAL: 1,272 line monolith → 5 domain files (~1,200 lines total)
+-- CONSOLIDATED Jan 2026: Merged search_artists_by_embedding, search_artists_with_count,
+-- and search_artists_with_style_boost into unified `search_artists` function.
 --
 -- TO APPLY CHANGES:
 --   Run files in Supabase SQL Editor in this order:
@@ -23,7 +24,7 @@
 --   4. location/location_counts.sql
 --   5. admin/admin_functions.sql
 --
--- Last Updated: 2026-01-06
+-- Last Updated: 2026-01-07
 -- ============================================================================
 
 
@@ -40,27 +41,26 @@
 --     Returns true if location matches the filter criteria
 
 -- search/vector_search.sql:
---   search_artists_by_embedding(
+--   search_artists(
 --     query_embedding vector(768),
 --     match_threshold float DEFAULT 0.5,
 --     match_count int DEFAULT 20,
 --     city_filter text DEFAULT NULL,
 --     region_filter text DEFAULT NULL,
 --     country_filter text DEFAULT NULL,
---     offset_param int DEFAULT 0
---   ) → artist results with boosted_score and location_count
---
---   search_artists_with_count(...same params...)
---     → same as above + total_count for pagination
---
---   search_artists_with_style_boost(...same params..., query_styles jsonb, is_color_query boolean)
---     → adds style_boost and color_boost to ranking
+--     offset_param int DEFAULT 0,
+--     query_styles jsonb DEFAULT NULL,      -- optional style boost
+--     is_color_query boolean DEFAULT NULL   -- optional color boost
+--   ) → unified search with style_boost, color_boost, boosted_score, total_count, location_count
 --
 --   find_related_artists(source_artist_id uuid, city_filter, region_filter, country_filter, match_count)
 --     → related artists by portfolio style similarity
 --
 --   classify_embedding_styles(p_embedding vector(768), p_max_styles int, p_min_confidence float)
 --     → style classifications with confidence scores
+--
+--   get_search_location_counts(query_embedding vector(768), match_threshold float)
+--     → location counts filtered by search results
 
 -- location/location_counts.sql:
 --   get_regions_with_counts(p_country_code text DEFAULT 'US') → regions with artist counts

@@ -34,9 +34,10 @@ interface SearchArtistRpcResult {
 }
 
 /**
- * Extended result type with style boost (from search_artists_with_style_boost RPC)
+ * Extended result type from unified search_artists RPC
+ * Includes style_boost, color_boost (0 when not applicable)
  */
-interface SearchArtistWithStyleBoostRpcResult extends SearchArtistRpcResult {
+interface SearchArtistRpcResultFull extends SearchArtistRpcResult {
   style_boost: number
   color_boost: number
   boosted_score: number
@@ -172,188 +173,21 @@ export interface LocationFilter {
 }
 
 /**
- * Search artists by CLIP embedding vector
+ * Unified artist search by CLIP embedding vector
+ *
+ * Calls the consolidated `search_artists` SQL function which supports:
+ * - Vector similarity search (uses IVFFlat index)
+ * - Location filtering (city/region/country)
+ * - Style boosting (optional, pass queryStyles)
+ * - Color boosting (optional, pass isColorQuery)
+ * - Pro/Featured ranking boosts
+ * - Pagination with total count
+ *
  * @param embedding - 768-dimension CLIP vector
- * @param options - Search options (threshold, limit, location filter, offset)
- * @returns Ranked artists with matching images
- */
-export async function searchArtistsByEmbedding(
-  embedding: number[],
-  options: {
-    threshold?: number
-    limit?: number
-    offset?: number
-  } & LocationFilter = {}
-) {
-  // Validate embedding
-  if (!Array.isArray(embedding) || embedding.length !== 768) {
-    throw new Error('Invalid embedding: must be an array of 768 numbers')
-  }
-  if (!embedding.every(n => typeof n === 'number' && Number.isFinite(n))) {
-    throw new Error('Invalid embedding: all elements must be finite numbers')
-  }
-
-  const supabase = await createClient()
-
-  const {
-    threshold = 0.7,
-    limit = 20,
-    country = null,
-    region = null,
-    city = null,
-    offset = 0,
-  } = options
-
-  // Validate options
-  validateFloat(threshold, 'threshold', 0, 1)
-  validateInteger(limit, 'limit', 1, 100)
-  validateInteger(offset, 'offset', 0, 10000)
-  if (country !== null) validateString(country, 'country', 10)
-  if (region !== null) validateString(region, 'region', 100)
-  if (city !== null) validateString(city, 'city', 100)
-
-  // Sanitize embedding for SQL (explicit number validation prevents injection)
-  const sanitizedEmbedding = embedding.map(n => {
-    if (!Number.isFinite(n)) {
-      throw new Error('Invalid embedding value detected')
-    }
-    return n.toString()
-  }).join(',')
-
-  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
-    query_embedding: `[${sanitizedEmbedding}]`,
-    match_threshold: threshold,
-    match_count: limit,
-    city_filter: city,
-    region_filter: region,
-    country_filter: country,
-    offset_param: offset,
-  })
-
-  if (error) {
-    console.error('Error searching artists:', error)
-    throw error
-  }
-
-  // Transform RPC response: RPC returns matching_images as JSONB (auto-parsed),
-  // but frontend expects it as 'images' with specific structure
-  return ((data || []) as SearchArtistRpcResult[]).map((result) => ({
-    id: result.artist_id,
-    name: result.artist_name,
-    slug: result.artist_slug,
-    city: result.city,
-    region: result.region,
-    country_code: result.country_code,
-    profile_image_url: result.profile_image_url,
-    follower_count: result.follower_count,
-    shop_name: result.shop_name,
-    instagram_url: result.instagram_url,
-    is_verified: result.is_verified,
-    is_pro: result.is_pro ?? false,
-    is_featured: result.is_featured ?? false,
-    images: (result.matching_images || []).map((img) => ({
-      url: img.thumbnail_url,  // Use thumbnail_url (actual image path), not image_url (Instagram post URL)
-      instagramUrl: img.image_url,  // Instagram post URL for linking
-      similarity: img.similarity,
-      likes_count: img.likes_count,
-    })),
-    max_similarity: result.similarity,
-    max_likes: result.max_likes,
-    location_count: result.location_count,
-  }))
-}
-
-/**
- * Search artists by CLIP embedding with total count
- * Optimized version - single RPC call returns both results and count
- * @param embedding - 768-dimensional CLIP embedding vector
- * @param options - Search options (threshold, limit, location filter, offset)
+ * @param options - Search options
  * @returns Object with artists array and totalCount
  */
-export async function searchArtistsWithCount(
-  embedding: number[],
-  options: {
-    threshold?: number
-    limit?: number
-    offset?: number
-  } & LocationFilter = {}
-) {
-  // Validate embedding
-  if (!Array.isArray(embedding) || embedding.length !== 768) {
-    throw new Error('Invalid embedding: must be an array of 768 numbers')
-  }
-  if (!embedding.every(n => typeof n === 'number' && Number.isFinite(n))) {
-    throw new Error('Invalid embedding: all elements must be finite numbers')
-  }
-
-  const supabase = await createClient()
-  const { threshold = 0.7, limit = 20, country = null, region = null, city = null, offset = 0 } = options
-
-  validateFloat(threshold, 'threshold', 0, 1)
-  validateInteger(limit, 'limit', 1, 100)
-  validateInteger(offset, 'offset', 0, 10000)
-  if (country !== null) validateString(country, 'country', 10)
-  if (region !== null) validateString(region, 'region', 100)
-  if (city !== null) validateString(city, 'city', 100)
-
-  const sanitizedEmbedding = embedding.map(n => {
-    if (!Number.isFinite(n)) throw new Error('Invalid embedding value')
-    return n.toString()
-  }).join(',')
-
-  const { data, error } = await supabase.rpc('search_artists_with_count', {
-    query_embedding: `[${sanitizedEmbedding}]`,
-    match_threshold: threshold,
-    match_count: limit,
-    city_filter: city,
-    region_filter: region,
-    country_filter: country,
-    offset_param: offset,
-  })
-
-  if (error) {
-    console.error('Error searching artists with count:', error)
-    throw error
-  }
-
-  // Extract total count from first row
-  const totalCount = data && data.length > 0 ? data[0].total_count : 0
-
-  // Transform results
-  const artists = ((data || []) as SearchArtistRpcResult[]).map((result) => ({
-    id: result.artist_id,
-    name: result.artist_name,
-    slug: result.artist_slug,
-    city: result.city,
-    region: result.region,
-    country_code: result.country_code,
-    profile_image_url: result.profile_image_url,
-    follower_count: result.follower_count,
-    shop_name: result.shop_name,
-    instagram_url: result.instagram_url,
-    is_verified: result.is_verified,
-    is_pro: result.is_pro ?? false,
-    is_featured: result.is_featured ?? false,
-    images: (result.matching_images || []).map((img) => ({
-      url: img.thumbnail_url,
-      instagramUrl: img.image_url,
-      similarity: img.similarity,
-      likes_count: img.likes_count,
-    })),
-    max_similarity: result.similarity,
-    max_likes: result.max_likes,
-    location_count: result.location_count,
-  }))
-
-  return { artists, totalCount }
-}
-
-/**
- * Search artists by embedding with style-weighted ranking
- * Boosts artists who specialize in detected query styles
- * Falls back to regular search if no styles provided
- */
-export async function searchArtistsWithStyleBoost(
+export async function searchArtists(
   embedding: number[],
   options: {
     threshold?: number
@@ -383,6 +217,7 @@ export async function searchArtistsWithStyleBoost(
     isColorQuery = null,
   } = options
 
+  // Validate options
   validateFloat(threshold, 'threshold', 0, 1)
   validateInteger(limit, 'limit', 1, 100)
   validateInteger(offset, 'offset', 0, 10000)
@@ -390,15 +225,13 @@ export async function searchArtistsWithStyleBoost(
   if (region !== null) validateString(region, 'region', 100)
   if (city !== null) validateString(city, 'city', 100)
 
+  // Sanitize embedding for SQL (explicit number validation prevents injection)
   const sanitizedEmbedding = embedding.map(n => {
     if (!Number.isFinite(n)) throw new Error('Invalid embedding value')
     return n.toString()
   }).join(',')
 
-  // Log what we're passing
-  console.log('[Style Search] Passing query_styles:', queryStyles, 'is_color_query:', isColorQuery)
-
-  const { data, error } = await supabase.rpc('search_artists_with_style_boost', {
+  const { data, error } = await supabase.rpc('search_artists', {
     query_embedding: `[${sanitizedEmbedding}]`,
     match_threshold: threshold,
     match_count: limit,
@@ -406,46 +239,20 @@ export async function searchArtistsWithStyleBoost(
     region_filter: region,
     country_filter: country,
     offset_param: offset,
-    query_styles: queryStyles,  // Pass directly, Supabase client handles JSONB
+    query_styles: queryStyles,
     is_color_query: isColorQuery,
   })
 
   if (error) {
-    console.error('Error searching artists with style boost:', error)
+    console.error('Error searching artists:', error)
     throw error
-  }
-
-  // Debug: log style and color boost values
-  if (data && data.length > 0) {
-    // Debug first result structure
-    console.log('[Debug] First result keys:', Object.keys(data[0]))
-    console.log('[Debug] First result matching_images:', data[0].matching_images)
-
-    const styleBoostsFound = data.filter((r: SearchArtistWithStyleBoostRpcResult) => r.style_boost > 0)
-    const colorBoostsFound = data.filter((r: SearchArtistWithStyleBoostRpcResult) => r.color_boost > 0)
-    console.log('[Style Search] Results with style boost:', styleBoostsFound.length, 'of', data.length)
-    console.log('[Color Search] Results with color boost:', colorBoostsFound.length, 'of', data.length)
-    if (styleBoostsFound.length > 0) {
-      console.log('[Style Search] Top style boosts:', styleBoostsFound.slice(0, 3).map((r: SearchArtistWithStyleBoostRpcResult) => ({
-        name: r.artist_name,
-        style_boost: r.style_boost,
-        similarity: r.similarity
-      })))
-    }
-    if (colorBoostsFound.length > 0) {
-      console.log('[Color Search] Top color boosts:', colorBoostsFound.slice(0, 3).map((r: SearchArtistWithStyleBoostRpcResult) => ({
-        name: r.artist_name,
-        color_boost: r.color_boost,
-        similarity: r.similarity
-      })))
-    }
   }
 
   // Extract total count from first row
   const totalCount = data && data.length > 0 ? data[0].total_count : 0
 
-  // Transform results
-  const artists = ((data || []) as SearchArtistWithStyleBoostRpcResult[]).map((result) => ({
+  // Transform RPC response to frontend format
+  const artists = ((data || []) as SearchArtistRpcResultFull[]).map((result) => ({
     id: result.artist_id,
     name: result.artist_name,
     slug: result.artist_slug,
@@ -460,8 +267,8 @@ export async function searchArtistsWithStyleBoost(
     is_pro: result.is_pro ?? false,
     is_featured: result.is_featured ?? false,
     images: (result.matching_images || []).map((img) => ({
-      url: img.thumbnail_url,
-      instagramUrl: img.image_url,
+      url: img.thumbnail_url,  // Actual image path
+      instagramUrl: img.image_url,  // Instagram post URL for linking
       similarity: img.similarity,
       likes_count: img.likes_count,
     })),
@@ -475,6 +282,18 @@ export async function searchArtistsWithStyleBoost(
 
   return { artists, totalCount }
 }
+
+// Legacy aliases for backwards compatibility during migration
+// TODO: Remove these after all callers are updated
+export const searchArtistsByEmbedding = async (
+  embedding: number[],
+  options: { threshold?: number; limit?: number; offset?: number } & LocationFilter = {}
+) => {
+  const { artists } = await searchArtists(embedding, options)
+  return artists
+}
+
+export const searchArtistsWithStyleBoost = searchArtists
 
 /**
  * Get artist by slug
@@ -1314,7 +1133,7 @@ export async function getArtistsByStyle(
   const supabase = await createClient()
 
   // Use vector similarity search with style seed embedding
-  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
+  const { data, error } = await supabase.rpc('search_artists', {
     query_embedding: `[${embeddingString}]`,
     match_threshold: 0.15, // Same threshold as regular search
     match_count: limit,
@@ -1410,7 +1229,7 @@ export async function getArtistsByStyleSeed(
   }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('search_artists_by_embedding', {
+  const { data, error } = await supabase.rpc('search_artists', {
     query_embedding: `[${embeddingString}]`,
     match_threshold: 0.15,
     match_count: limit,
