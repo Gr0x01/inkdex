@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-06
+Last-Updated: 2026-01-07
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -227,3 +227,53 @@ perf: Optimize IVFFlat index
 | `ui-designer` | Design system work |
 
 **Workflow:** Implement → Run quality checks → `code-reviewer` → Address Critical issues
+
+---
+
+## Systems to Monitor
+
+### International Artist Miner (VPS)
+
+**Server:** Vultr `66.42.100.208` ($5/mo)
+**Service:** `international-miner.service`
+**Script:** `/root/international_miner.py`
+**Deployed:** 2026-01-07
+
+**What it does:**
+1. Tavily web search → discovers artist Instagram handles
+2. Instaloader → scrapes 12 images per public profile
+3. Uploads WebP thumbnails to Supabase Storage
+4. Creates artist + portfolio_images records
+
+**Throughput:** ~1,000-2,000 artists/day, ~12,000-24,000 images/day
+
+**Target regions (31 cities):**
+- Canada: Toronto, Vancouver, Montreal, Calgary, Ottawa
+- Latin America: Mexico City, São Paulo, Buenos Aires, Bogotá, Lima, Santiago, Medellín, Rio de Janeiro, Guadalajara, Monterrey
+- Asia-Pacific: Tokyo, Seoul, Sydney, Melbourne, Singapore, Bangkok, Hong Kong, Taipei, Auckland, Manila, Osaka, Brisbane, Perth, Wellington, Kuala Lumpur
+
+**Monitoring commands:**
+```bash
+# SSH credentials in /tmp/vps_pass.txt (password: !r6JVs9UUzQZMLr$)
+sshpass -f /tmp/vps_pass.txt ssh root@66.42.100.208
+
+# Check service status
+systemctl status international-miner
+
+# Watch logs live
+journalctl -u international-miner -f
+
+# Recent logs
+journalctl -u international-miner -n 100 --no-pager
+
+# Restart if needed
+systemctl restart international-miner
+```
+
+**Cost:** ~$35-65/month (Tavily ~$1-2/day + VPS $5/mo) vs $200 for 16k artists on Apify
+
+**Known issues:**
+- `artist_locations` insert returns 404 (trigger issue) - doesn't block pipeline, artists still created
+- Instagram 403/401 errors occasionally - script handles gracefully, continues to next artist
+
+**Local script:** `scripts/instaloader/international_miner.py`
