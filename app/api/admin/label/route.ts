@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { isAdminEmail } from '@/lib/admin/whitelist';
+
+function getServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+}
 
 /**
  * GET /api/admin/label - Get next unlabeled image for labeling
@@ -90,6 +104,103 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error in label API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/admin/label - Delete a non-tattoo image (only if artist not claimed)
+ * Body: { imageId: string }
+ */
+export async function DELETE(request: NextRequest) {
+  const supabase = await createClient();
+
+  // Check admin auth
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !isAdminEmail(user.email)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { imageId } = body;
+
+    if (!imageId) {
+      return NextResponse.json({ error: 'imageId is required' }, { status: 400 });
+    }
+
+    const serviceClient = getServiceClient();
+
+    // Get the image and check if artist is claimed
+    const { data: image, error: fetchError } = await serviceClient
+      .from('portfolio_images')
+      .select(`
+        id,
+        artist_id,
+        storage_thumb_320,
+        storage_thumb_640,
+        storage_thumb_1280,
+        storage_original_path
+      `)
+      .eq('id', imageId)
+      .single();
+
+    if (fetchError || !image) {
+      return NextResponse.json({ error: 'Image not found' }, { status: 404 });
+    }
+
+    // Check if artist is claimed (has user_id)
+    const { data: artist } = await serviceClient
+      .from('artists')
+      .select('user_id')
+      .eq('id', image.artist_id)
+      .single();
+
+    if (artist?.user_id) {
+      return NextResponse.json(
+        { error: 'Cannot delete images from claimed artists' },
+        { status: 403 }
+      );
+    }
+
+    // Collect storage paths to delete
+    const storagePaths: string[] = [];
+    if (image.storage_thumb_320) storagePaths.push(image.storage_thumb_320);
+    if (image.storage_thumb_640) storagePaths.push(image.storage_thumb_640);
+    if (image.storage_thumb_1280) storagePaths.push(image.storage_thumb_1280);
+    if (image.storage_original_path) storagePaths.push(image.storage_original_path);
+
+    // Delete from storage
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await serviceClient.storage
+        .from('portfolio-images')
+        .remove(storagePaths);
+
+      if (storageError) {
+        console.error('Storage deletion error:', storageError);
+        // Continue anyway - orphaned files are acceptable
+      }
+    }
+
+    // Hard delete the image from DB
+    const { error: deleteError } = await serviceClient
+      .from('portfolio_images')
+      .delete()
+      .eq('id', imageId);
+
+    if (deleteError) {
+      console.error('Error deleting image:', deleteError);
+      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
+
+    console.log(`[Admin Label] Deleted image ${imageId} (${storagePaths.length} storage files)`)
+
+    return NextResponse.json({ success: true, deleted: imageId });
+  } catch (error) {
+    console.error('Error in label DELETE:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

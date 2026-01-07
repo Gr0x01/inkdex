@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, SkipForward, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, SkipForward, Check, Loader2, Trash2 } from 'lucide-react';
 import { ALL_LABELING_STYLES, STYLE_DISPLAY_NAMES } from '@/lib/constants/styles';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface CurrentImage {
   id: string;
@@ -55,6 +56,8 @@ export default function StyleLabelingPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<string[]>([]); // IDs of labeled images
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch next image
   const fetchNextImage = useCallback(async () => {
@@ -146,6 +149,42 @@ export default function StyleLabelingPage() {
     [currentImage, selectedStyles, saving, history.length, fetchNextImage, fetchStats]
   );
 
+  // Show delete confirmation dialog
+  const promptDelete = useCallback(() => {
+    if (!currentImage || deleting || saving) return;
+    setShowDeleteDialog(true);
+  }, [currentImage, deleting, saving]);
+
+  // Actually delete the image (called after confirmation)
+  const confirmDelete = useCallback(async () => {
+    if (!currentImage || deleting) return;
+
+    setShowDeleteDialog(false);
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/label', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId: currentImage.id }),
+      });
+
+      const data = await res.json();
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      // Move to next image
+      fetchNextImage();
+    } catch (err) {
+      setError('Failed to delete image');
+      console.error(err);
+    } finally {
+      setDeleting(false);
+    }
+  }, [currentImage, deleting, fetchNextImage]);
+
   // Toggle a style
   const toggleStyle = useCallback((style: string) => {
     setSelectedStyles((prev) => {
@@ -190,11 +229,17 @@ export default function StyleLabelingPage() {
         saveAndNext(true); // Skip
         return;
       }
+
+      if (key === 'd') {
+        e.preventDefault();
+        promptDelete(); // Show delete confirmation
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleStyle, saveAndNext, selectedStyles.size]);
+  }, [toggleStyle, saveAndNext, promptDelete, selectedStyles.size]);
 
   // Render style button
   const renderStyleButton = (style: string, shortcut: string) => {
@@ -408,6 +453,21 @@ export default function StyleLabelingPage() {
                 Skip
                 <span className="text-[10px] opacity-60">(S)</span>
               </button>
+
+              <button
+                onClick={promptDelete}
+                disabled={deleting || saving}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded font-body text-xs
+                  text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors"
+              >
+                {deleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                Delete (not a tattoo)
+                <span className="text-[10px] opacity-60">(D)</span>
+              </button>
             </div>
 
             {/* Session progress */}
@@ -419,7 +479,7 @@ export default function StyleLabelingPage() {
             <div className="text-[10px] text-gray-400 pt-2 border-t border-gray-100">
               <div className="font-semibold mb-1">Shortcuts:</div>
               <div>1-9: Core styles · Q-I: Other styles</div>
-              <div>Space/Enter: Save · S: Skip</div>
+              <div>Space/Enter: Save · S: Skip · D: Delete</div>
             </div>
           </div>
         </div>
@@ -449,6 +509,18 @@ export default function StyleLabelingPage() {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
+        title="Delete Image"
+        message="Delete this image permanently? This cannot be undone. Only use for non-tattoo images (digital art, photos, etc)."
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setShowDeleteDialog(false)}
+      />
     </div>
   );
 }
