@@ -53,7 +53,11 @@ export async function GET(request: NextRequest) {
     // Sanitize search input to prevent PostgREST injection
     let sanitizedSearch = null;
     if (search) {
-      const trimmedSearch = search.slice(0, 100);
+      let trimmedSearch = search.slice(0, 100);
+      // Strip @ prefix (users often search @handle)
+      if (trimmedSearch.startsWith('@')) {
+        trimmedSearch = trimmedSearch.slice(1);
+      }
       sanitizedSearch = trimmedSearch
         .replace(/\\/g, '\\\\')
         .replace(/%/g, '\\%')

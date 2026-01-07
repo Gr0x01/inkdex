@@ -138,7 +138,7 @@ RETURNS TABLE (
   is_featured boolean,
   is_pro boolean,
   verification_status text,
-  follower_count bigint,
+  follower_count integer,
   slug text,
   deleted_at timestamp with time zone,
   image_count bigint,

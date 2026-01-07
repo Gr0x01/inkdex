@@ -16,6 +16,7 @@ import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { fetchInstagramProfileImages } from '../../lib/instagram/profile-fetcher';
 import { extractLocationFromBio } from '../../lib/instagram/bio-location-extractor';
+import { generateSlugFromInstagram } from '../../lib/utils/slug';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -210,8 +211,8 @@ async function updateCandidate(
 }
 
 async function insertArtist(candidate: PendingCandidate, location: ReturnType<typeof extractLocationFromBio>): Promise<string | null> {
-  // Generate slug from handle
-  const slug = candidate.instagram_handle.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  // Generate slug from handle (uses centralized utility that handles edge cases)
+  const slug = generateSlugFromInstagram(candidate.instagram_handle);
 
   // Generate name from handle (capitalize words)
   const name = candidate.instagram_handle

@@ -28,6 +28,7 @@ import {
   getMatchingBioKeywords,
   classifyTattooArtist,
 } from '../../lib/instagram/classifier';
+import { generateSlugFromInstagram } from '../../lib/utils/slug';
 import { extractLocationFromBio, checkBioForGDPR } from '../../lib/instagram/bio-location-extractor';
 
 // ============================================================================
@@ -259,7 +260,8 @@ async function insertArtist(profile: {
   state?: string;
   discoverySource: string;
 }): Promise<boolean> {
-  const baseSlug = profile.username.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  // Generate slug (uses centralized utility that handles edge cases)
+  const baseSlug = generateSlugFromInstagram(profile.username);
 
   const { data: artistData, error } = await supabase.from('artists').insert({
     name: profile.username,

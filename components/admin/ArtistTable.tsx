@@ -393,9 +393,12 @@ export default function ArtistTable() {
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="flex items-center gap-1">
-                      <span className="text-ink text-[13px] font-medium truncate">
+                      <Link
+                        href={`/admin/artists/${artist.id}`}
+                        className="text-ink text-[13px] font-medium truncate hover:underline"
+                      >
                         @{artist.instagram_handle}
-                      </span>
+                      </Link>
                       {artist.is_pro && (
                         <Crown className="w-2.5 h-2.5 text-status-warning flex-shrink-0" />
                       )}
