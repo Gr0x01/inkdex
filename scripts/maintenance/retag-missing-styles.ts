@@ -3,12 +3,12 @@
  * Retag Images Missing Style Tags
  *
  * Finds images that have embeddings but no style tags and re-tags them.
- * Useful for catching images that failed during style tag insertion.
+ * Loops until all orphaned images are processed.
  *
  * Usage:
  *   npx tsx scripts/maintenance/retag-missing-styles.ts
  *   npx tsx scripts/maintenance/retag-missing-styles.ts --dry-run    # Preview only
- *   npx tsx scripts/maintenance/retag-missing-styles.ts --limit 100  # Process max 100
+ *   npx tsx scripts/maintenance/retag-missing-styles.ts --limit 100  # Process max 100 per round
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -29,14 +29,14 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 interface ParsedArgs {
   dryRun: boolean;
-  limit: number | null;
+  limit: number;
   batchSize: number;
 }
 
 function parseArgs(): ParsedArgs {
   const args = process.argv.slice(2);
   let dryRun = false;
-  let limit: number | null = null;
+  let limit = 5000; // Per-round limit
   let batchSize = 100;
 
   for (let i = 0; i < args.length; i++) {
@@ -60,122 +60,165 @@ async function main() {
   console.log('Retag Missing Styles');
   console.log('====================');
   console.log(`Mode: ${dryRun ? 'DRY RUN (no changes)' : 'LIVE'}`);
-  console.log(`Batch size: ${batchSize}`);
-  if (limit) console.log(`Limit: ${limit}`);
+  console.log(`Batch size: ${batchSize}, Round limit: ${limit}`);
   console.log('');
 
-  // Find images with embeddings but no style tags
-  // Using a LEFT JOIN to find missing tags
-  const { data: orphanedImages, error: queryError } = await supabase
-    .from('portfolio_images')
-    .select(`
-      id,
-      instagram_post_id,
-      artist_id,
-      embedding,
-      image_style_tags!left(id)
-    `)
-    .eq('status', 'active')
-    .not('embedding', 'is', null)
-    .is('image_style_tags.id', null)
-    .order('created_at', { ascending: false })
-    .limit(limit ?? 10000);
+  let totalProcessed = 0;
+  let totalTagged = 0;
+  let totalNoStyles = 0;
+  const totalStyleCounts: Record<string, number> = {};
+  const globalStartTime = Date.now();
+  let round = 0;
 
-  if (queryError) {
-    console.error('Error querying orphaned images:', queryError);
-    process.exit(1);
+  // First, get all image IDs that already have tags (Supabase LEFT JOIN is buggy)
+  console.log('Building set of already-tagged image IDs...');
+  const taggedImageIds = new Set<string>();
+  let tagOffset = 0;
+  while (true) {
+    const { data: tagBatch } = await supabase
+      .from('image_style_tags')
+      .select('image_id')
+      .range(tagOffset, tagOffset + 999);
+    if (!tagBatch || tagBatch.length === 0) break;
+    tagBatch.forEach((t) => taggedImageIds.add(t.image_id));
+    if (tagBatch.length < 1000) break;
+    tagOffset += 1000;
   }
+  console.log(`Found ${taggedImageIds.size} images already tagged\n`);
 
-  if (!orphanedImages || orphanedImages.length === 0) {
-    console.log('No orphaned images found. All images with embeddings have style tags.');
-    return;
-  }
+  // Loop until no more orphaned images
+  while (true) {
+    round++;
 
-  console.log(`Found ${orphanedImages.length} images with embeddings but no style tags`);
-  console.log('');
+    // Find images with embeddings, then filter out already-tagged ones
+    const { data: candidateImages, error: queryError } = await supabase
+      .from('portfolio_images')
+      .select('id, instagram_post_id, artist_id, embedding')
+      .eq('status', 'active')
+      .not('embedding', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(limit * 2); // Fetch extra since we'll filter
 
-  let processed = 0;
-  let tagged = 0;
-  let noTags = 0;
-  const styleCounts: Record<string, number> = {};
-  const startTime = Date.now();
+    // Filter to only truly orphaned images
+    const orphanedImages = candidateImages?.filter((img) => !taggedImageIds.has(img.id)).slice(0, limit);
 
-  // Process in batches
-  for (let i = 0; i < orphanedImages.length; i += batchSize) {
-    const batch = orphanedImages.slice(i, i + batchSize);
-    const tagsToInsert: { image_id: string; style_name: string; confidence: number }[] = [];
+    if (queryError) {
+      console.error('Error querying orphaned images:', queryError);
+      process.exit(1);
+    }
 
-    for (const img of batch) {
-      // Parse embedding if string
-      const embedding =
-        typeof img.embedding === 'string' ? JSON.parse(img.embedding) : img.embedding;
-
-      if (!embedding || embedding.length !== 768) {
-        console.warn(`[SKIP] Invalid embedding for ${img.instagram_post_id}`);
-        continue;
+    if (!orphanedImages || orphanedImages.length === 0) {
+      if (round === 1) {
+        console.log('No orphaned images found. All images with embeddings have style tags.');
       }
+      break;
+    }
 
-      const predictions = predictStyles(embedding);
+    console.log(`\n=== Round ${round}: Processing ${orphanedImages.length} images ===`);
 
-      if (predictions.length > 0) {
-        tagged++;
-        for (const { style, confidence } of predictions) {
-          tagsToInsert.push({
-            image_id: img.id,
-            style_name: style,
-            confidence,
-          });
-          styleCounts[style] = (styleCounts[style] || 0) + 1;
+    let roundProcessed = 0;
+    let roundTagged = 0;
+    let roundNoStyles = 0;
+    const roundStartTime = Date.now();
+
+    // Process in batches
+    for (let i = 0; i < orphanedImages.length; i += batchSize) {
+      const batch = orphanedImages.slice(i, i + batchSize);
+      const tagsToInsert: { image_id: string; style_name: string; confidence: number }[] = [];
+
+      for (const img of batch) {
+        // Parse embedding if string
+        let embedding: number[];
+        try {
+          embedding =
+            typeof img.embedding === 'string' ? JSON.parse(img.embedding) : img.embedding;
+        } catch {
+          console.warn(`[SKIP] JSON parse failed for ${img.instagram_post_id}`);
+          continue;
         }
-      } else {
-        noTags++;
+
+        if (!embedding || embedding.length !== 768) {
+          console.warn(`[SKIP] Invalid embedding for ${img.instagram_post_id}`);
+          continue;
+        }
+
+        const predictions = predictStyles(embedding);
+
+        if (predictions.length > 0) {
+          roundTagged++;
+          totalTagged++;
+          for (const { style, confidence } of predictions) {
+            tagsToInsert.push({
+              image_id: img.id,
+              style_name: style,
+              confidence,
+            });
+            totalStyleCounts[style] = (totalStyleCounts[style] || 0) + 1;
+          }
+        } else {
+          roundNoStyles++;
+          totalNoStyles++;
+        }
+
+        roundProcessed++;
+        totalProcessed++;
       }
 
-      processed++;
-    }
+      // Insert tags
+      if (tagsToInsert.length > 0 && !dryRun) {
+        const { error: insertError } = await supabase
+          .from('image_style_tags')
+          .upsert(tagsToInsert, { onConflict: 'image_id,style_name' });
 
-    // Insert tags
-    if (tagsToInsert.length > 0 && !dryRun) {
-      const { error: insertError } = await supabase
-        .from('image_style_tags')
-        .upsert(tagsToInsert, { onConflict: 'image_id,style_name' });
-
-      if (insertError) {
-        console.error('Error inserting tags:', insertError);
+        if (insertError) {
+          console.error('Error inserting tags:', insertError);
+        } else {
+          // Add to tagged set so we don't re-process
+          tagsToInsert.forEach((t) => taggedImageIds.add(t.image_id));
+        }
       }
+
+      // Progress update
+      const elapsed = (Date.now() - roundStartTime) / 1000;
+      const rate = roundProcessed / elapsed;
+      process.stdout.write(
+        `\rProcessed ${roundProcessed}/${orphanedImages.length} (${rate.toFixed(0)}/s) - ${tagsToInsert.length} tags`
+      );
     }
 
-    // Progress update
-    const elapsed = (Date.now() - startTime) / 1000;
-    const rate = processed / elapsed;
-    console.log(
-      `Processed ${processed}/${orphanedImages.length} (${rate.toFixed(1)}/s) - ${tagsToInsert.length} tags ${dryRun ? 'would be' : ''} inserted`
-    );
+    const roundElapsed = (Date.now() - roundStartTime) / 1000;
+    console.log(`\nRound ${round} complete: ${roundTagged} tagged, ${roundNoStyles} no styles (${roundElapsed.toFixed(1)}s)`);
+
+    // In dry run, only do one round
+    if (dryRun) {
+      console.log('\nDRY RUN - stopping after first round');
+      break;
+    }
   }
 
-  // Summary
-  const elapsed = (Date.now() - startTime) / 1000;
+  // Final summary
+  const totalElapsed = (Date.now() - globalStartTime) / 1000;
 
-  console.log('');
-  console.log('Summary');
-  console.log('=======');
-  console.log(`Total processed: ${processed}`);
-  console.log(`Images tagged: ${tagged}`);
-  console.log(`Images with no matching styles: ${noTags}`);
-  console.log(`Time: ${elapsed.toFixed(1)}s`);
+  console.log('\n');
+  console.log('===================');
+  console.log('FINAL SUMMARY');
+  console.log('===================');
+  console.log(`Rounds: ${round}`);
+  console.log(`Total processed: ${totalProcessed}`);
+  console.log(`Total tagged: ${totalTagged}`);
+  console.log(`Total no matching styles: ${totalNoStyles}`);
+  console.log(`Total time: ${totalElapsed.toFixed(1)}s (${(totalProcessed / totalElapsed).toFixed(0)}/s)`);
   console.log('');
   console.log('Style distribution:');
 
-  const sortedStyles = Object.entries(styleCounts).sort((a, b) => b[1] - a[1]);
+  const sortedStyles = Object.entries(totalStyleCounts).sort((a, b) => b[1] - a[1]);
   for (const [style, count] of sortedStyles) {
-    const pct = ((count / tagged) * 100).toFixed(1);
+    const pct = totalTagged > 0 ? ((count / totalTagged) * 100).toFixed(1) : '0';
     console.log(`  ${style}: ${count} (${pct}%)`);
   }
 
   if (dryRun) {
-    console.log('');
-    console.log('This was a DRY RUN. No changes were made.');
-    console.log('Run without --dry-run to apply changes.');
+    console.log('\nThis was a DRY RUN. No changes were made.');
   }
 }
 
