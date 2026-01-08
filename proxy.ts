@@ -148,10 +148,26 @@ function isScrapablePath(pathname: string): boolean {
 }
 
 /**
- * Check maintenance mode via internal API
+ * Maintenance mode cache
+ * Caches the Redis check for 60 seconds to avoid hammering the API on every request.
+ * Worst case: 60 second delay before maintenance mode kicks in (acceptable for emergencies).
+ */
+let maintenanceModeCache: boolean = false
+let maintenanceCacheExpiry: number = 0
+const MAINTENANCE_CACHE_TTL = 60_000 // 60 seconds
+
+/**
+ * Check maintenance mode via internal API (cached)
  * Uses fetch because ioredis doesn't work on Edge runtime
  */
 async function checkMaintenanceMode(request: NextRequest): Promise<boolean> {
+  const now = Date.now()
+
+  // Return cached value if still valid
+  if (now < maintenanceCacheExpiry) {
+    return maintenanceModeCache
+  }
+
   try {
     // Build absolute URL for internal API call
     const baseUrl = request.nextUrl.origin
@@ -160,12 +176,26 @@ async function checkMaintenanceMode(request: NextRequest): Promise<boolean> {
       headers: { 'Cache-Control': 'no-cache' },
     })
 
-    if (!response.ok) return false
+    if (!response.ok) {
+      // Cache the "not in maintenance" result too
+      maintenanceModeCache = false
+      maintenanceCacheExpiry = now + MAINTENANCE_CACHE_TTL
+      return false
+    }
 
     const data = await response.json()
-    return data.enabled === true
+    const enabled = data.enabled === true
+
+    // Cache the result
+    maintenanceModeCache = enabled
+    maintenanceCacheExpiry = now + MAINTENANCE_CACHE_TTL
+
+    return enabled
   } catch {
     // Fail open - if we can't check, don't block
+    // But still cache to avoid hammering a failing endpoint
+    maintenanceModeCache = false
+    maintenanceCacheExpiry = now + MAINTENANCE_CACHE_TTL
     return false
   }
 }
