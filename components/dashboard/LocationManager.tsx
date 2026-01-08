@@ -9,8 +9,8 @@
  * - Pro tier: Multiple locations with add/remove/reorder
  */
 
-import { useState, useEffect } from 'react';
-import { Plus, X, MapPin, Crown, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, X, MapPin, Crown } from 'lucide-react';
 import Link from 'next/link';
 import Select from '@/components/ui/Select';
 import CitySelect from '@/components/ui/CitySelect';
@@ -32,8 +32,7 @@ interface LocationManagerProps {
   artistId: string;
   isPro: boolean;
   locations: Location[];
-  onSave: (locations: Location[]) => Promise<void>;
-  isSaving?: boolean;
+  onChange: (locations: Location[]) => void;
   error?: string;
 }
 
@@ -44,15 +43,10 @@ export default function LocationManager({
   artistId: _artistId,
   isPro,
   locations,
-  onSave,
-  isSaving = false,
+  onChange,
   error,
 }: LocationManagerProps) {
   const maxLocations = isPro ? MAX_PRO_LOCATIONS : MAX_FREE_LOCATIONS;
-
-  // Edit mode state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingLocations, setEditingLocations] = useState<Location[]>([]);
 
   // Add form state
   const [isAdding, setIsAdding] = useState(false);
@@ -60,13 +54,6 @@ export default function LocationManager({
   const [newCity, setNewCity] = useState<string>('');
   const [newRegion, setNewRegion] = useState<string>('');
   const [newLocationType, setNewLocationType] = useState<'city' | 'region'>('city');
-
-  // Initialize editing state
-  useEffect(() => {
-    if (isEditing) {
-      setEditingLocations([...locations]);
-    }
-  }, [isEditing, locations]);
 
   const formatLocation = (loc: Location): string => {
     const parts: string[] = [];
@@ -106,93 +93,55 @@ export default function LocationManager({
       city: newLocationType === 'city' ? (newCity.trim() || null) : null,
       region: newCountry === 'US' ? (newRegion || null) : (newRegion.trim() || null),
       locationType: newLocationType,
-      isPrimary: editingLocations.length === 0,
+      isPrimary: locations.length === 0,
     };
 
-    setEditingLocations([...editingLocations, newLocation]);
+    onChange([...locations, newLocation]);
     setNewCity('');
     setNewRegion('');
     setIsAdding(false);
   };
 
   const handleRemoveLocation = (index: number) => {
-    const newLocations = editingLocations.filter((_, i) => i !== index);
+    const newLocations = locations.filter((_, i) => i !== index);
     // Ensure there's always a primary if locations exist
     if (newLocations.length > 0 && !newLocations.some((l) => l.isPrimary)) {
       newLocations[0].isPrimary = true;
     }
-    setEditingLocations(newLocations);
+    onChange(newLocations);
   };
 
   const handleSetPrimary = (index: number) => {
-    const newLocations = editingLocations.map((loc, i) => ({
+    const newLocations = locations.map((loc, i) => ({
       ...loc,
       isPrimary: i === index,
     }));
-    setEditingLocations(newLocations);
+    onChange(newLocations);
   };
 
-  const handleSave = async () => {
-    await onSave(editingLocations);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditingLocations([...locations]);
-    setIsEditing(false);
-    setIsAdding(false);
-  };
-
-  // ===== FREE TIER: Read-only with edit button =====
+  // ===== FREE TIER: Inline editable =====
   if (!isPro) {
-    const currentLocation = locations[0];
-
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
-            Location <span className="text-[var(--error)]">*</span>
-          </label>
-          {!isEditing && (
-            <button
-              type="button"
-              onClick={() => setIsEditing(true)}
-              className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
-            >
-              Edit
-            </button>
-          )}
+        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
+          Location <span className="text-[var(--error)]">*</span>
+        </label>
+
+        <FreeTierLocationEditor
+          location={locations[0] || null}
+          onChange={(loc) => onChange(loc ? [loc] : [])}
+        />
+
+        {/* Upgrade CTA */}
+        <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[var(--gray-200)] bg-[var(--gray-50)]">
+          <Crown className="w-3.5 h-3.5 text-amber-500" />
+          <span className="font-body text-sm text-[var(--gray-600)]">
+            Want to list multiple locations?{' '}
+            <Link href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
+              Upgrade to Pro
+            </Link>
+          </span>
         </div>
-
-        {!isEditing ? (
-          <>
-            <div className="flex items-center gap-3 p-3 border-2 border-[var(--border-subtle)] bg-[var(--gray-50)]">
-              <MapPin className="w-3.5 h-3.5 text-[var(--gray-500)]" />
-              <span className="font-body text-[var(--text-primary)]">
-                {currentLocation ? formatLocation(currentLocation) : 'No location set'}
-              </span>
-            </div>
-
-            {/* Upgrade CTA */}
-            <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[var(--gray-200)] bg-[var(--gray-50)]">
-              <Crown className="w-3.5 h-3.5 text-amber-500" />
-              <span className="font-body text-sm text-[var(--gray-600)]">
-                Want to list multiple locations?{' '}
-                <Link href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
-                  Upgrade to Pro
-                </Link>
-              </span>
-            </div>
-          </>
-        ) : (
-          <FreeTierLocationEditor
-            location={editingLocations[0] || null}
-            onChange={(loc) => setEditingLocations(loc ? [loc] : [])}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            isSaving={isSaving}
-          />
-        )}
 
         {error && (
           <p className="text-[var(--error)] text-sm font-body">{error}</p>
@@ -201,49 +150,19 @@ export default function LocationManager({
     );
   }
 
-  // ===== PRO TIER: Full location management =====
+  // ===== PRO TIER: Full location management (always editable) =====
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
-            Locations ({locations.length}/{maxLocations})
-          </label>
-          <ProBadge variant="icon-only" size="sm" />
-        </div>
-        {!isEditing ? (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-600)] hover:text-[var(--ink-black)] transition-colors"
-          >
-            Edit
-          </button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isSaving}
-              className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--gray-700)] disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={isSaving || editingLocations.length === 0}
-              className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider bg-[var(--ink-black)] text-[var(--paper-white)] px-3 py-1.5 hover:bg-[var(--gray-800)] disabled:opacity-50 transition-colors"
-            >
-              {isSaving ? '...' : <><Check className="!w-2.5 !h-2.5" /> Save</>}
-            </button>
-          </div>
-        )}
+      <div className="flex items-center gap-2">
+        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
+          Locations ({locations.length}/{maxLocations})
+        </label>
+        <ProBadge variant="icon-only" size="sm" />
       </div>
 
       {/* Locations list */}
       <div className="space-y-2">
-        {(isEditing ? editingLocations : locations).map((loc, index) => (
+        {locations.map((loc, index) => (
           <div
             key={loc.id || index}
             className={`flex items-center justify-between p-3 border-2 ${
@@ -263,35 +182,33 @@ export default function LocationManager({
                 </span>
               )}
             </div>
-            {isEditing && (
-              <div className="flex items-center gap-2">
-                {!loc.isPrimary && (
-                  <button
-                    type="button"
-                    onClick={() => handleSetPrimary(index)}
-                    className="font-mono text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink-black)] transition-colors"
-                  >
-                    Set primary
-                  </button>
-                )}
-                {(isEditing ? editingLocations : locations).length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveLocation(index)}
-                    className="p-1 text-[var(--gray-400)] hover:text-[var(--error)] transition-colors"
-                    aria-label="Remove location"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {!loc.isPrimary && (
+                <button
+                  type="button"
+                  onClick={() => handleSetPrimary(index)}
+                  className="font-mono text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink-black)] transition-colors"
+                >
+                  Set primary
+                </button>
+              )}
+              {locations.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLocation(index)}
+                  className="p-1 text-[var(--gray-400)] hover:text-[var(--error)] transition-colors"
+                  aria-label="Remove location"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Add new location (editing mode only) */}
-      {isEditing && editingLocations.length < maxLocations && !isAdding && (
+      {/* Add new location */}
+      {locations.length < maxLocations && !isAdding && (
         <button
           type="button"
           onClick={() => setIsAdding(true)}
@@ -305,7 +222,7 @@ export default function LocationManager({
       )}
 
       {/* Add location form */}
-      {isEditing && isAdding && (
+      {isAdding && (
         <div className="border-2 border-dashed border-[var(--gray-300)] p-4 space-y-4">
           <div className="flex items-center justify-between">
             <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
@@ -421,17 +338,11 @@ export default function LocationManager({
 interface FreeTierLocationEditorProps {
   location: Location | null;
   onChange: (location: Location | null) => void;
-  onSave: () => void;
-  onCancel: () => void;
-  isSaving: boolean;
 }
 
 function FreeTierLocationEditor({
   location,
   onChange,
-  onSave,
-  onCancel,
-  isSaving,
 }: FreeTierLocationEditorProps) {
   const [locationType, setLocationType] = useState<'city' | 'region'>(
     location?.locationType === 'region' ? 'region' : 'city'
@@ -441,20 +352,32 @@ function FreeTierLocationEditor({
   const [cityInput, setCityInput] = useState<string>(location?.city || '');
   const [regionInput, setRegionInput] = useState<string>(location?.region || '');
 
-  // Update parent when fields change
-  useEffect(() => {
+  // Helper to notify parent of changes
+  const notifyChange = (updates: Partial<{
+    locationType: 'city' | 'region';
+    selectedCountry: string;
+    selectedState: string | null;
+    cityInput: string;
+    regionInput: string;
+  }>) => {
+    const newLocationType = updates.locationType ?? locationType;
+    const newCountry = updates.selectedCountry ?? selectedCountry;
+    const newState = updates.selectedState !== undefined ? updates.selectedState : selectedState;
+    const newCity = updates.cityInput ?? cityInput;
+    const newRegion = updates.regionInput ?? regionInput;
+
     const newLocation: Location = {
-      countryCode: selectedCountry,
-      city: locationType === 'city' ? (cityInput || null) : null,
-      region: selectedCountry === 'US' ? selectedState : (regionInput || null),
-      locationType: locationType,
+      countryCode: newCountry,
+      city: newLocationType === 'city' ? (newCity || null) : null,
+      region: newCountry === 'US' ? newState : (newRegion || null),
+      locationType: newLocationType,
       isPrimary: true,
     };
     onChange(newLocation);
-  }, [locationType, selectedCountry, selectedState, cityInput, regionInput]);
+  };
 
   return (
-    <div className="space-y-4 p-4 border-2 border-[var(--ink-black)]">
+    <div className="space-y-4">
       <div>
         <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
           Country
@@ -462,10 +385,12 @@ function FreeTierLocationEditor({
         <Select
           value={selectedCountry}
           onChange={(val) => {
-            setSelectedCountry(val || 'US');
+            const newCountry = val || 'US';
+            setSelectedCountry(newCountry);
             setSelectedState(null);
             setCityInput('');
             setRegionInput('');
+            notifyChange({ selectedCountry: newCountry, selectedState: null, cityInput: '', regionInput: '' });
           }}
           options={COUNTRY_OPTIONS}
           placeholder="Select country"
@@ -481,7 +406,10 @@ function FreeTierLocationEditor({
               <input
                 type="radio"
                 checked={locationType === 'city'}
-                onChange={() => setLocationType('city')}
+                onChange={() => {
+                  setLocationType('city');
+                  notifyChange({ locationType: 'city' });
+                }}
                 className="w-3.5 h-3.5"
               />
               <span className="font-body text-sm">Specific city</span>
@@ -490,7 +418,10 @@ function FreeTierLocationEditor({
               <input
                 type="radio"
                 checked={locationType === 'region'}
-                onChange={() => setLocationType('region')}
+                onChange={() => {
+                  setLocationType('region');
+                  notifyChange({ locationType: 'region' });
+                }}
                 className="w-3.5 h-3.5"
               />
               <span className="font-body text-sm">State-wide</span>
@@ -505,8 +436,14 @@ function FreeTierLocationEditor({
                 </label>
                 <CitySelect
                   value={cityInput}
-                  onChange={setCityInput}
-                  onStateAutoFill={(state) => setSelectedState(state)}
+                  onChange={(val) => {
+                    setCityInput(val);
+                    notifyChange({ cityInput: val });
+                  }}
+                  onStateAutoFill={(state) => {
+                    setSelectedState(state);
+                    notifyChange({ selectedState: state });
+                  }}
                   countryCode="US"
                   placeholder="Select city"
                 />
@@ -517,7 +454,10 @@ function FreeTierLocationEditor({
                 </label>
                 <Select
                   value={selectedState}
-                  onChange={(val) => setSelectedState(val)}
+                  onChange={(val) => {
+                    setSelectedState(val);
+                    notifyChange({ selectedState: val });
+                  }}
                   options={US_STATE_OPTIONS}
                   placeholder="Select state"
                   searchable
@@ -532,7 +472,10 @@ function FreeTierLocationEditor({
               </label>
               <Select
                 value={selectedState}
-                onChange={(val) => setSelectedState(val)}
+                onChange={(val) => {
+                  setSelectedState(val);
+                  notifyChange({ selectedState: val });
+                }}
                 options={US_STATE_OPTIONS}
                 placeholder="Select state"
                 searchable
@@ -552,7 +495,10 @@ function FreeTierLocationEditor({
             <input
               type="text"
               value={cityInput}
-              onChange={(e) => setCityInput(e.target.value)}
+              onChange={(e) => {
+                setCityInput(e.target.value);
+                notifyChange({ cityInput: e.target.value });
+              }}
               className="input"
               placeholder="London"
             />
@@ -564,32 +510,16 @@ function FreeTierLocationEditor({
             <input
               type="text"
               value={regionInput}
-              onChange={(e) => setRegionInput(e.target.value)}
+              onChange={(e) => {
+                setRegionInput(e.target.value);
+                notifyChange({ regionInput: e.target.value });
+              }}
               className="input"
               placeholder="England"
             />
           </div>
         </div>
       )}
-
-      <div className="flex gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={isSaving}
-          className="flex-1 py-2 bg-[var(--ink-black)] text-[var(--paper-white)] font-mono text-[11px] uppercase tracking-wider hover:bg-[var(--gray-800)] disabled:opacity-50 transition-colors"
-        >
-          {isSaving ? 'Saving...' : 'Save Location'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSaving}
-          className="px-4 py-2 border-2 border-[var(--gray-300)] font-mono text-[11px] uppercase tracking-wider hover:border-[var(--gray-400)] disabled:opacity-50 transition-colors"
-        >
-          Cancel
-        </button>
-      </div>
     </div>
   );
 }

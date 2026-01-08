@@ -15,6 +15,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useNavbarVisibility } from '@/components/layout/NavbarContext';
 import { ProBadge } from '@/components/badges/ProBadge';
 import Select from '@/components/ui/Select';
 import LocationManager, { Location } from './LocationManager';
@@ -41,6 +42,7 @@ export default function ProfileEditor({
   isPro,
 }: ProfileEditorProps) {
   const router = useRouter();
+  const { isNavbarHidden, isCompact } = useNavbarVisibility();
 
   // Form state
   const [name, setName] = useState(initialData.name);
@@ -52,34 +54,31 @@ export default function ProfileEditor({
     (initialData.availabilityStatus as AvailabilityStatus) || null
   );
 
-  // Location save state (separate from main form)
-  const [locationSaving, setLocationSaving] = useState(false);
+  // Location error state
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationsChanged, setLocationsChanged] = useState(false);
 
   // UI state
-  const [_isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveInProgress, setSaveInProgress] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [_saveSuccess, setSaveSuccess] = useState(false);
-  const [_hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Track changes - generic function for type-safe handling
   function handleStringChange(setter: React.Dispatch<React.SetStateAction<string>>) {
     return (value: string) => {
       setter(value);
       setHasUnsavedChanges(true);
-      setSaveSuccess(false);
     };
   }
 
   function handleAvailabilityChange(value: AvailabilityStatus) {
     setAvailabilityStatus(value);
     setHasUnsavedChanges(true);
-    setSaveSuccess(false);
   }
 
   // Handle save
-  const _handleSave = async () => {
+  const handleSave = async () => {
     if (saveInProgress) return;
 
     setSaveInProgress(true);
@@ -93,7 +92,8 @@ export default function ProfileEditor({
         body: JSON.stringify({
           artistId,
           name: name.trim(),
-          locations: locations,
+          // Only send locations if they changed
+          ...(locationsChanged && { locations }),
           bioOverride: bioOverride.trim() || null,
           bookingLink: bookingLink.trim() || null,
           pricingInfo: isPro ? pricingInfo.trim() || null : null,
@@ -106,10 +106,9 @@ export default function ProfileEditor({
         throw new Error(data.error || 'Failed to update profile');
       }
 
-      setSaveSuccess(true);
       setHasUnsavedChanges(false);
+      setLocationsChanged(false);
       router.refresh();
-      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error('[ProfileEditor] Save error:', error);
       setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
@@ -120,7 +119,7 @@ export default function ProfileEditor({
   };
 
   // Handle cancel
-  const _handleCancel = () => {
+  const handleCancel = () => {
     setName(initialData.name);
     setLocations(initialData.locations);
     setBioOverride(initialData.bioOverride);
@@ -128,47 +127,71 @@ export default function ProfileEditor({
     setPricingInfo(initialData.pricingInfo);
     setAvailabilityStatus((initialData.availabilityStatus as AvailabilityStatus) || null);
     setHasUnsavedChanges(false);
-    setSaveSuccess(false);
+    setLocationsChanged(false);
     setSaveError(null);
   };
 
-  // Handle location save (separate from main form)
-  const handleLocationSave = async (newLocations: Location[]) => {
-    setLocationSaving(true);
+  // Handle location changes (now part of main save flow)
+  const handleLocationChange = (newLocations: Location[]) => {
+    setLocations(newLocations);
+    setHasUnsavedChanges(true);
+    setLocationsChanged(true);
     setLocationError(null);
-
-    try {
-      const response = await fetch('/api/dashboard/profile/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          artistId,
-          locations: newLocations,
-          // Preserve other fields
-          name: name.trim(),
-          bioOverride: bioOverride.trim() || null,
-          bookingLink: bookingLink.trim() || null,
-          pricingInfo: isPro ? pricingInfo.trim() || null : null,
-          availabilityStatus: isPro ? availabilityStatus : null,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to update locations');
-      }
-
-      setLocations(newLocations);
-      router.refresh();
-    } catch (error) {
-      setLocationError(error instanceof Error ? error.message : 'Failed to save locations');
-    } finally {
-      setLocationSaving(false);
-    }
   };
+
+  // Save bar content (reused in both positions)
+  const saveBarContent = (
+    <div className="flex items-center justify-end gap-3 md:justify-center">
+      <button
+        type="button"
+        onClick={handleCancel}
+        disabled={isSaving}
+        className="btn btn-secondary text-xs px-4 py-2 disabled:opacity-50"
+      >
+        Discard
+      </button>
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={isSaving || !name.trim()}
+        className="btn btn-primary text-xs px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isSaving ? (
+          <>
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            Saving...
+          </>
+        ) : (
+          'Save Changes'
+        )}
+      </button>
+    </div>
+  );
 
   return (
     <div className="max-w-7xl">{/* Content wrapper */}
+
+        {/* Save Bar - Desktop/Tablet: fixed at top below toolbar */}
+        {hasUnsavedChanges && (
+          <>
+            <div
+              className={`hidden md:block fixed left-0 right-0 z-30 px-4 sm:px-6 py-3 bg-white border-b-2 border-[var(--ink-black)] animate-fade-up transition-[top] duration-300 ${
+                isNavbarHidden
+                  ? 'top-[46px]'
+                  : isCompact
+                    ? 'top-[calc(var(--navbar-height-compact)+46px)]'
+                    : 'top-[calc(var(--navbar-height-desktop)+46px)]'
+              }`}
+            >
+              {saveBarContent}
+            </div>
+            {/* Spacer to push content below fixed save bar */}
+            <div className="hidden md:block h-[58px]" />
+          </>
+        )}
 
         {/* Status Messages */}
         {saveError && (
@@ -210,8 +233,7 @@ export default function ProfileEditor({
                   artistId={artistId}
                   isPro={isPro}
                   locations={locations}
-                  onSave={handleLocationSave}
-                  isSaving={locationSaving}
+                  onChange={handleLocationChange}
                   error={locationError || undefined}
                 />
 
@@ -311,6 +333,13 @@ export default function ProfileEditor({
             </div>
           </aside>
         </div>
+
+        {/* Save Bar - Mobile: fixed at bottom */}
+        {hasUnsavedChanges && (
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white border-t-2 border-[var(--ink-black)] shadow-lg animate-fade-up">
+            {saveBarContent}
+          </div>
+        )}
     </div>
   );
 }
