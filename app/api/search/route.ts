@@ -13,18 +13,22 @@ import { getArtistByInstagramHandle } from '@/lib/supabase/queries'
 import { checkInstagramSearchRateLimit, getClientIp } from '@/lib/rate-limiter'
 import { saveImagesToTempFromBuffers } from '@/lib/instagram/image-saver'
 import { processArtistImages } from '@/lib/processing/process-artist'
+import type { SearchedArtistData } from '@/types/search'
 
-// Type for searched artist card data (stored in searches table for immediate display)
-interface SearchedArtistData {
-  id: string | null           // null if artist not yet in DB
-  instagram_handle: string
-  name: string
-  profile_image_url: string | null
-  bio: string | null
-  follower_count: number | null
-  city: string | null
-  images: string[]            // The image URLs used for search (for display)
-}
+// Zod schema for validating searched artist data before storage
+const searchedArtistSchema = z.object({
+  id: z.string().uuid().nullable(),
+  instagram_handle: z.string().min(1).max(30),
+  name: z.string().min(1).max(100),
+  profile_image_url: z.string().nullable().or(z.literal(null)),  // Can be URL or storage path
+  bio: z.string().max(2000).nullable().or(z.literal(null)),
+  follower_count: z.number().int().min(0).nullable().or(z.literal(null)),
+  city: z.string().max(100).nullable().or(z.literal(null)),
+  images: z.array(z.string().min(1)).max(10),  // Can be URLs or storage paths
+  is_pro: z.boolean().optional(),
+  is_featured: z.boolean().optional(),
+  is_verified: z.boolean().optional(),
+})
 
 // Validation schemas
 const textSearchSchema = z.object({
@@ -319,9 +323,21 @@ export async function POST(request: NextRequest) {
             // Fetch additional artist fields for search result card
             const { data: artistDetails } = await supabase
               .from('artists')
-              .select('profile_image_url, bio, follower_count, city')
+              .select(`
+                profile_image_url, bio, follower_count, is_pro, is_featured, verification_status,
+                artist_locations!left (city, is_primary)
+              `)
               .eq('id', existingArtist.id)
               .single()
+
+            // Get primary city from artist_locations
+            const locations = artistDetails?.artist_locations as Array<{ city: string | null; is_primary: boolean }> | null
+            const primaryLocation = locations?.find(l => l.is_primary) || locations?.[0]
+            const artistCity = primaryLocation?.city || null
+
+            // Calculate is_verified from verification_status
+            const verificationStatus = artistDetails?.verification_status as string | null
+            const isVerified = verificationStatus === 'verified' || verificationStatus === 'claimed'
 
             // Build searched artist data for immediate display
             searchedArtist = {
@@ -331,11 +347,14 @@ export async function POST(request: NextRequest) {
               profile_image_url: artistDetails?.profile_image_url || null,
               bio: artistDetails?.bio || null,
               follower_count: artistDetails?.follower_count || null,
-              city: artistDetails?.city || existingArtist.city || null,
+              city: artistCity,
               images: existingArtist.portfolio_images
                 .slice(0, 3)
                 .map((img: { storage_thumb_640?: string | null }) => img.storage_thumb_640)
                 .filter(Boolean) as string[],
+              is_pro: artistDetails?.is_pro ?? false,
+              is_featured: artistDetails?.is_featured ?? false,
+              is_verified: isVerified,
             }
 
             console.log(`[Profile Search] Instant search completed (DB lookup)`)
@@ -644,6 +663,17 @@ export async function POST(request: NextRequest) {
     // Combine techniques and themes into flat array for storage (backwards compatible)
     const allStyles = [...styleClassification.techniques, ...styleClassification.themes]
 
+    // Validate searched artist data before storage (security: prevent JSONB injection)
+    let validatedSearchedArtist: SearchedArtistData | null = null
+    if (searchedArtist) {
+      const validation = searchedArtistSchema.safeParse(searchedArtist)
+      if (validation.success) {
+        validatedSearchedArtist = validation.data
+      } else {
+        console.warn('[Search] Invalid searched_artist data, skipping:', validation.error.errors)
+      }
+    }
+
     // Build insert payload with style and color data
     const insertPayload: Record<string, unknown> = {
       embedding: `[${embedding.join(',')}]`,
@@ -655,7 +685,7 @@ export async function POST(request: NextRequest) {
       detected_styles: allStyles.length > 0 ? allStyles : null,
       primary_style: styleClassification.techniques[0]?.style_name || null,
       is_color: isColorQuery,
-      searched_artist: searchedArtist,  // For profile searches: immediate display data
+      searched_artist: validatedSearchedArtist,  // Validated for security
     }
 
     console.log('[Search] Inserting with multi-axis classification:', {

@@ -42,6 +42,7 @@ interface ArtistCardProps {
 
 export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCardProps) {
   const {
+    artist_id,
     artist_slug,
     artist_name,
     city,
@@ -51,14 +52,18 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     follower_count,
     is_pro = false,
     is_featured = false,
+    is_searched_artist = false,
   } = artist
+
+  // Check if this is a pending artist (not yet fully in DB)
+  const isPending = artist_id.startsWith('pending-')
 
   // Multi-location support using location_count from search results
   const locationCount = artist.location_count || 1
   const hasMultipleLocations = locationCount > 1
 
-  // All available images
-  const allImages = (matching_images || []).filter(img => img.url && img.instagramUrl)
+  // All available images (for searched artist, images may not have instagramUrl yet)
+  const allImages = (matching_images || []).filter(img => img.url)
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentImage = allImages[currentIndex]
 
@@ -72,12 +77,12 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     : null
 
   // Convert raw similarity score to user-friendly percentage
-  // Rescale internal range to [60%, 95%] for better user perception
+  // Scores now include style/theme/color boosts and can exceed 1.0
   const rescaleToUserFriendlyPercentage = (score: number): number => {
     const MIN_SCORE = 0.15  // Minimum search threshold
-    const MAX_SCORE = 0.47  // Excellent match + max boosts
+    const MAX_SCORE = 1.15  // High match with all boosts (similarity ~0.45 + technique 0.20 + theme 0.10 + color 0.10 + pro 0.05 + featured 0.02 + margin)
     const MIN_DISPLAY = 60 // Display minimum
-    const MAX_DISPLAY = 95 // Display maximum
+    const MAX_DISPLAY = 99 // Display maximum
 
     // Clamp to expected range
     const clamped = Math.max(MIN_SCORE, Math.min(MAX_SCORE, score))
@@ -88,7 +93,8 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     return Math.round(rescaled)
   }
 
-  const matchPercentage = rescaleToUserFriendlyPercentage(similarity)
+  // Searched artist always shows 100% (it's their own work)
+  const matchPercentage = is_searched_artist ? 100 : rescaleToUserFriendlyPercentage(similarity)
 
   const handleImageClick = (e: React.MouseEvent) => {
     if (allImages.length > 1) {
@@ -124,15 +130,26 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
   // On mobile, all cards use standard vertical layout for consistent grid
   const isProOrFeatured = (is_pro || is_featured) && displayMode === 'search'
 
+  // Determine href: for pending artists, link to Instagram; otherwise artist profile
+  // For searched artists that have a DB id, link to their profile
+  const href = isPending
+    ? instagram_url || `https://instagram.com/${instagramHandle}`
+    : `/artist/${artist_slug}`
+
+  // Use anchor tag for external links (pending artists)
+  const LinkComponent = isPending ? 'a' : Link
+  const linkProps = isPending ? { target: '_blank', rel: 'noopener noreferrer' } : {}
+
   return (
-    <Link
-      href={`/artist/${artist_slug}`}
-      className={`group block w-full min-w-0 bg-paper border-2 border-ink/20 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast ${
+    <LinkComponent
+      href={href}
+      {...linkProps}
+      className={`group block w-full min-w-0 bg-paper border-2 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast min-h-[280px] sm:min-h-[320px] lg:min-h-[360px] ${
         isProOrFeatured ? 'lg:col-span-2' : ''
-      }`}
+      } ${is_searched_artist ? 'border-orange-400 ring-2 ring-orange-400/20' : 'border-ink/20'}`}
     >
       {/* On mobile/tablet: vertical layout. On lg+: Pro/Featured use horizontal layout */}
-      <div className={isProOrFeatured ? 'lg:flex lg:flex-row lg:h-full lg:gap-4 lg:min-h-[200px]' : ''}>
+      <div className={isProOrFeatured ? 'lg:flex lg:flex-row h-full lg:gap-4' : ''}>
         {/* Hero Image (tap to rotate) - Editorial */}
         {currentImage && (
           <div
@@ -354,6 +371,6 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
           )}
         </div>
       </div>
-    </Link>
+    </LinkComponent>
   )
 }

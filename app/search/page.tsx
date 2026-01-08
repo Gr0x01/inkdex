@@ -10,7 +10,7 @@ import { searchArtistsWithStyleBoost } from '@/lib/supabase/queries'
 import type { StyleMatch } from '@/lib/search/style-classifier'
 import { getImageUrl } from '@/lib/utils/images'
 import { slugToName } from '@/lib/utils/location'
-import type { SearchResult } from '@/types/search'
+import type { SearchResult, SearchedArtistData } from '@/types/search'
 
 interface SearchPageProps {
   searchParams: Promise<{
@@ -73,6 +73,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Extract artist_id_source for exclusion (similar_artist searches)
   const excludeArtistId = search.artist_id_source || null
 
+  // Get search type and searched artist data (for profile searches)
+  const searchType = search.query_type as string
+  const searchedArtistData = search.searched_artist as SearchedArtistData | null
+
   // Parse location filters - convert slugs to proper format for DB query
   const countryFilter = country?.toUpperCase() || null
   const regionFilter = region?.toUpperCase() || null
@@ -114,16 +118,53 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     location_count: result.location_count,
   }))
 
-  // Exclude source artist for similar_artist searches
-  const artists = excludeArtistId
-    ? allResults.filter(artist => artist.artist_id !== excludeArtistId)
-    : allResults
+  // Handle artist filtering and ordering based on search type
+  let artists: SearchResult[]
+
+  if (searchType === 'similar_artist' && excludeArtistId) {
+    // For similar_artist searches: exclude the source artist
+    artists = allResults.filter(artist => artist.artist_id !== excludeArtistId)
+  } else if (searchType === 'instagram_profile' && searchedArtistData) {
+    // For instagram_profile searches: show searched artist FIRST
+    // Remove from results if present (to avoid duplicate)
+    const filteredResults = searchedArtistData.id
+      ? allResults.filter(artist => artist.artist_id !== searchedArtistData.id)
+      : allResults
+
+    // Build the searched artist card
+    const searchedArtistCard: SearchResult = {
+      artist_id: searchedArtistData.id || `pending-${searchedArtistData.instagram_handle}`,
+      artist_name: searchedArtistData.name,
+      artist_slug: searchedArtistData.instagram_handle.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      city: searchedArtistData.city,
+      profile_image_url: searchedArtistData.profile_image_url,
+      follower_count: searchedArtistData.follower_count,
+      instagram_url: `https://instagram.com/${searchedArtistData.instagram_handle}`,
+      is_verified: searchedArtistData.is_verified ?? false,
+      is_pro: searchedArtistData.is_pro ?? false,
+      is_featured: searchedArtistData.is_featured ?? false,
+      max_likes: 0,  // Not displayed in UI
+      matching_images: searchedArtistData.images.map(url => ({
+        url: getImageUrl(url),
+        similarity: 1.0,  // Perfect match - it's their own work
+      })),
+      similarity: 1.0,
+      is_searched_artist: true,  // Flag for special styling
+    }
+
+    // Prepend searched artist
+    artists = [searchedArtistCard, ...filteredResults]
+  } else {
+    artists = allResults
+  }
 
   // Track search appearances with details (fire-and-forget)
-  if (artists.length > 0) {
+  // Exclude searched artist from tracking if it's a pending artist (not in DB yet)
+  const trackableArtists = artists.filter(a => !a.artist_id.startsWith('pending-'))
+  if (trackableArtists.length > 0) {
     void (async () => {
       try {
-        const appearancesData = artists.map((artist, index) => ({
+        const appearancesData = trackableArtists.map((artist, index) => ({
           artist_id: artist.artist_id,
           rank: index + 1,
           similarity: artist.similarity,
@@ -140,6 +181,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       }
     })()
   }
+
+  // Adjust total count if we added a searched artist
+  const displayTotalCount = searchedArtistData ? totalCount + 1 : totalCount
 
   return (
     <main className="min-h-screen bg-light">
@@ -181,7 +225,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         {/* Results count */}
         <div className="mb-6">
           <p className="text-sm font-mono text-ink/60">
-            {totalCount} {totalCount === 1 ? 'artist' : 'artists'} found
+            {displayTotalCount} {displayTotalCount === 1 ? 'artist' : 'artists'} found
             {cityFilter && ` in ${cityFilter}`}
             {!cityFilter && regionFilter && ` in ${regionFilter}`}
             {!cityFilter && !regionFilter && countryFilter && ` in ${countryFilter}`}
@@ -192,13 +236,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <SearchResultsGrid
           searchId={id}
           initialResults={artists}
-          totalCount={totalCount}
+          totalCount={displayTotalCount}
           filters={{
             country: country || null,
             region: region || null,
             city: city || null,
           }}
           excludeArtistId={excludeArtistId}
+          searchedArtistId={searchedArtistData?.id || null}
         />
       </div>
     </main>

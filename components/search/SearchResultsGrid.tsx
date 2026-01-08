@@ -15,6 +15,8 @@ interface SearchResultsGridProps {
   }
   /** Exclude this artist from results (for similar_artist searches) */
   excludeArtistId?: string | null
+  /** The searched artist ID (for instagram_profile searches) - exclude from pagination */
+  searchedArtistId?: string | null
 }
 
 const BATCH_SIZE = 20
@@ -25,6 +27,7 @@ export default function SearchResultsGrid({
   totalCount,
   filters,
   excludeArtistId,
+  searchedArtistId,
 }: SearchResultsGridProps) {
   const [results, setResults] = useState<SearchResult[]>(initialResults)
   const [loading, setLoading] = useState(false)
@@ -69,11 +72,16 @@ export default function SearchResultsGrid({
 
       const data = await response.json()
 
-      // Filter out excluded artist if needed
+      // Filter out excluded artist (similar_artist) and searched artist (instagram_profile)
       let newArtists: SearchResult[] = data.artists || []
       if (excludeArtistId) {
         newArtists = newArtists.filter(
           (artist: SearchResult) => artist.artist_id !== excludeArtistId
+        )
+      }
+      if (searchedArtistId) {
+        newArtists = newArtists.filter(
+          (artist: SearchResult) => artist.artist_id !== searchedArtistId
         )
       }
 
@@ -90,7 +98,7 @@ export default function SearchResultsGrid({
       setLoading(false)
       abortControllerRef.current = null
     }
-  }, [searchId, results.length, filters, excludeArtistId, loading, hasMore])
+  }, [searchId, results.length, filters, excludeArtistId, searchedArtistId, loading, hasMore])
 
   // Keep loadMoreRef in sync
   useEffect(() => {

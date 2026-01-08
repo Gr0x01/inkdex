@@ -1320,14 +1320,18 @@ export async function getArtistByInstagramHandle(handle: string) {
       name,
       slug,
       instagram_handle,
-      city,
-      state,
       portfolio_images!inner (
         id,
         embedding,
         status,
         instagram_url,
         storage_thumb_640
+      ),
+      artist_locations!left (
+        city,
+        region,
+        country_code,
+        is_primary
       )
     `)
     .eq('instagram_handle', normalizedHandle)
