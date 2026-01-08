@@ -127,33 +127,49 @@ export default function CitySelect({
   }, [countryCode, isUS]);
 
   // Handle city selection
-  const handleCityChange = (selectedCity: string | null) => {
-    if (!selectedCity) {
+  const handleCityChange = (selectedValue: string | null) => {
+    if (!selectedValue) {
       onChange('');
       return;
     }
 
-    onChange(selectedCity);
-
-    // Auto-fill state for US cities
-    if (isUS && onStateAutoFill) {
-      const stateCode = cityMapRef.current.get(selectedCity.toLowerCase());
-      if (stateCode) {
+    // Parse composite value "City::ST" for US cities
+    if (selectedValue.includes('::')) {
+      const [cityName, stateCode] = selectedValue.split('::');
+      onChange(cityName);
+      if (onStateAutoFill && stateCode) {
         onStateAutoFill(stateCode);
+      }
+    } else {
+      onChange(selectedValue);
+      // Fallback: try to auto-fill state from map
+      if (isUS && onStateAutoFill) {
+        const stateCode = cityMapRef.current.get(selectedValue.toLowerCase());
+        if (stateCode) {
+          onStateAutoFill(stateCode);
+        }
       }
     }
   };
 
   // US: Use Select dropdown with API data
   if (isUS) {
+    // Use composite value "City::ST" for uniqueness (handles cities in multiple states)
     const options = cities.map(city => ({
-      value: city.city,
+      value: city.state ? `${city.city}::${city.state}` : city.city,
       label: city.label
     }));
 
+    // Find the composite value that matches the current city name
+    // This handles when parent passes just the city name (e.g., "Austin")
+    // but we need to match it to the composite value (e.g., "Austin::TX")
+    const selectedValue = value
+      ? options.find(opt => opt.value === value || opt.value.startsWith(`${value}::`))?.value || value
+      : null;
+
     return (
       <Select
-        value={value}
+        value={selectedValue}
         onChange={handleCityChange}
         options={options}
         placeholder={loading ? 'Loading cities...' : placeholder}

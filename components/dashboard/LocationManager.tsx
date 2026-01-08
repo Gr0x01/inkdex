@@ -83,16 +83,25 @@ export default function LocationManager({
     return parts.join(', ') || 'Unknown location';
   };
 
+  // Check if form is valid for adding
+  const canAddLocation = (): boolean => {
+    if (newCountry === 'US') {
+      if (newLocationType === 'city') return !!newCity.trim();
+      if (newLocationType === 'region') return !!newRegion;
+    }
+    // Non-US: country-only, always valid
+    return true;
+  };
+
   const handleAddLocation = () => {
-    if (!newCity.trim() && newCountry === 'US' && newLocationType === 'city') return;
-    if (!newCity.trim() && newCountry !== 'US') return;
-    if (newLocationType === 'region' && !newRegion) return;
+    if (!canAddLocation()) return;
 
     const newLocation: Location = {
       countryCode: newCountry,
-      city: newLocationType === 'city' ? (newCity.trim() || null) : null,
-      region: newCountry === 'US' ? (newRegion || null) : (newRegion.trim() || null),
-      locationType: newLocationType,
+      // For non-US, no city/region - just country
+      city: newCountry === 'US' && newLocationType === 'city' ? (newCity.trim() || null) : null,
+      region: newCountry === 'US' ? (newRegion || null) : null,
+      locationType: newCountry === 'US' ? newLocationType : 'country',
       isPrimary: locations.length === 0,
     };
 
@@ -212,20 +221,18 @@ export default function LocationManager({
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="w-full p-3 border-2 border-dashed border-[var(--gray-300)] text-center hover:border-[var(--gray-400)] transition-colors"
+          className="btn btn-secondary w-full"
         >
-          <Plus className="w-3.5 h-3.5 inline mr-1" />
-          <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
-            Add location
-          </span>
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
+          Add location
         </button>
       )}
 
       {/* Add location form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-[var(--gray-300)] p-4 space-y-4">
+        <div className="border-2 border-[var(--gray-200)] p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--gray-600)]">
               Add new location
             </span>
             <button
@@ -233,7 +240,7 @@ export default function LocationManager({
               onClick={() => setIsAdding(false)}
               className="text-[var(--gray-400)] hover:text-[var(--gray-600)]"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
@@ -246,6 +253,8 @@ export default function LocationManager({
               onChange={(val) => {
                 setNewCountry(val || 'US');
                 setNewRegion('');
+                setNewCity('');
+                setNewLocationType('city');
               }}
               options={COUNTRY_OPTIONS}
               placeholder="Select country"
@@ -277,26 +286,27 @@ export default function LocationManager({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            {(newCountry !== 'US' || newLocationType === 'city') && (
-              <div>
+          {/* US: Show city/state selection */}
+          {newCountry === 'US' && (
+            <div className="grid grid-cols-2 gap-4">
+              {newLocationType === 'city' && (
+                <div>
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                    City
+                  </label>
+                  <CitySelect
+                    value={newCity}
+                    onChange={setNewCity}
+                    onStateAutoFill={(state) => setNewRegion(state)}
+                    countryCode={newCountry}
+                    placeholder="Select city"
+                  />
+                </div>
+              )}
+              <div className={newLocationType === 'city' ? '' : 'col-span-2'}>
                 <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
-                  City
+                  State
                 </label>
-                <CitySelect
-                  value={newCity}
-                  onChange={setNewCity}
-                  onStateAutoFill={(state) => setNewRegion(state)}
-                  countryCode={newCountry}
-                  placeholder="Select city"
-                />
-              </div>
-            )}
-            <div className={newCountry !== 'US' || newLocationType === 'city' ? '' : 'col-span-2'}>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
-                {newCountry === 'US' ? 'State' : 'Region / Province'}
-              </label>
-              {newCountry === 'US' ? (
                 <Select
                   value={newRegion}
                   onChange={(val) => setNewRegion(val || '')}
@@ -304,26 +314,30 @@ export default function LocationManager({
                   placeholder="Select state"
                   searchable
                   searchPlaceholder="Search states..."
+                  disabled={newLocationType === 'city' && !!newCity && !!newRegion}
                 />
-              ) : (
-                <input
-                  type="text"
-                  value={newRegion}
-                  onChange={(e) => setNewRegion(e.target.value)}
-                  className="input"
-                  placeholder="Optional"
-                />
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
-          <button
-            type="button"
-            onClick={handleAddLocation}
-            className="w-full py-2 bg-[var(--ink-black)] text-[var(--paper-white)] font-mono text-[11px] uppercase tracking-wider hover:bg-[var(--gray-800)] transition-colors"
-          >
-            Add Location
-          </button>
+
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsAdding(false)}
+              className="btn btn-secondary text-xs px-4 py-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleAddLocation}
+              disabled={!canAddLocation()}
+              className="btn btn-primary text-xs px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Add
+            </button>
+          </div>
         </div>
       )}
 
@@ -350,7 +364,6 @@ function FreeTierLocationEditor({
   const [selectedCountry, setSelectedCountry] = useState<string>(location?.countryCode || 'US');
   const [selectedState, setSelectedState] = useState<string | null>(location?.region || null);
   const [cityInput, setCityInput] = useState<string>(location?.city || '');
-  const [regionInput, setRegionInput] = useState<string>(location?.region || '');
 
   // Helper to notify parent of changes
   const notifyChange = (updates: Partial<{
@@ -358,19 +371,18 @@ function FreeTierLocationEditor({
     selectedCountry: string;
     selectedState: string | null;
     cityInput: string;
-    regionInput: string;
   }>) => {
     const newLocationType = updates.locationType ?? locationType;
     const newCountry = updates.selectedCountry ?? selectedCountry;
     const newState = updates.selectedState !== undefined ? updates.selectedState : selectedState;
     const newCity = updates.cityInput ?? cityInput;
-    const newRegion = updates.regionInput ?? regionInput;
 
+    // For non-US, we only store country (no city/region)
     const newLocation: Location = {
       countryCode: newCountry,
-      city: newLocationType === 'city' ? (newCity || null) : null,
-      region: newCountry === 'US' ? newState : (newRegion || null),
-      locationType: newLocationType,
+      city: newCountry === 'US' && newLocationType === 'city' ? (newCity || null) : null,
+      region: newCountry === 'US' ? newState : null,
+      locationType: newCountry === 'US' ? newLocationType : 'country',
       isPrimary: true,
     };
     onChange(newLocation);
@@ -389,8 +401,7 @@ function FreeTierLocationEditor({
             setSelectedCountry(newCountry);
             setSelectedState(null);
             setCityInput('');
-            setRegionInput('');
-            notifyChange({ selectedCountry: newCountry, selectedState: null, cityInput: '', regionInput: '' });
+            notifyChange({ selectedCountry: newCountry, selectedState: null, cityInput: '' });
           }}
           options={COUNTRY_OPTIONS}
           placeholder="Select country"
@@ -462,6 +473,7 @@ function FreeTierLocationEditor({
                   placeholder="Select state"
                   searchable
                   searchPlaceholder="Search states..."
+                  disabled={!!cityInput && !!selectedState}
                 />
               </div>
             </div>
@@ -486,40 +498,6 @@ function FreeTierLocationEditor({
         </>
       )}
 
-      {selectedCountry !== 'US' && (
-        <div className="space-y-4">
-          <div>
-            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
-              City <span className="text-[var(--error)]">*</span>
-            </label>
-            <input
-              type="text"
-              value={cityInput}
-              onChange={(e) => {
-                setCityInput(e.target.value);
-                notifyChange({ cityInput: e.target.value });
-              }}
-              className="input"
-              placeholder="London"
-            />
-          </div>
-          <div>
-            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
-              Region / Province (optional)
-            </label>
-            <input
-              type="text"
-              value={regionInput}
-              onChange={(e) => {
-                setRegionInput(e.target.value);
-                notifyChange({ regionInput: e.target.value });
-              }}
-              className="input"
-              placeholder="England"
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
