@@ -58,6 +58,7 @@ export default function PortfolioManager({
   const [error, setError] = useState<string | null>(null);
   const [pinningInProgress, setPinningInProgress] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
 
   // Filter visible images only (hidden images not shown in Free tier)
   const visibleImages = images.filter((img) => !img.hidden);
@@ -274,12 +275,24 @@ export default function PortfolioManager({
                     </span>
                   </div>
 
-                  {/* Right: Sync Controls (Pro only) */}
-                  {isPro && (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <SyncSettingsCard />
-                    </div>
-                  )}
+                  {/* Right: Edit button + Sync Controls */}
+                  <div className="flex items-start gap-2 flex-shrink-0">
+                    {/* Edit Mode Toggle - mobile/tablet only (hover works on desktop) */}
+                    <button
+                      onClick={() => setEditMode(!editMode)}
+                      className={`lg:hidden inline-flex items-center justify-center h-7 px-2 border-2 border-ink transition-colors font-mono text-[10px] uppercase tracking-wider ${
+                        editMode
+                          ? 'bg-ink text-paper'
+                          : 'hover:bg-gray-50'
+                      }`}
+                      aria-label={editMode ? 'Exit edit mode' : 'Enter edit mode'}
+                      aria-pressed={editMode}
+                    >
+                      Edit Mode
+                    </button>
+                    {/* Sync Controls (Pro only) */}
+                    {isPro && <SyncSettingsCard />}
+                  </div>
                 </div>
 
                 {/* Pro users can drag to reorder, free users just see pinned images */}
@@ -303,6 +316,7 @@ export default function PortfolioManager({
                             onTogglePin={handleTogglePin}
                             deleting={deleting.has(image.id)}
                             pinning={pinningInProgress.has(image.id)}
+                            editMode={editMode}
                           />
                         ))}
                       </div>
@@ -320,6 +334,7 @@ export default function PortfolioManager({
                         onTogglePin={handleTogglePin}
                         deleting={deleting.has(image.id)}
                         pinning={pinningInProgress.has(image.id)}
+                        editMode={editMode}
                       />
                     ))}
                   </div>
@@ -347,6 +362,7 @@ export default function PortfolioManager({
                       onTogglePin={handleTogglePin}
                       deleting={deleting.has(image.id)}
                       pinning={pinningInProgress.has(image.id)}
+                      editMode={editMode}
                     />
                   ))}
                 </div>
@@ -359,7 +375,9 @@ export default function PortfolioManager({
         {visibleImages.length > 0 && (
           <footer className="mt-12 pt-6 border-t border-gray-200 text-center">
             <p className="font-mono text-[10px] uppercase tracking-wider text-gray-500">
-              Hover to manage images • Re-import replaces entire portfolio
+              <span className="hidden sm:inline">Hover to manage images</span>
+              <span className="sm:hidden">Tap edit to manage images</span>
+              {' • '}Re-import replaces entire portfolio
             </p>
           </footer>
         )}

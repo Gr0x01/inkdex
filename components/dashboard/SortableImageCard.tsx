@@ -34,6 +34,7 @@ interface SortableImageCardProps {
   onTogglePin: (imageId: string) => void;
   deleting?: boolean;
   pinning?: boolean;
+  editMode?: boolean;
 }
 
 export default function SortableImageCard({
@@ -44,6 +45,7 @@ export default function SortableImageCard({
   onTogglePin,
   deleting = false,
   pinning = false,
+  editMode = false,
 }: SortableImageCardProps) {
   const {
     attributes,
@@ -86,8 +88,12 @@ export default function SortableImageCard({
         <div
           className={`absolute right-2 top-2 flex h-8 items-center overflow-hidden rounded-full shadow-lg transition-all duration-200 ease-out ${
             isPinned
-              ? 'w-8 bg-ink/90 group-hover:w-auto group-hover:bg-ink'
-              : 'opacity-0 group-hover:opacity-100 bg-ink/90'
+              ? editMode
+                ? 'w-auto bg-ink'
+                : 'w-8 bg-ink/90 group-hover:w-auto group-hover:bg-ink'
+              : editMode
+                ? 'opacity-100 bg-ink/90'
+                : 'opacity-0 group-hover:opacity-100 bg-ink/90'
           }`}
           role="toolbar"
           aria-label="Image actions"
@@ -102,11 +108,13 @@ export default function SortableImageCard({
             </span>
           )}
 
-          {/* Divider + Actions (visible on hover) */}
+          {/* Divider + Actions (visible on hover or edit mode) */}
           <div
             className={`flex items-center gap-2 transition-all duration-200 ease-out ${
               isPinned
-                ? 'max-w-0 overflow-hidden opacity-0 group-hover:max-w-[150px] group-hover:opacity-100'
+                ? editMode
+                  ? 'max-w-[150px] opacity-100'
+                  : 'max-w-0 overflow-hidden opacity-0 group-hover:max-w-[150px] group-hover:opacity-100'
                 : ''
             }`}
           >
