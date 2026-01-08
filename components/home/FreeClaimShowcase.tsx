@@ -105,6 +105,14 @@ const FREE_BENEFITS = [
 export default function FreeClaimShowcase() {
   return (
     <section className="relative py-12 md:py-16 bg-paper overflow-hidden">
+      {/* Background accent - orange glow behind artist card */}
+      <div
+        className="absolute top-0 left-0 w-1/2 h-full opacity-[0.08] pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle at 30% 50%, #f09433 0%, transparent 50%)'
+        }}
+      />
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
           {/* Left Column: ArtistInfoColumn-style Visual - Hidden on mobile */}
