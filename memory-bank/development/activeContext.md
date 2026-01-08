@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-08
+Last-Updated: 2026-01-09
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -522,6 +522,31 @@ npm run db:push  # Apply GDPR migration
 - Use dual-GPU for large local batches (>10k images)
 - Use A2000 only for smaller production jobs via admin panel
 - For overnight jobs, A2000 alone is fine (5 hours for 20k images)
+
+## Production Schema Incident Fix (Jan 9, 2026) ✅
+
+**Problem:** Several SQL functions and tables were missing from production, causing 500 errors in the artist dashboard (portfolio, profile editing, analytics).
+
+**Root Cause:** Migrations were archived to `_archive/` folder before being applied to production AND before the baseline was updated. This left production missing:
+- Functions: `get_artist_portfolio`, `update_artist_locations`, `search_appearances` tracking functions, `sync_artist_to_locations`, `update_artist_pipeline_on_embedding`, `get_all_cities_with_min_artists`
+- Tables: `search_appearances`, `artist_audit_log`
+
+**Fix Applied:**
+1. Ran missing function/table definitions directly in Supabase SQL Editor
+2. Created verification script: `scripts/migrations/verify-production-schema.ts`
+3. Added npm command: `npm run db:verify`
+4. Updated `operations.md` with migration workflow rules
+
+**Prevention Going Forward:**
+1. **Before deploying:** Run `npm run db:verify` to check for missing schema
+2. **Creating migrations:** Apply immediately with `npm run db:push`
+3. **Archiving migrations:** NEVER archive before applying to production AND updating baseline
+
+**Key Files:**
+- `scripts/migrations/verify-production-schema.ts` - Schema verification script
+- `memory-bank/development/operations.md` - Updated with Migration Workflow section
+
+---
 
 ## Reference Docs
 

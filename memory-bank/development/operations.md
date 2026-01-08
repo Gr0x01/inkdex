@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07
+Last-Updated: 2026-01-09
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -16,6 +16,41 @@ npm run db:push       # For migrations (runs sqlfluff first)
 ```
 
 **Use `code-reviewer` subagent after significant changes.**
+
+---
+
+## Migration Workflow (CRITICAL)
+
+### Before Deploying
+**ALWAYS verify schema before any deployment:**
+```bash
+npx tsx scripts/migrations/verify-production-schema.ts
+```
+This outputs SQL to check for missing functions/tables. Run in Supabase SQL Editor.
+
+### Creating New Migrations
+1. Create migration in `supabase/migrations/` with timestamp prefix (e.g., `20260109_001_feature.sql`)
+2. **Apply to production immediately:** `npm run db:push`
+3. Only archive migrations AFTER they've been applied AND baseline is updated
+
+### Archiving Migrations
+**NEVER archive a migration before it's applied to production!**
+
+1. Verify migration was applied: check Supabase → Database → Migrations
+2. Update `00000000000000_baseline.sql` with the new schema
+3. Move to `_archive/` folder
+
+### If You Find Missing Schema
+1. Check `00000000000000_baseline.sql` for the definition
+2. If not there, check `_archive/` folder for unapplied migrations
+3. Run the SQL directly in Supabase SQL Editor
+4. Add to baseline if missing
+
+### Post-Incident (Jan 9, 2026)
+Several functions/tables were archived without being applied:
+- `get_artist_portfolio`, `search_appearances`, `update_artist_locations`, etc.
+- Root cause: migrations archived before baseline was updated AND before production apply
+- Fixed by running definitions directly in SQL Editor
 
 ---
 
