@@ -11,6 +11,8 @@ import { createClient } from '@supabase/supabase-js';
 import { processLocalImage } from './image-processor';
 import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImages } from '../storage/supabase-storage';
 import { analyzeImageColor } from '../search/color-analyzer';
+import { generateImageEmbedding } from '../embeddings/hybrid-client';
+import { predictStyles } from '../styles/predictor';
 
 const TEMP_DIR = '/tmp/instagram';
 
@@ -282,8 +284,38 @@ export async function processArtistImages(
           // Non-fatal
         }
 
-        // Insert into database
-        const { error: dbError } = await supabase
+        // Generate CLIP embedding inline (required - skip image if fails)
+        let embedding: number[];
+        try {
+          // Use thumb640 buffer for embedding (good balance of quality/size)
+          // Convert Buffer to Uint8Array for File constructor compatibility
+          const uint8Array = new Uint8Array(buffers.thumb640);
+          const file = new File([uint8Array], 'image.webp', { type: 'image/webp' });
+          const result = await generateImageEmbedding(file);
+
+          if (!result || result.length !== 768) {
+            throw new Error(`Invalid embedding: ${result?.length || 0} dimensions`);
+          }
+          embedding = result;
+          console.log(`[ProcessArtist] Generated embedding for ${postId}`);
+        } catch (embeddingError) {
+          console.error(`[ProcessArtist] Embedding failed for ${postId}:`, embeddingError);
+          // Rollback storage uploads since we can't proceed without embedding
+          await deleteImages([paths.original, paths.thumb320, paths.thumb640, paths.thumb1280]).catch(() => {});
+          errors.push(`Embedding failed for ${postId}: ${embeddingError}`);
+          continue;
+        }
+
+        // Predict styles inline
+        const styleTags = predictStyles(embedding);
+        if (styleTags.length > 0) {
+          console.log(
+            `[ProcessArtist] Styles for ${postId}: ${styleTags.map((s) => `${s.style}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`
+          );
+        }
+
+        // Insert into database with embedding
+        const { data: imageRecord, error: dbError } = await supabase
           .from('portfolio_images')
           .insert({
             artist_id: artistId,
@@ -296,9 +328,12 @@ export async function processArtistImages(
             post_caption: meta.caption || null,
             post_timestamp: meta.timestamp,
             likes_count: meta.likes,
-            status: 'pending', // Pending until embeddings are generated
+            status: 'active',
             is_color: isColor,
-          });
+            embedding: `[${embedding.join(',')}]`,
+          })
+          .select('id')
+          .single();
 
         if (dbError) {
           if (dbError.code !== '23505') { // Not a duplicate
@@ -308,6 +343,21 @@ export async function processArtistImages(
             continue;
           }
           // Duplicate - count as processed
+        } else if (imageRecord && styleTags.length > 0) {
+          // Insert style tags (triggers artist_style_profiles update)
+          const styleTagRecords = styleTags.map((tag) => ({
+            image_id: imageRecord.id,
+            style_name: tag.style,
+            confidence: tag.confidence,
+          }));
+
+          const { error: tagError } = await supabase
+            .from('image_style_tags')
+            .upsert(styleTagRecords, { onConflict: 'image_id,style_name' });
+
+          if (tagError) {
+            console.warn(`[ProcessArtist] Style tag insert failed (non-fatal): ${tagError.message}`);
+          }
         }
 
         imagesProcessed++;

@@ -180,11 +180,17 @@ function validateArtistId(artistId: string): boolean {
 }
 
 /**
- * Validate Instagram shortcode format for post IDs
+ * Validate post ID format for storage paths
+ * Supports:
+ * - Instagram shortcodes: alphanumeric + underscore/hyphen, 8-15 chars (e.g., "C1234567890")
+ * - Manual imports: manual_{timestamp}_{index} format (e.g., "manual_1767900959187_0")
  */
 function validatePostId(postId: string): boolean {
+  // Manual import format: manual_<digits>_<digits>
+  if (postId.startsWith('manual_')) {
+    return /^manual_\d+_\d+$/.test(postId);
+  }
   // Instagram shortcode: alphanumeric + underscore/hyphen, 8-15 chars
-  // Most are 11 chars, but older posts may vary
   return /^[A-Za-z0-9_-]{8,15}$/.test(postId);
 }
 

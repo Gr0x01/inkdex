@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/generate-country-content",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/retag-missing-styles",
+      "schedule": "0 * * * *"
     }
   ]
 }
