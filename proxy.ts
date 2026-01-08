@@ -147,11 +147,49 @@ function isScrapablePath(pathname: string): boolean {
   return false
 }
 
+/**
+ * Check maintenance mode via internal API
+ * Uses fetch because ioredis doesn't work on Edge runtime
+ */
+async function checkMaintenanceMode(request: NextRequest): Promise<boolean> {
+  try {
+    // Build absolute URL for internal API call
+    const baseUrl = request.nextUrl.origin
+    const response = await fetch(`${baseUrl}/api/maintenance/status`, {
+      method: 'GET',
+      headers: { 'Cache-Control': 'no-cache' },
+    })
+
+    if (!response.ok) return false
+
+    const data = await response.json()
+    return data.enabled === true
+  } catch {
+    // Fail open - if we can't check, don't block
+    return false
+  }
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Run cleanup periodically
   cleanupStaleEntries()
+
+  // Maintenance mode - check Redis via internal API
+  // Skip for admin routes, the maintenance page itself, and the status API
+  const isMaintenanceExempt =
+    pathname === '/maintenance' ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/api/maintenance') ||
+    pathname === '/api/health'
+
+  if (!isMaintenanceExempt) {
+    const inMaintenance = await checkMaintenanceMode(request)
+    if (inMaintenance) {
+      return NextResponse.rewrite(new URL('/maintenance', request.url))
+    }
+  }
 
   // Rate limit scrapable paths
   if (isScrapablePath(pathname)) {

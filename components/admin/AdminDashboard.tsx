@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Image, Activity, Crown, Star, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import StatsCard from './StatsCard';
+import MaintenanceToggle from './MaintenanceToggle';
 
 interface DashboardData {
   artists: {
@@ -113,6 +114,7 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500 font-body mt-0.5">Platform overview</p>
         </div>
         <div className="flex items-center gap-3">
+          <MaintenanceToggle />
           {lastRefresh && (
             <span className="text-xs text-gray-500 font-mono">
               {lastRefresh.toLocaleTimeString()}
