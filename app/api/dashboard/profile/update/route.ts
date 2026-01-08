@@ -29,8 +29,8 @@ const updateProfileSchema = z.object({
   // Legacy fields kept for backward compatibility but now populated from primary location
   city: z.string().trim().max(100).optional(),
   state: z.string().trim().max(100).optional(),
-  // New locations array
-  locations: z.array(locationSchema).min(1, 'At least one location is required').max(20),
+  // New locations array (optional - only update if provided)
+  locations: z.array(locationSchema).min(1, 'At least one location is required').max(20).optional(),
   bioOverride: z.string().trim().max(500).nullable(),
   bookingLink: z.string().url('Invalid URL').nullable(),
   pricingInfo: z.string().trim().max(100).nullable(),
@@ -98,35 +98,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - not your profile' }, { status: 403 });
     }
 
-    // 5. Validate location count based on tier
-    const maxLocations = artist.is_pro ? 20 : 1;
-    if (locations.length > maxLocations) {
-      return NextResponse.json(
-        { error: `Free tier limited to ${maxLocations} location. Upgrade to Pro for multiple locations.` },
-        { status: 400 }
-      );
-    }
+    // 5. Validate location count based on tier (only if locations provided)
+    if (locations && locations.length > 0) {
+      const maxLocations = artist.is_pro ? 20 : 1;
+      if (locations.length > maxLocations) {
+        return NextResponse.json(
+          { error: `Free tier limited to ${maxLocations} location. Upgrade to Pro for multiple locations.` },
+          { status: 400 }
+        );
+      }
 
-    // 6. Validate and normalize primary location
-    // Ensure exactly one primary location exists
-    const primaryCount = locations.filter(loc => loc.isPrimary).length;
-    if (primaryCount === 0 && locations.length > 0) {
-      // Auto-set first location as primary if none specified
-      locations[0].isPrimary = true;
-    } else if (primaryCount > 1) {
-      return NextResponse.json(
-        { error: 'Only one location can be marked as primary' },
-        { status: 400 }
-      );
-    }
-
-    // 7. Validate at least one location exists
-    const primaryLocation = locations.find(loc => loc.isPrimary);
-    if (!primaryLocation && locations.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one location is required' },
-        { status: 400 }
-      );
+      // 6. Validate and normalize primary location
+      // Ensure exactly one primary location exists
+      const primaryCount = locations.filter(loc => loc.isPrimary).length;
+      if (primaryCount === 0 && locations.length > 0) {
+        // Auto-set first location as primary if none specified
+        locations[0].isPrimary = true;
+      } else if (primaryCount > 1) {
+        return NextResponse.json(
+          { error: 'Only one location can be marked as primary' },
+          { status: 400 }
+        );
+      }
     }
 
     // 8. Build update object (location data is stored in artist_locations only)
@@ -154,25 +147,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
     }
 
-    // 9. Update locations atomically using RPC function
-    // This prevents race conditions by doing delete+insert in a single transaction
-    const locationInserts = locations.map((loc, index) => ({
-      city: loc.city || null,
-      region: loc.region || null,
-      country_code: loc.countryCode || 'US',
-      location_type: loc.locationType,
-      is_primary: loc.isPrimary || index === 0,
-      display_order: loc.displayOrder ?? index,
-    }));
+    // 9. Update locations only if provided
+    if (locations && locations.length > 0) {
+      const locationInserts = locations.map((loc, index) => ({
+        city: loc.city || null,
+        region: loc.region || null,
+        country_code: loc.countryCode || 'US',
+        location_type: loc.locationType,
+        is_primary: loc.isPrimary || index === 0,
+        display_order: loc.displayOrder ?? index,
+      }));
 
-    const { error: locationsError } = await supabase.rpc('update_artist_locations', {
-      p_artist_id: artistId,
-      p_locations: locationInserts,
-    });
+      const { error: locationsError } = await supabase.rpc('update_artist_locations', {
+        p_artist_id: artistId,
+        p_locations: locationInserts,
+        p_user_id: user.id,  // Pass verified user ID for ownership check (auth.uid() returns NULL from SSR client)
+      });
 
-    if (locationsError) {
-      console.error('[ProfileUpdate] Failed to update locations:', locationsError);
-      return NextResponse.json({ error: 'Failed to save locations' }, { status: 500 });
+      if (locationsError) {
+        console.error('[ProfileUpdate] Failed to update locations:', locationsError);
+        return NextResponse.json({ error: 'Failed to save locations' }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });

@@ -548,6 +548,30 @@ npm run db:push  # Apply GDPR migration
 
 ---
 
+## Profile Location Save Fix + Migration Squash (Jan 9, 2026) ✅
+
+**Problem:** Saving location changes in the artist dashboard failed with `relation "artists" does not exist`.
+
+**Root Causes (multiple issues):**
+1. `auth.uid()` returns NULL from SSR Supabase client - RPC ownership check failed
+2. `check_location_limit` trigger had `search_path=""` (empty) - couldn't find artists table
+3. `sync_primary_location` trigger had `search_path=""` AND referenced removed columns (`city`, `state`)
+
+**Fixes Applied:**
+1. Added `p_user_id` parameter to `update_artist_locations` RPC with `COALESCE(p_user_id, auth.uid())`
+2. Fixed `check_location_limit` with `SET search_path = public`
+3. Made `sync_primary_location` a no-op (columns no longer exist in artists table)
+
+**Migration Squash:**
+After creating 7 incremental fix migrations, squashed all migrations to a fresh baseline:
+- New baseline: `00000000000000_baseline.sql` (5,930 lines)
+- Old migrations archived to `_archive_jan9/` (41 files)
+- Reset `schema_migrations` table to just the baseline
+
+**Key Learning:** SECURITY DEFINER functions MUST have `SET search_path = public` or they can't find tables.
+
+---
+
 ## Reference Docs
 
 - **Detailed specs:** `/memory-bank/projects/user-artist-account-implementation.md`

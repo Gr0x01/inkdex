@@ -23,27 +23,8 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 
-CREATE TYPE "public"."search_tier" AS ENUM (
-    'active',
-    'archive'
-);
-
-
-ALTER TYPE "public"."search_tier" OWNER TO "postgres";
-
-
-CREATE TYPE "public"."style_taxonomy" AS ENUM (
-    'technique',
-    'theme'
-);
-
-
-ALTER TYPE "public"."style_taxonomy" OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."can_claim_artist"("p_artist_id" "uuid", "p_instagram_id" "text" DEFAULT NULL::"text", "p_instagram_handle" "text" DEFAULT NULL::"text") RETURNS boolean
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO ''
     AS $_$
 DECLARE
   v_clean_handle TEXT;
@@ -83,7 +64,6 @@ COMMENT ON FUNCTION "public"."can_claim_artist"("p_artist_id" "uuid", "p_instagr
 
 CREATE OR REPLACE FUNCTION "public"."can_receive_email"("p_email" "text", "p_email_type" "text") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   v_preferences RECORD;
@@ -128,7 +108,6 @@ COMMENT ON FUNCTION "public"."can_receive_email"("p_email" "text", "p_email_type
 
 CREATE OR REPLACE FUNCTION "public"."check_and_blacklist_artist"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
     AS $$
 DECLARE
     failure_count INTEGER;
@@ -166,7 +145,6 @@ ALTER FUNCTION "public"."check_and_blacklist_artist"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."check_email_rate_limit"("p_recipient_email" "text", "p_email_type" "text", "p_max_per_hour" integer DEFAULT 10, "p_max_per_day" integer DEFAULT 50) RETURNS TABLE("allowed" boolean, "hourly_count" integer, "daily_count" integer, "reason" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   v_hourly_count INTEGER;
@@ -234,7 +212,6 @@ COMMENT ON FUNCTION "public"."check_email_rate_limit"("p_recipient_email" "text"
 
 CREATE OR REPLACE FUNCTION "public"."check_location_limit"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
     AS $$
 DECLARE
   is_pro BOOLEAN;
@@ -270,7 +247,6 @@ ALTER FUNCTION "public"."check_location_limit"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."claim_artist_profile"("p_artist_id" "uuid", "p_user_id" "uuid", "p_instagram_handle" "text", "p_instagram_id" "text" DEFAULT NULL::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $_$
 DECLARE
   v_artist_handle TEXT;
@@ -415,35 +391,8 @@ COMMENT ON FUNCTION "public"."claim_artist_profile"("p_artist_id" "uuid", "p_use
 
 
 
-CREATE OR REPLACE FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer DEFAULT 3, "p_min_confidence" double precision DEFAULT 0.35, "p_taxonomy" "public"."style_taxonomy" DEFAULT NULL::"public"."style_taxonomy") RETURNS TABLE("style_name" "text", "confidence" double precision, "taxonomy" "public"."style_taxonomy")
-    LANGUAGE "plpgsql" STABLE
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    ss.style_name,
-    (1 - (p_embedding <=> ss.embedding))::FLOAT as confidence,
-    ss.taxonomy
-  FROM style_seeds ss
-  WHERE ss.embedding IS NOT NULL
-    AND (1 - (p_embedding <=> ss.embedding)) >= p_min_confidence
-    AND (p_taxonomy IS NULL OR ss.taxonomy = p_taxonomy)
-  ORDER BY p_embedding <=> ss.embedding ASC
-  LIMIT p_max_styles;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer, "p_min_confidence" double precision, "p_taxonomy" "public"."style_taxonomy") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer, "p_min_confidence" double precision, "p_taxonomy" "public"."style_taxonomy") IS 'Classifies an embedding against style seeds. Optionally filter by taxonomy (technique/theme). Returns top N styles with confidence scores above threshold.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."cleanup_old_email_logs"() RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   v_deleted_count INTEGER;
@@ -468,64 +417,53 @@ COMMENT ON FUNCTION "public"."cleanup_old_email_logs"() IS 'Delete email logs ol
 CREATE OR REPLACE FUNCTION "public"."compute_image_style_tags"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
-DECLARE
-  technique_record RECORD;
-  theme_record RECORD;
-  v_technique_threshold float := 0.35;
-  v_theme_threshold float := 0.45;  -- Tighter threshold for themes
-  v_theme_count int := 0;
-BEGIN
-  -- Only process if embedding is set
-  IF NEW.embedding IS NULL THEN
+  DECLARE
+    style_record RECORD;
+    similarity FLOAT;
+    min_confidence FLOAT := 0.25;
+    max_tags INT := 3;
+    tag_count INT := 0;
+  BEGIN
+    -- Only run if embedding is set and not null
+    IF NEW.embedding IS NULL THEN
+      RETURN NEW;
+    END IF;
+
+    -- Skip if embedding hasn't changed (on UPDATE)
+    IF TG_OP = 'UPDATE' AND OLD.embedding IS NOT DISTINCT FROM NEW.embedding THEN
+      RETURN NEW;
+    END IF;
+
+    -- Delete existing tags for this image (will be replaced)
+    DELETE FROM image_style_tags WHERE image_id = NEW.id;
+
+    -- Compute similarity to each style seed and insert top N
+    FOR style_record IN (
+      SELECT
+        ss.style_name,
+        1 - (NEW.embedding <=> ss.embedding) as similarity
+      FROM style_seeds ss
+      WHERE ss.embedding IS NOT NULL
+      ORDER BY NEW.embedding <=> ss.embedding ASC
+      LIMIT max_tags
+    ) LOOP
+      -- Only insert if above minimum confidence
+      IF style_record.similarity >= min_confidence THEN
+        INSERT INTO image_style_tags (image_id, style_name, confidence)
+        VALUES (NEW.id, style_record.style_name, style_record.similarity)
+        ON CONFLICT (image_id, style_name) DO UPDATE SET
+          confidence = EXCLUDED.confidence;
+
+        tag_count := tag_count + 1;
+      END IF;
+    END LOOP;
+
     RETURN NEW;
-  END IF;
-
-  -- Delete existing tags for this image
-  DELETE FROM image_style_tags WHERE image_id = NEW.id;
-
-  -- Step 1: Find ONE best technique (exclusive, lower threshold)
-  SELECT style_name, (1 - (NEW.embedding <=> embedding)) as similarity
-  INTO technique_record
-  FROM style_seeds
-  WHERE taxonomy = 'technique' AND embedding IS NOT NULL
-  ORDER BY NEW.embedding <=> embedding ASC
-  LIMIT 1;
-
-  IF technique_record IS NOT NULL AND technique_record.similarity >= v_technique_threshold THEN
-    INSERT INTO image_style_tags
-      (image_id, style_name, confidence, taxonomy, is_primary)
-    VALUES
-      (NEW.id, technique_record.style_name, technique_record.similarity,
-       'technique', true);
-  END IF;
-
-  -- Step 2: Find top 2 themes (higher threshold to reduce false positives)
-  FOR theme_record IN (
-    SELECT style_name, (1 - (NEW.embedding <=> embedding)) as similarity
-    FROM style_seeds
-    WHERE taxonomy = 'theme' AND embedding IS NOT NULL
-      AND (1 - (NEW.embedding <=> embedding)) >= v_theme_threshold
-    ORDER BY NEW.embedding <=> embedding ASC
-    LIMIT 2
-  ) LOOP
-    INSERT INTO image_style_tags
-      (image_id, style_name, confidence, taxonomy, is_primary)
-    VALUES
-      (NEW.id, theme_record.style_name, theme_record.similarity,
-       'theme', false);
-    v_theme_count := v_theme_count + 1;
-  END LOOP;
-
-  RETURN NEW;
-END;
-$$;
+  END;
+  $$;
 
 
 ALTER FUNCTION "public"."compute_image_style_tags"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."compute_image_style_tags"() IS 'Auto-tags images with ONE technique (threshold 0.35) and up to 2 themes (threshold 0.45). Themes have higher threshold to reduce false positives like horror matching normal portraits.';
-
 
 
 CREATE OR REPLACE FUNCTION "public"."count_artists_without_images"() RETURNS bigint
@@ -538,6 +476,7 @@ BEGIN
     WHERE a.deleted_at IS NULL
       AND a.instagram_handle IS NOT NULL
       AND a.instagram_private != TRUE
+      AND (a.scraping_blacklisted IS NULL OR a.scraping_blacklisted = FALSE)
       AND NOT EXISTS (
         SELECT 1
         FROM portfolio_images pi
@@ -551,13 +490,8 @@ $$;
 ALTER FUNCTION "public"."count_artists_without_images"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."count_artists_without_images"() IS 'Returns count of artists needing image scraping (no portfolio images, not private)';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."count_matching_artists"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.5, "city_filter" "text" DEFAULT NULL::"text") RETURNS TABLE("count" bigint)
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
     AS $$
 BEGIN
   RETURN QUERY
@@ -630,39 +564,12 @@ COMMENT ON FUNCTION "public"."create_pipeline_run"("p_job_type" "text", "p_trigg
 
 
 
-CREATE OR REPLACE FUNCTION "public"."expire_featured_artists"() RETURNS "void"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-  expired_count INTEGER;
-BEGIN
-  UPDATE artists
-  SET
-    is_featured = false,
-    updated_at = NOW()
-  WHERE is_featured = true
-    AND featured_expires_at IS NOT NULL
-    AND featured_expires_at < NOW();
-
-  GET DIAGNOSTICS expired_count = ROW_COUNT;
-
-  IF expired_count > 0 THEN
-    RAISE NOTICE 'Expired % featured artists', expired_count;
-  END IF;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."expire_featured_artists"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "city_filter" "text" DEFAULT NULL::"text", "region_filter" "text" DEFAULT NULL::"text", "country_filter" "text" DEFAULT NULL::"text", "match_count" integer DEFAULT 3) RETURNS TABLE("artist_id" "uuid", "artist_name" "text", "artist_slug" "text", "city" "text", "region" "text", "country_code" "text", "profile_image_url" "text", "instagram_url" "text", "shop_name" "text", "is_verified" boolean, "follower_count" integer, "similarity" double precision, "location_count" bigint)
     LANGUAGE "plpgsql"
     AS $$
 DECLARE
   source_avg_embedding vector(768);
 BEGIN
-  -- Get average embedding for source artist
   SELECT avg(embedding)::vector(768) INTO source_avg_embedding
   FROM portfolio_images
   WHERE portfolio_images.artist_id = source_artist_id
@@ -677,20 +584,40 @@ BEGIN
   WITH filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id, a.name as fa_name, a.slug as fa_slug,
-           al.city as fa_city,
-           al.region as fa_region,
-           al.country_code as fa_country_code,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
            a.profile_image_url as fa_profile_image_url,
            a.instagram_url as fa_instagram_url,
            a.shop_name as fa_shop_name,
            a.follower_count as fa_follower_count,
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
     FROM artists a
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
+      AND (
+        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
+        OR
+        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+        OR
+        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
+         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+        OR
+        (city_filter IS NOT NULL
+         AND (
+           (LOWER(al.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
+           OR
+           (LOWER(a.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
+            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
+         ))
+      )
   ),
   artist_embeddings AS (
     SELECT
@@ -741,7 +668,6 @@ COMMENT ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "
 
 CREATE OR REPLACE FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") RETURNS "text"
     LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO ''
     AS $$
 BEGIN
   IF p_country_code = 'US' THEN
@@ -774,36 +700,8 @@ $$;
 ALTER FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer DEFAULT 3) RETURNS TABLE("city" "text", "region" "text", "country_code" "text", "artist_count" bigint)
-    LANGUAGE "sql" STABLE SECURITY DEFINER
-    AS $$
-    SELECT
-      LOWER(al.city) as city,
-      al.region,
-      al.country_code,
-      COUNT(DISTINCT al.artist_id) AS artist_count
-    FROM artist_locations al
-    INNER JOIN artists a ON a.id = al.artist_id
-    WHERE al.city IS NOT NULL
-      AND al.country_code = 'US'
-      AND a.deleted_at IS NULL
-    GROUP BY LOWER(al.city), al.region, al.country_code
-    HAVING COUNT(DISTINCT al.artist_id) >= min_artist_count
-    ORDER BY artist_count DESC, city ASC;
-  $$;
-
-
-ALTER FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer) IS 'Returns all US cities with at least min_artist_count active artists. Used by Next.js 
-  generateStaticParams().';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."get_artist_by_handle"("p_instagram_handle" "text") RETURNS TABLE("id" "uuid", "name" "text", "slug" "text", "instagram_handle" "text", "verification_status" "text", "claimed_by_user_id" "uuid")
     LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
   SELECT
     id, name, slug, instagram_handle,
@@ -824,7 +722,6 @@ COMMENT ON FUNCTION "public"."get_artist_by_handle"("p_instagram_handle" "text")
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_locations"("p_artist_id" "uuid") RETURNS TABLE("id" "uuid", "city" "text", "region" "text", "country_code" "text", "location_type" "text", "is_primary" boolean, "display_order" integer, "formatted" "text")
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
     AS $$
 BEGIN
   RETURN QUERY
@@ -850,38 +747,37 @@ ALTER FUNCTION "public"."get_artist_locations"("p_artist_id" "uuid") OWNER TO "p
 CREATE OR REPLACE FUNCTION "public"."get_artist_portfolio"("p_artist_id" "uuid") RETURNS TABLE("id" "uuid", "instagram_post_id" "text", "instagram_url" "text", "storage_original_path" "text", "storage_thumb_320" "text", "storage_thumb_640" "text", "storage_thumb_1280" "text", "post_caption" "text", "post_timestamp" timestamp with time zone, "likes_count" integer, "is_pinned" boolean, "pinned_position" integer, "hidden" boolean, "import_source" "text", "created_at" timestamp with time zone)
     LANGUAGE "sql" STABLE
     AS $$
-    SELECT
-      pi.id,
-      pi.instagram_post_id,
-      pi.instagram_url,
-      pi.storage_original_path,
-      pi.storage_thumb_320,
-      pi.storage_thumb_640,
-      pi.storage_thumb_1280,
-      pi.post_caption,
-      pi.post_timestamp,
-      pi.likes_count,
-      pi.is_pinned,
-      pi.pinned_position,
-      pi.hidden,
-      pi.import_source,
-      pi.created_at
-    FROM portfolio_images pi
-    WHERE pi.artist_id = p_artist_id
-      AND pi.hidden = FALSE
-      AND pi.artist_id IN (SELECT id FROM artists WHERE deleted_at IS NULL)
-    ORDER BY
-      pi.is_pinned DESC,
-      pi.pinned_position ASC NULLS LAST,
-      pi.created_at DESC;
-  $$;
+  SELECT
+    pi.id,
+    pi.instagram_post_id,
+    pi.instagram_url,
+    pi.storage_original_path,
+    pi.storage_thumb_320,
+    pi.storage_thumb_640,
+    pi.storage_thumb_1280,
+    pi.post_caption,
+    pi.post_timestamp,
+    pi.likes_count,
+    pi.is_pinned,
+    pi.pinned_position,
+    pi.hidden,
+    pi.import_source,
+    pi.created_at
+  FROM portfolio_images pi
+  WHERE pi.artist_id = p_artist_id
+    AND pi.hidden = FALSE
+    AND pi.artist_id IN (SELECT id FROM artists WHERE deleted_at IS NULL)
+  ORDER BY
+    pi.is_pinned DESC,
+    pi.pinned_position ASC NULLS LAST,
+    pi.created_at DESC;
+$$;
 
 
 ALTER FUNCTION "public"."get_artist_portfolio"("p_artist_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_artist_portfolio"("p_artist_id" "uuid") IS 'Returns portfolio images for an artist, ordered by pinned position.
-   Filters out hidden images and deleted artists.';
+COMMENT ON FUNCTION "public"."get_artist_portfolio"("p_artist_id" "uuid") IS 'Returns portfolio images for an artist, ordered by pinned position. Filters out hidden images and deleted artists. Updated in Phase 6 to include hidden and import_source fields.';
 
 
 
@@ -906,13 +802,8 @@ $$;
 ALTER FUNCTION "public"."get_artist_stats"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_artist_stats"() IS 'Returns aggregate counts by tier for admin dashboard (total, unclaimed, free, pro).';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."get_artist_subscription_status"("p_artist_id" "uuid") RETURNS TABLE("subscription_type" "text", "status" "text", "is_active" boolean, "current_period_end" timestamp with time zone)
     LANGUAGE "sql" STABLE
-    SET "search_path" TO ''
     AS $$
   SELECT
     subscription_type,
@@ -931,7 +822,6 @@ ALTER FUNCTION "public"."get_artist_subscription_status"("p_artist_id" "uuid") O
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_tier_counts"() RETURNS TABLE("total" bigint, "unclaimed" bigint, "claimed_free" bigint, "pro" bigint, "featured" bigint)
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
     AS $$
 BEGIN
   RETURN QUERY
@@ -953,7 +843,7 @@ COMMENT ON FUNCTION "public"."get_artist_tier_counts"() IS 'Returns artist count
 
 
 
-CREATE OR REPLACE FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer DEFAULT 0, "p_limit" integer DEFAULT 20, "p_search" "text" DEFAULT NULL::"text", "p_location_city" "text" DEFAULT NULL::"text", "p_location_state" "text" DEFAULT NULL::"text", "p_tier" "text" DEFAULT NULL::"text", "p_is_featured" boolean DEFAULT NULL::boolean, "p_has_images" boolean DEFAULT NULL::boolean, "p_sort_by" "text" DEFAULT 'instagram_handle'::"text", "p_sort_order" "text" DEFAULT 'asc'::"text", "p_min_followers" integer DEFAULT NULL::integer, "p_max_followers" integer DEFAULT NULL::integer, "p_min_images" integer DEFAULT NULL::integer, "p_max_images" integer DEFAULT NULL::integer) RETURNS TABLE("id" "uuid", "name" "text", "instagram_handle" "text", "city" "text", "state" "text", "is_featured" boolean, "is_pro" boolean, "verification_status" "text", "follower_count" integer, "slug" "text", "deleted_at" timestamp with time zone, "image_count" bigint, "total_count" bigint)
+CREATE OR REPLACE FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text" DEFAULT NULL::"text", "p_location_city" "text" DEFAULT NULL::"text", "p_location_state" "text" DEFAULT NULL::"text", "p_tier" "text" DEFAULT NULL::"text", "p_is_featured" boolean DEFAULT NULL::boolean, "p_has_images" boolean DEFAULT NULL::boolean, "p_sort_by" "text" DEFAULT 'instagram_handle'::"text", "p_sort_order" "text" DEFAULT 'asc'::"text") RETURNS TABLE("id" "uuid", "name" "text", "instagram_handle" "text", "city" "text", "state" "text", "is_featured" boolean, "is_pro" boolean, "verification_status" "text", "follower_count" integer, "slug" "text", "deleted_at" timestamp with time zone, "image_count" bigint, "total_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
 BEGIN
@@ -963,8 +853,8 @@ BEGIN
       a.id AS ai_id,
       a.name AS ai_name,
       a.instagram_handle AS ai_instagram_handle,
-      COALESCE(al.city, '') AS ai_city,
-      COALESCE(al.region, '') AS ai_state,
+      a.city AS ai_city,
+      a.state AS ai_state,
       a.is_featured AS ai_is_featured,
       a.is_pro AS ai_is_pro,
       a.verification_status::TEXT AS ai_verification_status,
@@ -973,26 +863,27 @@ BEGIN
       a.deleted_at AS ai_deleted_at,
       COUNT(pi.id) FILTER (WHERE pi.hidden = false) AS ai_image_count
     FROM artists a
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     LEFT JOIN portfolio_images pi ON a.id = pi.artist_id
     WHERE a.deleted_at IS NULL
+      -- Search filter (name or Instagram handle)
       AND (
         p_search IS NULL
         OR a.name ILIKE '%' || p_search || '%'
         OR a.instagram_handle ILIKE '%' || p_search || '%'
       )
-      AND (p_location_city IS NULL OR al.city = p_location_city)
-      AND (p_location_state IS NULL OR al.region = p_location_state)
+      -- Location filter
+      AND (p_location_city IS NULL OR a.city = p_location_city)
+      AND (p_location_state IS NULL OR a.state = p_location_state)
+      -- Tier filter
       AND (
         p_tier IS NULL
         OR (p_tier = 'unclaimed' AND a.verification_status = 'unclaimed')
         OR (p_tier = 'free' AND a.verification_status = 'claimed' AND a.is_pro = false)
         OR (p_tier = 'pro' AND a.verification_status = 'claimed' AND a.is_pro = true)
       )
+      -- Featured filter
       AND (p_is_featured IS NULL OR a.is_featured = p_is_featured)
-      AND (p_min_followers IS NULL OR a.follower_count >= p_min_followers)
-      AND (p_max_followers IS NULL OR a.follower_count <= p_max_followers)
-    GROUP BY a.id, al.city, al.region
+    GROUP BY a.id
   )
   SELECT
     ai.ai_id,
@@ -1010,48 +901,44 @@ BEGIN
     COUNT(*) OVER() AS total_count
   FROM artist_images ai
   WHERE
-    (p_has_images IS NULL
-      OR (p_has_images = true AND ai.ai_image_count > 0)
-      OR (p_has_images = false AND ai.ai_image_count = 0))
-    AND (p_min_images IS NULL OR ai.ai_image_count >= p_min_images)
-    AND (p_max_images IS NULL OR ai.ai_image_count <= p_max_images)
+    -- Has images filter (applied after aggregation)
+    p_has_images IS NULL
+    OR (p_has_images = true AND ai.ai_image_count > 0)
+    OR (p_has_images = false AND ai.ai_image_count = 0)
   ORDER BY
-    -- Numeric sorting (image_count, follower_count, is_featured)
-    CASE WHEN p_sort_by = 'image_count' AND p_sort_order = 'asc' THEN ai.ai_image_count END ASC NULLS LAST,
-    CASE WHEN p_sort_by = 'image_count' AND p_sort_order = 'desc' THEN ai.ai_image_count END DESC NULLS LAST,
-    CASE WHEN p_sort_by = 'follower_count' AND p_sort_order = 'asc' THEN ai.ai_follower_count END ASC NULLS LAST,
-    CASE WHEN p_sort_by = 'follower_count' AND p_sort_order = 'desc' THEN ai.ai_follower_count END DESC NULLS LAST,
-    CASE WHEN p_sort_by = 'is_featured' AND p_sort_order = 'asc' THEN ai.ai_is_featured::int END ASC,
-    CASE WHEN p_sort_by = 'is_featured' AND p_sort_order = 'desc' THEN ai.ai_is_featured::int END DESC,
-    -- Text sorting (instagram_handle, name, city, verification_status)
-    CASE WHEN p_sort_by IN ('instagram_handle', 'name', 'city', 'verification_status') AND p_sort_order = 'asc' THEN
+    CASE WHEN p_sort_order = 'asc' THEN
       CASE p_sort_by
         WHEN 'instagram_handle' THEN ai.ai_instagram_handle
         WHEN 'name' THEN ai.ai_name
         WHEN 'city' THEN ai.ai_city
         WHEN 'verification_status' THEN ai.ai_verification_status
+        ELSE ai.ai_instagram_handle
       END
     END ASC NULLS LAST,
-    CASE WHEN p_sort_by IN ('instagram_handle', 'name', 'city', 'verification_status') AND p_sort_order = 'desc' THEN
+    CASE WHEN p_sort_order = 'desc' THEN
       CASE p_sort_by
         WHEN 'instagram_handle' THEN ai.ai_instagram_handle
         WHEN 'name' THEN ai.ai_name
         WHEN 'city' THEN ai.ai_city
         WHEN 'verification_status' THEN ai.ai_verification_status
+        ELSE ai.ai_instagram_handle
       END
     END DESC NULLS LAST,
-    -- Default fallback
-    ai.ai_instagram_handle ASC NULLS LAST
+    -- Numeric sorts (image_count, is_featured)
+    CASE WHEN p_sort_order = 'asc' AND p_sort_by = 'image_count' THEN ai.ai_image_count END ASC NULLS LAST,
+    CASE WHEN p_sort_order = 'desc' AND p_sort_by = 'image_count' THEN ai.ai_image_count END DESC NULLS LAST,
+    CASE WHEN p_sort_order = 'asc' AND p_sort_by = 'is_featured' THEN ai.ai_is_featured::int END ASC,
+    CASE WHEN p_sort_order = 'desc' AND p_sort_by = 'is_featured' THEN ai.ai_is_featured::int END DESC
   OFFSET p_offset
   LIMIT p_limit;
 END;
 $$;
 
 
-ALTER FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text", "p_min_followers" integer, "p_max_followers" integer, "p_min_images" integer, "p_max_images" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text", "p_min_followers" integer, "p_max_followers" integer, "p_min_images" integer, "p_max_images" integer) IS 'Returns paginated artist list with image counts for admin dashboard.';
+COMMENT ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text") IS 'Returns paginated artist list with image counts. Supports search, location, tier, featured, and image filtering, plus dynamic sorting by any column.';
 
 
 
@@ -1059,42 +946,53 @@ CREATE OR REPLACE FUNCTION "public"."get_cities_with_counts"("min_count" integer
     LANGUAGE "plpgsql" STABLE
     AS $_$
 BEGIN
+  -- Validate country code format if provided (2 letters only)
   IF p_country_code IS NOT NULL AND p_country_code !~ '^[A-Za-z]{2}$' THEN
     RAISE EXCEPTION 'Invalid country code format. Must be 2 letters.';
   END IF;
 
-  IF p_country_code IS NOT NULL AND is_gdpr_country(p_country_code) THEN
+  -- Block GDPR countries entirely
+  IF p_country_code IS NOT NULL AND UPPER(p_country_code) IN (
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+    'IS', 'LI', 'NO',
+    'GB', 'CH'
+  ) THEN
+    -- Return empty result for GDPR countries
     RETURN;
   END IF;
 
+  -- Validate region format if provided (alphanumeric, spaces, hyphens only)
   IF p_region IS NOT NULL AND p_region !~ '^[A-Za-z0-9\s\-]+$' THEN
     RAISE EXCEPTION 'Invalid region format.';
   END IF;
 
+  -- Validate min_count is reasonable
   IF min_count < 0 OR min_count > 10000 THEN
     RAISE EXCEPTION 'Invalid min_count value.';
   END IF;
 
   RETURN QUERY
-  WITH artists_with_images AS (
-    SELECT DISTINCT pi.artist_id
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.storage_thumb_640 IS NOT NULL
-  )
   SELECT
-    al.city as city,
-    al.region as region,
-    al.country_code as country_code,
+    al.city,
+    al.region,
+    al.country_code,
     COUNT(DISTINCT al.artist_id)::bigint AS artist_count
   FROM artist_locations al
   INNER JOIN artists a ON a.id = al.artist_id
-  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
   WHERE al.city IS NOT NULL
     AND a.deleted_at IS NULL
     AND (p_country_code IS NULL OR al.country_code = UPPER(p_country_code))
     AND (p_region IS NULL OR LOWER(al.region) = LOWER(p_region))
-    AND NOT is_gdpr_country(al.country_code)
+    -- Exclude GDPR countries
+    AND al.country_code NOT IN (
+      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+      'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+      'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+      'IS', 'LI', 'NO',
+      'GB', 'CH'
+    )
   GROUP BY al.city, al.region, al.country_code
   HAVING COUNT(DISTINCT al.artist_id) >= min_count
   ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
@@ -1105,7 +1003,7 @@ $_$;
 ALTER FUNCTION "public"."get_cities_with_counts"("min_count" integer, "p_country_code" "text", "p_region" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_cities_with_counts"("min_count" integer, "p_country_code" "text", "p_region" "text") IS 'Returns cities with artist counts. Excludes GDPR countries.';
+COMMENT ON FUNCTION "public"."get_cities_with_counts"("min_count" integer, "p_country_code" "text", "p_region" "text") IS 'Returns cities with artist counts. Excludes GDPR countries for compliance.';
 
 
 
@@ -1119,7 +1017,14 @@ CREATE OR REPLACE FUNCTION "public"."get_countries_with_counts"() RETURNS TABLE(
     FROM artist_locations al
     INNER JOIN artists a ON a.id = al.artist_id
     WHERE a.deleted_at IS NULL
-      AND NOT is_gdpr_country(COALESCE(al.country_code, 'US'))
+      -- Exclude GDPR countries
+      AND COALESCE(al.country_code, 'US') NOT IN (
+        'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+        'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+        'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+        'IS', 'LI', 'NO',
+        'GB', 'CH'
+      )
     GROUP BY al.country_code
     HAVING COUNT(DISTINCT al.artist_id) >= 1
   )
@@ -1138,39 +1043,12 @@ $$;
 ALTER FUNCTION "public"."get_countries_with_counts"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_countries_with_counts"() IS 'Returns countries with artist counts. Excludes GDPR countries.';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."get_homepage_stats"() RETURNS TABLE("artist_count" bigint, "image_count" bigint, "city_count" bigint, "country_count" bigint)
-    LANGUAGE "plpgsql" STABLE
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    (SELECT COUNT(*) FROM artists WHERE deleted_at IS NULL)::bigint AS artist_count,
-    (SELECT COUNT(*) FROM portfolio_images WHERE status = 'active')::bigint AS image_count,
-    (SELECT COUNT(DISTINCT city) FROM artist_locations WHERE country_code = 'US')::bigint AS city_count,
-    (SELECT COUNT(DISTINCT al.country_code)
-     FROM artist_locations al
-     INNER JOIN artists a ON a.id = al.artist_id
-     WHERE a.deleted_at IS NULL
-       AND al.country_code IS NOT NULL
-       AND NOT is_gdpr_country(al.country_code))::bigint AS country_count;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."get_homepage_stats"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."get_homepage_stats"() IS 'Returns aggregate counts (artists, images, cities, countries) for homepage hero section.';
+COMMENT ON FUNCTION "public"."get_countries_with_counts"() IS 'Returns countries with artist counts. Excludes GDPR countries for compliance.';
 
 
 
 CREATE OR REPLACE FUNCTION "public"."get_mining_city_distribution"() RETURNS json
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
     AS $$
 BEGIN
   RETURN (
@@ -1196,7 +1074,6 @@ ALTER FUNCTION "public"."get_mining_city_distribution"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_mining_stats"() RETURNS json
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
     AS $$
 DECLARE
   hashtag_stats JSON;
@@ -1280,36 +1157,37 @@ ALTER FUNCTION "public"."get_mining_stats"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer DEFAULT 20) RETURNS TABLE("sa_search_id" "uuid", "sa_rank_position" integer, "sa_similarity_score" double precision, "sa_boosted_score" double precision, "sa_created_at" timestamp with time zone, "s_query_type" "text", "s_query_text" "text", "s_instagram_username" "text")
     LANGUAGE "plpgsql" STABLE
     AS $$
-  BEGIN
-    RETURN QUERY
-    WITH recent_appearances AS (
-      SELECT
-        sa.search_id AS ra_search_id,
-        sa.rank_position AS ra_rank_position,
-        sa.similarity_score AS ra_similarity_score,
-        sa.boosted_score AS ra_boosted_score,
-        sa.created_at AS ra_created_at
-      FROM search_appearances sa
-      WHERE
-        sa.artist_id = p_artist_id
-        AND (p_days IS NULL OR sa.created_at >= NOW () - (p_days || ' days')::INTERVAL)
-      ORDER BY sa.created_at DESC
-      LIMIT p_limit
-    )
+BEGIN
+  RETURN QUERY
+  WITH recent_appearances AS (
+    -- ra_ prefix for CTE columns
     SELECT
-      ra.ra_search_id,
-      ra.ra_rank_position,
-      ra.ra_similarity_score,
-      ra.ra_boosted_score,
-      ra.ra_created_at,
-      s.query_type,
-      s.query_text,
-      s.instagram_username
-    FROM recent_appearances ra
-    INNER JOIN searches s ON s.id = ra.ra_search_id
-    ORDER BY ra.ra_created_at DESC;
-  END;
-  $$;
+      sa.search_id AS ra_search_id,
+      sa.rank_position AS ra_rank_position,
+      sa.similarity_score AS ra_similarity_score,
+      sa.boosted_score AS ra_boosted_score,
+      sa.created_at AS ra_created_at
+    FROM search_appearances sa
+    WHERE
+      sa.artist_id = p_artist_id
+      AND (p_days IS NULL OR sa.created_at >= NOW () - (p_days || ' days')::INTERVAL)
+    ORDER BY sa.created_at DESC
+    LIMIT p_limit
+  )
+  SELECT
+    ra.ra_search_id,
+    ra.ra_rank_position,
+    ra.ra_similarity_score,
+    ra.ra_boosted_score,
+    ra.ra_created_at,
+    s.query_type,
+    s.query_text,
+    s.instagram_username
+  FROM recent_appearances ra
+  INNER JOIN searches s ON s.id = ra.ra_search_id
+  ORDER BY ra.ra_created_at DESC;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer) OWNER TO "postgres";
@@ -1323,28 +1201,30 @@ CREATE OR REPLACE FUNCTION "public"."get_regions_with_counts"("p_country_code" "
     LANGUAGE "plpgsql" STABLE
     AS $_$
 BEGIN
+  -- Validate country code format (2 letters only)
   IF p_country_code IS NULL OR p_country_code !~ '^[A-Za-z]{2}$' THEN
     RAISE EXCEPTION 'Invalid country code format. Must be 2 letters.';
   END IF;
 
-  IF is_gdpr_country(p_country_code) THEN
+  -- Block GDPR countries entirely
+  IF UPPER(p_country_code) IN (
+    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
+    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
+    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+    'IS', 'LI', 'NO',
+    'GB', 'CH'
+  ) THEN
+    -- Return empty result for GDPR countries
     RETURN;
   END IF;
 
   RETURN QUERY
-  WITH artists_with_images AS (
-    SELECT DISTINCT pi.artist_id
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.storage_thumb_640 IS NOT NULL
-  )
   SELECT
-    al.region as region,
+    al.region,
     al.region as region_name,
     COUNT(DISTINCT al.artist_id)::bigint as artist_count
   FROM artist_locations al
   INNER JOIN artists a ON a.id = al.artist_id
-  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
   WHERE al.region IS NOT NULL
     AND al.country_code = UPPER(p_country_code)
     AND a.deleted_at IS NULL
@@ -1362,127 +1242,27 @@ COMMENT ON FUNCTION "public"."get_regions_with_counts"("p_country_code" "text") 
 
 
 
-CREATE OR REPLACE FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.15) RETURNS TABLE("location_type" "text", "country_code" "text", "region" "text", "city" "text", "artist_count" bigint)
-    LANGUAGE "plpgsql" STABLE
-    AS $$
-BEGIN
-  RETURN QUERY
-  -- Step 1: Vector search to find matching images (same as main search)
-  WITH ranked_images AS (
-    SELECT
-      pi.artist_id as ri_artist_id,
-      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-      AND COALESCE(pi.hidden, FALSE) = FALSE
-    ORDER BY pi.embedding <=> query_embedding
-    LIMIT 2000
-  ),
-  threshold_images AS (
-    SELECT DISTINCT ri_artist_id
-    FROM ranked_images
-    WHERE ri_similarity_score >= match_threshold
-  ),
-  -- Step 2: Get matching artists with their primary locations
-  matching_artists AS (
-    SELECT DISTINCT
-      a.id as artist_id,
-      al.country_code as al_country_code,
-      al.region as al_region,
-      al.city as al_city
-    FROM artists a
-    INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
-    WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code))
-  ),
-  -- Step 3: Aggregate by country
-  country_counts AS (
-    SELECT
-      'country'::text as loc_type,
-      ma.al_country_code,
-      NULL::text as loc_region,
-      NULL::text as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_country_code IS NOT NULL
-    GROUP BY ma.al_country_code
-  ),
-  -- Step 4: Aggregate by region (only US for now)
-  region_counts AS (
-    SELECT
-      'region'::text as loc_type,
-      ma.al_country_code,
-      ma.al_region as loc_region,
-      NULL::text as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_country_code = 'US'
-      AND ma.al_region IS NOT NULL
-    GROUP BY ma.al_country_code, ma.al_region
-  ),
-  -- Step 5: Aggregate by city
-  city_counts AS (
-    SELECT
-      'city'::text as loc_type,
-      ma.al_country_code,
-      ma.al_region as loc_region,
-      ma.al_city as loc_city,
-      COUNT(DISTINCT ma.artist_id) as cnt
-    FROM matching_artists ma
-    WHERE ma.al_city IS NOT NULL
-    GROUP BY ma.al_country_code, ma.al_region, ma.al_city
-  )
-  -- Combine all location types
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM country_counts
-  UNION ALL
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM region_counts
-  UNION ALL
-  SELECT loc_type, al_country_code, loc_region, loc_city, cnt
-  FROM city_counts
-  ORDER BY cnt DESC;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision) OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision) IS 'Returns location counts filtered by search embedding. Only includes locations with matching artists.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."get_state_cities_with_counts"("state_code" "text") RETURNS TABLE("city" "text", "artist_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $_$
 BEGIN
+  -- Validate state_code format (alphanumeric, spaces, hyphens only)
   IF state_code IS NULL OR state_code !~ '^[A-Za-z0-9\s\-]+$' THEN
     RAISE EXCEPTION 'Invalid state_code format.';
   END IF;
 
   RETURN QUERY
-  WITH artists_with_images AS (
-    SELECT DISTINCT pi.artist_id
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.storage_thumb_640 IS NOT NULL
-  )
   SELECT
-    al.city as city,
-    COUNT(DISTINCT al.artist_id)::bigint as artist_count
+    al.city,
+    COUNT(DISTINCT al.artist_id) as artist_count
   FROM artist_locations al
   INNER JOIN artists a ON a.id = al.artist_id
-  INNER JOIN artists_with_images awi ON awi.artist_id = a.id
-  WHERE LOWER(al.region) = LOWER(state_code)
+  WHERE al.region = state_code
     AND al.city IS NOT NULL
     AND a.deleted_at IS NULL
     AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
   GROUP BY al.city
-  ORDER BY COUNT(DISTINCT al.artist_id) DESC, al.city ASC;
+  ORDER BY artist_count DESC, al.city ASC;
 END;
 $_$;
 
@@ -1490,98 +1270,104 @@ $_$;
 ALTER FUNCTION "public"."get_state_cities_with_counts"("state_code" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_state_cities_with_counts"("state_code" "text") IS 'Get cities within a state/region with artist counts.';
+COMMENT ON FUNCTION "public"."get_state_cities_with_counts"("state_code" "text") IS 'Get cities within a state/region with artist counts. Excludes GDPR artists for compliance.';
 
 
 
 CREATE OR REPLACE FUNCTION "public"."get_top_artists_by_style"("p_style_slug" "text", "p_limit" integer DEFAULT 25) RETURNS TABLE("artist_id" "uuid", "artist_name" "text", "instagram_handle" "text", "city" "text", "state" "text", "similarity_score" double precision, "best_image_url" "text", "is_pro" boolean, "is_featured" boolean)
     LANGUAGE "plpgsql" STABLE
     AS $_$
-DECLARE
-  style_embedding vector(768);
-BEGIN
-  IF p_style_slug IS NULL OR p_style_slug !~ '^[a-z0-9\-]+$' THEN
-    RAISE EXCEPTION 'Invalid style_slug format. Use lowercase with hyphens.';
-  END IF;
+  DECLARE
+    style_embedding vector(768);
+  BEGIN
+    -- Validate style_slug format (alphanumeric, hyphens only)
+    IF p_style_slug IS NULL OR p_style_slug !~ '^[a-z0-9\-]+$' THEN
+      RAISE EXCEPTION 'Invalid style_slug format. Use lowercase with hyphens.';
+    END IF;
 
-  IF p_limit < 1 OR p_limit > 100 THEN
-    RAISE EXCEPTION 'Limit must be between 1 and 100.';
-  END IF;
+    -- Validate limit
+    IF p_limit < 1 OR p_limit > 100 THEN
+      RAISE EXCEPTION 'Limit must be between 1 and 100.';
+    END IF;
 
-  SELECT ss.embedding INTO style_embedding
-  FROM style_seeds ss
-  WHERE ss.style_name = p_style_slug;
+    -- Get the style seed embedding
+    SELECT ss.embedding INTO style_embedding
+    FROM style_seeds ss
+    WHERE ss.style_name = p_style_slug;
 
-  IF style_embedding IS NULL THEN
-    RETURN;
-  END IF;
+    -- If style not found, return empty
+    IF style_embedding IS NULL THEN
+      RETURN;
+    END IF;
 
-  RETURN QUERY
-  WITH ranked_images AS (
+    RETURN QUERY
+    -- Step 1: Vector search (uses index)
+    WITH ranked_images AS (
+      SELECT
+        pi.artist_id as ri_artist_id,
+        pi.id as ri_image_id,
+        pi.storage_thumb_640 as ri_thumbnail_url,
+        1 - (pi.embedding <=> style_embedding) as ri_similarity
+      FROM portfolio_images pi
+      WHERE pi.status = 'active'
+        AND pi.embedding IS NOT NULL
+        AND COALESCE(pi.hidden, FALSE) = FALSE
+      ORDER BY pi.embedding <=> style_embedding
+      LIMIT 500  -- Top 500 matching images
+    ),
+    -- Step 2: Get best image per artist
+    best_per_artist AS (
+      SELECT DISTINCT ON (ri.ri_artist_id)
+        ri.ri_artist_id as ba_artist_id,
+        ri.ri_similarity as ba_similarity,
+        ri.ri_thumbnail_url as ba_image_url
+      FROM ranked_images ri
+      ORDER BY ri.ri_artist_id, ri.ri_similarity DESC
+    ),
+    -- Step 3: Join with artist data, filter GDPR/deleted
+    filtered_artists AS (
+      SELECT
+        bpa.ba_artist_id as fa_artist_id,
+        a.name as fa_name,
+        a.instagram_handle as fa_handle,
+        a.city as fa_city,
+        a.state as fa_state,
+        bpa.ba_similarity as fa_similarity,
+        bpa.ba_image_url as fa_image_url,
+        COALESCE(a.is_pro, FALSE) as fa_is_pro,
+        COALESCE(a.is_featured, FALSE) as fa_is_featured
+      FROM best_per_artist bpa
+      INNER JOIN artists a ON a.id = bpa.ba_artist_id
+      WHERE a.deleted_at IS NULL
+        AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+    )
+    -- Final output: ranked by similarity
     SELECT
-      pi.artist_id as ri_artist_id,
-      pi.id as ri_image_id,
-      pi.storage_thumb_640 as ri_thumbnail_url,
-      1 - (pi.embedding <=> style_embedding) as ri_similarity
-    FROM portfolio_images pi
-    WHERE pi.status = 'active'
-      AND pi.embedding IS NOT NULL
-      AND COALESCE(pi.hidden, FALSE) = FALSE
-    ORDER BY pi.embedding <=> style_embedding
-    LIMIT 500
-  ),
-  best_per_artist AS (
-    SELECT DISTINCT ON (ri.ri_artist_id)
-      ri.ri_artist_id as ba_artist_id,
-      ri.ri_similarity as ba_similarity,
-      ri.ri_thumbnail_url as ba_image_url
-    FROM ranked_images ri
-    ORDER BY ri.ri_artist_id, ri.ri_similarity DESC
-  ),
-  filtered_artists AS (
-    SELECT DISTINCT ON (bpa.ba_artist_id)
-      bpa.ba_artist_id as fa_artist_id,
-      a.name as fa_name,
-      a.instagram_handle as fa_handle,
-      al.city as fa_city,
-      al.region as fa_state,
-      bpa.ba_similarity as fa_similarity,
-      bpa.ba_image_url as fa_image_url,
-      COALESCE(a.is_pro, FALSE) as fa_is_pro,
-      COALESCE(a.is_featured, FALSE) as fa_is_featured
-    FROM best_per_artist bpa
-    INNER JOIN artists a ON a.id = bpa.ba_artist_id
-    INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
-    WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-  )
-  SELECT
-    fa.fa_artist_id,
-    fa.fa_name,
-    fa.fa_handle,
-    fa.fa_city,
-    fa.fa_state,
-    fa.fa_similarity,
-    fa.fa_image_url,
-    fa.fa_is_pro,
-    fa.fa_is_featured
-  FROM filtered_artists fa
-  ORDER BY fa.fa_similarity DESC
-  LIMIT p_limit;
-END;
-$_$;
+      fa.fa_artist_id,
+      fa.fa_name,
+      fa.fa_handle,
+      fa.fa_city,
+      fa.fa_state,
+      fa.fa_similarity,
+      fa.fa_image_url,
+      fa.fa_is_pro,
+      fa.fa_is_featured
+    FROM filtered_artists fa
+    ORDER BY fa.fa_similarity DESC
+    LIMIT p_limit;
+  END;
+  $_$;
 
 
 ALTER FUNCTION "public"."get_top_artists_by_style"("p_style_slug" "text", "p_limit" integer) OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_top_artists_by_style"("p_style_slug" "text", "p_limit" integer) IS 'Returns top N artists ranked by similarity to a style seed. Used for marketing curation.';
+COMMENT ON FUNCTION "public"."get_top_artists_by_style"("p_style_slug" "text", "p_limit" integer) IS 'Returns top N artists ranked by similarity to a style seed. Used for marketing curation. Excludes GDPR/deleted artists.';
 
 
 
 CREATE OR REPLACE FUNCTION "public"."increment_booking_click"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, booking_link_clicks)
@@ -1641,7 +1427,6 @@ COMMENT ON FUNCTION "public"."increment_image_view"("p_image_id" "uuid") IS 'Inc
 
 CREATE OR REPLACE FUNCTION "public"."increment_instagram_click"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, instagram_clicks)
@@ -1657,7 +1442,6 @@ ALTER FUNCTION "public"."increment_instagram_click"("p_artist_id" "uuid") OWNER 
 
 CREATE OR REPLACE FUNCTION "public"."increment_pipeline_progress"("run_id" "uuid", "processed_delta" integer, "failed_delta" integer) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
   BEGIN
     UPDATE pipeline_runs
@@ -1675,7 +1459,6 @@ ALTER FUNCTION "public"."increment_pipeline_progress"("run_id" "uuid", "processe
 
 CREATE OR REPLACE FUNCTION "public"."increment_profile_view"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, profile_views)
@@ -1691,7 +1474,6 @@ ALTER FUNCTION "public"."increment_profile_view"("p_artist_id" "uuid") OWNER TO 
 
 CREATE OR REPLACE FUNCTION "public"."increment_search_appearances"("p_artist_ids" "uuid"[]) RETURNS "void"
     LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
   INSERT INTO artist_analytics (artist_id, date, search_appearances)
   SELECT unnest(p_artist_ids), CURRENT_DATE, 1
@@ -1707,28 +1489,8 @@ COMMENT ON FUNCTION "public"."increment_search_appearances"("p_artist_ids" "uuid
 
 
 
-CREATE OR REPLACE FUNCTION "public"."is_gdpr_country"("country_code" "text") RETURNS boolean
-    LANGUAGE "sql" IMMUTABLE PARALLEL SAFE
-    AS $$
-  SELECT UPPER(country_code) = ANY(ARRAY[
-    'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
-    'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-    'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
-    'IS', 'LI', 'NO', 'GB', 'CH'
-  ])
-$$;
-
-
-ALTER FUNCTION "public"."is_gdpr_country"("country_code" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."is_gdpr_country"("country_code" "text") IS 'Returns TRUE if country is subject to GDPR or equivalent privacy regulation. Includes EU 27, EEA 3, UK, and Switzerland.';
-
-
-
 CREATE OR REPLACE FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_user_id" "uuid", "p_artist_id" "uuid", "p_email_type" "text", "p_subject" "text", "p_success" boolean, "p_error_message" "text" DEFAULT NULL::"text", "p_resend_id" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   v_log_id UUID;
@@ -1765,155 +1527,10 @@ COMMENT ON FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_use
 
 
 
-CREATE OR REPLACE FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") RETURNS boolean
-    LANGUAGE "sql" IMMUTABLE PARALLEL SAFE
-    AS $$
-  SELECT (
-    (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
-    OR
-    (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
-     AND p_country_code = UPPER(country_filter))
-    OR
-    (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
-     AND p_country_code = UPPER(country_filter)
-     AND LOWER(p_region) = LOWER(region_filter))
-    OR
-    (city_filter IS NOT NULL
-     AND LOWER(p_city) = LOWER(city_filter)
-     AND (country_filter IS NULL OR p_country_code = UPPER(country_filter))
-     AND (region_filter IS NULL OR LOWER(p_region) = LOWER(region_filter)))
-  )
-$$;
-
-
-ALTER FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") IS 'Checks if a location matches the given filter criteria. Used by search and count functions to avoid duplicating filter logic.';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  -- Delete existing profiles for this artist that won't be replaced
-  -- (We'll upsert the new ones, so this just cleans up any orphaned styles)
-  DELETE FROM artist_style_profiles
-  WHERE artist_id = p_artist_id
-    AND style_name NOT IN (
-      SELECT ist.style_name
-      FROM image_style_tags ist
-      JOIN portfolio_images pi ON pi.id = ist.image_id
-      WHERE pi.artist_id = p_artist_id
-        AND pi.status = 'active'
-    );
-
-  -- Upsert with per-taxonomy percentages (matching compute-artist-profiles.ts logic)
-  -- Uses ON CONFLICT to handle concurrent executions gracefully
-  INSERT INTO artist_style_profiles (artist_id, style_name, taxonomy, percentage, image_count)
-  WITH artist_tags AS (
-    SELECT
-      ist.style_name,
-      COALESCE(ist.taxonomy, 'technique') as taxonomy,
-      COUNT(*) as tag_count
-    FROM image_style_tags ist
-    JOIN portfolio_images pi ON pi.id = ist.image_id
-    WHERE pi.artist_id = p_artist_id
-      AND pi.status = 'active'
-    GROUP BY ist.style_name, ist.taxonomy
-  ),
-  taxonomy_totals AS (
-    SELECT taxonomy, SUM(tag_count) as total
-    FROM artist_tags
-    GROUP BY taxonomy
-  )
-  SELECT
-    p_artist_id,
-    at.style_name,
-    at.taxonomy,
-    (at.tag_count::float / NULLIF(tt.total, 0) * 100) as percentage,
-    at.tag_count as image_count
-  FROM artist_tags at
-  JOIN taxonomy_totals tt ON tt.taxonomy = at.taxonomy
-  ON CONFLICT (artist_id, style_name) DO UPDATE SET
-    taxonomy = EXCLUDED.taxonomy,
-    percentage = EXCLUDED.percentage,
-    image_count = EXCLUDED.image_count,
-    updated_at = now();
-END;
-$$;
-
-
-ALTER FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") IS 'Recomputes artist_style_profiles for a single artist. Uses UPSERT to handle concurrent executions safely.';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."recompute_artist_styles_on_image_delete"() RETURNS "trigger"
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
-    AS $$
-BEGIN
-  -- Delete existing profiles for this artist
-  DELETE FROM artist_style_profiles WHERE artist_id = OLD.artist_id;
-
-  -- Recompute from remaining image tags
-  INSERT INTO artist_style_profiles (artist_id, style_name, taxonomy, percentage, image_count)
-  SELECT
-    OLD.artist_id,
-    ist.style_name,
-    'technique' as taxonomy,
-    (COUNT(*)::float / NULLIF(total.cnt, 0) * 100) as percentage,
-    COUNT(*) as image_count
-  FROM image_style_tags ist
-  JOIN portfolio_images pi ON pi.id = ist.image_id
-  CROSS JOIN (
-    SELECT COUNT(DISTINCT pi2.id) as cnt
-    FROM portfolio_images pi2
-    WHERE pi2.artist_id = OLD.artist_id
-    AND pi2.status = 'active'
-    AND pi2.id != OLD.id  -- Exclude the deleted image
-  ) total
-  WHERE pi.artist_id = OLD.artist_id
-  AND pi.status = 'active'
-  AND pi.id != OLD.id  -- Exclude the deleted image
-  GROUP BY ist.style_name, total.cnt
-  HAVING COUNT(*) > 0;
-
-  RETURN OLD;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."recompute_artist_styles_on_image_delete"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() IS 'Recomputes artist_style_profiles when an image is deleted. Runs as SECURITY DEFINER to bypass RLS.';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.5, "match_count" integer DEFAULT 20, "city_filter" "text" DEFAULT NULL::"text", "region_filter" "text" DEFAULT NULL::"text", "country_filter" "text" DEFAULT NULL::"text", "offset_param" integer DEFAULT 0, "query_techniques" "jsonb" DEFAULT NULL::"jsonb", "is_color_query" boolean DEFAULT NULL::boolean, "query_themes" "jsonb" DEFAULT NULL::"jsonb") RETURNS TABLE("artist_id" "uuid", "artist_name" "text", "artist_slug" "text", "city" "text", "region" "text", "country_code" "text", "profile_image_url" "text", "follower_count" integer, "shop_name" "text", "instagram_url" "text", "is_verified" boolean, "is_pro" boolean, "is_featured" boolean, "similarity" double precision, "style_boost" double precision, "color_boost" double precision, "theme_boost" double precision, "boosted_score" double precision, "max_likes" bigint, "matching_images" "jsonb", "total_count" bigint, "location_count" bigint)
+CREATE OR REPLACE FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.5, "match_count" integer DEFAULT 20, "city_filter" "text" DEFAULT NULL::"text", "region_filter" "text" DEFAULT NULL::"text", "country_filter" "text" DEFAULT NULL::"text", "offset_param" integer DEFAULT 0) RETURNS TABLE("artist_id" "uuid", "artist_name" "text", "artist_slug" "text", "city" "text", "region" "text", "country_code" "text", "profile_image_url" "text", "instagram_url" "text", "is_verified" boolean, "is_pro" boolean, "is_featured" boolean, "similarity" double precision, "matching_images" "jsonb", "location_count" bigint)
     LANGUAGE "plpgsql"
     AS $$
-DECLARE
-  v_has_techniques boolean;
-  v_has_themes boolean;
-  v_technique_weight float := 0.20;  -- Increased from 0.15 - primary match
-  v_theme_weight float := 0.10;       -- Secondary boost
-  v_color_weight float := 0.10;
 BEGIN
-  v_has_techniques := query_techniques IS NOT NULL
-    AND jsonb_typeof(query_techniques) = 'array'
-    AND jsonb_array_length(query_techniques) > 0;
-
-  v_has_themes := query_themes IS NOT NULL
-    AND jsonb_typeof(query_themes) = 'array'
-    AND jsonb_array_length(query_themes) > 0;
-
   RETURN QUERY
   -- Step 1: Vector search FIRST (uses index, fast)
   WITH ranked_images AS (
@@ -1923,112 +1540,69 @@ BEGIN
       pi.instagram_url as ri_image_url,
       pi.storage_thumb_640 as ri_thumbnail_url,
       pi.likes_count as ri_likes_count,
-      pi.is_color as ri_is_color,
-      1 - (pi.embedding <=> query_embedding) as ri_base_similarity,
-      -- Color boost at image level
-      (1 - (pi.embedding <=> query_embedding)) +
-        CASE
-          WHEN is_color_query IS NULL THEN 0.0
-          WHEN is_color_query = pi.is_color THEN v_color_weight * 0.5
-          ELSE 0.0
-        END as ri_similarity_score
+      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
     ORDER BY pi.embedding <=> query_embedding
-    LIMIT 2000
+    LIMIT 500  -- Get top 500 matching images, then filter artists
   ),
-  -- Step 2: Filter by threshold
+  -- Step 2: Filter to images above threshold
   threshold_images AS (
     SELECT * FROM ranked_images
-    WHERE ri_base_similarity >= match_threshold
+    WHERE ri_similarity_score >= match_threshold
   ),
-  -- Step 3: Get candidate artist IDs
+  -- Step 3: Get unique artists from matching images
   candidate_artists AS (
     SELECT DISTINCT ri_artist_id FROM threshold_images
   ),
-  -- Step 4: Filter artists (GDPR, location, deleted)
+  -- Step 4: Filter artists (GDPR, deleted, location) - now only checking ~100 artists, not 15k
   filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id,
            a.name as fa_name,
            a.slug as fa_slug,
-           al.city as fa_city,
-           al.region as fa_region,
-           al.country_code as fa_country_code,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
            a.profile_image_url as fa_profile_image_url,
-           a.follower_count as fa_follower_count,
-           a.shop_name as fa_shop_name,
            a.instagram_url as fa_instagram_url,
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified,
            COALESCE(a.is_pro, FALSE) as fa_is_pro,
            COALESCE(a.is_featured, FALSE) as fa_is_featured
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
-    LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_locations al ON al.artist_id = a.id
     WHERE a.deleted_at IS NULL
       AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
+      AND (
+        -- No location filters: return all
+        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
+        OR
+        -- Country-only filter
+        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+        OR
+        -- Country + Region filter
+        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
+         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+        OR
+        -- City filter
+        (city_filter IS NOT NULL
+         AND (
+           (LOWER(al.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
+           OR
+           (LOWER(a.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
+            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
+         ))
+      )
   ),
-  -- Step 5: Calculate TECHNIQUE boost per artist
-  artist_technique_boost AS (
-    SELECT
-      fa.fa_id as atb_artist_id,
-      CASE WHEN v_has_techniques THEN
-        COALESCE(
-          (
-            SELECT SUM(
-              (qt.confidence::float) * (asp.percentage / 100.0) * v_technique_weight
-            )
-            FROM jsonb_to_recordset(query_techniques) AS qt(style_name text, confidence float)
-            INNER JOIN artist_style_profiles asp
-              ON asp.artist_id = fa.fa_id
-              AND asp.style_name = qt.style_name
-              AND asp.taxonomy = 'technique'
-          ),
-          0.0
-        )
-      ELSE 0.0
-      END as atb_technique_boost
-    FROM filtered_artists fa
-  ),
-  -- Step 6: Calculate THEME boost per artist (NEW)
-  artist_theme_boost AS (
-    SELECT
-      fa.fa_id as athb_artist_id,
-      CASE WHEN v_has_themes THEN
-        COALESCE(
-          (
-            SELECT SUM(
-              (qt.confidence::float) * (asp.percentage / 100.0) * v_theme_weight
-            )
-            FROM jsonb_to_recordset(query_themes) AS qt(style_name text, confidence float)
-            INNER JOIN artist_style_profiles asp
-              ON asp.artist_id = fa.fa_id
-              AND asp.style_name = qt.style_name
-              AND asp.taxonomy = 'theme'
-          ),
-          0.0
-        )
-      ELSE 0.0
-      END as athb_theme_boost
-    FROM filtered_artists fa
-  ),
-  -- Step 7: Calculate color boost per artist (aggregated from image-level)
-  artist_color_boost AS (
-    SELECT
-      ti.ri_artist_id as acb_artist_id,
-      CASE
-        WHEN is_color_query IS NULL THEN 0.0
-        ELSE AVG(
-          CASE WHEN is_color_query = ti.ri_is_color THEN v_color_weight * 0.5 ELSE 0.0 END
-        )
-      END as acb_color_boost
-    FROM threshold_images ti
-    GROUP BY ti.ri_artist_id
-  ),
-  -- Step 8: Rank images per artist (top 3)
+  -- Step 5: Rank images within each filtered artist
   artist_ranked_images AS (
     SELECT
       ti.*,
@@ -2039,7 +1613,161 @@ BEGIN
     FROM threshold_images ti
     INNER JOIN filtered_artists fa ON ti.ri_artist_id = fa.fa_id
   ),
-  -- Step 9: Aggregate per artist
+  -- Step 6: Aggregate top 3 images per artist
+  aggregated_artists AS (
+    SELECT
+      ari.ri_artist_id as aa_artist_id,
+      MAX(ari.ri_similarity_score) as aa_best_similarity,
+      jsonb_agg(
+        jsonb_build_object(
+          'image_id', ari.ri_image_id,
+          'image_url', ari.ri_image_url,
+          'thumbnail_url', ari.ri_thumbnail_url,
+          'likes_count', ari.ri_likes_count,
+          'similarity', ROUND(ari.ri_similarity_score::numeric, 3)
+        )
+        ORDER BY ari.ri_similarity_score DESC
+      ) FILTER (WHERE ari.rank_in_artist <= 3) as aa_matching_images
+    FROM artist_ranked_images ari
+    GROUP BY ari.ri_artist_id
+  ),
+  -- Step 7: Apply Pro/Featured boosts
+  boosted_artists AS (
+    SELECT
+      aa.aa_artist_id as ba_artist_id,
+      aa.aa_best_similarity,
+      aa.aa_matching_images,
+      aa.aa_best_similarity
+        + CASE WHEN fa.fa_is_pro THEN 0.05 ELSE 0 END
+        + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END as ba_boosted_score
+    FROM aggregated_artists aa
+    INNER JOIN filtered_artists fa ON fa.fa_id = aa.aa_artist_id
+  ),
+  -- Step 8: Get location counts (only for final results)
+  artist_location_counts AS (
+    SELECT al.artist_id, COUNT(*) as loc_count
+    FROM artist_locations al
+    INNER JOIN boosted_artists ba ON al.artist_id = ba.ba_artist_id
+    GROUP BY al.artist_id
+  )
+  -- Final output
+  SELECT
+    fa.fa_id,
+    fa.fa_name,
+    fa.fa_slug,
+    fa.fa_city,
+    fa.fa_region,
+    fa.fa_country_code,
+    fa.fa_profile_image_url,
+    fa.fa_instagram_url,
+    fa.fa_is_verified,
+    fa.fa_is_pro,
+    fa.fa_is_featured,
+    ba.ba_boosted_score,
+    ba.aa_matching_images,
+    COALESCE(alc.loc_count, 1)::bigint as location_count
+  FROM boosted_artists ba
+  INNER JOIN filtered_artists fa ON fa.fa_id = ba.ba_artist_id
+  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
+  ORDER BY ba.ba_boosted_score DESC
+  LIMIT match_count
+  OFFSET offset_param;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) IS 'Vector similarity search - OPTIMIZED to do vector search first, then filter. Returns boosted_score and location_count.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.5, "match_count" integer DEFAULT 20, "city_filter" "text" DEFAULT NULL::"text", "region_filter" "text" DEFAULT NULL::"text", "country_filter" "text" DEFAULT NULL::"text", "offset_param" integer DEFAULT 0) RETURNS TABLE("artist_id" "uuid", "artist_name" "text", "artist_slug" "text", "city" "text", "region" "text", "country_code" "text", "profile_image_url" "text", "follower_count" integer, "shop_name" "text", "instagram_url" "text", "is_verified" boolean, "is_pro" boolean, "is_featured" boolean, "similarity" double precision, "max_likes" bigint, "matching_images" "jsonb", "total_count" bigint, "location_count" bigint)
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  RETURN QUERY
+  -- Step 1: Vector search FIRST (uses index, fast)
+  WITH ranked_images AS (
+    SELECT
+      pi.artist_id as ri_artist_id,
+      pi.id as ri_image_id,
+      pi.instagram_url as ri_image_url,
+      pi.storage_thumb_640 as ri_thumbnail_url,
+      pi.likes_count as ri_likes_count,
+      1 - (pi.embedding <=> query_embedding) as ri_similarity_score
+    FROM portfolio_images pi
+    WHERE pi.status = 'active'
+      AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.hidden, FALSE) = FALSE
+    ORDER BY pi.embedding <=> query_embedding
+    LIMIT 500
+  ),
+  -- Step 2: Filter to images above threshold
+  threshold_images AS (
+    SELECT * FROM ranked_images
+    WHERE ri_similarity_score >= match_threshold
+  ),
+  -- Step 3: Get unique artists from matching images
+  candidate_artists AS (
+    SELECT DISTINCT ri_artist_id FROM threshold_images
+  ),
+  -- Step 4: Filter artists (GDPR, deleted, location)
+  filtered_artists AS (
+    SELECT DISTINCT ON (a.id)
+           a.id as fa_id,
+           a.name as fa_name,
+           a.slug as fa_slug,
+           COALESCE(al.city, a.city) as fa_city,
+           COALESCE(al.region, a.state) as fa_region,
+           COALESCE(al.country_code, 'US') as fa_country_code,
+           a.profile_image_url as fa_profile_image_url,
+           a.follower_count as fa_follower_count,
+           a.shop_name as fa_shop_name,
+           a.instagram_url as fa_instagram_url,
+           (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified,
+           COALESCE(a.is_pro, FALSE) as fa_is_pro,
+           COALESCE(a.is_featured, FALSE) as fa_is_featured
+    FROM artists a
+    INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
+    LEFT JOIN artist_locations al ON al.artist_id = a.id
+    WHERE a.deleted_at IS NULL
+      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+      AND (
+        (country_filter IS NULL AND region_filter IS NULL AND city_filter IS NULL)
+        OR
+        (country_filter IS NOT NULL AND region_filter IS NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US')))
+        OR
+        (country_filter IS NOT NULL AND region_filter IS NOT NULL AND city_filter IS NULL
+         AND (al.country_code = UPPER(country_filter) OR (al.country_code IS NULL AND UPPER(country_filter) = 'US'))
+         AND (LOWER(al.region) = LOWER(region_filter) OR LOWER(a.state) = LOWER(region_filter)))
+        OR
+        (city_filter IS NOT NULL
+         AND (
+           (LOWER(al.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR al.country_code = UPPER(country_filter))
+            AND (region_filter IS NULL OR LOWER(al.region) = LOWER(region_filter)))
+           OR
+           (LOWER(a.city) = LOWER(city_filter)
+            AND (country_filter IS NULL OR UPPER(country_filter) = 'US')
+            AND (region_filter IS NULL OR LOWER(a.state) = LOWER(region_filter)))
+         ))
+      )
+  ),
+  -- Step 5: Rank images within each filtered artist
+  artist_ranked_images AS (
+    SELECT
+      ti.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY ti.ri_artist_id
+        ORDER BY ti.ri_similarity_score DESC
+      ) as rank_in_artist
+    FROM threshold_images ti
+    INNER JOIN filtered_artists fa ON ti.ri_artist_id = fa.fa_id
+  ),
+  -- Step 6: Aggregate top 3 images per artist
   aggregated_artists AS (
     SELECT
       ari.ri_artist_id as aa_artist_id,
@@ -2058,40 +1786,31 @@ BEGIN
     FROM artist_ranked_images ari
     GROUP BY ari.ri_artist_id
   ),
-  -- Step 10: Apply all boosts (pro, featured, technique, theme, color)
+  -- Step 7: Apply Pro/Featured boosts
   boosted_artists AS (
     SELECT
       aa.aa_artist_id as ba_artist_id,
       aa.aa_best_similarity,
       aa.aa_max_likes,
       aa.aa_matching_images,
-      COALESCE(atb.atb_technique_boost, 0.0)::float as ba_technique_boost,
-      COALESCE(athb.athb_theme_boost, 0.0)::float as ba_theme_boost,
-      COALESCE(acb.acb_color_boost, 0.0)::float as ba_color_boost,
       aa.aa_best_similarity
         + CASE WHEN fa.fa_is_pro THEN 0.05 ELSE 0 END
-        + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END
-        + COALESCE(atb.atb_technique_boost, 0.0)
-        + COALESCE(athb.athb_theme_boost, 0.0)
-        + COALESCE(acb.acb_color_boost, 0.0) as ba_boosted_score
+        + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END as ba_boosted_score
     FROM aggregated_artists aa
     INNER JOIN filtered_artists fa ON fa.fa_id = aa.aa_artist_id
-    LEFT JOIN artist_technique_boost atb ON atb.atb_artist_id = aa.aa_artist_id
-    LEFT JOIN artist_theme_boost athb ON athb.athb_artist_id = aa.aa_artist_id
-    LEFT JOIN artist_color_boost acb ON acb.acb_artist_id = aa.aa_artist_id
   ),
-  -- Step 11: Total count for pagination
+  -- Step 8: Total count
   total AS (
     SELECT COUNT(*) as cnt FROM aggregated_artists
   ),
-  -- Step 12: Location counts per artist
+  -- Step 9: Get location counts (only for final results)
   artist_location_counts AS (
     SELECT al.artist_id, COUNT(*) as loc_count
     FROM artist_locations al
     INNER JOIN boosted_artists ba ON al.artist_id = ba.ba_artist_id
     GROUP BY al.artist_id
   )
-  -- Final SELECT
+  -- Final output
   SELECT
     fa.fa_id,
     fa.fa_name,
@@ -2106,10 +1825,6 @@ BEGIN
     fa.fa_is_verified,
     fa.fa_is_pro,
     fa.fa_is_featured,
-    ba.aa_best_similarity,
-    ba.ba_technique_boost,       -- style_boost now = technique_boost
-    ba.ba_color_boost,
-    ba.ba_theme_boost,           -- NEW column
     ba.ba_boosted_score,
     ba.aa_max_likes,
     ba.aa_matching_images,
@@ -2125,41 +1840,41 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") OWNER TO "postgres";
+ALTER FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") IS 'Unified vector similarity search with technique + theme + color boosts. Techniques (0.20 weight) match artistic style, themes (0.10 weight) match subject matter.';
+COMMENT ON FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) IS 'Vector similarity search with count - OPTIMIZED to do vector search first, then filter. Returns boosted_score and location_count.';
 
 
 
 CREATE OR REPLACE FUNCTION "public"."sync_artist_to_locations"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     AS $$
-  BEGIN
-    -- Only sync if artist has city and no existing location
-    IF NEW.city IS NOT NULL AND NEW.city != '' THEN
-      INSERT INTO artist_locations (
-        artist_id,
-        city,
-        region,
-        country_code,
-        location_type,
-        is_primary,
-        display_order
-      ) VALUES (
-        NEW.id,
-        NEW.city,
-        NEW.state,
-        'US',
-        'city',
-        TRUE,
-        0
-      )
-      ON CONFLICT DO NOTHING;
-    END IF;
-    RETURN NEW;
-  END;
-  $$;
+BEGIN
+  -- Only sync if artist has city and no existing location
+  IF NEW.city IS NOT NULL AND NEW.city != '' THEN
+    INSERT INTO artist_locations (
+      artist_id,
+      city,
+      region,
+      country_code,
+      location_type,
+      is_primary,
+      display_order
+    ) VALUES (
+      NEW.id,
+      NEW.city,
+      NEW.state,
+      'US',
+      'city',
+      TRUE,
+      0
+    )
+    ON CONFLICT DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."sync_artist_to_locations"() OWNER TO "postgres";
@@ -2167,12 +1882,20 @@ ALTER FUNCTION "public"."sync_artist_to_locations"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."sync_primary_location"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
     AS $$
 BEGIN
-  -- This trigger is now a no-op
-  -- The city/state columns were removed from artists table
-  -- All location data is managed in artist_locations table
+  -- When a location is marked as primary, update artists table
+  IF NEW.is_primary = TRUE THEN
+    UPDATE artists
+    SET
+      city = COALESCE(NEW.city, NEW.region, ''),
+      state = CASE
+        WHEN NEW.country_code = 'US' THEN COALESCE(NEW.region, '')
+        ELSE NEW.country_code
+      END
+    WHERE id = NEW.artist_id;
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -2185,41 +1908,44 @@ CREATE OR REPLACE FUNCTION "public"."track_search_appearances_with_details"("p_s
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  DECLARE
-    v_appearance JSONB;
-    v_artist_id UUID;
-  BEGIN
-    FOR v_appearance IN
-      SELECT *
-      FROM jsonb_array_elements (p_appearances)
-    LOOP
-      v_artist_id := (v_appearance->>'artist_id')::UUID;
+DECLARE
+  v_appearance JSONB;
+  v_artist_id UUID;
+BEGIN
+  -- Loop through each appearance and insert individual record
+  FOR v_appearance IN
+    SELECT *
+    FROM jsonb_array_elements (p_appearances)
+  LOOP
+    v_artist_id := (v_appearance->>'artist_id')::UUID;
 
-      INSERT INTO search_appearances (
-        search_id,
-        artist_id,
-        rank_position,
-        similarity_score,
-        boosted_score,
-        matching_images_count,
-        created_at
-      ) VALUES (
-        p_search_id,
-        v_artist_id,
-        (v_appearance->>'rank')::INTEGER,
-        (v_appearance->>'similarity')::FLOAT,
-        (v_appearance->>'boosted_score')::FLOAT,
-        COALESCE ((v_appearance->>'image_count')::INTEGER, 3),
-        NOW ()
-      );
+    -- Insert individual search appearance record
+    INSERT INTO search_appearances (
+      search_id,
+      artist_id,
+      rank_position,
+      similarity_score,
+      boosted_score,
+      matching_images_count,
+      created_at
+    ) VALUES (
+      p_search_id,
+      v_artist_id,
+      (v_appearance->>'rank')::INTEGER,
+      (v_appearance->>'similarity')::FLOAT,
+      (v_appearance->>'boosted_score')::FLOAT,
+      COALESCE ((v_appearance->>'image_count')::INTEGER, 3),
+      NOW ()
+    );
 
-      INSERT INTO artist_analytics (artist_id, date, search_appearances)
-      VALUES (v_artist_id, CURRENT_DATE, 1)
-      ON CONFLICT (artist_id, date)
-      DO UPDATE SET search_appearances = artist_analytics.search_appearances + 1;
-    END LOOP;
-  END;
-  $$;
+    -- Also increment daily aggregate count (existing behavior)
+    INSERT INTO artist_analytics (artist_id, date, search_appearances)
+    VALUES (v_artist_id, CURRENT_DATE, 1)
+    ON CONFLICT (artist_id, date)
+    DO UPDATE SET search_appearances = artist_analytics.search_appearances + 1;
+  END LOOP;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."track_search_appearances_with_details"("p_search_id" "uuid", "p_appearances" "jsonb") OWNER TO "postgres";
@@ -2231,7 +1957,6 @@ COMMENT ON FUNCTION "public"."track_search_appearances_with_details"("p_search_i
 
 CREATE OR REPLACE FUNCTION "public"."unsubscribe_from_emails"("p_email" "text", "p_unsubscribe_all" boolean DEFAULT true, "p_reason" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   v_pref_id UUID;
@@ -2267,20 +1992,18 @@ COMMENT ON FUNCTION "public"."unsubscribe_from_emails"("p_email" "text", "p_unsu
 
 
 
-CREATE OR REPLACE FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb", "p_user_id" "uuid" DEFAULT NULL::"uuid") RETURNS "void"
+CREATE OR REPLACE FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public'
     AS $$
 DECLARE
   loc JSONB;
   i INTEGER := 0;
 BEGIN
   -- Verify caller owns this artist
-  -- Use p_user_id if provided (from API route), fall back to auth.uid() (for direct calls)
   IF NOT EXISTS (
     SELECT 1 FROM artists a
     WHERE a.id = p_artist_id
-      AND a.claimed_by_user_id = COALESCE(p_user_id, auth.uid())
+      AND a.claimed_by_user_id = auth.uid()
   ) THEN
     RAISE EXCEPTION 'Unauthorized: You do not own this artist profile';
   END IF;
@@ -2304,9 +2027,9 @@ BEGIN
       loc->>'city',
       loc->>'region',
       COALESCE(loc->>'country_code', 'US'),
-      (loc->>'location_type')::text,
-      COALESCE((loc->>'is_primary')::boolean, i = 0),
-      COALESCE((loc->>'display_order')::integer, i)
+      loc->>'location_type',
+      COALESCE((loc->>'is_primary')::BOOLEAN, i = 0),
+      COALESCE((loc->>'display_order')::INTEGER, i)
     );
     i := i + 1;
   END LOOP;
@@ -2314,102 +2037,44 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb", "p_user_id" "uuid") OWNER TO "postgres";
+ALTER FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."update_artist_pipeline_on_embedding"() RETURNS "trigger"
     LANGUAGE "plpgsql"
     AS $$
-  BEGIN
-    -- Only run when embedding changes from NULL to a value
-    IF OLD.embedding IS NULL AND NEW.embedding IS NOT NULL THEN
-      -- Check if ALL images for this artist now have embeddings
-      IF NOT EXISTS (
-        SELECT 1 FROM portfolio_images
-        WHERE artist_id = NEW.artist_id
-        AND embedding IS NULL
-        AND status != 'deleted'
-      ) THEN
-        -- All images have embeddings, mark artist complete
-        UPDATE artists
-        SET pipeline_status = 'complete'
-        WHERE id = NEW.artist_id
-        AND pipeline_status = 'pending_embeddings';
-      END IF;
+BEGIN
+  -- Only run when embedding changes from NULL to a value
+  IF OLD.embedding IS NULL AND NEW.embedding IS NOT NULL THEN
+    -- Check if ALL images for this artist now have embeddings
+    IF NOT EXISTS (
+      SELECT 1 FROM portfolio_images 
+      WHERE artist_id = NEW.artist_id 
+      AND embedding IS NULL
+      AND status != 'deleted'
+    ) THEN
+      -- All images have embeddings, mark artist complete
+      UPDATE artists 
+      SET pipeline_status = 'complete' 
+      WHERE id = NEW.artist_id 
+      AND pipeline_status = 'pending_embeddings';
     END IF;
-
-    RETURN NEW;
-  END;
-  $$;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."update_artist_pipeline_on_embedding"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."update_artist_pipeline_on_embedding"() IS 'Auto-updates artist pipeline_status to complete when all their images 
-  have embeddings';
-
-
-
-CREATE OR REPLACE FUNCTION "public"."update_artist_styles_on_tag_change"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-DECLARE
-  v_artist_id uuid;
-  v_affected_artists uuid[];
-BEGIN
-  -- Collect all unique artist IDs affected by this statement
-  -- Uses transition tables (new_table for INSERT/UPDATE, old_table for UPDATE/DELETE)
-
-  IF TG_OP = 'INSERT' THEN
-    SELECT ARRAY_AGG(DISTINCT pi.artist_id) INTO v_affected_artists
-    FROM new_table nt
-    JOIN portfolio_images pi ON pi.id = nt.image_id
-    WHERE pi.artist_id IS NOT NULL;
-
-  ELSIF TG_OP = 'UPDATE' THEN
-    -- For UPDATE, we need to handle both old and new image_ids (in case image_id changed)
-    SELECT ARRAY_AGG(DISTINCT pi.artist_id) INTO v_affected_artists
-    FROM (
-      SELECT image_id FROM new_table
-      UNION
-      SELECT image_id FROM old_table
-    ) changed
-    JOIN portfolio_images pi ON pi.id = changed.image_id
-    WHERE pi.artist_id IS NOT NULL;
-
-  ELSIF TG_OP = 'DELETE' THEN
-    -- For DELETE, check if the parent image still exists (skip cascade scenarios)
-    -- When portfolio_image is deleted, its tags cascade delete but the image delete trigger handles recompute
-    SELECT ARRAY_AGG(DISTINCT pi.artist_id) INTO v_affected_artists
-    FROM old_table ot
-    JOIN portfolio_images pi ON pi.id = ot.image_id  -- Only if image still exists
-    WHERE pi.artist_id IS NOT NULL;
-  END IF;
-
-  -- Recompute for each affected artist (deduplicated)
-  IF v_affected_artists IS NOT NULL THEN
-    FOREACH v_artist_id IN ARRAY v_affected_artists
-    LOOP
-      PERFORM recompute_artist_styles(v_artist_id);
-    END LOOP;
-  END IF;
-
-  RETURN NULL;  -- Ignored for statement-level AFTER triggers
-END;
-$$;
-
-
-ALTER FUNCTION "public"."update_artist_styles_on_tag_change"() OWNER TO "postgres";
-
-
-COMMENT ON FUNCTION "public"."update_artist_styles_on_tag_change"() IS 'Statement-level trigger function: Efficiently updates artist_style_profiles for all affected artists in a single statement. Uses transition tables to deduplicate and handle INSERT/UPDATE/DELETE.';
+COMMENT ON FUNCTION "public"."update_artist_pipeline_on_embedding"() IS 'Auto-updates artist pipeline_status to complete when all their images have embeddings';
 
 
 
 CREATE OR REPLACE FUNCTION "public"."update_marketing_outreach_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
     AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -2434,22 +2099,8 @@ $$;
 ALTER FUNCTION "public"."update_pipeline_runs_updated_at"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."update_training_label_timestamp"() RETURNS "trigger"
-    LANGUAGE "plpgsql"
-    AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION "public"."update_training_label_timestamp"() OWNER TO "postgres";
-
-
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
     AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -2463,7 +2114,6 @@ ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."user_has_vault_tokens"("user_id_param" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   vault_id UUID;
@@ -2494,7 +2144,6 @@ COMMENT ON FUNCTION "public"."user_has_vault_tokens"("user_id_param" "uuid") IS 
 
 CREATE OR REPLACE FUNCTION "public"."validate_promo_code"("p_code" "text") RETURNS TABLE("id" "uuid", "discount_type" "text", "discount_value" integer, "is_valid" boolean)
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
     AS $$
 DECLARE
   promo promo_codes%ROWTYPE;
@@ -2529,7 +2178,6 @@ COMMENT ON FUNCTION "public"."validate_promo_code"("p_code" "text") IS 'Validate
 
 CREATE OR REPLACE FUNCTION "public"."vault_create_secret"("secret" "text", "name" "text", "description" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   secret_id UUID;
@@ -2552,7 +2200,6 @@ COMMENT ON FUNCTION "public"."vault_create_secret"("secret" "text", "name" "text
 
 CREATE OR REPLACE FUNCTION "public"."vault_delete_secret"("secret_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 BEGIN
   DELETE FROM vault.secrets WHERE id = secret_id;
@@ -2569,7 +2216,6 @@ COMMENT ON FUNCTION "public"."vault_delete_secret"("secret_id" "uuid") IS 'Delet
 
 CREATE OR REPLACE FUNCTION "public"."vault_get_decrypted_secret"("secret_id" "uuid") RETURNS "text"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 DECLARE
   decrypted TEXT;
@@ -2592,7 +2238,6 @@ COMMENT ON FUNCTION "public"."vault_get_decrypted_secret"("secret_id" "uuid") IS
 
 CREATE OR REPLACE FUNCTION "public"."vault_update_secret"("secret_id" "uuid", "new_secret" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
     AS $$
 BEGIN
   UPDATE vault.secrets
@@ -2639,23 +2284,6 @@ COMMENT ON TABLE "public"."admin_audit_log" IS 'Audit trail for all admin panel 
 
 
 
-CREATE TABLE IF NOT EXISTS "public"."airtable_sync_log" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "sync_type" "text" NOT NULL,
-    "direction" "text" NOT NULL,
-    "records_processed" integer DEFAULT 0,
-    "records_created" integer DEFAULT 0,
-    "records_updated" integer DEFAULT 0,
-    "errors" "jsonb",
-    "triggered_by" "text",
-    "started_at" timestamp with time zone DEFAULT "now"(),
-    "completed_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."airtable_sync_log" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."artist_analytics" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "artist_id" "uuid",
@@ -2677,22 +2305,6 @@ CREATE TABLE IF NOT EXISTS "public"."artist_analytics" (
 ALTER TABLE "public"."artist_analytics" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."artist_audit_log" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "artist_id" "uuid" NOT NULL,
-    "action" "text" NOT NULL,
-    "details" "jsonb",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
-);
-
-
-ALTER TABLE "public"."artist_audit_log" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."artist_audit_log" IS 'Audit trail for artist profile changes and portfolio imports';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."artist_locations" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "artist_id" "uuid" NOT NULL,
@@ -2711,26 +2323,6 @@ CREATE TABLE IF NOT EXISTS "public"."artist_locations" (
 
 
 ALTER TABLE "public"."artist_locations" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."artist_pipeline_state" (
-    "artist_id" "uuid" NOT NULL,
-    "pipeline_status" "text" DEFAULT 'pending'::"text",
-    "last_scraped_at" timestamp with time zone,
-    "scrape_priority" integer DEFAULT 0,
-    "scraping_blacklisted" boolean DEFAULT false,
-    "exclude_from_scraping" boolean DEFAULT false,
-    "blacklist_reason" "text",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."artist_pipeline_state" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."artist_pipeline_state" IS 'Stores scraping/embedding pipeline state. Used by Python scripts. Extracted from artists table.';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."artist_recommendations" (
@@ -2774,7 +2366,6 @@ CREATE TABLE IF NOT EXISTS "public"."artist_style_profiles" (
     "percentage" double precision NOT NULL,
     "image_count" integer DEFAULT 0 NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    "taxonomy" "public"."style_taxonomy" DEFAULT 'technique'::"public"."style_taxonomy",
     CONSTRAINT "artist_style_profiles_percentage_check" CHECK ((("percentage" >= (0)::double precision) AND ("percentage" <= (100)::double precision)))
 );
 
@@ -2804,26 +2395,6 @@ CREATE TABLE IF NOT EXISTS "public"."artist_subscriptions" (
 ALTER TABLE "public"."artist_subscriptions" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."artist_sync_state" (
-    "artist_id" "uuid" NOT NULL,
-    "auto_sync_enabled" boolean DEFAULT false,
-    "last_sync_at" timestamp with time zone,
-    "last_sync_started_at" timestamp with time zone,
-    "sync_in_progress" boolean DEFAULT false,
-    "consecutive_failures" integer DEFAULT 0,
-    "disabled_reason" "text",
-    "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."artist_sync_state" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."artist_sync_state" IS 'Stores Instagram sync state for claimed artists. Extracted from artists table for cleaner schema.';
-
-
-
 CREATE TABLE IF NOT EXISTS "public"."artists" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "name" "text" NOT NULL,
@@ -2831,6 +2402,8 @@ CREATE TABLE IF NOT EXISTS "public"."artists" (
     "instagram_handle" "text" NOT NULL,
     "instagram_id" "text",
     "shop_name" "text",
+    "city" "text",
+    "state" "text",
     "profile_image_url" "text",
     "instagram_url" "text",
     "website_url" "text",
@@ -2848,20 +2421,26 @@ CREATE TABLE IF NOT EXISTS "public"."artists" (
     "booking_url" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
+    "last_scraped_at" timestamp with time zone,
     "is_pro" boolean DEFAULT false,
     "is_featured" boolean DEFAULT false,
     "pricing_info" "text",
     "availability_status" "text",
+    "last_instagram_sync_at" timestamp with time zone,
+    "auto_sync_enabled" boolean DEFAULT false,
     "deleted_at" timestamp with time zone,
+    "exclude_from_scraping" boolean DEFAULT false,
+    "sync_consecutive_failures" integer DEFAULT 0,
+    "sync_disabled_reason" "text",
+    "sync_in_progress" boolean DEFAULT false,
+    "last_sync_started_at" timestamp with time zone,
+    "pipeline_status" "text" DEFAULT 'pending_scrape'::"text",
+    "scraping_blacklisted" boolean DEFAULT false,
+    "blacklist_reason" "text",
     "blacklisted_at" timestamp with time zone,
     "is_test_account" boolean DEFAULT false,
     "filter_non_tattoo_content" boolean DEFAULT true,
     "is_gdpr_blocked" boolean DEFAULT false,
-    "profile_storage_path" "text",
-    "profile_storage_thumb_320" "text",
-    "profile_storage_thumb_640" "text",
-    "featured_at" timestamp with time zone,
-    "featured_expires_at" timestamp with time zone,
     CONSTRAINT "check_availability_status" CHECK ((("availability_status" IS NULL) OR ("availability_status" = ANY (ARRAY['available'::"text", 'booking_soon'::"text", 'waitlist'::"text"])))),
     CONSTRAINT "check_verification_status" CHECK (("verification_status" = ANY (ARRAY['unclaimed'::"text", 'pending'::"text", 'verified'::"text", 'claimed'::"text"]))),
     CONSTRAINT "valid_booking_url" CHECK ((("booking_url" IS NULL) OR ("booking_url" ~* '^https?://'::"text"))),
@@ -2874,7 +2453,31 @@ CREATE TABLE IF NOT EXISTS "public"."artists" (
 ALTER TABLE "public"."artists" OWNER TO "postgres";
 
 
-COMMENT ON TABLE "public"."artists" IS 'Core artist profiles. Location data in artist_locations, sync state in artist_sync_state, pipeline state in artist_pipeline_state.';
+COMMENT ON COLUMN "public"."artists"."sync_consecutive_failures" IS 'Count of consecutive sync failures. Auto-sync disabled at 3.';
+
+
+
+COMMENT ON COLUMN "public"."artists"."sync_disabled_reason" IS 'Reason auto-sync was disabled: token_revoked, consecutive_failures';
+
+
+
+COMMENT ON COLUMN "public"."artists"."sync_in_progress" IS 'Lock flag to prevent concurrent syncs';
+
+
+
+COMMENT ON COLUMN "public"."artists"."last_sync_started_at" IS 'Timestamp when last sync started (for stale lock detection)';
+
+
+
+COMMENT ON COLUMN "public"."artists"."pipeline_status" IS 'Discovery pipeline status: pending_scrape, scraping, pending_embeddings, complete, failed';
+
+
+
+COMMENT ON COLUMN "public"."artists"."scraping_blacklisted" IS 'TRUE if artist should be excluded from scraping (e.g., private account, deleted, persistent failures)';
+
+
+
+COMMENT ON COLUMN "public"."artists"."blacklist_reason" IS 'Why this artist was blacklisted from scraping';
 
 
 
@@ -2887,18 +2490,6 @@ COMMENT ON COLUMN "public"."artists"."is_test_account" IS 'Flag for test/develop
 
 
 COMMENT ON COLUMN "public"."artists"."filter_non_tattoo_content" IS 'Pro feature: Filter non-tattoo content during auto-sync and manual import using GPT-5-mini classification. TRUE = filter enabled (default), FALSE = import all images.';
-
-
-
-COMMENT ON COLUMN "public"."artists"."profile_storage_path" IS 'Supabase Storage path to original profile image (e.g., profiles/original/{artist_id}.jpg)';
-
-
-
-COMMENT ON COLUMN "public"."artists"."profile_storage_thumb_320" IS 'Supabase Storage path to 320px WebP thumbnail';
-
-
-
-COMMENT ON COLUMN "public"."artists"."profile_storage_thumb_640" IS 'Supabase Storage path to 640px WebP thumbnail';
 
 
 
@@ -2938,67 +2529,6 @@ ALTER TABLE "public"."claim_attempts" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "public"."claim_attempts" IS 'Audit log for all claim attempts (successful and failed)';
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."country_editorial_content" (
-    "country_code" character(2) NOT NULL,
-    "hero_text" "text" NOT NULL,
-    "scene_heading" "text",
-    "scene_text" "text" NOT NULL,
-    "tips_heading" "text",
-    "tips_text" "text" NOT NULL,
-    "keywords" "text"[] DEFAULT '{}'::"text"[],
-    "major_cities" "text"[] DEFAULT '{}'::"text"[],
-    "generated_at" timestamp with time zone DEFAULT "now"(),
-    "generated_by" "text" DEFAULT 'cron'::"text"
-);
-
-
-ALTER TABLE "public"."country_editorial_content" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."country_editorial_content" IS 'Auto-generated SEO editorial content for country browse pages. Simpler than city content (~300 words).';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."country_code" IS 'ISO 3166-1 alpha-2 country code (e.g., MX, CA, JP)';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."hero_text" IS 'Hero introduction paragraph about the country''s tattoo culture (80-100 words)';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."scene_heading" IS 'Optional heading for the scene section';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."scene_text" IS 'Scene overview paragraph: major cities, style preferences, influences (100-120 words)';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."tips_heading" IS 'Optional heading for the tips section';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."tips_text" IS 'Practical searching tips paragraph (60-80 words)';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."keywords" IS 'SEO keywords for this country';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."major_cities" IS 'Major tattoo cities in this country';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."generated_at" IS 'Timestamp when content was generated';
-
-
-
-COMMENT ON COLUMN "public"."country_editorial_content"."generated_by" IS 'Source of generation: cron, manual, or script name';
 
 
 
@@ -3115,38 +2645,11 @@ CREATE TABLE IF NOT EXISTS "public"."image_style_tags" (
     "style_name" "text" NOT NULL,
     "confidence" double precision NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "taxonomy" "public"."style_taxonomy" DEFAULT 'technique'::"public"."style_taxonomy",
-    "is_primary" boolean DEFAULT false,
     CONSTRAINT "image_style_tags_confidence_check" CHECK ((("confidence" >= (0)::double precision) AND ("confidence" <= (1)::double precision)))
 );
 
 
 ALTER TABLE "public"."image_style_tags" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."image_style_tags" IS 'Style tags for portfolio images. Each image can have 0-3 style tags based on CLIP embedding similarity to style seeds.';
-
-
-
-CREATE TABLE IF NOT EXISTS "public"."indexnow_submissions" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "submitted_at" timestamp with time zone DEFAULT "now"(),
-    "urls" "text"[] NOT NULL,
-    "url_count" integer NOT NULL,
-    "engine" "text" NOT NULL,
-    "trigger_source" "text" NOT NULL,
-    "response_status" integer,
-    "response_body" "jsonb",
-    "triggered_by" "text",
-    "created_at" timestamp with time zone DEFAULT "now"()
-);
-
-
-ALTER TABLE "public"."indexnow_submissions" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."indexnow_submissions" IS 'Tracks IndexNow submissions to search engines for SEO auditing';
-
 
 
 CREATE TABLE IF NOT EXISTS "public"."instagram_sync_log" (
@@ -3224,8 +2727,6 @@ CREATE TABLE IF NOT EXISTS "public"."marketing_outreach" (
     "notes" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    "airtable_record_id" "text",
-    "airtable_synced_at" timestamp with time zone,
     CONSTRAINT "marketing_outreach_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'generated'::"text", 'posted'::"text", 'dm_sent'::"text", 'claimed'::"text", 'converted'::"text"])))
 );
 
@@ -3359,7 +2860,7 @@ CREATE TABLE IF NOT EXISTS "public"."pipeline_runs" (
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "process_pid" integer,
     "last_heartbeat_at" timestamp with time zone,
-    CONSTRAINT "pipeline_runs_job_type_check" CHECK (("job_type" = ANY (ARRAY['scraping'::"text", 'processing'::"text", 'embeddings'::"text"]))),
+    CONSTRAINT "pipeline_runs_job_type_check" CHECK (("job_type" = ANY (ARRAY['scraping'::"text", 'processing'::"text", 'embeddings'::"text", 'index_rebuild'::"text"]))),
     CONSTRAINT "pipeline_runs_status_check" CHECK (("status" = ANY (ARRAY['pending'::"text", 'running'::"text", 'completed'::"text", 'failed'::"text", 'cancelled'::"text"]))),
     CONSTRAINT "pipeline_runs_target_scope_check" CHECK (("target_scope" = ANY (ARRAY['pending'::"text", 'failed'::"text", 'all'::"text", 'specific'::"text"])))
 );
@@ -3429,8 +2930,6 @@ CREATE TABLE IF NOT EXISTS "public"."portfolio_images" (
     "manually_added" boolean DEFAULT false,
     "import_source" "text" DEFAULT 'scrape'::"text",
     "instagram_media_id" "text",
-    "is_color" boolean,
-    "search_tier" "public"."search_tier" DEFAULT 'active'::"public"."search_tier",
     CONSTRAINT "check_import_source" CHECK (("import_source" = ANY (ARRAY['scrape'::"text", 'oauth_onboarding'::"text", 'oauth_sync'::"text", 'manual_import'::"text"]))),
     CONSTRAINT "check_pinned_position_valid" CHECK ((("pinned_position" IS NULL) OR ("pinned_position" >= 0))),
     CONSTRAINT "valid_likes_count" CHECK ((("likes_count" IS NULL) OR ("likes_count" >= 0))),
@@ -3458,19 +2957,6 @@ COMMENT ON COLUMN "public"."portfolio_images"."storage_thumb_1280" IS 'Supabase 
 
 
 COMMENT ON COLUMN "public"."portfolio_images"."instagram_media_id" IS 'Instagram media ID for deduplication during sync';
-
-
-
-COMMENT ON COLUMN "public"."portfolio_images"."is_color" IS 'True if image is colorful, False if black-and-gray. Determined by saturation analysis.';
-
-
-
-COMMENT ON COLUMN "public"."portfolio_images"."search_tier" IS 'Search tier for performance at scale:
-   - active: Included in main vector search (recent/popular images)
-   - archive: Excluded from main search, used for fallback/completeness
-
-   At 1M+ images, active tier will use HNSW index for fast search.
-   Archive tier continues with IVFFlat for recall.';
 
 
 
@@ -3591,10 +3077,6 @@ CREATE TABLE IF NOT EXISTS "public"."searches" (
     "instagram_username" "text",
     "instagram_post_id" "text",
     "artist_id_source" "uuid",
-    "detected_styles" "jsonb",
-    "primary_style" "text",
-    "is_color" boolean,
-    "searched_artist" "jsonb",
     CONSTRAINT "instagram_post_id_format" CHECK ((("instagram_post_id" IS NULL) OR (("length"("instagram_post_id") >= 8) AND ("length"("instagram_post_id") <= 15) AND ("instagram_post_id" ~ '^[a-zA-Z0-9_-]+$'::"text")))),
     CONSTRAINT "instagram_username_format" CHECK ((("instagram_username" IS NULL) OR (("length"("instagram_username") >= 1) AND ("length"("instagram_username") <= 30) AND ("instagram_username" ~ '^[a-zA-Z0-9._]+$'::"text") AND ("instagram_username" !~ '\.$'::"text")))),
     CONSTRAINT "valid_query_type" CHECK (("query_type" = ANY (ARRAY['image'::"text", 'text'::"text", 'hybrid'::"text", 'instagram_post'::"text", 'instagram_profile'::"text", 'similar_artist'::"text"])))
@@ -3620,23 +3102,6 @@ COMMENT ON COLUMN "public"."searches"."artist_id_source" IS 'Artist ID for simil
 
 
 
-COMMENT ON COLUMN "public"."searches"."detected_styles" IS 'Top 3 detected styles from query image: [{"style_name": "geometric", "confidence": 0.85}, ...]';
-
-
-
-COMMENT ON COLUMN "public"."searches"."primary_style" IS 'Dominant style detected in query image (for analytics and debugging)';
-
-
-
-COMMENT ON COLUMN "public"."searches"."is_color" IS 'True if query image is colorful, False if black-and-gray. Used for color-matched search ranking.';
-
-
-
-COMMENT ON COLUMN "public"."searches"."searched_artist" IS 'For instagram_profile searches: the searched artist card data for immediate display.
-Structure: { id, instagram_handle, name, profile_image_url, bio, follower_count, city, images[] }';
-
-
-
 COMMENT ON CONSTRAINT "instagram_post_id_format" ON "public"."searches" IS 'Validates Instagram post ID format: 8-15 chars, alphanumeric with underscores/hyphens';
 
 
@@ -3653,31 +3118,11 @@ CREATE TABLE IF NOT EXISTS "public"."style_seeds" (
     "embedding" "public"."vector"(768) NOT NULL,
     "description" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"(),
-    "taxonomy" "public"."style_taxonomy" DEFAULT 'technique'::"public"."style_taxonomy"
-);
-
-
-ALTER TABLE "public"."style_seeds" OWNER TO "postgres";
-
-
-CREATE TABLE IF NOT EXISTS "public"."style_training_labels" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "image_id" "uuid" NOT NULL,
-    "labeled_by" "text" NOT NULL,
-    "styles" "text"[] DEFAULT '{}'::"text"[] NOT NULL,
-    "skipped" boolean DEFAULT false,
-    "notes" "text",
-    "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"()
 );
 
 
-ALTER TABLE "public"."style_training_labels" OWNER TO "postgres";
-
-
-COMMENT ON TABLE "public"."style_training_labels" IS 'Human-labeled style tags for training ML classifier on CLIP embeddings';
-
+ALTER TABLE "public"."style_seeds" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."users" (
@@ -3703,11 +3148,6 @@ ALTER TABLE ONLY "public"."admin_audit_log"
 
 
 
-ALTER TABLE ONLY "public"."airtable_sync_log"
-    ADD CONSTRAINT "airtable_sync_log_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."artist_analytics"
     ADD CONSTRAINT "artist_analytics_artist_id_date_key" UNIQUE ("artist_id", "date");
 
@@ -3718,18 +3158,8 @@ ALTER TABLE ONLY "public"."artist_analytics"
 
 
 
-ALTER TABLE ONLY "public"."artist_audit_log"
-    ADD CONSTRAINT "artist_audit_log_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."artist_locations"
     ADD CONSTRAINT "artist_locations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."artist_pipeline_state"
-    ADD CONSTRAINT "artist_pipeline_state_pkey" PRIMARY KEY ("artist_id");
 
 
 
@@ -3758,11 +3188,6 @@ ALTER TABLE ONLY "public"."artist_subscriptions"
 
 
 
-ALTER TABLE ONLY "public"."artist_sync_state"
-    ADD CONSTRAINT "artist_sync_state_pkey" PRIMARY KEY ("artist_id");
-
-
-
 ALTER TABLE ONLY "public"."artists"
     ADD CONSTRAINT "artists_pkey" PRIMARY KEY ("id");
 
@@ -3780,11 +3205,6 @@ ALTER TABLE ONLY "public"."artists"
 
 ALTER TABLE ONLY "public"."claim_attempts"
     ADD CONSTRAINT "claim_attempts_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."country_editorial_content"
-    ADD CONSTRAINT "country_editorial_content_pkey" PRIMARY KEY ("country_code");
 
 
 
@@ -3838,11 +3258,6 @@ ALTER TABLE ONLY "public"."image_style_tags"
 
 
 
-ALTER TABLE ONLY "public"."indexnow_submissions"
-    ADD CONSTRAINT "indexnow_submissions_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."instagram_sync_log"
     ADD CONSTRAINT "instagram_sync_log_pkey" PRIMARY KEY ("id");
 
@@ -3850,11 +3265,6 @@ ALTER TABLE ONLY "public"."instagram_sync_log"
 
 ALTER TABLE ONLY "public"."locations"
     ADD CONSTRAINT "locations_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."marketing_outreach"
-    ADD CONSTRAINT "marketing_outreach_airtable_record_id_key" UNIQUE ("airtable_record_id");
 
 
 
@@ -3953,16 +3363,6 @@ ALTER TABLE ONLY "public"."style_seeds"
 
 
 
-ALTER TABLE ONLY "public"."style_training_labels"
-    ADD CONSTRAINT "style_training_labels_image_id_key" UNIQUE ("image_id");
-
-
-
-ALTER TABLE ONLY "public"."style_training_labels"
-    ADD CONSTRAINT "style_training_labels_pkey" PRIMARY KEY ("id");
-
-
-
 ALTER TABLE ONLY "public"."portfolio_images"
     ADD CONSTRAINT "unique_artist_post" UNIQUE ("artist_id", "instagram_post_id");
 
@@ -4016,10 +3416,6 @@ CREATE INDEX "idx_admin_audit_resource" ON "public"."admin_audit_log" USING "btr
 
 
 
-CREATE INDEX "idx_airtable_sync_log_started_at" ON "public"."airtable_sync_log" USING "btree" ("started_at" DESC);
-
-
-
 CREATE INDEX "idx_analytics_artist_date" ON "public"."artist_analytics" USING "btree" ("artist_id", "date" DESC);
 
 
@@ -4028,11 +3424,7 @@ CREATE INDEX "idx_analytics_date" ON "public"."artist_analytics" USING "btree" (
 
 
 
-CREATE INDEX "idx_artist_audit_log_artist_id" ON "public"."artist_audit_log" USING "btree" ("artist_id");
-
-
-
-CREATE INDEX "idx_artist_audit_log_created_at" ON "public"."artist_audit_log" USING "btree" ("created_at" DESC);
+CREATE INDEX "idx_artist_locations_artist" ON "public"."artist_locations" USING "btree" ("artist_id");
 
 
 
@@ -4041,10 +3433,6 @@ CREATE INDEX "idx_artist_locations_artist_id" ON "public"."artist_locations" USI
 
 
 COMMENT ON INDEX "public"."idx_artist_locations_artist_id" IS 'Optimizes JOINs between artist_locations and artists tables';
-
-
-
-CREATE INDEX "idx_artist_locations_artist_primary" ON "public"."artist_locations" USING "btree" ("artist_id") WHERE ("is_primary" = true);
 
 
 
@@ -4092,6 +3480,10 @@ COMMENT ON INDEX "public"."idx_artist_locations_country_region_city" IS 'Optimiz
 
 
 
+CREATE INDEX "idx_artist_locations_primary" ON "public"."artist_locations" USING "btree" ("artist_id") WHERE ("is_primary" = true);
+
+
+
 CREATE INDEX "idx_artist_locations_region" ON "public"."artist_locations" USING "btree" ("lower"("region")) WHERE ("region" IS NOT NULL);
 
 
@@ -4128,15 +3520,23 @@ CREATE INDEX "idx_artists_active" ON "public"."artists" USING "btree" ("deleted_
 
 
 
+CREATE INDEX "idx_artists_auto_sync" ON "public"."artists" USING "btree" ("auto_sync_enabled") WHERE ("auto_sync_enabled" = true);
+
+
+
+CREATE INDEX "idx_artists_auto_sync_eligible" ON "public"."artists" USING "btree" ("auto_sync_enabled", "is_pro", "last_instagram_sync_at") WHERE (("auto_sync_enabled" = true) AND ("is_pro" = true) AND ("deleted_at" IS NULL));
+
+
+
+CREATE INDEX "idx_artists_city" ON "public"."artists" USING "btree" ("city");
+
+
+
 CREATE INDEX "idx_artists_claimed_by" ON "public"."artists" USING "btree" ("claimed_by_user_id");
 
 
 
 CREATE INDEX "idx_artists_featured" ON "public"."artists" USING "btree" ("is_featured") WHERE ("is_featured" = true);
-
-
-
-CREATE INDEX "idx_artists_featured_expires" ON "public"."artists" USING "btree" ("featured_expires_at") WHERE ("is_featured" = true);
 
 
 
@@ -4176,11 +3576,27 @@ CREATE INDEX "idx_artists_not_gdpr_blocked" ON "public"."artists" USING "btree" 
 
 
 
+CREATE INDEX "idx_artists_pipeline_status" ON "public"."artists" USING "btree" ("pipeline_status");
+
+
+
 CREATE INDEX "idx_artists_pro" ON "public"."artists" USING "btree" ("is_pro") WHERE ("is_pro" = true);
 
 
 
+CREATE INDEX "idx_artists_scraping_blacklisted" ON "public"."artists" USING "btree" ("scraping_blacklisted") WHERE ("scraping_blacklisted" = true);
+
+
+
 CREATE INDEX "idx_artists_slug" ON "public"."artists" USING "btree" ("slug");
+
+
+
+CREATE INDEX "idx_artists_state_city" ON "public"."artists" USING "btree" ("state", "city");
+
+
+
+COMMENT ON INDEX "public"."idx_artists_state_city" IS 'Composite index for efficient state/city grouping in get_state_cities_with_counts()';
 
 
 
@@ -4205,10 +3621,6 @@ CREATE INDEX "idx_claim_attempts_outcome" ON "public"."claim_attempts" USING "bt
 
 
 CREATE INDEX "idx_claim_attempts_user" ON "public"."claim_attempts" USING "btree" ("user_id");
-
-
-
-CREATE INDEX "idx_country_content_generated_at" ON "public"."country_editorial_content" USING "btree" ("generated_at" DESC);
 
 
 
@@ -4288,14 +3700,6 @@ CREATE INDEX "idx_image_style_tags_style_name" ON "public"."image_style_tags" US
 
 
 
-CREATE INDEX "idx_indexnow_submissions_date" ON "public"."indexnow_submissions" USING "btree" ("submitted_at" DESC);
-
-
-
-CREATE INDEX "idx_indexnow_submissions_source" ON "public"."indexnow_submissions" USING "btree" ("trigger_source");
-
-
-
 CREATE INDEX "idx_locations_city_country" ON "public"."locations" USING "btree" ("city_ascii", "country_code");
 
 
@@ -4356,18 +3760,6 @@ CREATE INDEX "idx_onboarding_sessions_user_id" ON "public"."onboarding_sessions"
 
 
 
-CREATE INDEX "idx_pipeline_last_scraped" ON "public"."artist_pipeline_state" USING "btree" ("last_scraped_at");
-
-
-
-CREATE INDEX "idx_pipeline_not_blacklisted" ON "public"."artist_pipeline_state" USING "btree" ("artist_id") WHERE (("scraping_blacklisted" = false) AND ("exclude_from_scraping" = false));
-
-
-
-CREATE INDEX "idx_pipeline_priority" ON "public"."artist_pipeline_state" USING "btree" ("scrape_priority" DESC) WHERE ("pipeline_status" = ANY (ARRAY['pending'::"text", 'failed'::"text"]));
-
-
-
 CREATE INDEX "idx_pipeline_runs_created" ON "public"."pipeline_runs" USING "btree" ("created_at" DESC);
 
 
@@ -4396,10 +3788,6 @@ COMMENT ON INDEX "public"."idx_pipeline_runs_unique_active_job" IS 'Ensures only
 
 
 
-CREATE INDEX "idx_pipeline_status" ON "public"."artist_pipeline_state" USING "btree" ("pipeline_status");
-
-
-
 CREATE INDEX "idx_portfolio_artist" ON "public"."portfolio_images" USING "btree" ("artist_id");
 
 
@@ -4408,7 +3796,7 @@ CREATE INDEX "idx_portfolio_auto_synced" ON "public"."portfolio_images" USING "b
 
 
 
-CREATE INDEX "idx_portfolio_embeddings" ON "public"."portfolio_images" USING "ivfflat" ("embedding" "public"."vector_cosine_ops") WITH ("lists"='300');
+CREATE INDEX "idx_portfolio_embeddings" ON "public"."portfolio_images" USING "ivfflat" ("embedding" "public"."vector_cosine_ops") WITH ("lists"='105');
 
 
 
@@ -4429,14 +3817,6 @@ CREATE INDEX "idx_portfolio_images_artist_status" ON "public"."portfolio_images"
 
 
 CREATE INDEX "idx_portfolio_images_featured_active" ON "public"."portfolio_images" USING "btree" ("featured", "created_at" DESC) WHERE (("status" = 'active'::"text") AND ("featured" = true));
-
-
-
-CREATE INDEX "idx_portfolio_images_is_color" ON "public"."portfolio_images" USING "btree" ("is_color") WHERE ("is_color" IS NOT NULL);
-
-
-
-CREATE INDEX "idx_portfolio_images_search_tier" ON "public"."portfolio_images" USING "btree" ("search_tier") WHERE ("status" = 'active'::"text");
 
 
 
@@ -4504,10 +3884,6 @@ CREATE INDEX "idx_searches_instagram_username" ON "public"."searches" USING "btr
 
 
 
-CREATE INDEX "idx_searches_primary_style" ON "public"."searches" USING "btree" ("primary_style") WHERE ("primary_style" IS NOT NULL);
-
-
-
 CREATE INDEX "idx_searches_query_type" ON "public"."searches" USING "btree" ("query_type");
 
 
@@ -4532,6 +3908,10 @@ CREATE INDEX "idx_subscriptions_user" ON "public"."artist_subscriptions" USING "
 
 
 
+CREATE INDEX "idx_sync_log_artist" ON "public"."instagram_sync_log" USING "btree" ("artist_id", "started_at" DESC);
+
+
+
 CREATE INDEX "idx_sync_log_artist_recent" ON "public"."instagram_sync_log" USING "btree" ("artist_id", "started_at" DESC);
 
 
@@ -4541,26 +3921,6 @@ CREATE INDEX "idx_sync_log_status" ON "public"."instagram_sync_log" USING "btree
 
 
 CREATE INDEX "idx_sync_log_user" ON "public"."instagram_sync_log" USING "btree" ("user_id", "started_at" DESC);
-
-
-
-CREATE INDEX "idx_sync_state_auto_enabled" ON "public"."artist_sync_state" USING "btree" ("auto_sync_enabled") WHERE ("auto_sync_enabled" = true);
-
-
-
-CREATE INDEX "idx_sync_state_in_progress" ON "public"."artist_sync_state" USING "btree" ("sync_in_progress") WHERE ("sync_in_progress" = true);
-
-
-
-CREATE INDEX "idx_sync_state_last_sync" ON "public"."artist_sync_state" USING "btree" ("last_sync_at");
-
-
-
-CREATE INDEX "idx_training_labels_image_id" ON "public"."style_training_labels" USING "btree" ("image_id");
-
-
-
-CREATE INDEX "idx_training_labels_labeled_by" ON "public"."style_training_labels" USING "btree" ("labeled_by");
 
 
 
@@ -4580,19 +3940,11 @@ CREATE UNIQUE INDEX "unique_primary_location" ON "public"."artist_locations" USI
 
 
 
-CREATE OR REPLACE TRIGGER "compute_image_style_tags_trigger" AFTER INSERT OR UPDATE OF "embedding" ON "public"."portfolio_images" FOR EACH ROW EXECUTE FUNCTION "public"."compute_image_style_tags"();
-
-
-
 CREATE OR REPLACE TRIGGER "enforce_location_limit" BEFORE INSERT OR UPDATE ON "public"."artist_locations" FOR EACH ROW EXECUTE FUNCTION "public"."check_location_limit"();
 
 
 
 CREATE OR REPLACE TRIGGER "marketing_outreach_updated_at" BEFORE UPDATE ON "public"."marketing_outreach" FOR EACH ROW EXECUTE FUNCTION "public"."update_marketing_outreach_updated_at"();
-
-
-
-CREATE OR REPLACE TRIGGER "recompute_styles_on_image_delete" BEFORE DELETE ON "public"."portfolio_images" FOR EACH ROW EXECUTE FUNCTION "public"."recompute_artist_styles_on_image_delete"();
 
 
 
@@ -4608,27 +3960,7 @@ CREATE OR REPLACE TRIGGER "sync_primary_location_trigger" AFTER INSERT OR UPDATE
 
 
 
-CREATE OR REPLACE TRIGGER "trg_update_artist_styles_on_tag_delete" AFTER DELETE ON "public"."image_style_tags" REFERENCING OLD TABLE AS "old_table" FOR EACH STATEMENT EXECUTE FUNCTION "public"."update_artist_styles_on_tag_change"();
-
-
-
-COMMENT ON TRIGGER "trg_update_artist_styles_on_tag_delete" ON "public"."image_style_tags" IS 'Statement-level trigger: Recomputes artist_style_profiles when tags are deleted (skips cascade from image delete).';
-
-
-
-CREATE OR REPLACE TRIGGER "trg_update_artist_styles_on_tag_insert" AFTER INSERT ON "public"."image_style_tags" REFERENCING NEW TABLE AS "new_table" FOR EACH STATEMENT EXECUTE FUNCTION "public"."update_artist_styles_on_tag_change"();
-
-
-
-COMMENT ON TRIGGER "trg_update_artist_styles_on_tag_insert" ON "public"."image_style_tags" IS 'Statement-level trigger: Recomputes artist_style_profiles when tags are inserted (deduplicated per artist).';
-
-
-
-CREATE OR REPLACE TRIGGER "trg_update_artist_styles_on_tag_update" AFTER UPDATE ON "public"."image_style_tags" REFERENCING OLD TABLE AS "old_table" NEW TABLE AS "new_table" FOR EACH STATEMENT EXECUTE FUNCTION "public"."update_artist_styles_on_tag_change"();
-
-
-
-COMMENT ON TRIGGER "trg_update_artist_styles_on_tag_update" ON "public"."image_style_tags" IS 'Statement-level trigger: Recomputes artist_style_profiles when tags are updated.';
+CREATE OR REPLACE TRIGGER "trg_compute_style_tags" AFTER INSERT OR UPDATE OF "embedding" ON "public"."portfolio_images" FOR EACH ROW EXECUTE FUNCTION "public"."compute_image_style_tags"();
 
 
 
@@ -4660,10 +3992,6 @@ CREATE OR REPLACE TRIGGER "update_style_seeds_updated_at" BEFORE UPDATE ON "publ
 
 
 
-CREATE OR REPLACE TRIGGER "update_training_label_timestamp" BEFORE UPDATE ON "public"."style_training_labels" FOR EACH ROW EXECUTE FUNCTION "public"."update_training_label_timestamp"();
-
-
-
 CREATE OR REPLACE TRIGGER "update_users_updated_at" BEFORE UPDATE ON "public"."users" FOR EACH ROW EXECUTE FUNCTION "public"."update_updated_at_column"();
 
 
@@ -4673,18 +4001,8 @@ ALTER TABLE ONLY "public"."artist_analytics"
 
 
 
-ALTER TABLE ONLY "public"."artist_audit_log"
-    ADD CONSTRAINT "artist_audit_log_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "public"."artists"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."artist_locations"
     ADD CONSTRAINT "artist_locations_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "public"."artists"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."artist_pipeline_state"
-    ADD CONSTRAINT "artist_pipeline_state_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "public"."artists"("id") ON DELETE CASCADE;
 
 
 
@@ -4705,11 +4023,6 @@ ALTER TABLE ONLY "public"."artist_subscriptions"
 
 ALTER TABLE ONLY "public"."artist_subscriptions"
     ADD CONSTRAINT "artist_subscriptions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
-
-
-
-ALTER TABLE ONLY "public"."artist_sync_state"
-    ADD CONSTRAINT "artist_sync_state_artist_id_fkey" FOREIGN KEY ("artist_id") REFERENCES "public"."artists"("id") ON DELETE CASCADE;
 
 
 
@@ -4828,11 +4141,6 @@ ALTER TABLE ONLY "public"."searches"
 
 
 
-ALTER TABLE ONLY "public"."style_training_labels"
-    ADD CONSTRAINT "style_training_labels_image_id_fkey" FOREIGN KEY ("image_id") REFERENCES "public"."portfolio_images"("id") ON DELETE CASCADE;
-
-
-
 ALTER TABLE ONLY "public"."users"
     ADD CONSTRAINT "users_instagram_token_vault_id_fkey" FOREIGN KEY ("instagram_token_vault_id") REFERENCES "vault"."secrets"("id") ON DELETE SET NULL;
 
@@ -4842,51 +4150,33 @@ CREATE POLICY "Anyone can submit artist recommendations" ON "public"."artist_rec
 
 
 
-CREATE POLICY "Artist owners can view pipeline state" ON "public"."artist_pipeline_state" FOR SELECT USING (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
 CREATE POLICY "Artists can delete own images" ON "public"."portfolio_images" FOR DELETE USING (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
 
 
 
 CREATE POLICY "Artists can insert own images" ON "public"."portfolio_images" FOR INSERT WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
-CREATE POLICY "Artists can insert own pipeline state" ON "public"."artist_pipeline_state" FOR INSERT WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
-CREATE POLICY "Artists can insert own sync state" ON "public"."artist_sync_state" FOR INSERT WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
 
 
 
 CREATE POLICY "Artists can read own analytics" ON "public"."artist_analytics" FOR SELECT USING (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
 
 
 
 CREATE POLICY "Artists can read own image analytics" ON "public"."portfolio_image_analytics" FOR SELECT USING (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
 
 
 
-CREATE POLICY "Artists can read own images" ON "public"."portfolio_images" FOR SELECT TO "authenticated" USING (("artist_id" IN ( SELECT "artists"."id"
+CREATE POLICY "Artists can read own images" ON "public"."portfolio_images" FOR SELECT USING (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
 
 
 
@@ -4896,45 +4186,29 @@ CREATE POLICY "Artists can read own search appearances" ON "public"."search_appe
 
 
 
-CREATE POLICY "Artists can read own sync logs" ON "public"."instagram_sync_log" FOR SELECT USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Artists can read own sync logs" ON "public"."instagram_sync_log" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
 
 CREATE POLICY "Artists can update own images" ON "public"."portfolio_images" FOR UPDATE USING (("artist_id" IN ( SELECT "artists"."id"
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))) WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
+  WHERE ("artists"."claimed_by_user_id" = "auth"."uid"()))));
+
+
+
+CREATE POLICY "Artists can update own profile" ON "public"."artists" FOR UPDATE USING ((("claimed_by_user_id" = "auth"."uid"()) AND ("deleted_at" IS NULL)));
+
+
+
+CREATE POLICY "Claimed artists can manage own portfolio images" ON "public"."portfolio_images" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
-CREATE POLICY "Artists can update own pipeline state" ON "public"."artist_pipeline_state" FOR UPDATE USING (("artist_id" IN ( SELECT "artists"."id"
+  WHERE (("artists"."id" = "portfolio_images"."artist_id") AND ("artists"."claimed_by_user_id" = "auth"."uid"()))))) WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))) WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
+  WHERE (("artists"."id" = "portfolio_images"."artist_id") AND ("artists"."claimed_by_user_id" = "auth"."uid"())))));
 
 
 
-CREATE POLICY "Artists can update own profile" ON "public"."artists" FOR UPDATE USING ((("claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("deleted_at" IS NULL))) WITH CHECK ((("claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")) AND ("deleted_at" IS NULL)));
-
-
-
-CREATE POLICY "Artists can update own sync state" ON "public"."artist_sync_state" FOR UPDATE USING (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))) WITH CHECK (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
-CREATE POLICY "Artists can view own sync state" ON "public"."artist_sync_state" FOR SELECT USING (("artist_id" IN ( SELECT "artists"."id"
-   FROM "public"."artists"
-  WHERE ("artists"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))));
-
-
-
-CREATE POLICY "Country content is publicly readable" ON "public"."country_editorial_content" FOR SELECT USING (true);
+CREATE POLICY "Claimed artists can update own profile" ON "public"."artists" FOR UPDATE USING (("claimed_by_user_id" = "auth"."uid"())) WITH CHECK (("claimed_by_user_id" = "auth"."uid"()));
 
 
 
@@ -4960,6 +4234,14 @@ CREATE POLICY "Public can read visible images" ON "public"."portfolio_images" FO
 
 
 
+CREATE POLICY "Public read access to active portfolio images" ON "public"."portfolio_images" FOR SELECT USING (("status" = 'active'::"text"));
+
+
+
+CREATE POLICY "Public read access to artists" ON "public"."artists" FOR SELECT USING (true);
+
+
+
 CREATE POLICY "Public read access to style seeds" ON "public"."style_seeds" FOR SELECT USING (true);
 
 
@@ -4972,11 +4254,19 @@ COMMENT ON POLICY "Public read image style tags" ON "public"."image_style_tags" 
 
 
 
-CREATE POLICY "Service role can access slug backup" ON "public"."artists_slug_backup" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role can delete artists" ON "public"."artists" FOR DELETE USING ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role can insert audit logs" ON "public"."admin_audit_log" FOR INSERT TO "service_role" WITH CHECK (true);
+CREATE POLICY "Service role can delete portfolio images" ON "public"."portfolio_images" FOR DELETE USING ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
+
+
+
+CREATE POLICY "Service role can insert artists" ON "public"."artists" FOR INSERT WITH CHECK ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
+
+
+
+CREATE POLICY "Service role can insert portfolio images" ON "public"."portfolio_images" FOR INSERT WITH CHECK ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
 
 
 
@@ -4984,83 +4274,75 @@ CREATE POLICY "Service role can manage all recommendations" ON "public"."artist_
 
 
 
-CREATE POLICY "Service role can manage country content" ON "public"."country_editorial_content" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
+CREATE POLICY "Service role can manage style seeds" ON "public"."style_seeds" USING ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role can manage style seeds" ON "public"."style_seeds" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role can update artists" ON "public"."artists" FOR UPDATE USING ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role can read audit logs" ON "public"."admin_audit_log" FOR SELECT TO "service_role" USING (true);
+CREATE POLICY "Service role can update portfolio images" ON "public"."portfolio_images" FOR UPDATE USING ((("auth"."jwt"() ->> 'role'::"text") = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access" ON "public"."artist_pipeline_state" USING ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
+CREATE POLICY "Service role full access" ON "public"."discovery_queries" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access" ON "public"."artist_sync_state" USING ((( SELECT "auth"."role"() AS "role") = 'service_role'::"text"));
+CREATE POLICY "Service role full access on follower_mining_runs" ON "public"."follower_mining_runs" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access" ON "public"."style_training_labels" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
+CREATE POLICY "Service role full access on hashtag_mining_runs" ON "public"."hashtag_mining_runs" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to analytics" ON "public"."artist_analytics" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access on mining_candidates" ON "public"."mining_candidates" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to artist_audit_log" ON "public"."artist_audit_log" USING (("auth"."role"() = 'service_role'::"text"));
+CREATE POLICY "Service role full access to analytics" ON "public"."artist_analytics" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to artists" ON "public"."artists" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to artists" ON "public"."artists" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to claim attempts" ON "public"."claim_attempts" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to claim attempts" ON "public"."claim_attempts" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to discovery_queries" ON "public"."discovery_queries" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to image analytics" ON "public"."portfolio_image_analytics" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to follower_mining_runs" ON "public"."follower_mining_runs" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to onboarding sessions" ON "public"."onboarding_sessions" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to hashtag_mining_runs" ON "public"."hashtag_mining_runs" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to pipeline_runs" ON "public"."pipeline_runs" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to image analytics" ON "public"."portfolio_image_analytics" TO "service_role" USING (true) WITH CHECK (true);
+COMMENT ON POLICY "Service role full access to pipeline_runs" ON "public"."pipeline_runs" IS 'Only service role can access pipeline run data (admin operations only)';
 
 
 
-CREATE POLICY "Service role full access to mining_candidates" ON "public"."mining_candidates" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to portfolio_images" ON "public"."portfolio_images" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to onboarding sessions" ON "public"."onboarding_sessions" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to promo codes" ON "public"."promo_codes" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to pipeline_runs" ON "public"."pipeline_runs" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to scraping_jobs" ON "public"."scraping_jobs" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to portfolio_images" ON "public"."portfolio_images" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "Service role full access to promo codes" ON "public"."promo_codes" TO "service_role" USING (true) WITH CHECK (true);
-
-
-
-CREATE POLICY "Service role full access to scraping_jobs" ON "public"."scraping_jobs" TO "service_role" USING (true) WITH CHECK (true);
+COMMENT ON POLICY "Service role full access to scraping_jobs" ON "public"."scraping_jobs" IS 'Only service role can access scraping job data (admin operations only)';
 
 
 
@@ -5068,27 +4350,31 @@ CREATE POLICY "Service role full access to search appearances" ON "public"."sear
 
 
 
-CREATE POLICY "Service role full access to subscriptions" ON "public"."artist_subscriptions" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to subscriptions" ON "public"."artist_subscriptions" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to sync logs" ON "public"."instagram_sync_log" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to sync logs" ON "public"."instagram_sync_log" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role full access to users" ON "public"."users" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role full access to users" ON "public"."users" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Service role manage style tags" ON "public"."image_style_tags" TO "service_role" USING (true) WITH CHECK (true);
+CREATE POLICY "Service role manage style tags" ON "public"."image_style_tags" USING (("auth"."role"() = 'service_role'::"text"));
 
 
 
-CREATE POLICY "Users can delete own onboarding sessions" ON "public"."onboarding_sessions" FOR DELETE USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+COMMENT ON POLICY "Service role manage style tags" ON "public"."image_style_tags" IS 'Only service role can modify style tags (batch processing scripts)';
 
 
 
-CREATE POLICY "Users can insert own data" ON "public"."users" FOR INSERT WITH CHECK (("id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can delete own onboarding sessions" ON "public"."onboarding_sessions" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can insert own data" ON "public"."users" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
 
 
 
@@ -5096,73 +4382,79 @@ COMMENT ON POLICY "Users can insert own data" ON "public"."users" IS 'Allow Supa
 
 
 
-CREATE POLICY "Users can insert own onboarding sessions" ON "public"."onboarding_sessions" FOR INSERT WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can insert own onboarding sessions" ON "public"."onboarding_sessions" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can insert searches" ON "public"."searches" FOR INSERT WITH CHECK ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("user_id" IS NULL)));
+CREATE POLICY "Users can insert own profile" ON "public"."users" FOR INSERT WITH CHECK (("auth"."uid"() = "id"));
 
 
 
-CREATE POLICY "Users can insert their own email preferences" ON "public"."email_preferences" FOR INSERT TO "authenticated" WITH CHECK ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("email" = ( SELECT "auth"."email"() AS "email"))));
+CREATE POLICY "Users can insert searches" ON "public"."searches" FOR INSERT WITH CHECK ((("auth"."uid"() = "user_id") OR ("user_id" IS NULL)));
 
 
 
-CREATE POLICY "Users can read own claim attempts" ON "public"."claim_attempts" FOR SELECT USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can insert their own email preferences" ON "public"."email_preferences" FOR INSERT TO "authenticated" WITH CHECK ((("user_id" = "auth"."uid"()) OR ("email" = "auth"."email"())));
 
 
 
-CREATE POLICY "Users can read own data" ON "public"."users" FOR SELECT USING (("id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can read own claim attempts" ON "public"."claim_attempts" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "Users can read own subscriptions" ON "public"."artist_subscriptions" FOR SELECT USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can read own data" ON "public"."users" FOR SELECT USING (("auth"."uid"() = "id"));
 
 
 
-CREATE POLICY "Users can save artists" ON "public"."saved_artists" FOR INSERT WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can read own subscriptions" ON "public"."artist_subscriptions" FOR SELECT USING (("user_id" = "auth"."uid"()));
 
 
 
-CREATE POLICY "Users can unsave artists" ON "public"."saved_artists" FOR DELETE USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can save artists" ON "public"."saved_artists" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can update own data" ON "public"."users" FOR UPDATE USING (("id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can unsave artists" ON "public"."saved_artists" FOR DELETE USING (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can update own onboarding sessions" ON "public"."onboarding_sessions" FOR UPDATE USING (("user_id" = ( SELECT "auth"."uid"() AS "uid"))) WITH CHECK (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can update own data" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "id"));
 
 
 
-CREATE POLICY "Users can update their own email preferences" ON "public"."email_preferences" FOR UPDATE TO "authenticated" USING ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("email" = ( SELECT "auth"."email"() AS "email")))) WITH CHECK ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("email" = ( SELECT "auth"."email"() AS "email"))));
+CREATE POLICY "Users can update own onboarding sessions" ON "public"."onboarding_sessions" FOR UPDATE USING (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can view own onboarding sessions" ON "public"."onboarding_sessions" FOR SELECT USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can update own profile" ON "public"."users" FOR UPDATE USING (("auth"."uid"() = "id"));
 
 
 
-CREATE POLICY "Users can view own saved artists" ON "public"."saved_artists" FOR SELECT USING (("user_id" = ( SELECT "auth"."uid"() AS "uid")));
+CREATE POLICY "Users can update their own email preferences" ON "public"."email_preferences" FOR UPDATE TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR ("email" = "auth"."email"())));
 
 
 
-CREATE POLICY "Users can view own searches" ON "public"."searches" FOR SELECT USING ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("user_id" IS NULL)));
+CREATE POLICY "Users can view own onboarding sessions" ON "public"."onboarding_sessions" FOR SELECT USING (("auth"."uid"() = "user_id"));
 
 
 
-CREATE POLICY "Users can view their own email preferences" ON "public"."email_preferences" FOR SELECT TO "authenticated" USING ((("user_id" = ( SELECT "auth"."uid"() AS "uid")) OR ("email" = ( SELECT "auth"."email"() AS "email"))));
+CREATE POLICY "Users can view own profile" ON "public"."users" FOR SELECT USING (("auth"."uid"() = "id"));
 
 
 
-ALTER TABLE "public"."admin_audit_log" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own saved artists" ON "public"."saved_artists" FOR SELECT USING (("auth"."uid"() = "user_id"));
+
+
+
+CREATE POLICY "Users can view own searches" ON "public"."searches" FOR SELECT USING ((("auth"."uid"() = "user_id") OR ("user_id" IS NULL)));
+
+
+
+CREATE POLICY "Users can view their own email preferences" ON "public"."email_preferences" FOR SELECT TO "authenticated" USING ((("user_id" = "auth"."uid"()) OR ("email" = "auth"."email"())));
+
 
 
 ALTER TABLE "public"."artist_analytics" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."artist_audit_log" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."artist_locations" ENABLE ROW LEVEL SECURITY;
@@ -5170,13 +4462,13 @@ ALTER TABLE "public"."artist_locations" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "artist_locations_delete_own" ON "public"."artist_locations" FOR DELETE USING ((EXISTS ( SELECT 1
    FROM "public"."artists" "a"
-  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = "auth"."uid"())))));
 
 
 
 CREATE POLICY "artist_locations_insert_own" ON "public"."artist_locations" FOR INSERT WITH CHECK ((EXISTS ( SELECT 1
    FROM "public"."artists" "a"
-  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = "auth"."uid"())))));
 
 
 
@@ -5186,13 +4478,8 @@ CREATE POLICY "artist_locations_select_public" ON "public"."artist_locations" FO
 
 CREATE POLICY "artist_locations_update_own" ON "public"."artist_locations" FOR UPDATE USING ((EXISTS ( SELECT 1
    FROM "public"."artists" "a"
-  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid")))))) WITH CHECK ((EXISTS ( SELECT 1
-   FROM "public"."artists" "a"
-  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = ( SELECT "auth"."uid"() AS "uid"))))));
+  WHERE (("a"."id" = "artist_locations"."artist_id") AND ("a"."claimed_by_user_id" = "auth"."uid"())))));
 
-
-
-ALTER TABLE "public"."artist_pipeline_state" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."artist_recommendations" ENABLE ROW LEVEL SECURITY;
@@ -5208,19 +4495,10 @@ CREATE POLICY "artist_style_profiles_select" ON "public"."artist_style_profiles"
 ALTER TABLE "public"."artist_subscriptions" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."artist_sync_state" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."artists" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."artists_slug_backup" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."claim_attempts" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."country_editorial_content" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."discovery_queries" ENABLE ROW LEVEL SECURITY;
@@ -5239,9 +4517,6 @@ ALTER TABLE "public"."hashtag_mining_runs" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."image_style_tags" ENABLE ROW LEVEL SECURITY;
-
-
-ALTER TABLE "public"."indexnow_submissions" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."instagram_sync_log" ENABLE ROW LEVEL SECURITY;
@@ -5290,9 +4565,6 @@ ALTER TABLE "public"."searches" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."style_seeds" ENABLE ROW LEVEL SECURITY;
 
 
-ALTER TABLE "public"."style_training_labels" ENABLE ROW LEVEL SECURITY;
-
-
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;
 
 
@@ -5339,12 +4611,6 @@ GRANT ALL ON FUNCTION "public"."claim_artist_profile"("p_artist_id" "uuid", "p_u
 
 
 
-GRANT ALL ON FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer, "p_min_confidence" double precision, "p_taxonomy" "public"."style_taxonomy") TO "anon";
-GRANT ALL ON FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer, "p_min_confidence" double precision, "p_taxonomy" "public"."style_taxonomy") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."classify_embedding_styles"("p_embedding" "public"."vector", "p_max_styles" integer, "p_min_confidence" double precision, "p_taxonomy" "public"."style_taxonomy") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."cleanup_old_email_logs"() TO "anon";
 GRANT ALL ON FUNCTION "public"."cleanup_old_email_logs"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."cleanup_old_email_logs"() TO "service_role";
@@ -5375,12 +4641,6 @@ GRANT ALL ON FUNCTION "public"."create_pipeline_run"("p_job_type" "text", "p_tri
 
 
 
-GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "anon";
-GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "city_filter" "text", "region_filter" "text", "country_filter" "text", "match_count" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "city_filter" "text", "region_filter" "text", "country_filter" "text", "match_count" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "city_filter" "text", "region_filter" "text", "country_filter" "text", "match_count" integer) TO "service_role";
@@ -5390,12 +4650,6 @@ GRANT ALL ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid",
 GRANT ALL ON FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count" integer) TO "service_role";
 
 
 
@@ -5435,9 +4689,9 @@ GRANT ALL ON FUNCTION "public"."get_artist_tier_counts"() TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text", "p_min_followers" integer, "p_max_followers" integer, "p_min_images" integer, "p_max_images" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text", "p_min_followers" integer, "p_max_followers" integer, "p_min_images" integer, "p_max_images" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text", "p_min_followers" integer, "p_max_followers" integer, "p_min_images" integer, "p_max_images" integer) TO "service_role";
+GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_artists_with_image_counts"("p_offset" integer, "p_limit" integer, "p_search" "text", "p_location_city" "text", "p_location_state" "text", "p_tier" "text", "p_is_featured" boolean, "p_has_images" boolean, "p_sort_by" "text", "p_sort_order" "text") TO "service_role";
 
 
 
@@ -5450,12 +4704,6 @@ GRANT ALL ON FUNCTION "public"."get_cities_with_counts"("min_count" integer, "p_
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."get_homepage_stats"() TO "anon";
-GRANT ALL ON FUNCTION "public"."get_homepage_stats"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_homepage_stats"() TO "service_role";
 
 
 
@@ -5480,12 +4728,6 @@ GRANT ALL ON FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uu
 GRANT ALL ON FUNCTION "public"."get_regions_with_counts"("p_country_code" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."get_regions_with_counts"("p_country_code" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_regions_with_counts"("p_country_code" "text") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision) TO "anon";
-GRANT ALL ON FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."get_search_location_counts"("query_embedding" "public"."vector", "match_threshold" double precision) TO "service_role";
 
 
 
@@ -5537,39 +4779,21 @@ GRANT ALL ON FUNCTION "public"."increment_search_appearances"("p_artist_ids" "uu
 
 
 
-GRANT ALL ON FUNCTION "public"."is_gdpr_country"("country_code" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."is_gdpr_country"("country_code" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."is_gdpr_country"("country_code" "text") TO "service_role";
-
-
-
 GRANT ALL ON FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_user_id" "uuid", "p_artist_id" "uuid", "p_email_type" "text", "p_subject" "text", "p_success" boolean, "p_error_message" "text", "p_resend_id" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_user_id" "uuid", "p_artist_id" "uuid", "p_email_type" "text", "p_subject" "text", "p_success" boolean, "p_error_message" "text", "p_resend_id" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_user_id" "uuid", "p_artist_id" "uuid", "p_email_type" "text", "p_subject" "text", "p_success" boolean, "p_error_message" "text", "p_resend_id" "text") TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") TO "anon";
-GRANT ALL ON FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."matches_location_filter"("p_city" "text", "p_region" "text", "p_country_code" "text", "city_filter" "text", "region_filter" "text", "country_filter" "text") TO "service_role";
+GRANT ALL ON FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."search_artists_by_embedding"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "service_role";
 
 
 
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles"("p_artist_id" "uuid") TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() TO "anon";
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "anon";
-GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "service_role";
+GRANT ALL ON FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."search_artists_with_count"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer) TO "service_role";
 
 
 
@@ -5597,21 +4821,15 @@ GRANT ALL ON FUNCTION "public"."unsubscribe_from_emails"("p_email" "text", "p_un
 
 
 
-GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb", "p_user_id" "uuid") TO "anon";
-GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb", "p_user_id" "uuid") TO "authenticated";
-GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb", "p_user_id" "uuid") TO "service_role";
+GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."update_artist_locations"("p_artist_id" "uuid", "p_locations" "jsonb") TO "service_role";
 
 
 
 GRANT ALL ON FUNCTION "public"."update_artist_pipeline_on_embedding"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_artist_pipeline_on_embedding"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_artist_pipeline_on_embedding"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."update_artist_styles_on_tag_change"() TO "anon";
-GRANT ALL ON FUNCTION "public"."update_artist_styles_on_tag_change"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."update_artist_styles_on_tag_change"() TO "service_role";
 
 
 
@@ -5624,12 +4842,6 @@ GRANT ALL ON FUNCTION "public"."update_marketing_outreach_updated_at"() TO "serv
 GRANT ALL ON FUNCTION "public"."update_pipeline_runs_updated_at"() TO "anon";
 GRANT ALL ON FUNCTION "public"."update_pipeline_runs_updated_at"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."update_pipeline_runs_updated_at"() TO "service_role";
-
-
-
-GRANT ALL ON FUNCTION "public"."update_training_label_timestamp"() TO "anon";
-GRANT ALL ON FUNCTION "public"."update_training_label_timestamp"() TO "authenticated";
-GRANT ALL ON FUNCTION "public"."update_training_label_timestamp"() TO "service_role";
 
 
 
@@ -5681,33 +4893,15 @@ GRANT ALL ON TABLE "public"."admin_audit_log" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."airtable_sync_log" TO "anon";
-GRANT ALL ON TABLE "public"."airtable_sync_log" TO "authenticated";
-GRANT ALL ON TABLE "public"."airtable_sync_log" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."artist_analytics" TO "anon";
 GRANT ALL ON TABLE "public"."artist_analytics" TO "authenticated";
 GRANT ALL ON TABLE "public"."artist_analytics" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."artist_audit_log" TO "anon";
-GRANT ALL ON TABLE "public"."artist_audit_log" TO "authenticated";
-GRANT ALL ON TABLE "public"."artist_audit_log" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."artist_locations" TO "anon";
 GRANT ALL ON TABLE "public"."artist_locations" TO "authenticated";
 GRANT ALL ON TABLE "public"."artist_locations" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."artist_pipeline_state" TO "anon";
-GRANT ALL ON TABLE "public"."artist_pipeline_state" TO "authenticated";
-GRANT ALL ON TABLE "public"."artist_pipeline_state" TO "service_role";
 
 
 
@@ -5729,12 +4923,6 @@ GRANT ALL ON TABLE "public"."artist_subscriptions" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."artist_sync_state" TO "anon";
-GRANT ALL ON TABLE "public"."artist_sync_state" TO "authenticated";
-GRANT ALL ON TABLE "public"."artist_sync_state" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."artists" TO "anon";
 GRANT ALL ON TABLE "public"."artists" TO "authenticated";
 GRANT ALL ON TABLE "public"."artists" TO "service_role";
@@ -5750,12 +4938,6 @@ GRANT ALL ON TABLE "public"."artists_slug_backup" TO "service_role";
 GRANT ALL ON TABLE "public"."claim_attempts" TO "anon";
 GRANT ALL ON TABLE "public"."claim_attempts" TO "authenticated";
 GRANT ALL ON TABLE "public"."claim_attempts" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."country_editorial_content" TO "anon";
-GRANT ALL ON TABLE "public"."country_editorial_content" TO "authenticated";
-GRANT ALL ON TABLE "public"."country_editorial_content" TO "service_role";
 
 
 
@@ -5792,12 +4974,6 @@ GRANT ALL ON TABLE "public"."hashtag_mining_runs" TO "service_role";
 GRANT ALL ON TABLE "public"."image_style_tags" TO "anon";
 GRANT ALL ON TABLE "public"."image_style_tags" TO "authenticated";
 GRANT ALL ON TABLE "public"."image_style_tags" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."indexnow_submissions" TO "anon";
-GRANT ALL ON TABLE "public"."indexnow_submissions" TO "authenticated";
-GRANT ALL ON TABLE "public"."indexnow_submissions" TO "service_role";
 
 
 
@@ -5882,12 +5058,6 @@ GRANT ALL ON TABLE "public"."searches" TO "service_role";
 GRANT ALL ON TABLE "public"."style_seeds" TO "anon";
 GRANT ALL ON TABLE "public"."style_seeds" TO "authenticated";
 GRANT ALL ON TABLE "public"."style_seeds" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."style_training_labels" TO "anon";
-GRANT ALL ON TABLE "public"."style_training_labels" TO "authenticated";
-GRANT ALL ON TABLE "public"."style_training_labels" TO "service_role";
 
 
 

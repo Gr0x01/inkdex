@@ -21,6 +21,16 @@ npm run db:push       # For migrations (runs sqlfluff first)
 
 ## Migration Workflow (CRITICAL)
 
+### Migration File Naming
+**Format:** `YYYYMMDD_NNN_description.sql`
+- `YYYYMMDD` = today's date (e.g., `20260109`)
+- `NNN` = sequential number for that day (e.g., `001`, `002`)
+- `description` = kebab-case description
+
+**Examples:**
+- `20260109_001_add_user_preferences.sql`
+- `20260109_002_fix_rls_policy.sql`
+
 ### Before Deploying
 **ALWAYS verify schema before any deployment:**
 ```bash
@@ -29,9 +39,30 @@ npx tsx scripts/migrations/verify-production-schema.ts
 This outputs SQL to check for missing functions/tables. Run in Supabase SQL Editor.
 
 ### Creating New Migrations
-1. Create migration in `supabase/migrations/` with timestamp prefix (e.g., `20260109_001_feature.sql`)
+1. Create migration in `supabase/migrations/` with correct naming format
 2. **Apply to production immediately:** `npm run db:push`
 3. Only archive migrations AFTER they've been applied AND baseline is updated
+
+### Squashing to Baseline
+When migration history gets messy, squash to a new baseline:
+```bash
+# 1. Dump current production schema
+npx supabase db dump --schema public -f supabase/migrations/00000000000000_baseline.sql
+
+# 2. Archive old migrations
+mkdir -p supabase/migrations/_archive_YYYYMMDD
+mv supabase/migrations/2026*.sql supabase/migrations/_archive_YYYYMMDD/
+
+# 3. Reset schema_migrations table
+psql "$DATABASE_URL" -c "
+TRUNCATE supabase_migrations.schema_migrations;
+INSERT INTO supabase_migrations.schema_migrations (version, name, statements)
+VALUES ('00000000000000', '00000000000000_baseline.sql', '{}');
+"
+
+# 4. Verify
+npx supabase db push --dry-run  # Should say "up to date"
+```
 
 ### Archiving Migrations
 **NEVER archive a migration before it's applied to production!**
@@ -45,12 +76,6 @@ This outputs SQL to check for missing functions/tables. Run in Supabase SQL Edit
 2. If not there, check `_archive/` folder for unapplied migrations
 3. Run the SQL directly in Supabase SQL Editor
 4. Add to baseline if missing
-
-### Post-Incident (Jan 9, 2026)
-Several functions/tables were archived without being applied:
-- `get_artist_portfolio`, `search_appearances`, `update_artist_locations`, etc.
-- Root cause: migrations archived before baseline was updated AND before production apply
-- Fixed by running definitions directly in SQL Editor
 
 ---
 
@@ -69,6 +94,56 @@ Several functions/tables were archived without being applied:
 **To apply changes:** Run files in Supabase SQL Editor in dependency order (shared → search → location → admin).
 
 **DO NOT create migrations that rewrite search functions.**
+
+### SECURITY DEFINER Functions MUST Have search_path
+**All `SECURITY DEFINER` functions MUST include `SET search_path = public`.**
+
+Without this, the function runs with an empty search_path and cannot find tables:
+```
+ERROR: relation "artists" does not exist
+```
+
+**Correct pattern:**
+```sql
+CREATE OR REPLACE FUNCTION my_function()
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public  -- REQUIRED!
+AS $$
+BEGIN
+  -- Can now find tables in public schema
+  SELECT * FROM artists;
+END;
+$$;
+```
+
+**Post-Incident (Jan 9, 2026):**
+Multiple trigger functions (`check_location_limit`, `sync_primary_location`) had `search_path=""` (empty), causing location updates to fail. Fixed by adding `SET search_path = public` to all SECURITY DEFINER functions.
+
+### RPC Functions Called from SSR Need User ID Parameter
+**`auth.uid()` returns NULL when called from Next.js server-side Supabase client.**
+
+For RPC functions that need to verify ownership, pass the user ID as a parameter:
+```sql
+CREATE FUNCTION update_something(
+  p_record_id UUID,
+  p_user_id UUID DEFAULT NULL  -- For SSR clients
+)
+...
+AS $$
+BEGIN
+  -- Use COALESCE to support both SSR (p_user_id) and direct calls (auth.uid())
+  IF NOT EXISTS (
+    SELECT 1 FROM records
+    WHERE id = p_record_id
+      AND owner_id = COALESCE(p_user_id, auth.uid())
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+END;
+$$;
+```
 
 ### SQL Naming Convention (Prevents Ambiguous Column Errors)
 CTE columns MUST be prefixed:

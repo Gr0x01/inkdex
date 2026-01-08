@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-06
+Last-Updated: 2026-01-09
 Maintainer: Claude
 Status: Active Reference
 ---
@@ -104,6 +104,27 @@ WITH ranked_images AS (
 
 ---
 
+## Middleware / Proxy
+
+The `proxy.ts` file handles request-level concerns:
+
+### Rate Limiting (In-Memory)
+- 60 requests/minute per IP for scrapable paths (`/artist/*`, `/styles/*`, state pages)
+- 10-minute block after exceeding limit
+- Resets on deploy (acceptable for scraper protection)
+
+### Maintenance Mode (Cached)
+- Emergency "break glass" feature toggled via admin panel (Redis)
+- **Cached for 60 seconds** to avoid hammering `/api/maintenance/status` on every request
+- Worst case: 60s delay before maintenance kicks in (acceptable for emergencies)
+- Fails open: if Redis/API unreachable, site stays up
+
+### Redirects
+- `/artists` → `/texas` (default state)
+- `/artists/*` → `/artist/*` (route standardization)
+
+---
+
 ## Key Files
 
 | Purpose | File |
@@ -117,3 +138,4 @@ WITH ranked_images AS (
 | Countries/GDPR | `lib/constants/countries.ts` |
 | Redis caching | `lib/redis/cache.ts` |
 | Stripe | `lib/stripe/server.ts` |
+| Proxy/middleware | `proxy.ts` |

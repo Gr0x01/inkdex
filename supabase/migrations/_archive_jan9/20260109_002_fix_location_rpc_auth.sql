@@ -1,14 +1,16 @@
 -- ============================================================================
--- Migration: Fix SECURITY DEFINER functions missing search_path
--- Date: 2026-01-27
--- Issue: Functions with SECURITY DEFINER need SET search_path = public
---        to find tables when running with elevated privileges
+-- Migration: Fix update_artist_locations RPC auth issue
+-- Date: 2026-01-28
+-- Issue: auth.uid() returns NULL when called from Supabase SSR client
+-- Solution: Accept p_user_id parameter, use COALESCE to fall back to auth.uid()
 -- ============================================================================
 
--- Fix update_artist_locations
+-- Fix update_artist_locations to accept user_id parameter
+-- auth.uid() returns NULL from SSR clients, so we pass the verified user ID from the API
 CREATE OR REPLACE FUNCTION update_artist_locations(
   p_artist_id UUID,
-  p_locations JSONB
+  p_locations JSONB,
+  p_user_id UUID DEFAULT NULL  -- New parameter, optional for backward compatibility
 )
 RETURNS VOID
 LANGUAGE plpgsql
@@ -20,10 +22,11 @@ DECLARE
   i INTEGER := 0;
 BEGIN
   -- Verify caller owns this artist
+  -- Use p_user_id if provided (from API route), fall back to auth.uid() (for direct calls)
   IF NOT EXISTS (
     SELECT 1 FROM artists a
     WHERE a.id = p_artist_id
-      AND a.claimed_by_user_id = auth.uid()
+      AND a.claimed_by_user_id = COALESCE(p_user_id, auth.uid())
   ) THEN
     RAISE EXCEPTION 'Unauthorized: You do not own this artist profile';
   END IF;
@@ -55,10 +58,3 @@ BEGIN
   END LOOP;
 END;
 $$;
-
--- Verify other SECURITY DEFINER functions have search_path set
--- (These were already correct but documenting for completeness)
-
--- recompute_artist_styles_on_image_delete - has SET search_path = public ✓
--- check_location_limit - has SET search_path = public ✓
--- sync_primary_location - has SET search_path = public ✓
