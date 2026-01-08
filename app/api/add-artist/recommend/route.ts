@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
         bio: classifierResult.bio,
         follower_count: classifierResult.follower_count,
         discovery_source: 'user_recommendation',
-        verification_status: 'pending',
+        verification_status: 'unclaimed',
       })
       .select('id, slug')
       .single();

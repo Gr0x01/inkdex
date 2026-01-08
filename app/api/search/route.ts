@@ -14,6 +14,18 @@ import { checkInstagramSearchRateLimit, getClientIp } from '@/lib/rate-limiter'
 import { saveImagesToTempFromBuffers } from '@/lib/instagram/image-saver'
 import { processArtistImages } from '@/lib/processing/process-artist'
 
+// Type for searched artist card data (stored in searches table for immediate display)
+interface SearchedArtistData {
+  id: string | null           // null if artist not yet in DB
+  instagram_handle: string
+  name: string
+  profile_image_url: string | null
+  bio: string | null
+  follower_count: number | null
+  city: string | null
+  images: string[]            // The image URLs used for search (for display)
+}
+
 // Validation schemas
 const textSearchSchema = z.object({
   type: z.literal('text'),
@@ -60,6 +72,7 @@ export async function POST(request: NextRequest) {
     let artistIdSource: string | null = null
     let styleClassification: StyleClassification = { techniques: [], themes: [] }
     let isColorQuery: boolean | null = null  // null = unknown (text search), true = colorful, false = B&G
+    let searchedArtist: SearchedArtistData | null = null  // For profile searches: the artist being searched
 
     // Handle multipart/form-data (image upload)
     if (contentType.includes('multipart/form-data')) {
@@ -303,6 +316,28 @@ export async function POST(request: NextRequest) {
             instagramUsername = username
             queryText = `Artists similar to @${username}`
 
+            // Fetch additional artist fields for search result card
+            const { data: artistDetails } = await supabase
+              .from('artists')
+              .select('profile_image_url, bio, follower_count, city')
+              .eq('id', existingArtist.id)
+              .single()
+
+            // Build searched artist data for immediate display
+            searchedArtist = {
+              id: existingArtist.id,
+              instagram_handle: username,
+              name: existingArtist.name,
+              profile_image_url: artistDetails?.profile_image_url || null,
+              bio: artistDetails?.bio || null,
+              follower_count: artistDetails?.follower_count || null,
+              city: artistDetails?.city || existingArtist.city || null,
+              images: existingArtist.portfolio_images
+                .slice(0, 3)
+                .map((img: { storage_thumb_640?: string | null }) => img.storage_thumb_640)
+                .filter(Boolean) as string[],
+            }
+
             console.log(`[Profile Search] Instant search completed (DB lookup)`)
           } else {
             // Scrape profile via Apify
@@ -364,6 +399,19 @@ export async function POST(request: NextRequest) {
             instagramUsername = username
             queryText = `Artists similar to @${username}`
 
+            // Build searched artist data for immediate display (using scraped data)
+            // This gets updated with the DB id if artist creation succeeds
+            searchedArtist = {
+              id: null,  // Will be set if DB insert succeeds
+              instagram_handle: username,
+              name: profileData.username || username,
+              profile_image_url: profileData.profileImageUrl || null,
+              bio: profileData.bio || null,
+              follower_count: profileData.followerCount || null,
+              city: null,  // Unknown for new artists
+              images: profileData.images.slice(0, 3),  // The scraped images!
+            }
+
             // Save artist to database for future instant searches
             console.log(`[Profile Search] Saving @${username} to database...`)
             try {
@@ -379,13 +427,18 @@ export async function POST(request: NextRequest) {
                   bio: profileData.bio || null,
                   follower_count: profileData.followerCount || null,
                   discovery_source: 'profile_search',
-                  verification_status: 'pending',
+                  verification_status: 'unclaimed',
                 })
                 .select('id')
                 .single()
 
               if (newArtist) {
                 console.log(`[Profile Search] Created artist ${newArtist.id}`)
+
+                // Update searched artist with the new DB id
+                if (searchedArtist) {
+                  searchedArtist.id = newArtist.id
+                }
 
                 // Save downloaded images to temp directory (we already have them!)
                 const imagesWithUrls = imageBuffers.map((buffer, i) => ({
@@ -602,6 +655,7 @@ export async function POST(request: NextRequest) {
       detected_styles: allStyles.length > 0 ? allStyles : null,
       primary_style: styleClassification.techniques[0]?.style_name || null,
       is_color: isColorQuery,
+      searched_artist: searchedArtist,  // For profile searches: immediate display data
     }
 
     console.log('[Search] Inserting with multi-axis classification:', {

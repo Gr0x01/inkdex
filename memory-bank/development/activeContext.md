@@ -288,6 +288,24 @@ Access via `/dev/login` (development only):
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
 
+## Verification Status Fix (Jan 9, 2026) ✅
+
+**Problem:** Artists added via profile search or recommend flow got `verification_status='pending'` instead of `'unclaimed'`, which hid the "Claim This Page" button on their profiles.
+
+**Root Cause:** Two API routes incorrectly used `'pending'` status:
+- `/api/add-artist/recommend` (line 234)
+- `/api/search` (line 382)
+
+All discovery scripts correctly used `'unclaimed'`, but these two user-facing routes didn't.
+
+**Fix:**
+1. Changed both routes to use `verification_status: 'unclaimed'`
+2. Fixed 6 existing artists in DB with orphaned `'pending'` status (no `claimed_by_user_id`)
+
+**Key Insight:** `'pending'` status has no defined purpose - all unclaimed artists should be `'unclaimed'`. The claim flow transitions directly to `'claimed'` when an artist completes Instagram OAuth.
+
+---
+
 ## Image Saving Fix for Search/Recommend (Jan 8, 2026) ✅
 
 **Problem:** When artists were added via profile search or recommend flow, images were downloaded for classification/embedding but then discarded. The scraping job would re-fetch the same images later, wasting Apify credits.
