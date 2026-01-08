@@ -22,6 +22,7 @@ interface PortfolioImage {
 interface StyleProfile {
   style_name: string
   percentage: number
+  image_count: number
 }
 
 
