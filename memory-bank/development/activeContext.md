@@ -288,6 +288,71 @@ Access via `/dev/login` (development only):
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
 
+## Embedding & Style Tagging Pipeline Fix (Jan 9, 2026) ✅
+
+**Problem:** Multiple image processing flows were broken:
+
+| Flow | Images | Embeddings | Style Tags |
+|------|--------|------------|------------|
+| Auto-sync (Pro daily) | ✅ | ✅ | ✅ |
+| Manual import (dashboard) | ❌ URL only | ❌ | ❌ |
+| Profile search | ⚠️ Storage OK | ❌ | ❌ |
+| process-artist.ts | ✅ Storage | ❌ | ❌ |
+
+**Root Causes:**
+1. Manual import stored raw Instagram URLs without downloading/processing
+2. `processArtistImages()` uploaded to storage but never generated embeddings
+3. Style predictor was locked inside batch script, not available as library
+
+**Solution:**
+
+1. **Extracted ML Style Predictor** (`lib/styles/predictor.ts`)
+   - `predictStyles(embedding)` - returns styles above threshold
+   - Per-style thresholds: anime=0.65, japanese=0.60, surrealism=0.55
+   - Lazy-loads classifier from `models/style-classifier.json`
+
+2. **Created Unified Processing Pipeline** (`lib/processing/process-image-complete.ts`)
+   - Single function: download → thumbnails → storage → embedding → color → styles → DB
+   - SSRF protection (allowed hosts: instagram.com, cdninstagram.com, fbcdn.net)
+   - Embedding retry with exponential backoff (3 retries, max 10s delay)
+   - Used by manual import and can be used by other flows
+
+3. **Fixed Manual Import** (`app/api/dashboard/portfolio/import/route.ts`)
+   - Returns immediately with `{ processing: true }`
+   - Fire-and-forget background processing with 9-minute timeout
+   - Deletes existing images, processes new ones through full pipeline
+   - Audit logging for error recovery
+
+4. **Fixed process-artist.ts**
+   - Now generates CLIP embeddings inline
+   - Predicts styles and inserts to `image_style_tags`
+   - Skips images entirely if embedding fails (rollbacks storage uploads)
+   - Sets `status: 'active'` only when embedding exists
+
+5. **Added Retag Cron Job** (`app/api/cron/retag-missing-styles/route.ts`)
+   - Hourly cron finds images with embeddings but no style tags
+   - Processes up to 300 images per run (50s timeout protection)
+   - Catches any images that slipped through without tags
+
+**Key Files:**
+- `lib/styles/predictor.ts` - ML style prediction library
+- `lib/processing/process-image-complete.ts` - Unified pipeline
+- `lib/processing/process-artist.ts` - Fixed inline embedding + styles
+- `lib/storage/supabase-storage.ts` - Fixed `validatePostId()` for manual imports
+- `app/api/cron/retag-missing-styles/route.ts` - Hourly cleanup cron
+- `scripts/maintenance/retag-missing-styles.ts` - Manual script version
+
+**Commands:**
+```bash
+# Manual retag (dry run)
+npx tsx scripts/maintenance/retag-missing-styles.ts --dry-run
+
+# Manual retag (live)
+npx tsx scripts/maintenance/retag-missing-styles.ts
+```
+
+---
+
 ## Verification Status Fix (Jan 9, 2026) ✅
 
 **Problem:** Artists added via profile search or recommend flow got `verification_status='pending'` instead of `'unclaimed'`, which hid the "Claim This Page" button on their profiles.
@@ -358,16 +423,17 @@ Problem: Artist @aaronthomastattoos showed 33% anime (1 of 3 images falsely tagg
 |--------|--------|-------|
 | Anime artists displaying | 90 | 10 |
 
-**Per-Style ML Thresholds** (in `scripts/styles/tag-images-ml.ts`):
+**Per-Style ML Thresholds** (in `lib/styles/predictor.ts`):
 - Default: 0.50
 - Anime: 0.65
 - Japanese: 0.60
 - Surrealism: 0.55
 
 **Key Files:**
+- `lib/styles/predictor.ts` - **ML predictor library** (used by all processing flows)
 - `lib/constants/styles.ts` - `DISPLAY_STYLES` (11), `MIN_STYLE_PERCENTAGE` (35%), `MIN_STYLE_IMAGE_COUNT` (3)
 - `models/style-classifier.json` - Trained weights (768 coef + intercept per style)
-- `scripts/styles/tag-images-ml.ts` - ML-based tagging (recommended)
+- `scripts/styles/tag-images-ml.ts` - Batch ML tagging (for bulk operations)
 - `scripts/styles/tag-images.ts` - CLIP seed tagging (legacy)
 - `app/admin/(authenticated)/styles/label/page.tsx` - Manual labeling UI (backup)
 
