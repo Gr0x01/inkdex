@@ -288,47 +288,66 @@ Access via `/dev/login` (development only):
 | Alex Rivera | Free | Test free tier limits |
 | Morgan Black | Pro | Test pro features |
 
+## Image Saving Fix for Search/Recommend (Jan 8, 2026) ✅
+
+**Problem:** When artists were added via profile search or recommend flow, images were downloaded for classification/embedding but then discarded. The scraping job would re-fetch the same images later, wasting Apify credits.
+
+**Solution:** Save downloaded images immediately to temp directory and process them in background:
+1. **Profile Search** (`/api/search` with `instagram_profile`): Images already downloaded for embedding generation → save to `/tmp/instagram/{artistId}/` → fire-and-forget processing
+2. **Recommend Flow** (`/api/add-artist/recommend`): Classifier downloads images for GPT classification → save buffers → fire-and-forget processing
+
+**Key Files:**
+- `lib/instagram/classifier.ts` - `saveImagesToTemp()` for recommend flow
+- `lib/instagram/image-saver.ts` - `saveImagesToTempFromBuffers()` for search flow
+- `lib/processing/process-artist.ts` - Single-artist image processing (extracted from `process-batch.ts`)
+- `app/api/search/route.ts` - Profile search now saves + processes images
+- `app/api/add-artist/recommend/route.ts` - Recommend now saves + processes images
+
+**Behavior:**
+- API returns immediately (fast UX)
+- Images processed in background via fire-and-forget
+- Scraping job created as fallback (status: `'processing'` if images saved, `'pending'` otherwise)
+- If background processing fails, scraping pipeline handles it later
+
+**Security Fixes:**
+- UUID validation prevents path traversal attacks
+- `maxContentLength` (10MB) prevents resource exhaustion
+- Cleanup on error prevents partial file leaks
+
+---
+
 ## ML Style Classifier (Deployed Jan 8, 2026) ✅
 
 **Philosophy:** ML classifier trained on GPT-labeled data is more accurate than CLIP seed comparison.
 
 **Display Styles (11)** - shown on artist profile badges:
-
-| Style | % of Images | Artists |
-|-------|-------------|---------|
-| black-and-gray | 49.0% | 10,296 |
-| fine-line | 34.3% | 7,707 |
-| realism | 30.4% | 8,616 |
-| blackwork | 24.8% | 8,529 |
-| neo-traditional | 23.1% | 6,673 |
-| traditional | 19.4% | 6,211 |
-| new-school | 15.0% | 5,694 |
-| watercolor | 10.0% | 4,599 |
-| **japanese** | **7.4%** | 3,809 |
-| **anime** | **5.4%** | 2,625 |
-| ornamental | 13.0% | 6,013 |
+- traditional, neo-traditional, realism, black-and-gray, blackwork
+- new-school, watercolor, ornamental, fine-line, japanese, anime
 
 **Search-Only Styles** (kept for relevance, not displayed):
 - tribal, trash-polka, biomechanical, sketch, geometric, dotwork, surrealism, lettering
 
-**Key Improvement (ML vs CLIP seeds):**
-| Style | CLIP Seeds | ML Classifier |
-|-------|------------|---------------|
-| Surrealism | 28% | 12.4% |
-| Anime | ~30% | 5.4% |
-| Japanese | ~30% | 7.4% |
+**Anime/Japanese Threshold Tuning (Jan 8, 2026):**
 
-Japanese and anime now accurate enough to display as badges.
+Problem: Artist @aaronthomastattoos showed 33% anime (1 of 3 images falsely tagged).
 
-**ML Training Pipeline:**
-1. GPT-4.1-mini labeled ~15k images via `scripts/styles/batch-label-gpt.ts` (~$1.50/10k)
-2. Exported to `scripts/styles/training-data.json` via `export-training-data.ts`
-3. Trained sklearn LogisticRegression via `train-classifier.py`
-4. Model saved to `models/style-classifier.json`
-5. Tagged 99k images via `tag-images-ml.ts` (~11 minutes)
+**Three-layer defense applied:**
+1. Raised anime ML threshold from 0.50 → 0.65 (require 65% confidence)
+2. Raised display threshold from 25% → 35% (`MIN_STYLE_PERCENTAGE`)
+3. Added minimum 3 images requirement (`MIN_STYLE_IMAGE_COUNT`)
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Anime artists displaying | 90 | 10 |
+
+**Per-Style ML Thresholds** (in `scripts/styles/tag-images-ml.ts`):
+- Default: 0.50
+- Anime: 0.65
+- Japanese: 0.60
+- Surrealism: 0.55
 
 **Key Files:**
-- `lib/constants/styles.ts` - `DISPLAY_STYLES` (11), `MIN_STYLE_PERCENTAGE` (25%)
+- `lib/constants/styles.ts` - `DISPLAY_STYLES` (11), `MIN_STYLE_PERCENTAGE` (35%), `MIN_STYLE_IMAGE_COUNT` (3)
 - `models/style-classifier.json` - Trained weights (768 coef + intercept per style)
 - `scripts/styles/tag-images-ml.ts` - ML-based tagging (recommended)
 - `scripts/styles/tag-images.ts` - CLIP seed tagging (legacy)

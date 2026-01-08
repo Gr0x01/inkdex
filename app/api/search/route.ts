@@ -11,6 +11,8 @@ import { fetchInstagramProfileImages, PROFILE_ERROR_MESSAGES } from '@/lib/insta
 import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
 import { getArtistByInstagramHandle } from '@/lib/supabase/queries'
 import { checkInstagramSearchRateLimit, getClientIp } from '@/lib/rate-limiter'
+import { saveImagesToTempFromBuffers } from '@/lib/instagram/image-saver'
+import { processArtistImages } from '@/lib/processing/process-artist'
 
 // Validation schemas
 const textSearchSchema = z.object({
@@ -385,10 +387,37 @@ export async function POST(request: NextRequest) {
               if (newArtist) {
                 console.log(`[Profile Search] Created artist ${newArtist.id}`)
 
-                // Create scraping job to get full portfolio later
+                // Save downloaded images to temp directory (we already have them!)
+                const imagesWithUrls = imageBuffers.map((buffer, i) => ({
+                  url: profileData.images[i],
+                  buffer,
+                }))
+
+                const saveResult = await saveImagesToTempFromBuffers(
+                  newArtist.id,
+                  imagesWithUrls,
+                  profileData.profileImageUrl
+                )
+
+                if (saveResult.success) {
+                  console.log(`[Profile Search] ✅ Images saved to temp, processing in background...`)
+
+                  // Fire-and-forget: process images in background
+                  processArtistImages(newArtist.id)
+                    .then((result) => {
+                      console.log(`[Profile Search] Background processing complete: ${result.imagesProcessed} images`)
+                    })
+                    .catch((err) => {
+                      console.error(`[Profile Search] Background processing failed:`, err)
+                    })
+                } else {
+                  console.warn(`[Profile Search] Failed to save images: ${saveResult.error}`)
+                }
+
+                // Always create scraping job as fallback
                 await supabaseService.from('scraping_jobs').insert({
                   artist_id: newArtist.id,
-                  status: 'pending',
+                  status: saveResult.success ? 'processing' : 'pending',
                   images_scraped: 0,
                 })
                 console.log(`[Profile Search] Created scraping job for @${username}`)

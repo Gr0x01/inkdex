@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-08 (ML Style Classifier Deployed)
+Last-Updated: 2026-01-08 (Anime Threshold Tuning)
 Maintainer: RB
 Status: Production
 ---
@@ -50,6 +50,9 @@ similarity = 1 - (query_embedding <=> image_embedding)
 | `lib/search/color-analyzer.ts` | Query-time color analysis |
 | `app/api/search/route.ts` | Search creation endpoint |
 | `app/api/search/[searchId]/route.ts` | Results endpoint |
+| `lib/instagram/image-saver.ts` | Save downloaded images to temp for processing |
+| `lib/instagram/classifier.ts` | Tattoo artist classifier + `saveImagesToTemp()` |
+| `lib/processing/process-artist.ts` | Single-artist image processing |
 | `scripts/embeddings/modal_clip_embeddings.py` | Embedding generation (Modal GPU) |
 | `scripts/styles/tag-images.ts` | Batch image style tagging |
 | `scripts/styles/compute-artist-profiles.ts` | Artist style aggregation |
@@ -96,11 +99,14 @@ boosted_score = base_similarity + style_boost + color_boost + pro_boost + featur
 ### Style Classification
 | Constant | Value | Notes |
 |----------|-------|-------|
-| Min confidence | **0.35** | Raised from 0.25 (Jan 2026) to reduce false positives |
+| Default ML threshold | **0.50** | Sigmoid probability for style tagging |
+| Anime ML threshold | **0.65** | Raised to reduce false positives |
+| Japanese ML threshold | **0.60** | Raised to reduce false positives |
+| Surrealism ML threshold | **0.55** | Raised to reduce false positives |
 | Max styles | 3 | Top N styles returned per query |
 | Style weight | 0.15 | 15% impact on final score |
 
-**History**: Japanese style was over-tagging (30% of artists) at 0.25 threshold. Raised to 0.35 to require stronger CLIP similarity match.
+**Per-style thresholds** defined in `scripts/styles/tag-images-ml.ts` as `STYLE_THRESHOLDS` object.
 
 ### Color Analysis
 | Constant | Value | Notes |
@@ -275,9 +281,12 @@ python3 scripts/styles/train-classifier.py
 
 ### Style Profile Display
 - Artist pages show top 3 styles from DISPLAY_STYLES only
-- Minimum 25% of portfolio required to display (`MIN_STYLE_PERCENTAGE`)
+- **Minimum 35%** of portfolio required (`MIN_STYLE_PERCENTAGE`, raised from 25%)
+- **Minimum 3 images** required (`MIN_STYLE_IMAGE_COUNT`)
 - Controlled by `lib/constants/styles.ts`
 - Filter applied in `components/artist/ArtistInfoColumn.tsx`
+
+**Why both filters?** Small portfolios (3 images) can show 33% for a single false positive. Requiring ≥3 images AND ≥35% ensures styles are genuine specializations.
 
 ## Design Decisions
 
@@ -292,6 +301,17 @@ If 40-60% of portfolio is color, `is_color = null` → no boost either way. Prev
 
 ### Instagram Profile Optimization
 Check DB first - if artist exists with 3+ images, reuse embeddings (instant). Only scrape via Apify if not in DB.
+
+### Image Reuse on Artist Discovery (Jan 8, 2026)
+When adding artists via profile search or recommend flow, images are already downloaded for classification/embedding. Instead of discarding them and re-scraping later:
+1. Save buffers to `/tmp/instagram/{artistId}/`
+2. Fire-and-forget background processing to upload to Supabase Storage
+3. Scraping job created as fallback (handles serverless timeout failures)
+
+**Key files:**
+- `lib/instagram/image-saver.ts` - Save buffers from search flow
+- `lib/instagram/classifier.ts` - `saveImagesToTemp()` from recommend flow
+- `lib/processing/process-artist.ts` - Single-artist processing utility
 
 ### Style Weight Formula
 ```sql
@@ -317,23 +337,27 @@ SUM(query_confidence × artist_percentage × 0.15)
 5. Aggregate into artist profiles (% of portfolio per style)
 6. At search time: classify query → boost matching artists
 
-### Japanese/Anime Over-Tagging Incident (Jan 2026)
+### Japanese/Anime Over-Tagging Incidents (Jan 2026)
 
-**Symptom**: 30% of artists tagged as "Japanese" or "Anime" - way too high for specific styles.
+**Round 1 - CLIP Seeds (Early Jan):**
+- **Symptom**: 30% of artists tagged as "Japanese" or "Anime"
+- **Root cause**: CLIP matched visual features (clean lines) not style intent
+- **Fix**: Replaced with ML classifier trained on GPT-labeled data
 
-**Root cause**: Zero-shot CLIP seed comparison matched visual features (clean lines, detailed linework) rather than actual style intent.
+**Round 2 - ML Threshold Tuning (Jan 8):**
+- **Symptom**: Artist @aaronthomastattoos showed 33% anime (1 of 3 images falsely tagged)
+- **Root cause**: Default 0.50 threshold + 25% display threshold + small portfolios
+- **Fix**: Three-layer defense:
+  1. Raised anime ML threshold from 0.50 to 0.65 (require 65% confidence)
+  2. Raised display threshold from 25% to 35%
+  3. Added minimum 3 images requirement
 
-**Fix (Jan 8, 2026)**: Replaced CLIP seeds with ML classifier trained on GPT-4.1-mini labeled data.
+| Metric | Before | After |
+|--------|--------|-------|
+| Anime artists displaying | 90 | 10 |
+| False positive risk | High (1/3 = 33%) | Low (needs 3+ images at 65%+ confidence) |
 
-| Style | Before (CLIP) | After (ML) |
-|-------|---------------|------------|
-| Surrealism | 28% | 12.4% |
-| Anime | ~30% | 5.4% |
-| Japanese | ~30% | 7.4% |
-
-**Result**: Japanese and anime now accurate enough to display as badges on artist profiles.
-
-**Lesson**: CLIP matches visual features, not cultural/artistic intent. ML trained on labeled examples understands tattoo conventions better.
+**Lesson**: ML classifiers need per-class threshold tuning. Content-based styles (anime, japanese) need higher confidence than technique styles (blackwork, fine-line).
 
 ### Why Color Analysis Exists
 
@@ -382,10 +406,11 @@ SUM(query_confidence × artist_percentage × 0.15)
 
 ### Style Over-Tagging
 If a style appears on too many artists:
-1. Check threshold in `tag-images.ts` (currently 0.35)
-2. Review seed images for that style
-3. Re-run tagging: `npx tsx scripts/styles/tag-images.ts --clear`
+1. Check per-style thresholds in `scripts/styles/tag-images-ml.ts` (`STYLE_THRESHOLDS`)
+2. Consider raising threshold for that style (e.g., anime: 0.65)
+3. Re-run tagging: `npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200`
 4. Re-compute profiles: `npx tsx scripts/styles/compute-artist-profiles.ts --clear`
+5. If still over-tagging, consider raising `MIN_STYLE_PERCENTAGE` or `MIN_STYLE_IMAGE_COUNT`
 
 ### Slow Searches
 1. Check IVFFlat index exists: `\d portfolio_images` in psql

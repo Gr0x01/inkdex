@@ -9,7 +9,22 @@
 
 import OpenAI from 'openai';
 import axios from 'axios';
+import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { join } from 'path';
 import { fetchInstagramProfileImages, InstagramProfileData } from './profile-fetcher';
+
+/** UUID validation regex */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Maximum image download size (10MB) */
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+
+/** Downloaded image with original URL and base64 data */
+export interface DownloadedImage {
+  url: string;
+  base64: string; // Full data URL (data:image/jpeg;base64,...)
+  buffer: Buffer; // Raw image buffer for saving to disk
+}
 
 export interface ClassifierResult {
   passed: boolean;
@@ -19,6 +34,10 @@ export interface ClassifierResult {
   instagram_id?: string;
   bio?: string;
   follower_count?: number;
+  /** Downloaded images (only present if classification passed) */
+  downloadedImages?: DownloadedImage[];
+  /** Profile image URL from Instagram */
+  profileImageUrl?: string;
 }
 
 // Tattoo artist bio keywords (case-insensitive)
@@ -126,34 +145,44 @@ export function getMatchingBioKeywords(bio: string | undefined): string[] {
 /**
  * Download an image and convert to base64 data URL
  * Instagram CDN URLs expire quickly, so we must download before sending to OpenAI
+ * Returns both base64 (for GPT) and raw buffer (for saving to disk)
  */
-async function downloadAsBase64(imageUrl: string): Promise<string | null> {
+async function downloadImage(imageUrl: string): Promise<{ base64: string; buffer: Buffer } | null> {
   try {
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       timeout: 10000,
+      maxContentLength: MAX_IMAGE_SIZE,
+      maxBodyLength: MAX_IMAGE_SIZE,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
       },
     });
     const contentType = response.headers['content-type'] || 'image/jpeg';
-    const base64 = Buffer.from(response.data).toString('base64');
-    return `data:${contentType};base64,${base64}`;
+    const buffer = Buffer.from(response.data);
+    const base64 = `data:${contentType};base64,${buffer.toString('base64')}`;
+    return { base64, buffer };
   } catch (error) {
     console.warn(`[Classifier] Failed to download image: ${error instanceof Error ? error.message : 'unknown'}`);
     return null;
   }
 }
 
-/**
- * Classify images using GPT-5-mini to determine if they show tattoo work
- * Need at least 3 out of 6 images to show tattoos
- */
-async function classifyImages(images: string[]): Promise<{
+/** Result of downloading and classifying images */
+interface ImageClassificationResult {
   passed: boolean;
   confidence: number;
   details: string;
-}> {
+  /** Downloaded images with their original URLs and buffers */
+  downloadedImages: DownloadedImage[];
+}
+
+/**
+ * Classify images using GPT-5-mini to determine if they show tattoo work
+ * Need at least 3 out of 6 images to show tattoos
+ * Returns downloaded images so they can be saved to disk if classification passes
+ */
+async function classifyImages(imageUrls: string[]): Promise<ImageClassificationResult> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.error('[Classifier] OPENAI_API_KEY is not configured');
@@ -161,21 +190,25 @@ async function classifyImages(images: string[]): Promise<{
       passed: false,
       confidence: 0,
       details: 'Classification service temporarily unavailable. Please try again later.',
+      downloadedImages: [],
     };
   }
 
   const client = new OpenAI({ apiKey });
 
   // Download up to 6 images as base64 (Instagram CDN URLs expire quickly)
-  const imagesToProcess = images.slice(0, 6);
+  const imagesToProcess = imageUrls.slice(0, 6);
   console.log(`[Classifier] Downloading ${imagesToProcess.length} images as base64...`);
 
-  const base64Images = await Promise.all(
-    imagesToProcess.map(url => downloadAsBase64(url))
+  const downloadResults = await Promise.all(
+    imagesToProcess.map(async (url) => {
+      const result = await downloadImage(url);
+      return result ? { url, ...result } : null;
+    })
   );
 
   // Filter out failed downloads
-  const validImages = base64Images.filter((img): img is string => img !== null);
+  const validImages = downloadResults.filter((img): img is DownloadedImage => img !== null);
 
   if (validImages.length === 0) {
     console.warn('[Classifier] No images could be downloaded');
@@ -183,13 +216,14 @@ async function classifyImages(images: string[]): Promise<{
       passed: false,
       confidence: 0,
       details: 'Could not download any images for classification',
+      downloadedImages: [],
     };
   }
 
   console.log(`[Classifier] Downloaded ${validImages.length}/${imagesToProcess.length} images`);
 
   // Classify images in parallel
-  const classificationPromises = validImages.map(async (base64Image, index) => {
+  const classificationPromises = validImages.map(async (image, index) => {
     try {
       const response = await client.chat.completions.create({
         model: 'gpt-5-mini',
@@ -218,7 +252,7 @@ Answer only 'yes' or 'no'.`,
               {
                 type: 'image_url',
                 image_url: {
-                  url: base64Image,
+                  url: image.base64,
                   detail: 'low',
                 },
               },
@@ -257,6 +291,7 @@ Answer only 'yes' or 'no'.`,
     passed,
     confidence,
     details,
+    downloadedImages: validImages,
   };
 }
 
@@ -269,7 +304,7 @@ Answer only 'yes' or 'no'.`,
  * 3. If no bio match, classify images with GPT-5-mini (~$0.02)
  *
  * @param username - Instagram username (with or without @ prefix)
- * @returns Classification result with method and confidence
+ * @returns Classification result with method, confidence, and downloaded images if passed
  * @throws Error if profile fetch fails or account is private
  */
 export async function classifyTattooArtist(
@@ -295,11 +330,23 @@ export async function classifyTattooArtist(
       };
     }
 
-    const { bio, followerCount, images } = profileData;
+    const { bio, followerCount, images, profileImageUrl } = profileData;
 
     // Stage 1: Bio keyword check (instant, free)
+    // For bio-pass, we still need to download images for saving
     if (checkBioForTattooKeywords(bio)) {
       console.log('[Classifier] ✅ PASS - Bio contains tattoo keywords');
+      console.log('[Classifier] Downloading images for storage...');
+
+      // Download images even for bio-pass so we can save them
+      const downloadResults = await Promise.all(
+        images.slice(0, 6).map(async (url) => {
+          const result = await downloadImage(url);
+          return result ? { url, ...result } : null;
+        })
+      );
+      const downloadedImages = downloadResults.filter((img): img is DownloadedImage => img !== null);
+
       return {
         passed: true,
         method: 'bio',
@@ -307,6 +354,8 @@ export async function classifyTattooArtist(
         details: 'Bio contains tattoo-related keywords',
         bio,
         follower_count: followerCount,
+        downloadedImages,
+        profileImageUrl,
       };
     }
 
@@ -328,6 +377,8 @@ export async function classifyTattooArtist(
       details: imageResult.details,
       bio,
       follower_count: followerCount,
+      downloadedImages: imageResult.passed ? imageResult.downloadedImages : undefined,
+      profileImageUrl: imageResult.passed ? profileImageUrl : undefined,
     };
   } catch (error) {
     console.error('[Classifier] Unexpected error:', error);
@@ -340,3 +391,97 @@ export async function classifyTattooArtist(
     };
   }
 }
+
+/**
+ * Save downloaded images to temp directory for processing
+ * Creates /tmp/instagram/{artistId}/ with images and metadata
+ *
+ * @param artistId - Artist UUID from database
+ * @param images - Downloaded images from classifier
+ * @param profileImageUrl - Optional profile image URL to download
+ */
+export async function saveImagesToTemp(
+  artistId: string,
+  images: DownloadedImage[],
+  profileImageUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  // Security: Validate artistId is a valid UUID to prevent path traversal
+  if (!UUID_REGEX.test(artistId)) {
+    console.error(`[Classifier] Invalid artistId format: ${artistId}`);
+    return { success: false, error: 'Invalid artist ID format' };
+  }
+
+  const TEMP_DIR = '/tmp/instagram';
+  const artistDir = join(TEMP_DIR, artistId);
+
+  try {
+    // Create directory
+    mkdirSync(artistDir, { recursive: true });
+
+    // Generate metadata for each image
+    const metadata: Array<{
+      post_id: string;
+      post_url: string;
+      caption: string | null;
+      timestamp: string;
+      likes: number | null;
+    }> = [];
+
+    // Save each image
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      // Generate deterministic post ID (no post ID available from CDN URLs)
+      const postId = `img_${i}_${artistId.slice(0, 8)}`;
+      const filename = `${postId}.jpg`;
+
+      writeFileSync(join(artistDir, filename), image.buffer);
+
+      metadata.push({
+        post_id: postId,
+        post_url: image.url,
+        caption: null, // Not available from classifier
+        timestamp: new Date().toISOString(),
+        likes: null, // Not available from classifier
+      });
+    }
+
+    // Save profile image if available
+    if (profileImageUrl) {
+      try {
+        const profileImage = await downloadImage(profileImageUrl);
+        if (profileImage) {
+          writeFileSync(join(artistDir, `${artistId}_profile.jpg`), profileImage.buffer);
+          console.log(`[Classifier] Saved profile image for ${artistId}`);
+        }
+      } catch (err) {
+        // Non-fatal - continue without profile image
+        console.warn(`[Classifier] Failed to save profile image: ${err}`);
+      }
+    }
+
+    // Write metadata file
+    writeFileSync(join(artistDir, 'metadata.json'), JSON.stringify(metadata, null, 2));
+
+    // Create .complete lock file to signal ready for processing
+    writeFileSync(join(artistDir, '.complete'), '');
+
+    console.log(`[Classifier] Saved ${images.length} images to ${artistDir}`);
+    return { success: true };
+
+  } catch (error) {
+    console.error(`[Classifier] Failed to save images to temp:`, error);
+
+    // Cleanup partial writes on error
+    try {
+      rmSync(artistDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error saving images'
+    };
+  }
+}
+

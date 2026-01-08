@@ -18,7 +18,8 @@ import type { ClassifierResultRecord } from '@/types/classifier.types';
 import { toJsonb } from '@/types/database-helpers';
 import { getClientIp, checkAddArtistRateLimit } from '@/lib/rate-limiter';
 import { verifyTurnstileToken } from '@/lib/turnstile/verify';
-import { classifyTattooArtist } from '@/lib/instagram/classifier';
+import { classifyTattooArtist, saveImagesToTemp } from '@/lib/instagram/classifier';
+import { processArtistImages } from '@/lib/processing/process-artist';
 
 // Validation schema
 const RecommendSchema = z.object({
@@ -268,16 +269,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create scraping job
+    // Save images from classifier to temp directory (if available)
+    // This avoids re-fetching images that were already downloaded for classification
+    let imagesSaved = false;
+    if (classifierResult.downloadedImages && classifierResult.downloadedImages.length > 0) {
+      console.log(`[Recommend API] Saving ${classifierResult.downloadedImages.length} images from classifier...`);
+      const saveResult = await saveImagesToTemp(
+        newArtist.id,
+        classifierResult.downloadedImages,
+        classifierResult.profileImageUrl
+      );
+      imagesSaved = saveResult.success;
+
+      if (saveResult.success) {
+        console.log(`[Recommend API] ✅ Images saved to temp directory`);
+
+        // Fire-and-forget: process images in background
+        // Note: In serverless (Vercel), this relies on the function staying alive
+        // long enough. If it fails, the scraping job fallback will handle it.
+        processArtistImages(newArtist.id)
+          .then((result) => {
+            console.log(`[Recommend API] Background processing complete: ${result.imagesProcessed} images`);
+          })
+          .catch((err) => {
+            console.error(`[Recommend API] Background processing failed for ${newArtist.id}:`, err);
+          });
+      } else {
+        console.warn(`[Recommend API] Failed to save images: ${saveResult.error}`);
+      }
+    }
+
+    // Always create scraping job as fallback
+    // If background processing succeeds, the job will find images already uploaded
+    // If it fails (e.g., serverless timeout), the scraping pipeline will handle it
     const { error: jobError } = await supabase.from('scraping_jobs').insert({
       artist_id: newArtist.id,
-      status: 'pending',
+      status: imagesSaved ? 'processing' : 'pending',
       images_scraped: 0,
     });
 
-    if (jobError) {
+    if (jobError && jobError.code !== '23505') { // Ignore duplicate key errors
       console.error('[Recommend API] Error creating scraping job:', jobError);
-      // Don't fail the request - scraping can be triggered manually
     }
 
     // Log to recommendations table
@@ -300,13 +332,17 @@ export async function POST(request: NextRequest) {
       classifier_result: toJsonb(approvedResult),
     });
 
-    console.log(`[Recommend API] ✅ Success! Artist ${newArtist.id} created, scraping queued`);
+    console.log(`[Recommend API] ✅ Success! Artist ${newArtist.id} created${imagesSaved ? ', images processing in background' : ', scraping queued'}`);
 
-    // Return success
+    // Return success - message varies based on whether images were saved
+    const successMessage = imagesSaved
+      ? `Thanks! We're adding @${instagram_handle} now. They'll appear in search within a few minutes.`
+      : `Thanks! We're adding @${instagram_handle} now. They'll appear in search within 30 minutes.`;
+
     return NextResponse.json(
       {
         success: true,
-        message: `Thanks! We're adding @${instagram_handle} now. They'll appear in search within 30 minutes.`,
+        message: successMessage,
         handle: instagram_handle,
         artistId: newArtist.id,
       },
