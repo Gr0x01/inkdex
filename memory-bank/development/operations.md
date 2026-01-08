@@ -93,6 +93,52 @@ WITH ranked_images AS (
 
 ---
 
+## RLS Policy Best Practices
+
+### UPDATE Policies MUST have WITH CHECK
+PostgreSQL RLS requires both clauses for UPDATE:
+- `USING` - filters which rows can be selected for update
+- `WITH CHECK` - validates the new row values after update
+
+Without `WITH CHECK`, updates can fail silently or return empty results.
+
+**Pattern:**
+```sql
+CREATE POLICY "policy_name" ON table_name
+  FOR UPDATE
+  USING (owner_id = (SELECT auth.uid()))
+  WITH CHECK (owner_id = (SELECT auth.uid()));
+```
+
+### Always wrap auth functions in subqueries
+Use `(SELECT auth.uid())` not `auth.uid()` to prevent per-row evaluation during query planning.
+
+```sql
+-- GOOD
+USING (claimed_by_user_id = (SELECT auth.uid()))
+
+-- BAD (performance issue)
+USING (claimed_by_user_id = auth.uid())
+```
+
+### INSERT policies need WITH CHECK only
+INSERT policies use `WITH CHECK` only - there's no existing row to filter with `USING`.
+
+```sql
+CREATE POLICY "policy_name" ON table_name
+  FOR INSERT
+  WITH CHECK (owner_id = (SELECT auth.uid()));
+```
+
+### Post-Incident (Jan 9, 2026) - RLS Fix
+Missing `WITH CHECK` on `artists` UPDATE policy caused `filter_non_tattoo_content` updates to fail silently, returning empty results misinterpreted as "Pro subscription no longer active."
+
+Fixed in migration `20260127_001_fix_rls_policies_complete.sql`:
+- Added `WITH CHECK` to all UPDATE policies
+- Added missing INSERT policies to `artist_sync_state` and `artist_pipeline_state`
+
+---
+
 ## Commands
 
 ### Development
