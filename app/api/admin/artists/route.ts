@@ -37,6 +37,10 @@ export async function GET(request: NextRequest) {
     const hasImages = searchParams.get('has_images');
     const sortBy = searchParams.get('sort_by') || 'instagram_handle';
     const sortOrder = searchParams.get('sort_order') || 'asc';
+    const minFollowers = searchParams.get('min_followers');
+    const maxFollowers = searchParams.get('max_followers');
+    const minImages = searchParams.get('min_images');
+    const maxImages = searchParams.get('max_images');
 
     const offset = (page - 1) * limit;
 
@@ -74,12 +78,18 @@ export async function GET(request: NextRequest) {
       hasImages === 'true' ? true : hasImages === 'false' ? false : null;
 
     // Validate sort column to prevent SQL injection
-    const validSortColumns = ['instagram_handle', 'name', 'city', 'verification_status', 'image_count', 'is_featured'];
+    const validSortColumns = ['instagram_handle', 'name', 'city', 'verification_status', 'image_count', 'is_featured', 'follower_count'];
     const safeSortBy = validSortColumns.includes(sortBy) ? sortBy : 'instagram_handle';
     const safeSortOrder = sortOrder === 'desc' ? 'desc' : 'asc';
 
+    // Parse numeric filters
+    const minFollowersNum = minFollowers ? parseInt(minFollowers, 10) : null;
+    const maxFollowersNum = maxFollowers ? parseInt(maxFollowers, 10) : null;
+    const minImagesNum = minImages ? parseInt(minImages, 10) : null;
+    const maxImagesNum = maxImages ? parseInt(maxImages, 10) : null;
+
     // Generate cache key based on filters
-    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}:images:${hasImages || 'none'}:sort:${safeSortBy}:${safeSortOrder}`;
+    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}:images:${hasImages || 'none'}:sort:${safeSortBy}:${safeSortOrder}:minF:${minFollowersNum || 'none'}:maxF:${maxFollowersNum || 'none'}:minI:${minImagesNum || 'none'}:maxI:${maxImagesNum || 'none'}`;
 
     // Use Redis cache with 5-minute TTL
     const result = await getCached(
@@ -101,6 +111,10 @@ export async function GET(request: NextRequest) {
           p_has_images: hasImagesFilter,
           p_sort_by: safeSortBy,
           p_sort_order: safeSortOrder,
+          p_min_followers: minFollowersNum,
+          p_max_followers: maxFollowersNum,
+          p_min_images: minImagesNum,
+          p_max_images: maxImagesNum,
         });
 
         if (error) {

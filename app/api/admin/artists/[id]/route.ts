@@ -17,6 +17,7 @@ import { z } from 'zod';
 const updateSchema = z.object({
   is_pro: z.boolean().optional(),
   is_featured: z.boolean().optional(),
+  feature_days: z.number().int().min(1).max(365).optional(),
 });
 
 function getServiceClient() {
@@ -197,9 +198,9 @@ export async function PATCH(
       );
     }
 
-    const updates = result.data;
+    const { feature_days, ...updates } = result.data;
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 0 && feature_days === undefined) {
       return NextResponse.json(
         { error: 'No fields to update' },
         { status: 400 }
@@ -211,7 +212,7 @@ export async function PATCH(
     // Fetch current artist state for audit log
     const { data: oldArtist, error: fetchError } = await serviceClient
       .from('artists')
-      .select('id, name, is_pro, is_featured')
+      .select('id, name, is_pro, is_featured, featured_at, featured_expires_at')
       .eq('id', id)
       .is('deleted_at', null)
       .single();
@@ -220,13 +221,35 @@ export async function PATCH(
       return NextResponse.json({ error: 'Artist not found' }, { status: 404 });
     }
 
+    // Build the update object
+    const dbUpdates: Record<string, unknown> = {
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+
+    // If featuring with a duration, calculate expiration
+    if (updates.is_featured === true && feature_days) {
+      const now = new Date();
+      const expiresAt = new Date(now);
+      expiresAt.setDate(expiresAt.getDate() + feature_days);
+
+      dbUpdates.featured_at = now.toISOString();
+      dbUpdates.featured_expires_at = expiresAt.toISOString();
+    }
+
+    // If unfeaturing, clear expiration dates
+    if (updates.is_featured === false) {
+      dbUpdates.featured_at = null;
+      dbUpdates.featured_expires_at = null;
+    }
+
     // Update the artist
     const { data: artist, error: updateError } = await serviceClient
       .from('artists')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update(dbUpdates)
       .eq('id', id)
       .is('deleted_at', null)
-      .select('id, name, is_pro, is_featured')
+      .select('id, name, is_pro, is_featured, featured_at, featured_expires_at')
       .single();
 
     if (updateError) {
@@ -259,17 +282,23 @@ export async function PATCH(
       updates.is_featured !== undefined &&
       updates.is_featured !== oldArtist.is_featured
     ) {
+      const newValue: Record<string, unknown> = { is_featured: updates.is_featured };
+      if (feature_days) {
+        newValue.feature_days = feature_days;
+        newValue.featured_expires_at = artist.featured_expires_at;
+      }
+
       logAdminAction({
         adminEmail: user.email!,
         action: updates.is_featured ? 'artist.feature' : 'artist.unfeature',
         resourceType: 'artist',
         resourceId: id,
         oldValue: { is_featured: oldArtist.is_featured },
-        newValue: { is_featured: updates.is_featured },
+        newValue,
         ...clientInfo,
       });
       console.log(
-        `[Admin] ${user.email} set is_featured=${updates.is_featured} for artist ${artist.name} (${id})`
+        `[Admin] ${user.email} set is_featured=${updates.is_featured}${feature_days ? ` for ${feature_days} days` : ''} for artist ${artist.name} (${id})`
       );
     }
 

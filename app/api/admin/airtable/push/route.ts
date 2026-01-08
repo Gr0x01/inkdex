@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     let artists: ArtistForAirtable[] = []
 
     if (artistIds && artistIds.length > 0) {
-      // Fetch specific artists by ID
+      // Fetch specific artists by ID (allow any verification status when pushing specific IDs)
       const { data, error } = await supabase
         .from('artists')
         .select(
@@ -79,7 +79,6 @@ export async function POST(request: NextRequest) {
         `
         )
         .in('id', artistIds)
-        .eq('verification_status', 'unclaimed')
         .is('deleted_at', null)
 
       if (error) throw error

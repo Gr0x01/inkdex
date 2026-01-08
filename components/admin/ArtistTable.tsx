@@ -5,7 +5,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  Star,
   Crown,
   ExternalLink,
   Eye,
@@ -53,10 +52,13 @@ export default function ArtistTable() {
   const [tierFilter, setTierFilter] = useState<string>('');
   const [isFeaturedFilter, setIsFeaturedFilter] = useState<string>('');
   const [hasImagesFilter, setHasImagesFilter] = useState<string>('');
+  const [minFollowers, setMinFollowers] = useState<string>('');
+  const [maxFollowers, setMaxFollowers] = useState<string>('');
+  const [minImages, setMinImages] = useState<string>('');
+  const [maxImages, setMaxImages] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('instagram_handle');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [updatingIds, setUpdatingIds] = useState<Set<string>>(new Set());
   const [bulkUpdating, setBulkUpdating] = useState(false);
 
   const fetchArtists = useCallback(async () => {
@@ -72,6 +74,10 @@ export default function ArtistTable() {
     if (tierFilter) params.set('tier', tierFilter);
     if (isFeaturedFilter) params.set('is_featured', isFeaturedFilter);
     if (hasImagesFilter) params.set('has_images', hasImagesFilter);
+    if (minFollowers) params.set('min_followers', minFollowers);
+    if (maxFollowers) params.set('max_followers', maxFollowers);
+    if (minImages) params.set('min_images', minImages);
+    if (maxImages) params.set('max_images', maxImages);
     if (sortBy) params.set('sort_by', sortBy);
     if (sortOrder) params.set('sort_order', sortOrder);
 
@@ -87,7 +93,7 @@ export default function ArtistTable() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter, hasImagesFilter, sortBy, sortOrder]);
+  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter, hasImagesFilter, minFollowers, maxFollowers, minImages, maxImages, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchArtists();
@@ -101,34 +107,6 @@ export default function ArtistTable() {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
-
-  const toggleFeatured = async (artist: Artist) => {
-    setUpdatingIds((prev) => new Set(prev).add(artist.id));
-
-    try {
-      const response = await fetch(`/api/admin/artists/${artist.id}/featured`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_featured: !artist.is_featured }),
-      });
-
-      if (!response.ok) throw new Error('Failed to update');
-
-      setArtists((prev) =>
-        prev.map((a) =>
-          a.id === artist.id ? { ...a, is_featured: !a.is_featured } : a
-        )
-      );
-    } catch (error) {
-      console.error('Failed to toggle featured:', error);
-    } finally {
-      setUpdatingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(artist.id);
-        return next;
-      });
-    }
-  };
 
   const handleBulkUpdate = async (is_featured: boolean) => {
     if (selectedIds.size === 0) return;
@@ -277,6 +255,80 @@ export default function ArtistTable() {
         />
       </div>
 
+      {/* Range Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-gray-400 font-mono uppercase">Followers</span>
+          <input
+            type="number"
+            placeholder="Min"
+            value={minFollowers}
+            onChange={(e) => {
+              setMinFollowers(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="w-20 px-2 py-1 bg-paper border border-ink/10 text-ink font-mono text-[11px]
+                       placeholder-gray-400 focus:outline-none focus:border-ink/30"
+          />
+          <span className="text-gray-400">–</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={maxFollowers}
+            onChange={(e) => {
+              setMaxFollowers(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="w-20 px-2 py-1 bg-paper border border-ink/10 text-ink font-mono text-[11px]
+                       placeholder-gray-400 focus:outline-none focus:border-ink/30"
+          />
+        </div>
+
+        <div className="w-px h-4 bg-ink/10" />
+
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-gray-400 font-mono uppercase">Images</span>
+          <input
+            type="number"
+            placeholder="Min"
+            value={minImages}
+            onChange={(e) => {
+              setMinImages(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="w-16 px-2 py-1 bg-paper border border-ink/10 text-ink font-mono text-[11px]
+                       placeholder-gray-400 focus:outline-none focus:border-ink/30"
+          />
+          <span className="text-gray-400">–</span>
+          <input
+            type="number"
+            placeholder="Max"
+            value={maxImages}
+            onChange={(e) => {
+              setMaxImages(e.target.value);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="w-16 px-2 py-1 bg-paper border border-ink/10 text-ink font-mono text-[11px]
+                       placeholder-gray-400 focus:outline-none focus:border-ink/30"
+          />
+        </div>
+
+        {(minFollowers || maxFollowers || minImages || maxImages) && (
+          <button
+            onClick={() => {
+              setMinFollowers('');
+              setMaxFollowers('');
+              setMinImages('');
+              setMaxImages('');
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="text-[10px] text-gray-400 hover:text-ink font-mono uppercase transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       {/* Bulk Actions */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 px-2.5 py-1.5 bg-status-warning/10 border border-status-warning/30">
@@ -351,6 +403,15 @@ export default function ArtistTable() {
                 </span>
               </th>
               <th
+                onClick={() => toggleSort('follower_count')}
+                className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
+              >
+                <span className="flex items-center justify-end gap-1">
+                  Followers
+                  <SortIcon column="follower_count" />
+                </span>
+              </th>
+              <th
                 onClick={() => toggleSort('image_count')}
                 className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 cursor-pointer hover:text-ink select-none"
               >
@@ -365,13 +426,13 @@ export default function ArtistTable() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={6} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
+                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   Loading...
                 </td>
               </tr>
             ) : artists.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
+                <td colSpan={7} className="px-2 py-6 text-center text-gray-500 font-body text-[13px]">
                   No artists found
                 </td>
               </tr>
@@ -420,27 +481,14 @@ export default function ArtistTable() {
                       {artist.verification_status}
                     </span>
                   </td>
+                  <td className="px-2 py-1.5 text-right font-mono text-[12px] text-gray-500 tabular-nums">
+                    {artist.follower_count?.toLocaleString() || '—'}
+                  </td>
                   <td className="px-2 py-1.5 text-right font-mono text-[13px] text-ink tabular-nums">
                     {artist.image_count}
                   </td>
                   <td className="px-2 py-1">
                     <div className="flex items-center justify-end gap-4">
-                      <button
-                        onClick={() => toggleFeatured(artist)}
-                        disabled={updatingIds.has(artist.id)}
-                        className={`p-2 transition-colors ${
-                          artist.is_featured
-                            ? 'text-status-warning hover:text-status-warning/80'
-                            : 'text-gray-300 hover:text-gray-500'
-                        } disabled:opacity-50`}
-                        title={artist.is_featured ? 'Remove from featured' : 'Add to featured'}
-                      >
-                        {updatingIds.has(artist.id) ? (
-                          <div className="w-4 h-4 border border-current border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Star className={`w-4 h-4 ${artist.is_featured ? 'fill-current' : ''}`} />
-                        )}
-                      </button>
                       <Link
                         href={`/admin/artists/${artist.id}`}
                         className="p-2 text-gray-300 hover:text-ink transition-colors"

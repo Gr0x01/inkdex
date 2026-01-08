@@ -116,6 +116,7 @@ COMMENT ON FUNCTION get_top_artists_by_style IS
 -- Paginated artist list for admin dashboard
 -- ============================================
 DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, boolean, boolean, text, text);
+DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, boolean, boolean, text, text, integer, integer, integer, integer);
 
 CREATE OR REPLACE FUNCTION get_artists_with_image_counts(
   p_offset integer DEFAULT 0,
@@ -127,7 +128,11 @@ CREATE OR REPLACE FUNCTION get_artists_with_image_counts(
   p_is_featured boolean DEFAULT NULL,
   p_has_images boolean DEFAULT NULL,
   p_sort_by text DEFAULT 'instagram_handle',
-  p_sort_order text DEFAULT 'asc'
+  p_sort_order text DEFAULT 'asc',
+  p_min_followers integer DEFAULT NULL,
+  p_max_followers integer DEFAULT NULL,
+  p_min_images integer DEFAULT NULL,
+  p_max_images integer DEFAULT NULL
 )
 RETURNS TABLE (
   id uuid,
@@ -180,6 +185,8 @@ BEGIN
         OR (p_tier = 'pro' AND a.verification_status = 'claimed' AND a.is_pro = true)
       )
       AND (p_is_featured IS NULL OR a.is_featured = p_is_featured)
+      AND (p_min_followers IS NULL OR a.follower_count >= p_min_followers)
+      AND (p_max_followers IS NULL OR a.follower_count <= p_max_followers)
     GROUP BY a.id, al.city, al.region
   )
   SELECT
@@ -198,32 +205,38 @@ BEGIN
     COUNT(*) OVER() AS total_count
   FROM artist_images ai
   WHERE
-    p_has_images IS NULL
-    OR (p_has_images = true AND ai.ai_image_count > 0)
-    OR (p_has_images = false AND ai.ai_image_count = 0)
+    (p_has_images IS NULL
+      OR (p_has_images = true AND ai.ai_image_count > 0)
+      OR (p_has_images = false AND ai.ai_image_count = 0))
+    AND (p_min_images IS NULL OR ai.ai_image_count >= p_min_images)
+    AND (p_max_images IS NULL OR ai.ai_image_count <= p_max_images)
   ORDER BY
-    CASE WHEN p_sort_order = 'asc' THEN
+    -- Numeric sorting (image_count, follower_count, is_featured)
+    CASE WHEN p_sort_by = 'image_count' AND p_sort_order = 'asc' THEN ai.ai_image_count END ASC NULLS LAST,
+    CASE WHEN p_sort_by = 'image_count' AND p_sort_order = 'desc' THEN ai.ai_image_count END DESC NULLS LAST,
+    CASE WHEN p_sort_by = 'follower_count' AND p_sort_order = 'asc' THEN ai.ai_follower_count END ASC NULLS LAST,
+    CASE WHEN p_sort_by = 'follower_count' AND p_sort_order = 'desc' THEN ai.ai_follower_count END DESC NULLS LAST,
+    CASE WHEN p_sort_by = 'is_featured' AND p_sort_order = 'asc' THEN ai.ai_is_featured::int END ASC,
+    CASE WHEN p_sort_by = 'is_featured' AND p_sort_order = 'desc' THEN ai.ai_is_featured::int END DESC,
+    -- Text sorting (instagram_handle, name, city, verification_status)
+    CASE WHEN p_sort_by IN ('instagram_handle', 'name', 'city', 'verification_status') AND p_sort_order = 'asc' THEN
       CASE p_sort_by
         WHEN 'instagram_handle' THEN ai.ai_instagram_handle
         WHEN 'name' THEN ai.ai_name
         WHEN 'city' THEN ai.ai_city
         WHEN 'verification_status' THEN ai.ai_verification_status
-        ELSE ai.ai_instagram_handle
       END
     END ASC NULLS LAST,
-    CASE WHEN p_sort_order = 'desc' THEN
+    CASE WHEN p_sort_by IN ('instagram_handle', 'name', 'city', 'verification_status') AND p_sort_order = 'desc' THEN
       CASE p_sort_by
         WHEN 'instagram_handle' THEN ai.ai_instagram_handle
         WHEN 'name' THEN ai.ai_name
         WHEN 'city' THEN ai.ai_city
         WHEN 'verification_status' THEN ai.ai_verification_status
-        ELSE ai.ai_instagram_handle
       END
     END DESC NULLS LAST,
-    CASE WHEN p_sort_order = 'asc' AND p_sort_by = 'image_count' THEN ai.ai_image_count END ASC NULLS LAST,
-    CASE WHEN p_sort_order = 'desc' AND p_sort_by = 'image_count' THEN ai.ai_image_count END DESC NULLS LAST,
-    CASE WHEN p_sort_order = 'asc' AND p_sort_by = 'is_featured' THEN ai.ai_is_featured::int END ASC,
-    CASE WHEN p_sort_order = 'desc' AND p_sort_by = 'is_featured' THEN ai.ai_is_featured::int END DESC
+    -- Default fallback
+    ai.ai_instagram_handle ASC NULLS LAST
   OFFSET p_offset
   LIMIT p_limit;
 END;
