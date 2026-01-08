@@ -30,6 +30,14 @@ const classifier = JSON.parse(fs.readFileSync(classifierPath, 'utf-8'));
 
 const STYLES: string[] = classifier.styles;
 
+// Per-style threshold overrides (higher = more strict)
+// These styles tend to have more false positives, so require higher confidence
+const STYLE_THRESHOLDS: Record<string, number> = {
+  anime: 0.65,      // Raised from 0.5 to reduce false positives
+  japanese: 0.60,   // Also prone to over-tagging
+  surrealism: 0.55, // Was over-tagging at 28%
+};
+
 interface ParsedArgs {
   clear: boolean;
   limit: number | null;
@@ -69,9 +77,9 @@ function sigmoid(x: number): number {
   return 1 / (1 + Math.exp(-x));
 }
 
-// Predict styles for an embedding
-function predictStyles(embedding: number[], threshold: number): string[] {
-  const predictions: string[] = [];
+// Predict styles for an embedding, returns array of {style, confidence}
+function predictStyles(embedding: number[], defaultThreshold: number): Array<{ style: string; confidence: number }> {
+  const predictions: Array<{ style: string; confidence: number }> = [];
 
   for (let i = 0; i < STYLES.length; i++) {
     const style = STYLES[i];
@@ -89,8 +97,11 @@ function predictStyles(embedding: number[], threshold: number): string[] {
 
     const prob = sigmoid(logit);
 
+    // Use per-style threshold if defined, otherwise use default
+    const threshold = STYLE_THRESHOLDS[style] ?? defaultThreshold;
+
     if (prob >= threshold) {
-      predictions.push(style);
+      predictions.push({ style, confidence: prob });
     }
   }
 
@@ -102,7 +113,8 @@ async function main() {
 
   console.log('ML Style Tagging');
   console.log('================');
-  console.log(`Threshold: ${threshold}`);
+  console.log(`Default threshold: ${threshold}`);
+  console.log(`Per-style overrides: ${JSON.stringify(STYLE_THRESHOLDS)}`);
   console.log(`Concurrency: ${concurrency}`);
   if (limit) console.log(`Limit: ${limit}`);
   console.log('');
@@ -154,7 +166,7 @@ async function main() {
     if (!images || images.length === 0) break;
 
     // Process batch
-    const tagsToInsert: { image_id: string; style: string; confidence: number; source: string }[] = [];
+    const tagsToInsert: { image_id: string; style_name: string; confidence: number }[] = [];
 
     for (const img of images) {
       // Parse embedding if string
@@ -162,15 +174,15 @@ async function main() {
         ? JSON.parse(img.embedding)
         : img.embedding;
 
-      const styles = predictStyles(embedding, threshold);
+      const predictions = predictStyles(embedding, threshold);
 
-      if (styles.length > 0) {
+      if (predictions.length > 0) {
         tagged++;
-        for (const style of styles) {
+        for (const { style, confidence } of predictions) {
           tagsToInsert.push({
             image_id: img.id,
             style_name: style,
-            confidence: 0.5, // ML classifier doesn't give per-style confidence easily
+            confidence, // Store actual sigmoid probability
           });
           styleCounts[style] = (styleCounts[style] || 0) + 1;
         }

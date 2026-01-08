@@ -8,7 +8,7 @@ import { sanitizeText } from '@/lib/utils/sanitize'
 import { getProfileImageUrl } from '@/lib/utils/images'
 import { ArtistLocation } from '@/types/search'
 import { US_STATES } from '@/lib/constants/states'
-import { DISPLAY_STYLES, STYLE_DISPLAY_NAMES, MIN_STYLE_PERCENTAGE } from '@/lib/constants/styles'
+import { DISPLAY_STYLES, STYLE_DISPLAY_NAMES, MIN_STYLE_PERCENTAGE, MIN_STYLE_IMAGE_COUNT } from '@/lib/constants/styles'
 
 interface PortfolioImage {
   id: string
@@ -232,7 +232,7 @@ export default function ArtistInfoColumn({
             {artist.style_profiles && artist.style_profiles.length > 0 && (
               <div className="flex items-center justify-center gap-2.5 flex-wrap">
                 {artist.style_profiles
-                  .filter((s) => DISPLAY_STYLES.has(s.style_name) && s.percentage >= MIN_STYLE_PERCENTAGE)
+                  .filter((s) => DISPLAY_STYLES.has(s.style_name) && s.percentage >= MIN_STYLE_PERCENTAGE && s.image_count >= MIN_STYLE_IMAGE_COUNT)
                   .slice(0, 3)
                   .map((style) => (
                   <span

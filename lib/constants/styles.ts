@@ -23,7 +23,12 @@ export const DISPLAY_STYLES = new Set([
 ])
 
 // Minimum percentage of portfolio to display a style on profile
-export const MIN_STYLE_PERCENTAGE = 25
+// Raised from 25 to 35 to reduce false positives on small portfolios (Jan 8, 2026)
+export const MIN_STYLE_PERCENTAGE = 35
+
+// Minimum number of images required to display a style
+// Prevents 1-2 images from triggering style badges on small portfolios
+export const MIN_STYLE_IMAGE_COUNT = 3
 
 /**
  * All styles available for labeling in admin UI
