@@ -43,7 +43,7 @@ export default function ProShowcase() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           {/* Left Column: Text Content */}
-          <div className="max-w-2xl lg:max-w-lg">
+          <div className="max-w-xl lg:max-w-lg">
             {/* Section Label */}
             <p className="font-mono text-xs font-semibold text-purple-600 tracking-[0.3em] uppercase mb-4">
               Pro Features

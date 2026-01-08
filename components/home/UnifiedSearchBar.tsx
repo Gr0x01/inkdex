@@ -300,7 +300,7 @@ export default function UnifiedSearchBar({
           {/* Input Field Container */}
           <div
             className={`
-              relative flex-1 flex items-center gap-4 px-4 bg-white/95 min-h-[44px]
+              relative flex-1 flex items-center gap-4 px-2 sm:px-4 bg-white/95 min-h-[44px] sm:min-h-[64px]
               transition-all duration-150
               ${isLoading ? '' : 'border-2'}
               ${isLoading ? '' : displayError ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
@@ -369,9 +369,9 @@ export default function UnifiedSearchBar({
                     setTextQuery(e.target.value)
                     setError(null)
                   }}
-                  placeholder="Paste an Instagram link, describe your style, or drop an image..."
+                  placeholder="Drop an image or describe a style..."
                   maxLength={200}
-                  className="flex-1 bg-transparent text-[20px] font-body text-ink placeholder:text-ink/40 outline-none focus:outline-none focus:ring-0 min-w-0"
+                  className="flex-1 bg-transparent text-[16px] sm:text-[20px] font-body text-ink placeholder:text-ink/40 outline-none focus:outline-none focus:ring-0 min-w-0"
                 />
 
                 {/* Instagram Badge (conditional) */}
@@ -430,9 +430,8 @@ export default function UnifiedSearchBar({
           <button
             type="submit"
             disabled={!canSubmit}
-            style={{ height: '44px' }}
             className={`
-              w-full sm:w-auto px-6 border-2
+              w-full sm:w-auto px-6 border-2 h-[44px] sm:h-[64px]
               font-mono text-sm font-bold uppercase tracking-widest
               transition-all duration-150 flex items-center justify-center
               ${
