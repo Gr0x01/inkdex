@@ -77,6 +77,12 @@ All 15 implementation phases complete:
   - Consolidated 3 pending migrations into single reconciliation migration
   - Added pgcrypto token encryption infrastructure (table + 3 functions)
   - Created `npm run db:audit` tooling for drift detection
+- **Database Audit (Jan 9)** ✅
+  - Comprehensive post-consolidation audit using MCP tools
+  - Fixed 2 remaining SECURITY DEFINER functions (`create_pipeline_run`, `get_all_cities_with_min_artists`)
+  - Enabled RLS on `airtable_sync_log` + added service role policy
+  - Added policies to `email_log` and `indexnow_submissions`
+  - All checks pass: 0 functions with missing search_path, 0 tables without RLS
 - **Key Files Created/Modified**
   - `supabase/migrations/20260111_001_reconcile_schema.sql` - Consolidated fix (978 lines)
   - `scripts/migrations/audit-schema.ts` - Auto-extracts expected schema from baseline

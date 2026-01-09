@@ -631,6 +631,40 @@ npm run db:verify   # Verify expected objects exist (legacy)
 
 ---
 
+## Database Audit (Jan 9, 2026) ✅
+
+**Goal:** Comprehensive post-consolidation audit to verify schema health.
+
+**Audit Results:**
+| Check | Status |
+|-------|--------|
+| SECURITY DEFINER functions with search_path | ✅ All have `SET search_path = public` |
+| Tables with RLS enabled | ✅ All public tables have RLS |
+| RLS tables with policies | ✅ All RLS-enabled tables have policies |
+| Vector index health | ✅ 407 MB HNSW, 243 uses |
+| pgcrypto infrastructure | ✅ Table + 3 functions working |
+| Reconciliation migration applied | ✅ Verified |
+
+**Issues Fixed:**
+1. `create_pipeline_run` - Added `SET search_path = public`
+2. `get_all_cities_with_min_artists` - Added `SET search_path = public`
+3. `airtable_sync_log` - Enabled RLS + added service role policy
+4. `email_log` - Added service role policy
+5. `indexnow_submissions` - Added service role policy
+6. **25 application functions** - Added `SET search_path = public` for consistency
+
+**Remaining Warnings (Acceptable):**
+- `vector` extension in public schema (pgvector requirement, cannot change)
+- 2 intentionally permissive RLS policies (`artist_recommendations`, `pipeline_runs`)
+
+**Commands Used:**
+```bash
+npm run db:audit    # Generated audit SQL
+npm run db:push     # Applied fixes (partially, then via MCP)
+```
+
+---
+
 ## Reference Docs
 
 - **Detailed specs:** `/memory-bank/projects/user-artist-account-implementation.md`
