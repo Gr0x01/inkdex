@@ -548,6 +548,20 @@ npm run db:push  # Apply GDPR migration
 
 ---
 
+## Dashboard Duplicate Key Fix (Jan 9, 2026) ✅
+
+**Problem:** Dashboard overview page showed React console errors: "Encountered two children with the same key" with UUIDs as duplicate keys.
+
+**Root Cause:** The `get_recent_search_appearances` SQL function could return duplicate `search_id` values when the same search was tracked multiple times in `search_appearances` table (no unique constraint on `search_id, artist_id`). The `RecentSearchesTable` component used `searchId` as React keys, causing the duplicate key warnings.
+
+**Fix:** Added `DISTINCT ON (sa.search_id)` to the SQL function to ensure each search ID appears only once in results.
+
+**Files Changed:**
+- `supabase/functions/admin/admin_functions.sql` - Added function to source of truth
+- `supabase/migrations/20260109_001_fix_search_appearances_duplicates.sql` - Migration applied
+
+---
+
 ## Profile Location Save Fix + Migration Squash (Jan 9, 2026) ✅
 
 **Problem:** Saving location changes in the artist dashboard failed with `relation "artists" does not exist`.
