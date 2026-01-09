@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-08
+Last-Updated: 2026-01-11
 Maintainer: RB
 Status: Launched - All 15 Phases Complete + ML Style Classifier
 ---
@@ -70,6 +70,21 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 2 (Jan 11, 2026)
+- **Schema Drift Reconciliation** ✅
+  - Fixed 29 SECURITY DEFINER functions with empty `search_path` bug
+  - Consolidated 3 pending migrations into single reconciliation migration
+  - Added pgcrypto token encryption infrastructure (table + 3 functions)
+  - Created `npm run db:audit` tooling for drift detection
+- **Key Files Created/Modified**
+  - `supabase/migrations/20260111_001_reconcile_schema.sql` - Consolidated fix (978 lines)
+  - `scripts/migrations/audit-schema.ts` - Auto-extracts expected schema from baseline
+  - Updated `operations.md` with Schema Drift Detection workflow
+- **Root Cause Analysis**
+  - pg_dump serializes `SET search_path = ''` instead of `'public'`
+  - Migrations archived before being applied to production
+  - No automated check to verify production matches baseline
 
 ### Week 2 (Jan 8, 2026)
 - **ML Style Classifier Deployed** ✅

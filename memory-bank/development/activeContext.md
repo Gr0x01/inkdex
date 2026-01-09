@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-09
+Last-Updated: 2026-01-11
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -583,6 +583,51 @@ After creating 7 incremental fix migrations, squashed all migrations to a fresh 
 - Reset `schema_migrations` table to just the baseline
 
 **Key Learning:** SECURITY DEFINER functions MUST have `SET search_path = public` or they can't find tables.
+
+---
+
+## Schema Drift Reconciliation (Jan 11, 2026) ✅
+
+**Problem:** Persistent schema drift between baseline and production caused by:
+1. **search_path bug** - `pg_dump` serializes `SET search_path = ''` (empty) instead of `'public'`
+2. **Baseline squash before prod sync** - Migrations archived before being applied
+3. **No drift detection** - Manual verification only, no automated checks
+
+**Solution - Comprehensive Reconciliation:**
+
+1. **Created `db:audit` command** (`scripts/migrations/audit-schema.ts`)
+   - Auto-extracts expected schema from baseline (not hardcoded)
+   - Generates SQL to detect functions with bad search_path
+   - Detects missing tables, functions, indexes, triggers
+   - Input validation prevents SQL injection from malicious baseline
+
+2. **Applied reconciliation migration** (`20260111_001_reconcile_schema.sql`)
+   - Fixed 29 functions with empty `search_path = ''`
+   - Added pgcrypto token encryption infrastructure
+   - Consolidated 4 pending migrations into one idempotent migration
+   - Removed pgsodium grants (Supabase platform restriction)
+
+3. **Updated baseline from production**
+   - Fresh dump ensures search_path fixes persist
+   - Before: 29 functions with `search_path = ''`
+   - After: 0 functions with empty search_path, 40 with `'public'`
+
+**New Commands:**
+```bash
+npm run db:audit    # Generate audit SQL for drift detection
+npm run db:verify   # Verify expected objects exist (legacy)
+```
+
+**Key Files:**
+- `scripts/migrations/audit-schema.ts` - Enhanced drift detection
+- `supabase/migrations/20260111_001_reconcile_schema.sql` - Reconciliation migration
+- `memory-bank/development/operations.md` - Schema Drift Detection section added
+
+**pgcrypto Token Encryption:**
+- Table: `encrypted_instagram_tokens`
+- Functions: `store_encrypted_token`, `get_decrypted_token`, `delete_encrypted_token`
+- Uses `pgp_sym_encrypt` with `TOKEN_ENCRYPTION_KEY` env var
+- Replaces Supabase Vault (had pgsodium permission issues)
 
 ---
 
