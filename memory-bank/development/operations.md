@@ -149,6 +149,35 @@ $$;
 **Post-Incident (Jan 9, 2026):**
 Multiple trigger functions (`check_location_limit`, `sync_primary_location`) had `search_path=""` (empty), causing location updates to fail. Fixed by adding `SET search_path = public` to all SECURITY DEFINER functions.
 
+### Trigger Functions MUST Be Cascade-Safe
+**Trigger functions that INSERT/UPDATE must check if parent exists first.**
+
+When a parent row is deleted (e.g., `DELETE FROM artists`), child tables cascade delete. Triggers on child tables fire, but the parent is already gone. If the trigger tries to INSERT/UPDATE a table with an FK back to the parent, you get: `violates foreign key constraint`.
+
+**Correct pattern:**
+```sql
+CREATE OR REPLACE FUNCTION my_trigger_function()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Skip if parent no longer exists (cascade delete scenario)
+  IF NOT EXISTS (SELECT 1 FROM artists WHERE id = OLD.artist_id AND deleted_at IS NULL) THEN
+    RETURN OLD;
+  END IF;
+
+  -- Safe to INSERT/UPDATE now
+  INSERT INTO artist_style_profiles (...) VALUES (...);
+  RETURN OLD;
+END;
+$$;
+```
+
+**Functions that follow this pattern:**
+- `recompute_artist_styles_on_image_delete()` - checks artist exists
+- `update_artist_styles_on_tag_change()` - checks artist exists via JOIN
+
+**Post-Incident (Jan 9, 2026):**
+Artist deletion failed twice because `recompute_artist_styles_on_image_delete()` tried to INSERT into `artist_style_profiles` after the artist was already deleted. Fixed by adding existence check.
+
 ### RPC Functions Called from SSR Need User ID Parameter
 **`auth.uid()` returns NULL when called from Next.js server-side Supabase client.**
 

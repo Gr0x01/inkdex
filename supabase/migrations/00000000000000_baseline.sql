@@ -22,6 +22,33 @@ ALTER SCHEMA "public" OWNER TO "pg_database_owner";
 COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
+-- ============================================================================
+-- TRIGGER PATTERN: CASCADE-SAFE FUNCTIONS
+-- ============================================================================
+--
+-- PROBLEM: When a parent row is deleted (e.g., DELETE FROM artists), child
+-- tables cascade delete. Triggers on child tables fire, but the parent is
+-- already gone. If the trigger tries to INSERT/UPDATE a table with an FK
+-- back to the parent, you get: "violates foreign key constraint".
+--
+-- SOLUTION: All trigger functions that perform INSERT/UPDATE operations MUST
+-- check if the parent still exists before proceeding.
+--
+-- PATTERN:
+--   -- Skip if parent no longer exists (cascade delete scenario)
+--   IF NOT EXISTS (SELECT 1 FROM <parent_table> WHERE id = <parent_id> AND deleted_at IS NULL) THEN
+--     RETURN OLD;  -- or RETURN NEW for INSERT/UPDATE triggers
+--   END IF;
+--
+-- AFFECTED FUNCTIONS (must follow this pattern):
+--   - recompute_artist_styles_on_image_delete() - checks artists exists
+--   - update_artist_styles_on_tag_change() - checks artists exists (via JOIN)
+--   - Any future trigger that INSERTs/UPDATEs to FK-constrained tables
+--
+-- See incident: Jan 9, 2026 - Artist deletion failed twice due to missing
+-- cascade checks in trigger functions.
+-- ============================================================================
+
 
 CREATE TYPE "public"."search_tier" AS ENUM (
     'active',
@@ -1824,6 +1851,11 @@ CREATE OR REPLACE FUNCTION "public"."recompute_artist_styles_on_image_delete"() 
     SET "search_path" TO 'public'
     AS $$
 BEGIN
+  -- Skip if artist no longer exists (cascade delete scenario)
+  IF NOT EXISTS (SELECT 1 FROM artists WHERE id = OLD.artist_id AND deleted_at IS NULL) THEN
+    RETURN OLD;
+  END IF;
+
   -- Delete existing profiles for this artist
   DELETE FROM artist_style_profiles WHERE artist_id = OLD.artist_id;
 
@@ -1858,7 +1890,7 @@ $$;
 ALTER FUNCTION "public"."recompute_artist_styles_on_image_delete"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() IS 'Recomputes artist_style_profiles when an image is deleted. Runs as SECURITY DEFINER to bypass RLS.';
+COMMENT ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() IS 'Recomputes artist_style_profiles when an image is deleted. Skips during cascade deletes when artist no longer exists.';
 
 
 
