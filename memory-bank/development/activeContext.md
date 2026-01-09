@@ -410,23 +410,23 @@ All discovery scripts correctly used `'unclaimed'`, but these two user-facing ro
 **Search-Only Styles** (kept for relevance, not displayed):
 - tribal, trash-polka, biomechanical, sketch, geometric, dotwork, surrealism, lettering
 
-**Anime/Japanese Threshold Tuning (Jan 8, 2026):**
+**Anime/Japanese Threshold Tuning (Jan 9, 2026):**
 
-Problem: Artist @aaronthomastattoos showed 33% anime (1 of 3 images falsely tagged).
+Problem: Blackwork/ornamental images were being incorrectly tagged as anime/japanese with 0.66-0.76 confidence.
 
 **Three-layer defense applied:**
-1. Raised anime ML threshold from 0.50 → 0.65 (require 65% confidence)
-2. Raised display threshold from 25% → 35% (`MIN_STYLE_PERCENTAGE`)
-3. Added minimum 3 images requirement (`MIN_STYLE_IMAGE_COUNT`)
+1. Raised anime ML threshold: 0.50 → 0.65 → **0.80** (require 80% confidence)
+2. Raised japanese ML threshold: 0.50 → 0.60 → **0.75** (require 75% confidence)
+3. Display threshold: 35% (`MIN_STYLE_PERCENTAGE`) + minimum 3 images (`MIN_STYLE_IMAGE_COUNT`)
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Anime artists displaying | 90 | 10 |
+**Cleanup (Jan 9, 2026):**
+- Deleted 658 anime tags + 3,132 more = ~3,790 total below 0.80
+- Deleted 477 japanese tags + 3,360 more = ~3,837 total below 0.75
 
 **Per-Style ML Thresholds** (in `lib/styles/predictor.ts`):
 - Default: 0.50
-- Anime: 0.65
-- Japanese: 0.60
+- Anime: 0.80
+- Japanese: 0.75
 - Surrealism: 0.55
 
 **Key Files:**

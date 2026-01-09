@@ -19,9 +19,11 @@ let _classifier: StyleClassifier | null = null;
 
 // Per-style threshold overrides (higher = more strict)
 // These styles tend to have more false positives, so require higher confidence
+// Jan 9, 2026: Raised anime/japanese significantly after finding blackwork images
+// being incorrectly tagged at 0.74-0.76 confidence
 const STYLE_THRESHOLDS: Record<string, number> = {
-  anime: 0.65, // Raised to reduce false positives
-  japanese: 0.6, // Prone to over-tagging
+  anime: 0.80, // Raised from 0.65 - blackwork was being tagged at 0.74
+  japanese: 0.75, // Raised from 0.60 - blackwork was being tagged at 0.72-0.76
   surrealism: 0.55, // Was over-tagging at 28%
 };
 
