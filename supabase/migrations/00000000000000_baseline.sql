@@ -43,21 +43,17 @@ ALTER TYPE "public"."style_taxonomy" OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."can_claim_artist"("p_artist_id" "uuid", "p_instagram_id" "text" DEFAULT NULL::"text", "p_instagram_handle" "text" DEFAULT NULL::"text") RETURNS boolean
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $_$
 DECLARE
   v_clean_handle TEXT;
 BEGIN
-  -- Validate and sanitize handle if provided
   IF p_instagram_handle IS NOT NULL THEN
     v_clean_handle := LOWER(TRIM(REPLACE(p_instagram_handle, '@', '')));
-
-    -- Validate Instagram handle format
     IF v_clean_handle !~ '^[a-z0-9._]{1,30}$' THEN
       RETURN FALSE;
     END IF;
   END IF;
-
   RETURN EXISTS (
     SELECT 1
     FROM artists
@@ -83,27 +79,20 @@ COMMENT ON FUNCTION "public"."can_claim_artist"("p_artist_id" "uuid", "p_instagr
 
 CREATE OR REPLACE FUNCTION "public"."can_receive_email"("p_email" "text", "p_email_type" "text") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   v_preferences RECORD;
 BEGIN
-  -- Get preferences (returns NULL if not found)
   SELECT * INTO v_preferences
   FROM email_preferences
   WHERE email = p_email;
-
-  -- If no preferences exist, allow by default (user hasn't unsubscribed)
   IF v_preferences IS NULL THEN
     RETURN TRUE;
   END IF;
-
-  -- Check if unsubscribed from all emails
   IF v_preferences.unsubscribed_all THEN
     RETURN FALSE;
   END IF;
-
-  -- Check specific email type preferences
   CASE p_email_type
     WHEN 'welcome' THEN
       RETURN v_preferences.receive_welcome;
@@ -112,7 +101,6 @@ BEGIN
     WHEN 'subscription_created', 'subscription_cancelled', 'downgrade_warning' THEN
       RETURN v_preferences.receive_subscription_updates;
     ELSE
-      -- Unknown type, allow by default
       RETURN TRUE;
   END CASE;
 END;
@@ -128,22 +116,18 @@ COMMENT ON FUNCTION "public"."can_receive_email"("p_email" "text", "p_email_type
 
 CREATE OR REPLACE FUNCTION "public"."check_and_blacklist_artist"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
     failure_count INTEGER;
-    max_retries INTEGER := 3; -- Blacklist after 3 failures
+    max_retries INTEGER := 3;
 BEGIN
-    -- Only run on failed jobs
     IF NEW.status = 'failed' THEN
-        -- Count total failures for this artist
         SELECT COUNT(*)
         INTO failure_count
         FROM scraping_jobs
         WHERE artist_id = NEW.artist_id
         AND status = 'failed';
-
-        -- If we've hit the retry limit, blacklist the artist
         IF failure_count >= max_retries THEN
             UPDATE artists
             SET
@@ -151,11 +135,9 @@ BEGIN
                 blacklist_reason = 'Exceeded ' || max_retries || ' failed scraping attempts: ' || NEW.error_message,
                 blacklisted_at = NOW()
             WHERE id = NEW.artist_id;
-
             RAISE NOTICE 'Artist % blacklisted after % failures', NEW.artist_id, failure_count;
         END IF;
     END IF;
-
     RETURN NEW;
 END;
 $$;
@@ -166,7 +148,7 @@ ALTER FUNCTION "public"."check_and_blacklist_artist"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."check_email_rate_limit"("p_recipient_email" "text", "p_email_type" "text", "p_max_per_hour" integer DEFAULT 10, "p_max_per_day" integer DEFAULT 50) RETURNS TABLE("allowed" boolean, "hourly_count" integer, "daily_count" integer, "reason" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   v_hourly_count INTEGER;
@@ -176,24 +158,18 @@ DECLARE
 BEGIN
   v_one_hour_ago := NOW() - INTERVAL '1 hour';
   v_one_day_ago := NOW() - INTERVAL '24 hours';
-
-  -- Count emails sent in last hour
   SELECT COUNT(*) INTO v_hourly_count
   FROM email_log
   WHERE recipient_email = p_recipient_email
     AND email_type = p_email_type
     AND sent_at >= v_one_hour_ago
     AND success = TRUE;
-
-  -- Count emails sent in last 24 hours
   SELECT COUNT(*) INTO v_daily_count
   FROM email_log
   WHERE recipient_email = p_recipient_email
     AND email_type = p_email_type
     AND sent_at >= v_one_day_ago
     AND success = TRUE;
-
-  -- Check hourly limit
   IF v_hourly_count >= p_max_per_hour THEN
     RETURN QUERY SELECT
       FALSE,
@@ -203,8 +179,6 @@ BEGIN
         v_hourly_count, p_email_type, p_max_per_hour);
     RETURN;
   END IF;
-
-  -- Check daily limit
   IF v_daily_count >= p_max_per_day THEN
     RETURN QUERY SELECT
       FALSE,
@@ -214,8 +188,6 @@ BEGIN
         v_daily_count, p_email_type, p_max_per_day);
     RETURN;
   END IF;
-
-  -- Allowed
   RETURN QUERY SELECT
     TRUE,
     v_hourly_count,
@@ -270,14 +242,13 @@ ALTER FUNCTION "public"."check_location_limit"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."claim_artist_profile"("p_artist_id" "uuid", "p_user_id" "uuid", "p_instagram_handle" "text", "p_instagram_id" "text" DEFAULT NULL::"text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $_$
 DECLARE
   v_artist_handle TEXT;
   v_clean_handle TEXT;
   v_updated_count INT;
 BEGIN
-  -- Validate and sanitize input handle
   IF p_instagram_handle IS NULL OR p_instagram_handle = '' THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -285,10 +256,7 @@ BEGIN
       'message', 'Instagram handle is required'
     );
   END IF;
-
-  -- Clean and validate handle format
   v_clean_handle := LOWER(TRIM(REPLACE(p_instagram_handle, '@', '')));
-
   IF v_clean_handle !~ '^[a-z0-9._]{1,30}$' THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -296,12 +264,9 @@ BEGIN
       'message', 'Invalid Instagram handle format'
     );
   END IF;
-
-  -- Get artist's current handle for audit
   SELECT instagram_handle INTO v_artist_handle
   FROM artists
   WHERE id = p_artist_id;
-
   IF NOT FOUND THEN
     RETURN jsonb_build_object(
       'success', false,
@@ -309,8 +274,6 @@ BEGIN
       'message', 'Artist profile not found'
     );
   END IF;
-
-  -- Atomic update with race condition protection
   UPDATE artists
   SET
     claimed_by_user_id = p_user_id,
@@ -321,12 +284,8 @@ BEGIN
     AND verification_status = 'unclaimed'
     AND deleted_at IS NULL
     AND LOWER(instagram_handle) = v_clean_handle;
-
   GET DIAGNOSTICS v_updated_count = ROW_COUNT;
-
-  -- Check if update succeeded
   IF v_updated_count = 0 THEN
-    -- Determine specific failure reason
     DECLARE
       v_current_status TEXT;
       v_current_handle TEXT;
@@ -335,7 +294,6 @@ BEGIN
       INTO v_current_status, v_current_handle
       FROM artists
       WHERE id = p_artist_id AND deleted_at IS NULL;
-
       IF v_current_status = 'claimed' THEN
         RETURN jsonb_build_object(
           'success', false,
@@ -357,11 +315,7 @@ BEGIN
       END IF;
     END;
   END IF;
-
-  -- Delete portfolio images (CASCADE handles references)
   DELETE FROM portfolio_images WHERE artist_id = p_artist_id;
-
-  -- Log successful claim
   INSERT INTO claim_attempts (
     artist_id,
     user_id,
@@ -375,16 +329,13 @@ BEGIN
     v_artist_handle,
     'success'
   );
-
   RETURN jsonb_build_object(
     'success', true,
     'artist_id', p_artist_id,
     'message', 'Profile claimed successfully'
   );
-
 EXCEPTION
   WHEN OTHERS THEN
-    -- Log failed claim
     INSERT INTO claim_attempts (
       artist_id,
       user_id,
@@ -398,7 +349,6 @@ EXCEPTION
       COALESCE(v_artist_handle, 'unknown'),
       'error'
     );
-
     RETURN jsonb_build_object(
       'success', false,
       'error', 'server_error',
@@ -443,16 +393,14 @@ COMMENT ON FUNCTION "public"."classify_embedding_styles"("p_embedding" "public".
 
 CREATE OR REPLACE FUNCTION "public"."cleanup_old_email_logs"() RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   v_deleted_count INTEGER;
 BEGIN
   DELETE FROM email_log
   WHERE sent_at < NOW() - INTERVAL '90 days';
-
   GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
-
   RETURN v_deleted_count;
 END;
 $$;
@@ -557,18 +505,16 @@ COMMENT ON FUNCTION "public"."count_artists_without_images"() IS 'Returns count 
 
 CREATE OR REPLACE FUNCTION "public"."count_matching_artists"("query_embedding" "public"."vector", "match_threshold" double precision DEFAULT 0.5, "city_filter" "text" DEFAULT NULL::"text") RETURNS TABLE("count" bigint)
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   RETURN QUERY
   WITH filtered_artists AS (
-    -- Apply city filter first (same as search function)
-    SELECT id
-    FROM artists
-    WHERE (city_filter IS NULL OR artists.city = city_filter)
+    SELECT a.id
+    FROM artists a
+    WHERE (city_filter IS NULL OR a.city = city_filter)
   ),
   matching_artists AS (
-    -- Find artists with at least one matching image
     SELECT DISTINCT pi.artist_id
     FROM portfolio_images pi
     INNER JOIN filtered_artists fa ON pi.artist_id = fa.id
@@ -628,6 +574,19 @@ ALTER FUNCTION "public"."create_pipeline_run"("p_job_type" "text", "p_triggered_
 
 COMMENT ON FUNCTION "public"."create_pipeline_run"("p_job_type" "text", "p_triggered_by" "text", "p_target_scope" "text", "p_target_artist_ids" "uuid"[], "p_target_city" "text") IS 'Atomically creates a pipeline run, failing if one is already active for the job type';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."delete_encrypted_token"("p_user_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+BEGIN
+  DELETE FROM encrypted_instagram_tokens WHERE user_id = p_user_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."delete_encrypted_token"("p_user_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."expire_featured_artists"() RETURNS "void"
@@ -741,11 +700,10 @@ COMMENT ON FUNCTION "public"."find_related_artists"("source_artist_id" "uuid", "
 
 CREATE OR REPLACE FUNCTION "public"."format_location"("p_city" "text", "p_region" "text", "p_country_code" "text") RETURNS "text"
     LANGUAGE "plpgsql" IMMUTABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   IF p_country_code = 'US' THEN
-    -- US format: "Austin, TX" or just "TX"
     IF p_city IS NOT NULL AND p_city != '' THEN
       RETURN p_city || ', ' || COALESCE(p_region, '');
     ELSIF p_region IS NOT NULL AND p_region != '' THEN
@@ -754,7 +712,6 @@ BEGIN
       RETURN 'United States';
     END IF;
   ELSE
-    -- International format: "Tokyo, Japan" or "London, England, UK"
     IF p_city IS NOT NULL AND p_city != '' THEN
       IF p_region IS NOT NULL AND p_region != '' THEN
         RETURN p_city || ', ' || p_region || ', ' || p_country_code;
@@ -803,7 +760,7 @@ COMMENT ON FUNCTION "public"."get_all_cities_with_min_artists"("min_artist_count
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_by_handle"("p_instagram_handle" "text") RETURNS TABLE("id" "uuid", "name" "text", "slug" "text", "instagram_handle" "text", "verification_status" "text", "claimed_by_user_id" "uuid")
     LANGUAGE "sql" STABLE SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
   SELECT
     id, name, slug, instagram_handle,
@@ -824,7 +781,7 @@ COMMENT ON FUNCTION "public"."get_artist_by_handle"("p_instagram_handle" "text")
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_locations"("p_artist_id" "uuid") RETURNS TABLE("id" "uuid", "city" "text", "region" "text", "country_code" "text", "location_type" "text", "is_primary" boolean, "display_order" integer, "formatted" "text")
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   RETURN QUERY
@@ -912,7 +869,7 @@ COMMENT ON FUNCTION "public"."get_artist_stats"() IS 'Returns aggregate counts b
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_subscription_status"("p_artist_id" "uuid") RETURNS TABLE("subscription_type" "text", "status" "text", "is_active" boolean, "current_period_end" timestamp with time zone)
     LANGUAGE "sql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
   SELECT
     subscription_type,
@@ -931,7 +888,7 @@ ALTER FUNCTION "public"."get_artist_subscription_status"("p_artist_id" "uuid") O
 
 CREATE OR REPLACE FUNCTION "public"."get_artist_tier_counts"() RETURNS TABLE("total" bigint, "unclaimed" bigint, "claimed_free" bigint, "pro" bigint, "featured" bigint)
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   RETURN QUERY
@@ -1142,6 +1099,26 @@ COMMENT ON FUNCTION "public"."get_countries_with_counts"() IS 'Returns countries
 
 
 
+CREATE OR REPLACE FUNCTION "public"."get_decrypted_token"("p_user_id" "uuid", "p_encryption_key" "text") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_token TEXT;
+BEGIN
+  SELECT pgp_sym_decrypt(encrypted_token, p_encryption_key)
+  INTO v_token
+  FROM encrypted_instagram_tokens
+  WHERE user_id = p_user_id;
+
+  RETURN v_token;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_decrypted_token"("p_user_id" "uuid", "p_encryption_key" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."get_homepage_stats"() RETURNS TABLE("artist_count" bigint, "image_count" bigint, "city_count" bigint, "country_count" bigint)
     LANGUAGE "plpgsql" STABLE
     AS $$
@@ -1170,7 +1147,7 @@ COMMENT ON FUNCTION "public"."get_homepage_stats"() IS 'Returns aggregate counts
 
 CREATE OR REPLACE FUNCTION "public"."get_mining_city_distribution"() RETURNS json
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   RETURN (
@@ -1196,14 +1173,13 @@ ALTER FUNCTION "public"."get_mining_city_distribution"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."get_mining_stats"() RETURNS json
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   hashtag_stats JSON;
   follower_stats JSON;
   totals JSON;
 BEGIN
-  -- Aggregate hashtag stats
   SELECT json_build_object(
     'total', COUNT(*),
     'completed', COUNT(*) FILTER (WHERE status = 'completed'),
@@ -1219,7 +1195,6 @@ BEGIN
   ) INTO hashtag_stats
   FROM hashtag_mining_runs;
 
-  -- Aggregate follower stats
   SELECT json_build_object(
     'total', COUNT(*),
     'completed', COUNT(*) FILTER (WHERE status = 'completed'),
@@ -1235,7 +1210,6 @@ BEGIN
   ) INTO follower_stats
   FROM follower_mining_runs;
 
-  -- Calculate totals
   SELECT json_build_object(
     'artistsInserted',
       COALESCE((hashtag_stats->>'artistsInserted')::NUMERIC, 0) +
@@ -1280,42 +1254,43 @@ ALTER FUNCTION "public"."get_mining_stats"() OWNER TO "postgres";
 CREATE OR REPLACE FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer DEFAULT 20) RETURNS TABLE("sa_search_id" "uuid", "sa_rank_position" integer, "sa_similarity_score" double precision, "sa_boosted_score" double precision, "sa_created_at" timestamp with time zone, "s_query_type" "text", "s_query_text" "text", "s_instagram_username" "text")
     LANGUAGE "plpgsql" STABLE
     AS $$
-  BEGIN
-    RETURN QUERY
-    WITH recent_appearances AS (
-      SELECT
-        sa.search_id AS ra_search_id,
-        sa.rank_position AS ra_rank_position,
-        sa.similarity_score AS ra_similarity_score,
-        sa.boosted_score AS ra_boosted_score,
-        sa.created_at AS ra_created_at
-      FROM search_appearances sa
-      WHERE
-        sa.artist_id = p_artist_id
-        AND (p_days IS NULL OR sa.created_at >= NOW () - (p_days || ' days')::INTERVAL)
-      ORDER BY sa.created_at DESC
-      LIMIT p_limit
-    )
-    SELECT
-      ra.ra_search_id,
-      ra.ra_rank_position,
-      ra.ra_similarity_score,
-      ra.ra_boosted_score,
-      ra.ra_created_at,
-      s.query_type,
-      s.query_text,
-      s.instagram_username
-    FROM recent_appearances ra
-    INNER JOIN searches s ON s.id = ra.ra_search_id
-    ORDER BY ra.ra_created_at DESC;
-  END;
-  $$;
+BEGIN
+  RETURN QUERY
+  WITH recent_appearances AS (
+    -- Use DISTINCT ON to ensure unique search_id (prevents duplicate key errors in UI)
+    SELECT DISTINCT ON (sa.search_id)
+      sa.search_id AS ra_search_id,
+      sa.rank_position AS ra_rank_position,
+      sa.similarity_score AS ra_similarity_score,
+      sa.boosted_score AS ra_boosted_score,
+      sa.created_at AS ra_created_at
+    FROM search_appearances sa
+    WHERE
+      sa.artist_id = p_artist_id
+      AND (p_days IS NULL OR sa.created_at >= NOW() - (p_days || ' days')::INTERVAL)
+    ORDER BY sa.search_id, sa.created_at DESC
+  )
+  SELECT
+    ra.ra_search_id,
+    ra.ra_rank_position,
+    ra.ra_similarity_score,
+    ra.ra_boosted_score,
+    ra.ra_created_at,
+    s.query_type,
+    s.query_text,
+    s.instagram_username
+  FROM recent_appearances ra
+  INNER JOIN searches s ON s.id = ra.ra_search_id
+  ORDER BY ra.ra_created_at DESC
+  LIMIT p_limit;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer) OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer) IS 'Get recent search appearances for artist with query details';
+COMMENT ON FUNCTION "public"."get_recent_search_appearances"("p_artist_id" "uuid", "p_days" integer, "p_limit" integer) IS 'Get recent search appearances for artist with query details. Uses DISTINCT ON to prevent duplicate search_id values.';
 
 
 
@@ -1581,7 +1556,7 @@ COMMENT ON FUNCTION "public"."get_top_artists_by_style"("p_style_slug" "text", "
 
 CREATE OR REPLACE FUNCTION "public"."increment_booking_click"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, booking_link_clicks)
@@ -1641,7 +1616,7 @@ COMMENT ON FUNCTION "public"."increment_image_view"("p_image_id" "uuid") IS 'Inc
 
 CREATE OR REPLACE FUNCTION "public"."increment_instagram_click"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, instagram_clicks)
@@ -1657,17 +1632,17 @@ ALTER FUNCTION "public"."increment_instagram_click"("p_artist_id" "uuid") OWNER 
 
 CREATE OR REPLACE FUNCTION "public"."increment_pipeline_progress"("run_id" "uuid", "processed_delta" integer, "failed_delta" integer) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
-  BEGIN
-    UPDATE pipeline_runs
-    SET
-      processed_items = COALESCE(processed_items, 0) + processed_delta,
-      failed_items = COALESCE(failed_items, 0) + failed_delta,
-      updated_at = now()
-    WHERE id = run_id;
-  END;
-  $$;
+BEGIN
+  UPDATE pipeline_runs
+  SET
+    processed_items = COALESCE(processed_items, 0) + processed_delta,
+    failed_items = COALESCE(failed_items, 0) + failed_delta,
+    updated_at = now()
+  WHERE id = run_id;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."increment_pipeline_progress"("run_id" "uuid", "processed_delta" integer, "failed_delta" integer) OWNER TO "postgres";
@@ -1675,7 +1650,7 @@ ALTER FUNCTION "public"."increment_pipeline_progress"("run_id" "uuid", "processe
 
 CREATE OR REPLACE FUNCTION "public"."increment_profile_view"("p_artist_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   INSERT INTO artist_analytics (artist_id, date, profile_views)
@@ -1691,7 +1666,7 @@ ALTER FUNCTION "public"."increment_profile_view"("p_artist_id" "uuid") OWNER TO 
 
 CREATE OR REPLACE FUNCTION "public"."increment_search_appearances"("p_artist_ids" "uuid"[]) RETURNS "void"
     LANGUAGE "sql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
   INSERT INTO artist_analytics (artist_id, date, search_appearances)
   SELECT unnest(p_artist_ids), CURRENT_DATE, 1
@@ -1728,7 +1703,7 @@ COMMENT ON FUNCTION "public"."is_gdpr_country"("country_code" "text") IS 'Return
 
 CREATE OR REPLACE FUNCTION "public"."log_email_send"("p_recipient_email" "text", "p_user_id" "uuid", "p_artist_id" "uuid", "p_email_type" "text", "p_subject" "text", "p_success" boolean, "p_error_message" "text" DEFAULT NULL::"text", "p_resend_id" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   v_log_id UUID;
@@ -1752,7 +1727,6 @@ BEGIN
     p_error_message,
     p_resend_id
   ) RETURNING id INTO v_log_id;
-
   RETURN v_log_id;
 END;
 $$;
@@ -2132,34 +2106,43 @@ COMMENT ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector
 
 
 
+CREATE OR REPLACE FUNCTION "public"."store_encrypted_token"("p_user_id" "uuid", "p_token_data" "text", "p_encryption_key" "text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+DECLARE
+  v_token_id UUID;
+BEGIN
+  INSERT INTO encrypted_instagram_tokens (user_id, encrypted_token, updated_at)
+  VALUES (
+    p_user_id,
+    pgp_sym_encrypt(p_token_data, p_encryption_key),
+    NOW()
+  )
+  ON CONFLICT (user_id)
+  DO UPDATE SET
+    encrypted_token = pgp_sym_encrypt(p_token_data, p_encryption_key),
+    updated_at = NOW()
+  RETURNING id INTO v_token_id;
+
+  RETURN v_token_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."store_encrypted_token"("p_user_id" "uuid", "p_token_data" "text", "p_encryption_key" "text") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."sync_artist_to_locations"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
     AS $$
-  BEGIN
-    -- Only sync if artist has city and no existing location
-    IF NEW.city IS NOT NULL AND NEW.city != '' THEN
-      INSERT INTO artist_locations (
-        artist_id,
-        city,
-        region,
-        country_code,
-        location_type,
-        is_primary,
-        display_order
-      ) VALUES (
-        NEW.id,
-        NEW.city,
-        NEW.state,
-        'US',
-        'city',
-        TRUE,
-        0
-      )
-      ON CONFLICT DO NOTHING;
-    END IF;
-    RETURN NEW;
-  END;
-  $$;
+BEGIN
+  -- No-op: city/state columns removed from artists table
+  -- artist_locations is now source of truth
+  RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."sync_artist_to_locations"() OWNER TO "postgres";
@@ -2231,12 +2214,11 @@ COMMENT ON FUNCTION "public"."track_search_appearances_with_details"("p_search_i
 
 CREATE OR REPLACE FUNCTION "public"."unsubscribe_from_emails"("p_email" "text", "p_unsubscribe_all" boolean DEFAULT true, "p_reason" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   v_pref_id UUID;
 BEGIN
-  -- Upsert email preferences
   INSERT INTO email_preferences (
     email,
     unsubscribed_all,
@@ -2254,7 +2236,6 @@ BEGIN
     unsubscribe_reason = COALESCE(EXCLUDED.unsubscribe_reason, email_preferences.unsubscribe_reason),
     updated_at = NOW()
   RETURNING id INTO v_pref_id;
-
   RETURN v_pref_id;
 END;
 $$;
@@ -2409,7 +2390,7 @@ COMMENT ON FUNCTION "public"."update_artist_styles_on_tag_change"() IS 'Statemen
 
 CREATE OR REPLACE FUNCTION "public"."update_marketing_outreach_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -2449,7 +2430,7 @@ ALTER FUNCTION "public"."update_training_label_timestamp"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."update_updated_at_column"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 BEGIN
   NEW.updated_at = NOW();
@@ -2463,7 +2444,7 @@ ALTER FUNCTION "public"."update_updated_at_column"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."user_has_vault_tokens"("user_id_param" "uuid") RETURNS boolean
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public', 'vault'
     AS $$
 DECLARE
   vault_id UUID;
@@ -2471,11 +2452,9 @@ BEGIN
   SELECT instagram_token_vault_id INTO vault_id
   FROM users
   WHERE id = user_id_param;
-
   IF vault_id IS NULL THEN
     RETURN FALSE;
   END IF;
-
   RETURN EXISTS (
     SELECT 1
     FROM vault.secrets
@@ -2494,26 +2473,22 @@ COMMENT ON FUNCTION "public"."user_has_vault_tokens"("user_id_param" "uuid") IS 
 
 CREATE OR REPLACE FUNCTION "public"."validate_promo_code"("p_code" "text") RETURNS TABLE("id" "uuid", "discount_type" "text", "discount_value" integer, "is_valid" boolean)
     LANGUAGE "plpgsql" STABLE
-    SET "search_path" TO ''
+    SET "search_path" TO 'public'
     AS $$
 DECLARE
   promo promo_codes%ROWTYPE;
   is_code_valid BOOLEAN := FALSE;
 BEGIN
   SELECT * INTO promo FROM promo_codes WHERE code = p_code;
-
-  -- Check all conditions without revealing which failed
-  IF FOUND 
-     AND promo.active 
+  IF FOUND
+     AND promo.active
      AND (promo.expires_at IS NULL OR promo.expires_at >= NOW())
      AND (promo.max_uses IS NULL OR promo.current_uses < promo.max_uses) THEN
     is_code_valid := TRUE;
   END IF;
-
   IF is_code_valid THEN
     RETURN QUERY SELECT promo.id, promo.discount_type, promo.discount_value, TRUE;
   ELSE
-    -- Generic error - don't reveal why it's invalid (prevents code enumeration)
     RETURN QUERY SELECT NULL::UUID, NULL::TEXT, NULL::INTEGER, FALSE;
   END IF;
 END;
@@ -2529,7 +2504,7 @@ COMMENT ON FUNCTION "public"."validate_promo_code"("p_code" "text") IS 'Validate
 
 CREATE OR REPLACE FUNCTION "public"."vault_create_secret"("secret" "text", "name" "text", "description" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public', 'vault', 'pgsodium'
     AS $$
 DECLARE
   secret_id UUID;
@@ -2537,7 +2512,6 @@ BEGIN
   INSERT INTO vault.secrets (secret, name, description)
   VALUES (secret, name, description)
   RETURNING vault.secrets.id INTO secret_id;
-
   RETURN QUERY SELECT secret_id;
 END;
 $$;
@@ -2552,7 +2526,7 @@ COMMENT ON FUNCTION "public"."vault_create_secret"("secret" "text", "name" "text
 
 CREATE OR REPLACE FUNCTION "public"."vault_delete_secret"("secret_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public', 'vault', 'pgsodium'
     AS $$
 BEGIN
   DELETE FROM vault.secrets WHERE id = secret_id;
@@ -2569,7 +2543,7 @@ COMMENT ON FUNCTION "public"."vault_delete_secret"("secret_id" "uuid") IS 'Delet
 
 CREATE OR REPLACE FUNCTION "public"."vault_get_decrypted_secret"("secret_id" "uuid") RETURNS "text"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public', 'vault', 'pgsodium'
     AS $$
 DECLARE
   decrypted TEXT;
@@ -2577,7 +2551,6 @@ BEGIN
   SELECT decrypted_secret INTO decrypted
   FROM vault.decrypted_secrets
   WHERE id = secret_id;
-
   RETURN decrypted;
 END;
 $$;
@@ -2592,14 +2565,13 @@ COMMENT ON FUNCTION "public"."vault_get_decrypted_secret"("secret_id" "uuid") IS
 
 CREATE OR REPLACE FUNCTION "public"."vault_update_secret"("secret_id" "uuid", "new_secret" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO ''
+    SET "search_path" TO 'public', 'vault', 'pgsodium'
     AS $$
 BEGIN
   UPDATE vault.secrets
   SET secret = new_secret,
       updated_at = NOW()
   WHERE id = secret_id;
-
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Vault secret % not found', secret_id;
   END IF;
@@ -3061,6 +3033,18 @@ ALTER TABLE "public"."email_preferences" OWNER TO "postgres";
 
 COMMENT ON TABLE "public"."email_preferences" IS 'User email subscription preferences and unsubscribe management';
 
+
+
+CREATE TABLE IF NOT EXISTS "public"."encrypted_instagram_tokens" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_id" "uuid" NOT NULL,
+    "encrypted_data" "text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."encrypted_instagram_tokens" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."follower_mining_runs" (
@@ -3690,6 +3674,7 @@ CREATE TABLE IF NOT EXISTS "public"."users" (
     "updated_at" timestamp with time zone DEFAULT "now"(),
     "account_type" "text" DEFAULT 'fan'::"text" NOT NULL,
     "instagram_token_vault_id" "uuid",
+    "instagram_token_expires_at" timestamp with time zone,
     CONSTRAINT "check_account_type" CHECK (("account_type" = ANY (ARRAY['fan'::"text", 'artist_free'::"text", 'artist_pro'::"text"]))),
     CONSTRAINT "valid_email" CHECK ((("email" IS NULL) OR ("email" ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}$'::"text")))
 );
@@ -3815,6 +3800,16 @@ ALTER TABLE ONLY "public"."email_preferences"
 
 ALTER TABLE ONLY "public"."email_preferences"
     ADD CONSTRAINT "email_preferences_user_id_key" UNIQUE ("user_id");
+
+
+
+ALTER TABLE ONLY "public"."encrypted_instagram_tokens"
+    ADD CONSTRAINT "encrypted_instagram_tokens_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."encrypted_instagram_tokens"
+    ADD CONSTRAINT "encrypted_instagram_tokens_user_id_key" UNIQUE ("user_id");
 
 
 
@@ -4245,6 +4240,10 @@ CREATE INDEX "idx_email_preferences_email" ON "public"."email_preferences" USING
 
 
 CREATE INDEX "idx_email_preferences_user_id" ON "public"."email_preferences" USING "btree" ("user_id") WHERE ("user_id" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_encrypted_tokens_user" ON "public"."encrypted_instagram_tokens" USING "btree" ("user_id");
 
 
 
@@ -4743,6 +4742,11 @@ ALTER TABLE ONLY "public"."email_preferences"
 
 
 
+ALTER TABLE ONLY "public"."encrypted_instagram_tokens"
+    ADD CONSTRAINT "encrypted_instagram_tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."image_style_tags"
     ADD CONSTRAINT "image_style_tags_image_id_fkey" FOREIGN KEY ("image_id") REFERENCES "public"."portfolio_images"("id") ON DELETE CASCADE;
 
@@ -5004,6 +5008,10 @@ CREATE POLICY "Service role full access" ON "public"."artist_sync_state" USING (
 
 
 
+CREATE POLICY "Service role full access" ON "public"."encrypted_instagram_tokens" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
 CREATE POLICY "Service role full access" ON "public"."style_training_labels" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
@@ -5025,6 +5033,10 @@ CREATE POLICY "Service role full access to claim attempts" ON "public"."claim_at
 
 
 CREATE POLICY "Service role full access to discovery_queries" ON "public"."discovery_queries" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "Service role full access to encrypted_instagram_tokens" ON "public"."encrypted_instagram_tokens" USING (("auth"."role"() = 'service_role'::"text")) WITH CHECK (("auth"."role"() = 'service_role'::"text"));
 
 
 
@@ -5232,6 +5244,9 @@ ALTER TABLE "public"."email_log" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."email_preferences" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "public"."encrypted_instagram_tokens" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."follower_mining_runs" ENABLE ROW LEVEL SECURITY;
 
 
@@ -5375,6 +5390,12 @@ GRANT ALL ON FUNCTION "public"."create_pipeline_run"("p_job_type" "text", "p_tri
 
 
 
+GRANT ALL ON FUNCTION "public"."delete_encrypted_token"("p_user_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."delete_encrypted_token"("p_user_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."delete_encrypted_token"("p_user_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "anon";
 GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."expire_featured_artists"() TO "service_role";
@@ -5450,6 +5471,12 @@ GRANT ALL ON FUNCTION "public"."get_cities_with_counts"("min_count" integer, "p_
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_countries_with_counts"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_decrypted_token"("p_user_id" "uuid", "p_encryption_key" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_decrypted_token"("p_user_id" "uuid", "p_encryption_key" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_decrypted_token"("p_user_id" "uuid", "p_encryption_key" "text") TO "service_role";
 
 
 
@@ -5570,6 +5597,12 @@ GRANT ALL ON FUNCTION "public"."recompute_artist_styles_on_image_delete"() TO "s
 GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."search_artists"("query_embedding" "public"."vector", "match_threshold" double precision, "match_count" integer, "city_filter" "text", "region_filter" "text", "country_filter" "text", "offset_param" integer, "query_techniques" "jsonb", "is_color_query" boolean, "query_themes" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."store_encrypted_token"("p_user_id" "uuid", "p_token_data" "text", "p_encryption_key" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."store_encrypted_token"("p_user_id" "uuid", "p_token_data" "text", "p_encryption_key" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."store_encrypted_token"("p_user_id" "uuid", "p_token_data" "text", "p_encryption_key" "text") TO "service_role";
 
 
 
@@ -5774,6 +5807,12 @@ GRANT ALL ON TABLE "public"."email_log" TO "service_role";
 GRANT ALL ON TABLE "public"."email_preferences" TO "anon";
 GRANT ALL ON TABLE "public"."email_preferences" TO "authenticated";
 GRANT ALL ON TABLE "public"."email_preferences" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."encrypted_instagram_tokens" TO "anon";
+GRANT ALL ON TABLE "public"."encrypted_instagram_tokens" TO "authenticated";
+GRANT ALL ON TABLE "public"."encrypted_instagram_tokens" TO "service_role";
 
 
 

@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-09
+Last-Updated: 2026-01-11
 Maintainer: RB
 Status: Active Guidelines
 ---
@@ -76,6 +76,34 @@ npx supabase db push --dry-run  # Should say "up to date"
 2. If not there, check `_archive/` folder for unapplied migrations
 3. Run the SQL directly in Supabase SQL Editor
 4. Add to baseline if missing
+
+### Schema Drift Detection
+
+**Run before deployments:**
+```bash
+npm run db:audit    # Generates SQL to audit production
+```
+
+This auto-extracts expected objects from baseline and generates queries to detect:
+- Functions with empty `search_path` (the `''` bug)
+- Missing tables, functions, indexes, triggers
+- Tables without RLS enabled
+- Missing pgcrypto infrastructure (for token encryption)
+
+**Common Issues:**
+
+1. **search_path bug:** When Supabase dumps functions via `pg_dump`, it serializes `SET search_path = ''` (empty) instead of `SET search_path = 'public'`. Every time functions get recreated from dumps, they break with "relation does not exist" errors.
+
+2. **Baseline divergence:** Migrations archived before being applied to production, or manual SQL Editor changes without migrations.
+
+**Recovery:**
+1. Run `npm run db:audit` and copy queries to SQL Editor
+2. Check which objects are missing/broken
+3. Apply reconciliation migration: `npm run db:push`
+4. After fix verified, update baseline from prod:
+   ```bash
+   npx supabase db dump --schema public -f supabase/migrations/00000000000000_baseline.sql
+   ```
 
 ---
 
@@ -236,6 +264,8 @@ npm run generate-embeddings              # CLIP embeddings (Modal)
 ```bash
 npm run db:push       # Lint + push to production (PREFERRED)
 npm run db:lint       # Lint only (sqlfluff)
+npm run db:audit      # Generate audit SQL (drift detection)
+npm run db:verify     # Verify expected objects exist
 npx supabase db push  # Push without lint
 ```
 
