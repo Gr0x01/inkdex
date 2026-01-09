@@ -42,8 +42,18 @@ export async function generateMetadata({
   const cityName = slugToName(citySlug)
   const regionName = getRegionName(regionCode, countryCode)
 
-  const title = `Tattoo Artists in ${cityName}, ${regionCode} | Inkdex`
-  const description = `Discover talented tattoo artists in ${cityName}, ${regionName}. Browse portfolios, view styles, and connect via Instagram.`
+  // Fetch artist count for SEO title/description (Next.js dedupes with page component fetch)
+  const { total } = await getLocationArtists(countryCode, regionCode, cityName, 1, 0)
+
+  // Enhanced title with artist count for better CTR
+  const title = total > 0
+    ? `${total}+ Tattoo Artists in ${cityName}, ${regionCode} - Browse Portfolios | Inkdex`
+    : `Tattoo Artists in ${cityName}, ${regionCode} | Inkdex`
+
+  // Enhanced description with count and popular styles
+  const description = total > 0
+    ? `Browse ${total}+ tattoo artist portfolios in ${cityName}, ${regionName}. Compare styles like blackwork, realism, fine-line. Find your perfect artist and book via Instagram.`
+    : `Discover talented tattoo artists in ${cityName}, ${regionName}. Browse portfolios, view styles, and connect via Instagram.`
 
   // Canonical URL (page 1 = no query param, page 2+ = ?page=N)
   const canonical = currentPage === 1

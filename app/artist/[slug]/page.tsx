@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient as createServerClient } from '@supabase/supabase-js'
 import { getArtistBySlug } from '@/lib/supabase/queries'
-import { sanitizeForJsonLd, serializeJsonLd } from '@/lib/utils/seo'
+import { sanitizeForJsonLd, serializeJsonLd, formatStyleList } from '@/lib/utils/seo'
 import { getPortfolioImageUrl, getProfileImageUrl } from '@/lib/utils/images'
 import { getPrimaryLocation } from '@/lib/utils/location'
 import { CITIES } from '@/lib/constants/cities'
@@ -74,11 +74,23 @@ export async function generateMetadata({
   const artistRegion = primaryLoc?.region || null
   const locationStr = [artistCity, artistRegion].filter(Boolean).join(', ')
 
-  const title = `@${artist.instagram_handle} - Tattoo Artist${locationStr ? ` in ${locationStr}` : ''}`
+  // Name + handle format for better CTR
+  const displayName = artist.name
+    ? `${artist.name} (@${artist.instagram_handle})`
+    : `@${artist.instagram_handle}`
+
+  const title = `${displayName} - Tattoo Artist Portfolio${locationStr ? ` | ${locationStr}` : ''}`
+
+  // Portfolio-focused description with image count and styles
+  const imageCount = artist.portfolio_images?.length || 0
+  const styleList = formatStyleList(artist.style_profiles)
+
   const description =
-    artist.bio_override ||
-    artist.bio ||
-    `Browse @${artist.instagram_handle}'s tattoo portfolio and connect via Instagram.${locationStr ? ` Based in ${locationStr}.` : ''}`
+    imageCount > 0
+      ? `Browse ${imageCount} tattoo photos by ${displayName}.${styleList ? ` Specializing in ${styleList}.` : ''} View portfolio and book via Instagram.${locationStr ? ` ${locationStr}` : ''}`
+      : artist.bio_override ||
+        artist.bio ||
+        `View ${displayName}'s tattoo portfolio. Book via Instagram.${locationStr ? ` ${locationStr}` : ''}`
 
   // Use profile image or first portfolio image for OG
   // Priority: stored profile image > legacy profile URL > first portfolio image > default
@@ -211,6 +223,34 @@ export default async function ArtistPage({
     ],
   }
 
+  // ImageGallery schema for rich results (portfolio carousel potential)
+  const displayName = artist.name
+    ? `${artist.name} (@${artist.instagram_handle})`
+    : `@${artist.instagram_handle}`
+  const locationStr = [artistCity, artistRegion].filter(Boolean).join(', ')
+  const styleList = formatStyleList(artist.style_profiles)
+
+  const imageGalleryJsonLd =
+    artist.portfolio_images && artist.portfolio_images.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ImageGallery',
+          name: `${sanitizeForJsonLd(displayName)}'s Tattoo Portfolio`,
+          description: `Browse ${artist.portfolio_images.length} tattoo photos by ${sanitizeForJsonLd(displayName)}.${styleList ? ` Specializing in ${sanitizeForJsonLd(styleList)}.` : ''}${locationStr ? ` ${sanitizeForJsonLd(locationStr)}` : ''}`,
+          url: `/artist/${slug}`,
+          numberOfItems: artist.portfolio_images.length,
+          image: artist.portfolio_images.slice(0, 10).map((img: {
+            storage_thumb_1280?: string | null
+            storage_thumb_640?: string | null
+            post_caption?: string | null
+          }) => ({
+            '@type': 'ImageObject',
+            url: getPortfolioImageUrl(img),
+            caption: sanitizeForJsonLd(img.post_caption) || `Tattoo by ${sanitizeForJsonLd(displayName)}`,
+          })),
+        }
+      : null
+
   return (
     <>
       {/* Analytics Tracking */}
@@ -231,6 +271,12 @@ export default async function ArtistPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
+      {imageGalleryJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(imageGalleryJsonLd) }}
+        />
+      )}
 
       {/* Editorial Magazine Layout */}
       <main className="min-h-screen bg-paper">
