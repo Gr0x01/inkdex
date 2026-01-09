@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * Google Analytics Component
+ * Google Analytics & Google Ads Component
  *
- * Conditionally loads GA4 tracking scripts based on user consent
- * - Only loads if NEXT_PUBLIC_GA_MEASUREMENT_ID is configured
+ * Conditionally loads GA4 + Google Ads tracking scripts based on user consent
+ * - Only loads if measurement IDs are configured
  * - Only loads if user has given analytics consent
  * - Respects DNT (Do Not Track) headers
  * - Listens for consent changes in real-time (cross-tab sync)
@@ -14,7 +14,7 @@
  * - cookie_flags: 'SameSite=None;Secure' (secure cookies)
  *
  * Security:
- * - GA ID format validated (defense-in-depth against XSS)
+ * - ID formats validated (defense-in-depth against XSS)
  * - useSyncExternalStore prevents hydration mismatches
  */
 
@@ -62,41 +62,61 @@ function isValidGaId(gaId: string | undefined): gaId is string {
   return /^G-[A-Z0-9]{10,}$/.test(gaId)
 }
 
+/**
+ * Validate Google Ads ID format (AW-XXXXXXXXX)
+ */
+function isValidGadsId(gadsId: string | undefined): gadsId is string {
+  if (!gadsId) return false
+  return /^AW-\d{10,}$/.test(gadsId)
+}
+
 export function GoogleAnalytics() {
   // Use useSyncExternalStore to prevent hydration mismatches
   const hasConsent = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+  const gadsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID
 
   // Validate GA ID format (defense-in-depth)
-  if (!isValidGaId(gaId)) {
-    if (gaId) {
-      console.error('[GoogleAnalytics] Invalid GA4 Measurement ID format:', gaId)
-    }
-    return null
+  const validGaId = isValidGaId(gaId)
+  const validGadsId = isValidGadsId(gadsId)
+
+  if (!validGaId && gaId) {
+    console.error('[GoogleAnalytics] Invalid GA4 Measurement ID format:', gaId)
+  }
+  if (!validGadsId && gadsId) {
+    console.error('[GoogleAnalytics] Invalid Google Ads ID format:', gadsId)
   }
 
-  // Don't load if user hasn't consented or DNT enabled
+  // Don't load if no valid IDs or user hasn't consented
+  if (!validGaId && !validGadsId) return null
   if (!hasConsent) return null
+
+  // Build gtag config script
+  const configScript = `
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    ${validGaId ? `gtag('config', '${gaId}', {
+      anonymize_ip: true,
+      cookie_flags: 'SameSite=None;Secure'
+    });` : ''}
+    ${validGadsId ? `gtag('config', '${gadsId}');` : ''}
+  `
+
+  // Use GA ID for script loading (falls back to Google Ads ID if no GA)
+  const primaryId = validGaId ? gaId : gadsId
 
   return (
     <>
       {/* Load gtag.js script */}
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${primaryId}`}
         strategy="afterInteractive"
       />
 
-      {/* Initialize GA4 with GDPR-compliant config */}
+      {/* Initialize GA4 + Google Ads with GDPR-compliant config */}
       <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${gaId}', {
-            anonymize_ip: true,
-            cookie_flags: 'SameSite=None;Secure'
-          });
-        `}
+        {configScript}
       </Script>
     </>
   )

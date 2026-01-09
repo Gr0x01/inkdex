@@ -2,6 +2,7 @@
 'use client';
 import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { trackClaimConversion } from '@/lib/analytics/conversions';
 
 function InfoContent() {
   const router = useRouter();
@@ -183,6 +184,9 @@ function InfoContent() {
 
       const finalizeData = await finalizeRes.json();
       if (!finalizeRes.ok) throw new Error(finalizeData.error || 'Failed to create profile');
+
+      // Track artist claim conversion for Google Ads
+      trackClaimConversion();
 
       // Redirect to Step 2 (upgrade) with artistId
       router.push(`/onboarding/upgrade?session_id=${sessionId}&artist_id=${finalizeData.artistId}`);

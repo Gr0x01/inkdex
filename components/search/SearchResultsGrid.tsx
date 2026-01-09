@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import ArtistCard from '@/components/search/ArtistCard'
 import { SearchResult } from '@/types/search'
+import { trackSearchConversion } from '@/lib/analytics/conversions'
 
 interface SearchResultsGridProps {
   searchId: string
@@ -145,6 +146,15 @@ export default function SearchResultsGrid({
       }
     }
   }, [])
+
+  // Track search conversion for Google Ads (once per search)
+  const hasTrackedRef = useRef(false)
+  useEffect(() => {
+    if (!hasTrackedRef.current && initialResults.length > 0) {
+      hasTrackedRef.current = true
+      trackSearchConversion()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentionally run once on mount
 
   return (
     <>
