@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11
+Last-Updated: 2026-01-09
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -17,6 +17,54 @@ Status: Launched - Production
 **Display Styles:** 11 styles (added japanese + anime after ML accuracy improved)
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
+
+---
+
+## Local Supabase Setup (Jan 9, 2026) ✅
+
+**Purpose:** Safe testing environment for style tagging system iteration (threshold tuning, retraining classifier, new styles) without affecting production.
+
+**Current Local DB Stats:**
+| Table | Records |
+|-------|---------|
+| Artists | 13,432 |
+| Portfolio Images | 68,282 |
+| Style Seeds | 20 |
+| Image Style Tags | Regenerated locally |
+
+**Setup:**
+1. `.env.local` configured to switch between production/local (see comments in file)
+2. Seed data generated from production via `dump-production-seed.ts`
+3. Style tags regenerated locally with raised thresholds
+
+**Key Commands:**
+```bash
+# Generate fresh seed from production (requires prod credentials in .env.local)
+npx tsx scripts/seed/dump-production-seed.ts --artists 5000 --all-images
+
+# Start local Supabase
+npm run db:local:start
+
+# Load seed data (applies migrations + seed.sql)
+npm run db:local:reset
+
+# Stop local Supabase
+npm run db:local:stop
+
+# Regenerate style tags with current thresholds
+npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200
+```
+
+**Local URLs:**
+| Service | URL |
+|---------|-----|
+| API | http://127.0.0.1:54321 |
+| Studio (SQL Editor) | http://127.0.0.1:54323 |
+| Inbucket (Test Emails) | http://127.0.0.1:54324 |
+
+**Note:** After iterating on thresholds locally, apply same changes to production via `npm run db:push` and re-run tagging scripts against production.
+
+---
 
 ## Recent Expansion (Jan 4, 2026)
 

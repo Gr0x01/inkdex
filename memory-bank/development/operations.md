@@ -323,36 +323,55 @@ EOF
 **Note:** Direct connection (db.*.supabase.co:5432) requires IPv6 or IPv4 add-on.
 
 ### Local Supabase Development
-**Use this to safely test search function changes before production.**
+**Use this to safely test search function changes and ML tagging before production.**
 
 ```bash
-# One-time setup
-npm run db:local:seed         # Pull ~1000 artists from production
+# Seed generation (connects to production, dumps to supabase/seed.sql)
+npx tsx scripts/seed/dump-production-seed.ts --artists=500           # Small (~3k images, 30MB)
+npx tsx scripts/seed/dump-production-seed.ts --artists=20000 --all-images  # Full (~92k images, 1GB)
 
 # Daily workflow
 npm run db:local:start        # Start Docker containers
 npm run db:local:reset        # Apply migrations + load seed data
-# Edit supabase/functions/search_functions.sql
-supabase db push --local      # Test changes locally
-# Verify at localhost:3000 (with local env vars)
-npm run db:push               # Deploy to production when ready
+npm run db:local:status       # Check status
 npm run db:local:stop         # Stop when done
 ```
 
 **Local URLs:**
 - API: `http://127.0.0.1:54321`
 - Studio: `http://127.0.0.1:54323`
+- Database: `postgresql://postgres:postgres@127.0.0.1:54322/postgres`
 - Inbucket (emails): `http://127.0.0.1:54324`
 
 **To use local DB with app:**
-1. Copy keys from `supabase start` output
-2. Update `.env.local`:
-   ```
+1. Edit `.env.local` - comment PRODUCTION section, uncomment LOCAL section:
+   ```bash
+   # --- PRODUCTION (uncomment for production) ---
+   # NEXT_PUBLIC_SUPABASE_URL=https://aerereukzoflvybygolb.supabase.co
+   # ...
+
+   # --- LOCAL (active) ---
    NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<from-start-output>
-   SUPABASE_SERVICE_ROLE_KEY=<from-start-output>
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+   SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
    ```
-3. Run `npm run dev`
+2. Run `npm run dev`
+
+**Seed Script Options:**
+- `--artists=N` - Number of artists to export (default: 500)
+- `--images=N` - Images per artist (default: 6)
+- `--all-images` - Export all images per artist (overrides --images)
+
+**Note:** Seed script skips `image_style_tags` export (network issues with large batches). Regenerate locally:
+```bash
+npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200
+npx tsx scripts/styles/compute-artist-profiles.ts --clear
+```
+
+**Current Local DB (Jan 9, 2026):**
+- 13,432 artists
+- 68,282 images with embeddings
+- Ready for style tagging iteration
 
 ---
 

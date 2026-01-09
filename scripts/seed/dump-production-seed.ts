@@ -31,10 +31,14 @@ config({ path: '.env.local' });
 // Parse CLI args
 const args = process.argv.slice(2);
 const artistCountArg = args.find((a) => a.startsWith('--artists'));
+const imagesPerArtistArg = args.find((a) => a.startsWith('--images'));
 const ARTIST_COUNT = artistCountArg
   ? parseInt(artistCountArg.split('=')[1] || args[args.indexOf('--artists') + 1])
   : 500;
-const IMAGES_PER_ARTIST = 6;
+const IMAGES_PER_ARTIST = imagesPerArtistArg
+  ? parseInt(imagesPerArtistArg.split('=')[1] || args[args.indexOf('--images') + 1])
+  : 6;
+const ALL_IMAGES = args.includes('--all-images');
 
 // Initialize Supabase client with service role (production)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -101,21 +105,40 @@ function generateInsert(table: string, row: Record<string, unknown>, columns: st
   return `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${values.join(', ')}) ON CONFLICT DO NOTHING;`;
 }
 
+// Write stream for incremental file writing (avoids memory issues with large datasets)
+let writeStream: fs.WriteStream;
+let totalBytesWritten = 0;
+
+function writeLine(line: string) {
+  writeStream.write(line + '\n');
+  totalBytesWritten += line.length + 1;
+}
+
+function writeLines(lines: string[]) {
+  for (const line of lines) {
+    writeLine(line);
+  }
+}
+
 async function main() {
   console.log(`\n🔄 Dumping production data for local development...`);
-  console.log(`   Target: ${ARTIST_COUNT} artists, ~${ARTIST_COUNT * IMAGES_PER_ARTIST} images\n`);
+  const imageInfo = ALL_IMAGES ? 'all images' : `~${IMAGES_PER_ARTIST} images/artist`;
+  console.log(`   Target: ${ARTIST_COUNT} artists, ${imageInfo}\n`);
 
-  const sqlStatements: string[] = [];
+  // Create write stream for incremental output
+  writeStream = fs.createWriteStream(OUTPUT_FILE, { encoding: 'utf-8' });
 
   // Header
-  sqlStatements.push(`-- Production data seed for local Supabase development`);
-  sqlStatements.push(`-- Generated: ${new Date().toISOString()}`);
-  sqlStatements.push(`-- Artists: ${ARTIST_COUNT}, Images per artist: ${IMAGES_PER_ARTIST}`);
-  sqlStatements.push(``);
-  sqlStatements.push(`-- Enable required extensions`);
-  sqlStatements.push(`CREATE EXTENSION IF NOT EXISTS vector;`);
-  sqlStatements.push(`CREATE EXTENSION IF NOT EXISTS pg_trgm;`);
-  sqlStatements.push(``);
+  writeLines([
+    `-- Production data seed for local Supabase development`,
+    `-- Generated: ${new Date().toISOString()}`,
+    `-- Artists: ${ARTIST_COUNT}, Images: ${ALL_IMAGES ? 'all' : IMAGES_PER_ARTIST + ' per artist'}`,
+    ``,
+    `-- Enable required extensions`,
+    `CREATE EXTENSION IF NOT EXISTS vector;`,
+    `CREATE EXTENSION IF NOT EXISTS pg_trgm;`,
+    ``,
+  ]);
 
   // 1. Export all style_seeds (required for search)
   console.log('📦 Exporting style_seeds...');
@@ -128,34 +151,49 @@ async function main() {
     process.exit(1);
   }
 
-  sqlStatements.push(`-- Style Seeds (${styleSeeds?.length || 0} styles)`);
+  writeLine(`-- Style Seeds (${styleSeeds?.length || 0} styles)`);
   const styleSeedColumns = styleSeeds && styleSeeds.length > 0 ? Object.keys(styleSeeds[0]) : [];
 
   for (const seed of styleSeeds || []) {
-    sqlStatements.push(generateInsert('style_seeds', seed, styleSeedColumns));
+    writeLine(generateInsert('style_seeds', seed, styleSeedColumns));
   }
-  sqlStatements.push(``);
+  writeLine(``);
   console.log(`   ✅ ${styleSeeds?.length || 0} style seeds`);
 
-  // 2. Get top artists by image count
+  // 2. Get top artists by follower count (paginated to work around 5000 row limit)
   console.log('📦 Exporting artists...');
-  const { data: artists, error: artistsError } = await supabase
-    .from('artists')
-    .select('*')
-    .is('deleted_at', null)
-    .eq('is_gdpr_blocked', false)
-    .order('follower_count', { ascending: false, nullsFirst: false })
-    .limit(ARTIST_COUNT);
+  const artists: Array<Record<string, unknown>> = [];
+  const PAGE_SIZE = 1000;
 
-  if (artistsError) {
-    console.error('❌ Failed to fetch artists:', artistsError.message);
-    process.exit(1);
+  for (let offset = 0; offset < ARTIST_COUNT; offset += PAGE_SIZE) {
+    const limit = Math.min(PAGE_SIZE, ARTIST_COUNT - offset);
+    process.stdout.write(`\r   Fetching artists... ${offset}/${ARTIST_COUNT}`);
+
+    const { data, error: artistsError } = await supabase
+      .from('artists')
+      .select('*')
+      .is('deleted_at', null)
+      .eq('is_gdpr_blocked', false)
+      .order('follower_count', { ascending: false, nullsFirst: false })
+      .range(offset, offset + limit - 1);
+
+    if (artistsError) {
+      console.error(`\n❌ Failed to fetch artists at offset ${offset}:`, artistsError.message);
+      break;
+    }
+
+    if (!data || data.length === 0) {
+      console.log(`\n   Reached end of artists at ${artists.length}`);
+      break;
+    }
+
+    artists.push(...data);
   }
 
-  const artistIds = (artists || []).map((a) => a.id);
-  console.log(`   ✅ ${artists?.length || 0} artists`);
+  const artistIds = artists.map((a) => a.id as string);
+  console.log(`\r   ✅ ${artists.length} artists                    `);
 
-  sqlStatements.push(`-- Artists (${artists?.length || 0})`);
+  writeLine(`-- Artists (${artists?.length || 0})`);
   // Use dynamic columns from first row
   const artistColumns = artists && artists.length > 0 ? Object.keys(artists[0]) : [];
 
@@ -185,9 +223,9 @@ async function main() {
     // 10% featured (independent)
     artist.is_featured = Math.random() < 0.10;
 
-    sqlStatements.push(generateInsert('artists', artist, artistColumns));
+    writeLine(generateInsert('artists', artist, artistColumns));
   }
-  sqlStatements.push(``);
+  writeLine(``);
 
   // 3. Export artist_locations for these artists (batched)
   console.log('📦 Exporting artist_locations...');
@@ -214,11 +252,11 @@ async function main() {
     }
   }
 
-  sqlStatements.push(`-- Artist Locations (${allLocations.length})`);
+  writeLine(`-- Artist Locations (${allLocations.length})`);
   for (const loc of allLocations) {
-    sqlStatements.push(generateInsert('artist_locations', loc, locationColumns));
+    writeLine(generateInsert('artist_locations', loc, locationColumns));
   }
-  sqlStatements.push(``);
+  writeLine(``);
   console.log(`   ✅ ${allLocations.length} locations`);
 
   // 4. Export portfolio_images with embeddings (batched for performance)
@@ -238,26 +276,39 @@ async function main() {
     process.stdout.write(`\r   Fetching images... ${progress}%`);
 
     // Fetch all images for this batch of artists, then limit per artist in JS
-    const { data: images, error: imagesError } = await supabase
-      .from('portfolio_images')
-      .select('*')
-      .in('artist_id', batchIds)
-      .eq('status', 'active')
-      .not('embedding', 'is', null)
-      .order('likes_count', { ascending: false, nullsFirst: false });
+    // With retry logic for network failures
+    let retries = 3;
+    let images: Array<Record<string, unknown>> | null = null;
+    while (retries > 0 && !images) {
+      const { data, error: imagesError } = await supabase
+        .from('portfolio_images')
+        .select('*')
+        .in('artist_id', batchIds)
+        .eq('status', 'active')
+        .not('embedding', 'is', null)
+        .order('likes_count', { ascending: false, nullsFirst: false });
 
-    if (imagesError) {
-      console.error(`\n⚠️ Failed to fetch images for batch ${i}-${i + batchIds.length}:`, imagesError.message);
-      failedBatches.push(i);
-      continue;
+      if (imagesError) {
+        retries--;
+        if (retries === 0) {
+          console.error(`\n⚠️ Failed to fetch images for batch ${i}-${i + batchIds.length}:`, imagesError.message);
+          failedBatches.push(i);
+        } else {
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+      } else {
+        images = data;
+      }
     }
+
+    if (!images) continue;
 
     // Set columns from first batch
     if (imageColumns.length === 0 && images && images.length > 0) {
       imageColumns = Object.keys(images[0]);
     }
 
-    // Group by artist and take top N per artist
+    // Group by artist and take top N per artist (or all if --all-images)
     const imagesByArtist = new Map<string, Array<Record<string, unknown>>>();
     for (const img of images || []) {
       const artistId = img.artist_id as string;
@@ -265,7 +316,7 @@ async function main() {
         imagesByArtist.set(artistId, []);
       }
       const artistImages = imagesByArtist.get(artistId)!;
-      if (artistImages.length < IMAGES_PER_ARTIST) {
+      if (ALL_IMAGES || artistImages.length < IMAGES_PER_ARTIST) {
         artistImages.push(img);
       }
     }
@@ -282,14 +333,14 @@ async function main() {
     console.warn(`   ⚠️ WARNING: ${failedBatches.length} batches failed. Some images may be missing.`);
   }
 
-  sqlStatements.push(`-- Portfolio Images (${allImages.length})`);
+  writeLine(`-- Portfolio Images (${allImages.length})`);
   const exportedImageIds: string[] = [];
 
   for (const img of allImages) {
-    sqlStatements.push(generateInsert('portfolio_images', img, imageColumns));
+    writeLine(generateInsert('portfolio_images', img, imageColumns));
     exportedImageIds.push(img.id as string);
   }
-  sqlStatements.push(``);
+  writeLine(``);
   console.log(`   ✅ ${allImages.length} images with embeddings`);
 
   // 5. Export artist_style_profiles (batched)
@@ -318,11 +369,11 @@ async function main() {
   }
 
   if (allStyleProfiles.length > 0) {
-    sqlStatements.push(`-- Artist Style Profiles (${allStyleProfiles.length})`);
+    writeLine(`-- Artist Style Profiles (${allStyleProfiles.length})`);
     for (const profile of allStyleProfiles) {
-      sqlStatements.push(generateInsert('artist_style_profiles', profile, styleProfileColumns));
+      writeLine(generateInsert('artist_style_profiles', profile, styleProfileColumns));
     }
-    sqlStatements.push(``);
+    writeLine(``);
     console.log(`   ✅ ${allStyleProfiles.length} style profiles`);
   } else {
     console.log(`   ⚠️ No style profiles found`);
@@ -331,59 +382,30 @@ async function main() {
   // 6. artist_color_profiles table removed - color is now stored at image level (portfolio_images.is_color)
   // Color boosting happens directly in the search function using image-level is_color
 
-  // 7. Export image_style_tags for the images we exported
-  console.log('📦 Exporting image_style_tags...');
-
-  if (exportedImageIds.length > 0) {
-    const allTags: Array<Record<string, unknown>> = [];
-
-    // Fetch in batches of 500 to avoid query limits
-    for (let i = 0; i < exportedImageIds.length; i += 500) {
-      const batch = exportedImageIds.slice(i, i + 500);
-      const progress = Math.round(((i + batch.length) / exportedImageIds.length) * 100);
-      process.stdout.write(`\r   Fetching style tags... ${progress}%`);
-
-      const { data: tags, error: tagsError } = await supabase
-        .from('image_style_tags')
-        .select('*')
-        .in('image_id', batch);
-
-      if (!tagsError && tags) {
-        allTags.push(...tags);
-      }
-    }
-
-    console.log(`\r   Fetching style tags... done!     `);
-
-    sqlStatements.push(`-- Image Style Tags (${allTags.length})`);
-    const tagColumns = allTags.length > 0 ? Object.keys(allTags[0]) : [];
-
-    for (const tag of allTags) {
-      sqlStatements.push(generateInsert('image_style_tags', tag, tagColumns));
-    }
-    sqlStatements.push(``);
-    console.log(`   ✅ ${allTags.length} image style tags`);
-  }
+  // 7. Skip image_style_tags - regenerate locally with ML classifier
+  // This avoids network issues with large batch queries and gives a fresh slate
+  // for tagging iteration
+  console.log('📦 Skipping image_style_tags (regenerate locally with ML classifier)');
+  console.log(`   Run: npx tsx scripts/styles/tag-images-ml.ts --clear --concurrency 200`);
 
   // 8. Add vector index recreation at the end
   // Calculate optimal lists parameter: sqrt(row_count), min 10
   const lists = Math.max(10, Math.floor(Math.sqrt(allImages.length)));
-  sqlStatements.push(`-- Recreate vector index after data load (lists=${lists} for ${allImages.length} images)`);
-  sqlStatements.push(`DROP INDEX IF EXISTS idx_portfolio_embeddings;`);
-  sqlStatements.push(
+  writeLine(`-- Recreate vector index after data load (lists=${lists} for ${allImages.length} images)`);
+  writeLine(`DROP INDEX IF EXISTS idx_portfolio_embeddings;`);
+  writeLine(
     `CREATE INDEX idx_portfolio_embeddings ON portfolio_images USING ivfflat (embedding vector_cosine_ops) WITH (lists = ${lists});`
   );
-  sqlStatements.push(``);
+  writeLine(``);
 
-  // Write to file
-  console.log(`\n💾 Writing to ${OUTPUT_FILE}...`);
-  fs.writeFileSync(OUTPUT_FILE, sqlStatements.join('\n'), 'utf-8');
+  // Close the write stream
+  await new Promise<void>((resolve) => writeStream.end(resolve));
 
   const fileSizeMB = (fs.statSync(OUTPUT_FILE).size / 1024 / 1024).toFixed(1);
   console.log(`\n✅ Seed file generated successfully!`);
   console.log(`   File: ${OUTPUT_FILE}`);
   console.log(`   Size: ${fileSizeMB} MB`);
-  console.log(`   Artists: ${artists?.length || 0}`);
+  console.log(`   Artists: ${artists.length}`);
   console.log(`   Images: ${allImages.length}`);
   console.log(`   Style seeds: ${styleSeeds?.length || 0}`);
   console.log(`\n📝 Next steps:`);

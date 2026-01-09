@@ -23,6 +23,15 @@ COMMENT ON SCHEMA "public" IS 'standard public schema';
 
 
 -- ============================================================================
+-- REQUIRED EXTENSIONS (must come before any functions/tables that use them)
+-- ============================================================================
+SET search_path TO public;
+CREATE EXTENSION IF NOT EXISTS "vector" SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS "pg_trgm" SCHEMA public;
+
+
+-- ============================================================================
 -- TRIGGER PATTERN: CASCADE-SAFE FUNCTIONS
 -- ============================================================================
 --

@@ -136,6 +136,38 @@ export type Database = {
           },
         ]
       }
+      artist_audit_log: {
+        Row: {
+          action: string
+          artist_id: string
+          created_at: string
+          details: Json | null
+          id: string
+        }
+        Insert: {
+          action: string
+          artist_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          artist_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_audit_log_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_locations: {
         Row: {
           artist_id: string
@@ -785,6 +817,38 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      encrypted_instagram_tokens: {
+        Row: {
+          created_at: string
+          encrypted_data: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          encrypted_data: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          encrypted_data?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encrypted_instagram_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       follower_mining_runs: {
         Row: {
@@ -1786,6 +1850,7 @@ export type Database = {
           email: string | null
           id: string
           instagram_id: string | null
+          instagram_token_expires_at: string | null
           instagram_token_vault_id: string | null
           instagram_username: string | null
           updated_at: string | null
@@ -1797,6 +1862,7 @@ export type Database = {
           email?: string | null
           id?: string
           instagram_id?: string | null
+          instagram_token_expires_at?: string | null
           instagram_token_vault_id?: string | null
           instagram_username?: string | null
           updated_at?: string | null
@@ -1808,6 +1874,7 @@ export type Database = {
           email?: string | null
           id?: string
           instagram_id?: string | null
+          instagram_token_expires_at?: string | null
           instagram_token_vault_id?: string | null
           instagram_username?: string | null
           updated_at?: string | null
@@ -1889,6 +1956,10 @@ export type Database = {
         }
         Returns: string
       }
+      delete_encrypted_token: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       expire_featured_artists: { Args: never; Returns: undefined }
       find_related_artists: {
         Args: {
@@ -1917,6 +1988,15 @@ export type Database = {
       format_location: {
         Args: { p_city: string; p_country_code: string; p_region: string }
         Returns: string
+      }
+      get_all_cities_with_min_artists: {
+        Args: { min_artist_count?: number }
+        Returns: {
+          artist_count: number
+          city: string
+          country_code: string
+          region: string
+        }[]
       }
       get_artist_by_handle: {
         Args: { p_instagram_handle: string }
@@ -2031,6 +2111,10 @@ export type Database = {
           country_code: string
           country_name: string
         }[]
+      }
+      get_decrypted_token: {
+        Args: { p_encryption_key: string; p_user_id: string }
+        Returns: string
       }
       get_homepage_stats: {
         Args: never
@@ -2183,6 +2267,14 @@ export type Database = {
           total_count: number
         }[]
       }
+      store_encrypted_token: {
+        Args: {
+          p_encryption_key: string
+          p_token_data: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       track_search_appearances_with_details: {
         Args: { p_appearances: Json; p_search_id: string }
         Returns: undefined
@@ -2196,7 +2288,7 @@ export type Database = {
         Returns: string
       }
       update_artist_locations: {
-        Args: { p_artist_id: string; p_locations: Json }
+        Args: { p_artist_id: string; p_locations: Json; p_user_id?: string }
         Returns: undefined
       }
       user_has_vault_tokens: {
