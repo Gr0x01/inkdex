@@ -1,0 +1,1433 @@
+{
+  "generatedAt": "2026-01-09T10:28:20.171Z",
+  "coveredCities": [
+    {
+      "city": "Fargo",
+      "state": "ND",
+      "avgCpc": 0.77,
+      "totalVolume": 2950,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop fargo",
+          "city": "Fargo",
+          "state": "ND",
+          "searchVolume": 2900,
+          "cpc": 0.64,
+          "competition": "LOW",
+          "competitionIndex": 14,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo fargo",
+          "city": "Fargo",
+          "state": "ND",
+          "searchVolume": 50,
+          "cpc": 0.9,
+          "competition": "LOW",
+          "competitionIndex": 25,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Greenville",
+      "state": "SC",
+      "avgCpc": 0.8200000000000001,
+      "totalVolume": 2410,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop greenville",
+          "city": "Greenville",
+          "state": "SC",
+          "searchVolume": 2400,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 13,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo studio greenville",
+          "city": "Greenville",
+          "state": "SC",
+          "searchVolume": 10,
+          "cpc": 0.66,
+          "competition": "LOW",
+          "competitionIndex": 17,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Richmond",
+      "state": "VA",
+      "avgCpc": 1.192,
+      "totalVolume": 6600,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop richmond",
+          "city": "Richmond",
+          "state": "VA",
+          "searchVolume": 2900,
+          "cpc": 0.94,
+          "competition": "LOW",
+          "competitionIndex": 9,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor richmond",
+          "city": "Richmond",
+          "state": "VA",
+          "searchVolume": 2900,
+          "cpc": 0.94,
+          "competition": "LOW",
+          "competitionIndex": 9,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist richmond",
+          "city": "Richmond",
+          "state": "VA",
+          "searchVolume": 720,
+          "cpc": 1.41,
+          "competition": "LOW",
+          "competitionIndex": 6,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo richmond",
+          "city": "Richmond",
+          "state": "VA",
+          "searchVolume": 70,
+          "cpc": 2.18,
+          "competition": "LOW",
+          "competitionIndex": 9,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo studio richmond",
+          "city": "Richmond",
+          "state": "VA",
+          "searchVolume": 10,
+          "cpc": 0.49,
+          "competition": "MEDIUM",
+          "competitionIndex": 43,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Sioux Falls",
+      "state": "SD",
+      "avgCpc": 1.4216666666666666,
+      "totalVolume": 11150,
+      "topKeywords": [
+        {
+          "keyword": "tattoo artist sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo shop sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo shop sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 170,
+          "cpc": 1.12,
+          "competition": "LOW",
+          "competitionIndex": 19,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 140,
+          "cpc": 2.8,
+          "competition": "LOW",
+          "competitionIndex": 17,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo artist sioux falls",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "searchVolume": 40,
+          "cpc": 1.67,
+          "competition": "LOW",
+          "competitionIndex": 31,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Nashville",
+      "state": "TN",
+      "avgCpc": 1.69625,
+      "totalVolume": 18160,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 6600,
+          "cpc": 1.66,
+          "competition": "MEDIUM",
+          "competitionIndex": 63,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 6600,
+          "cpc": 1.66,
+          "competition": "MEDIUM",
+          "competitionIndex": 63,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 1300,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 37,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo studio nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 1300,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 37,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo artist nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 880,
+          "cpc": 1.89,
+          "competition": "HIGH",
+          "competitionIndex": 78,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo shop nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 880,
+          "cpc": 1.89,
+          "competition": "HIGH",
+          "competitionIndex": 78,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 590,
+          "cpc": 1.59,
+          "competition": "MEDIUM",
+          "competitionIndex": 44,
+          "isCovered": true
+        },
+        {
+          "keyword": "realism tattoo nashville",
+          "city": "Nashville",
+          "state": "TN",
+          "searchVolume": 10,
+          "cpc": 1.18,
+          "competition": "MEDIUM",
+          "competitionIndex": 60,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Salt Lake City",
+      "state": "UT",
+      "avgCpc": 1.836666666666667,
+      "totalVolume": 3500,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 2400,
+          "cpc": 2.04,
+          "competition": "MEDIUM",
+          "competitionIndex": 52,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 720,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 46,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 110,
+          "cpc": 1.55,
+          "competition": "MEDIUM",
+          "competitionIndex": 35,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo artist salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 110,
+          "cpc": 2.08,
+          "competition": "MEDIUM",
+          "competitionIndex": 42,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 70,
+          "cpc": 1.49,
+          "competition": "MEDIUM",
+          "competitionIndex": 40,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo shop salt lake city",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "searchVolume": 90,
+          "cpc": 2.01,
+          "competition": "HIGH",
+          "competitionIndex": 75,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Albuquerque",
+      "state": "NM",
+      "avgCpc": 1.9599999999999997,
+      "totalVolume": 7130,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 2900,
+          "cpc": 1.08,
+          "competition": "LOW",
+          "competitionIndex": 15,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 2900,
+          "cpc": 1.08,
+          "competition": "LOW",
+          "competitionIndex": 15,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo shop albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 390,
+          "cpc": 1.12,
+          "competition": "LOW",
+          "competitionIndex": 18,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 590,
+          "cpc": 2.39,
+          "competition": "LOW",
+          "competitionIndex": 17,
+          "isCovered": true
+        },
+        {
+          "keyword": "best tattoo artist albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 260,
+          "cpc": 2.71,
+          "competition": "LOW",
+          "competitionIndex": 17,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo albuquerque",
+          "city": "Albuquerque",
+          "state": "NM",
+          "searchVolume": 90,
+          "cpc": 3.38,
+          "competition": "LOW",
+          "competitionIndex": 11,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Knoxville",
+      "state": "TN",
+      "avgCpc": 2.12,
+      "totalVolume": 2930,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop knoxville",
+          "city": "Knoxville",
+          "state": "TN",
+          "searchVolume": 2400,
+          "cpc": 2.22,
+          "competition": "LOW",
+          "competitionIndex": 19,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist knoxville",
+          "city": "Knoxville",
+          "state": "TN",
+          "searchVolume": 390,
+          "cpc": 2.47,
+          "competition": "LOW",
+          "competitionIndex": 20,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor knoxville",
+          "city": "Knoxville",
+          "state": "TN",
+          "searchVolume": 70,
+          "cpc": 1.84,
+          "competition": "LOW",
+          "competitionIndex": 33,
+          "isCovered": true
+        },
+        {
+          "keyword": "fine line tattoo knoxville",
+          "city": "Knoxville",
+          "state": "TN",
+          "searchVolume": 70,
+          "cpc": 1.95,
+          "competition": "LOW",
+          "competitionIndex": 12,
+          "isCovered": true
+        }
+      ]
+    },
+    {
+      "city": "Chattanooga",
+      "state": "TN",
+      "avgCpc": 3.2933333333333334,
+      "totalVolume": 2680,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop chattanooga",
+          "city": "Chattanooga",
+          "state": "TN",
+          "searchVolume": 1900,
+          "cpc": 0.42,
+          "competition": "LOW",
+          "competitionIndex": 2,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo artist chattanooga",
+          "city": "Chattanooga",
+          "state": "TN",
+          "searchVolume": 390,
+          "cpc": 4.73,
+          "competition": "LOW",
+          "competitionIndex": 3,
+          "isCovered": true
+        },
+        {
+          "keyword": "tattoo parlor chattanooga",
+          "city": "Chattanooga",
+          "state": "TN",
+          "searchVolume": 390,
+          "cpc": 4.73,
+          "competition": "LOW",
+          "competitionIndex": 3,
+          "isCovered": true
+        }
+      ]
+    }
+  ],
+  "newCitiesRecommended": [
+    {
+      "city": "Lawrence",
+      "state": "KS",
+      "avgCpc": 0.58,
+      "totalVolume": 590,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop lawrence",
+          "city": "Lawrence",
+          "state": "KS",
+          "searchVolume": 590,
+          "cpc": 0.58,
+          "competition": "LOW",
+          "competitionIndex": 14,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Syracuse",
+      "state": "NY",
+      "avgCpc": 0.68,
+      "totalVolume": 1310,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop syracuse",
+          "city": "Syracuse",
+          "state": "NY",
+          "searchVolume": 1300,
+          "cpc": 0.93,
+          "competition": "LOW",
+          "competitionIndex": 33,
+          "isCovered": false
+        },
+        {
+          "keyword": "fine line tattoo syracuse",
+          "city": "Syracuse",
+          "state": "NY",
+          "searchVolume": 10,
+          "cpc": 0.43,
+          "competition": "LOW",
+          "competitionIndex": 19,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Albany",
+      "state": "NY",
+      "avgCpc": 0.82,
+      "totalVolume": 1000,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop albany",
+          "city": "Albany",
+          "state": "NY",
+          "searchVolume": 1000,
+          "cpc": 0.82,
+          "competition": "LOW",
+          "competitionIndex": 9,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Duluth",
+      "state": "MN",
+      "avgCpc": 0.94,
+      "totalVolume": 1600,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop duluth",
+          "city": "Duluth",
+          "state": "MN",
+          "searchVolume": 1600,
+          "cpc": 0.94,
+          "competition": "LOW",
+          "competitionIndex": 6,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Amarillo",
+      "state": "TX",
+      "avgCpc": 1.1,
+      "totalVolume": 1900,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop amarillo",
+          "city": "Amarillo",
+          "state": "TX",
+          "searchVolume": 1900,
+          "cpc": 1.1,
+          "competition": "LOW",
+          "competitionIndex": 5,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Huntsville",
+      "state": "AL",
+      "avgCpc": 1.23,
+      "totalVolume": 1900,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop huntsville",
+          "city": "Huntsville",
+          "state": "AL",
+          "searchVolume": 1900,
+          "cpc": 1.23,
+          "competition": "LOW",
+          "competitionIndex": 17,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Norman",
+      "state": "OK",
+      "avgCpc": 1.31,
+      "totalVolume": 880,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop norman",
+          "city": "Norman",
+          "state": "OK",
+          "searchVolume": 880,
+          "cpc": 1.31,
+          "competition": "LOW",
+          "competitionIndex": 30,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Lubbock",
+      "state": "TX",
+      "avgCpc": 1.364,
+      "totalVolume": 6090,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop lubbock",
+          "city": "Lubbock",
+          "state": "TX",
+          "searchVolume": 2900,
+          "cpc": 1.31,
+          "competition": "LOW",
+          "competitionIndex": 6,
+          "isCovered": false
+        },
+        {
+          "keyword": "tattoo parlor lubbock",
+          "city": "Lubbock",
+          "state": "TX",
+          "searchVolume": 2900,
+          "cpc": 1.31,
+          "competition": "LOW",
+          "competitionIndex": 6,
+          "isCovered": false
+        },
+        {
+          "keyword": "tattoo artist lubbock",
+          "city": "Lubbock",
+          "state": "TX",
+          "searchVolume": 170,
+          "cpc": 2.09,
+          "competition": "LOW",
+          "competitionIndex": 7,
+          "isCovered": false
+        },
+        {
+          "keyword": "fine line tattoo lubbock",
+          "city": "Lubbock",
+          "state": "TX",
+          "searchVolume": 50,
+          "cpc": 0.76,
+          "competition": "LOW",
+          "competitionIndex": 7,
+          "isCovered": false
+        },
+        {
+          "keyword": "best tattoo artist lubbock",
+          "city": "Lubbock",
+          "state": "TX",
+          "searchVolume": 70,
+          "cpc": 1.35,
+          "competition": "LOW",
+          "competitionIndex": 6,
+          "isCovered": false
+        }
+      ]
+    },
+    {
+      "city": "Fort Collins",
+      "state": "CO",
+      "avgCpc": 1.8099999999999998,
+      "totalVolume": 4420,
+      "topKeywords": [
+        {
+          "keyword": "tattoo shop fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 1900,
+          "cpc": 1.6,
+          "competition": "MEDIUM",
+          "competitionIndex": 47,
+          "isCovered": false
+        },
+        {
+          "keyword": "tattoo parlor fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 1900,
+          "cpc": 1.6,
+          "competition": "MEDIUM",
+          "competitionIndex": 47,
+          "isCovered": false
+        },
+        {
+          "keyword": "tattoo artist fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 320,
+          "cpc": 1.7,
+          "competition": "MEDIUM",
+          "competitionIndex": 48,
+          "isCovered": false
+        },
+        {
+          "keyword": "fine line tattoo fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 140,
+          "cpc": 1.25,
+          "competition": "MEDIUM",
+          "competitionIndex": 56,
+          "isCovered": false
+        },
+        {
+          "keyword": "best tattoo shop fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 110,
+          "cpc": 3.11,
+          "competition": "MEDIUM",
+          "competitionIndex": 51,
+          "isCovered": false
+        },
+        {
+          "keyword": "best tattoo artist fort collins",
+          "city": "Fort Collins",
+          "state": "CO",
+          "searchVolume": 50,
+          "cpc": 1.6,
+          "competition": "MEDIUM",
+          "competitionIndex": 46,
+          "isCovered": false
+        }
+      ]
+    }
+  ],
+  "allKeywords": [
+    {
+      "keyword": "tattoo artist nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 1300,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 37,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo artist nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 880,
+      "cpc": 1.89,
+      "competition": "HIGH",
+      "competitionIndex": 78,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 6600,
+      "cpc": 1.66,
+      "competition": "MEDIUM",
+      "competitionIndex": 63,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo studio nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 1300,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 37,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 6600,
+      "cpc": 1.66,
+      "competition": "MEDIUM",
+      "competitionIndex": 63,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo shop nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 880,
+      "cpc": 1.89,
+      "competition": "HIGH",
+      "competitionIndex": 78,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 590,
+      "cpc": 1.59,
+      "competition": "MEDIUM",
+      "competitionIndex": 44,
+      "isCovered": true
+    },
+    {
+      "keyword": "realism tattoo nashville",
+      "city": "Nashville",
+      "state": "TN",
+      "searchVolume": 10,
+      "cpc": 1.18,
+      "competition": "MEDIUM",
+      "competitionIndex": 60,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist richmond",
+      "city": "Richmond",
+      "state": "VA",
+      "searchVolume": 720,
+      "cpc": 1.41,
+      "competition": "LOW",
+      "competitionIndex": 6,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop richmond",
+      "city": "Richmond",
+      "state": "VA",
+      "searchVolume": 2900,
+      "cpc": 0.94,
+      "competition": "LOW",
+      "competitionIndex": 9,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo studio richmond",
+      "city": "Richmond",
+      "state": "VA",
+      "searchVolume": 10,
+      "cpc": 0.49,
+      "competition": "MEDIUM",
+      "competitionIndex": 43,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor richmond",
+      "city": "Richmond",
+      "state": "VA",
+      "searchVolume": 2900,
+      "cpc": 0.94,
+      "competition": "LOW",
+      "competitionIndex": 9,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo richmond",
+      "city": "Richmond",
+      "state": "VA",
+      "searchVolume": 70,
+      "cpc": 2.18,
+      "competition": "LOW",
+      "competitionIndex": 9,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop fargo",
+      "city": "Fargo",
+      "state": "ND",
+      "searchVolume": 2900,
+      "cpc": 0.64,
+      "competition": "LOW",
+      "competitionIndex": 14,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo fargo",
+      "city": "Fargo",
+      "state": "ND",
+      "searchVolume": 50,
+      "cpc": 0.9,
+      "competition": "LOW",
+      "competitionIndex": 25,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo artist sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 40,
+      "cpc": 1.67,
+      "competition": "LOW",
+      "competitionIndex": 31,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo shop sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 170,
+      "cpc": 1.12,
+      "competition": "LOW",
+      "competitionIndex": 19,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo sioux falls",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "searchVolume": 140,
+      "cpc": 2.8,
+      "competition": "LOW",
+      "competitionIndex": 17,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 590,
+      "cpc": 2.39,
+      "competition": "LOW",
+      "competitionIndex": 17,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo artist albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 260,
+      "cpc": 2.71,
+      "competition": "LOW",
+      "competitionIndex": 17,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 2900,
+      "cpc": 1.08,
+      "competition": "LOW",
+      "competitionIndex": 15,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 2900,
+      "cpc": 1.08,
+      "competition": "LOW",
+      "competitionIndex": 15,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo shop albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 390,
+      "cpc": 1.12,
+      "competition": "LOW",
+      "competitionIndex": 18,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo albuquerque",
+      "city": "Albuquerque",
+      "state": "NM",
+      "searchVolume": 90,
+      "cpc": 3.38,
+      "competition": "LOW",
+      "competitionIndex": 11,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 720,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 46,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo artist salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 110,
+      "cpc": 2.08,
+      "competition": "MEDIUM",
+      "competitionIndex": 42,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 2400,
+      "cpc": 2.04,
+      "competition": "MEDIUM",
+      "competitionIndex": 52,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 70,
+      "cpc": 1.49,
+      "competition": "MEDIUM",
+      "competitionIndex": 40,
+      "isCovered": true
+    },
+    {
+      "keyword": "best tattoo shop salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 90,
+      "cpc": 2.01,
+      "competition": "HIGH",
+      "competitionIndex": 75,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo salt lake city",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "searchVolume": 110,
+      "cpc": 1.55,
+      "competition": "MEDIUM",
+      "competitionIndex": 35,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop duluth",
+      "city": "Duluth",
+      "state": "MN",
+      "searchVolume": 1600,
+      "cpc": 0.94,
+      "competition": "LOW",
+      "competitionIndex": 6,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop flagstaff",
+      "city": "Flagstaff",
+      "state": "AZ",
+      "searchVolume": 1000,
+      "cpc": 3.2,
+      "competition": "LOW",
+      "competitionIndex": 12,
+      "isCovered": false
+    },
+    {
+      "keyword": "fine line tattoo flagstaff",
+      "city": "Flagstaff",
+      "state": "AZ",
+      "searchVolume": 30,
+      "cpc": 1.37,
+      "competition": "LOW",
+      "competitionIndex": 11,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo artist fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 320,
+      "cpc": 1.7,
+      "competition": "MEDIUM",
+      "competitionIndex": 48,
+      "isCovered": false
+    },
+    {
+      "keyword": "best tattoo artist fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 50,
+      "cpc": 1.6,
+      "competition": "MEDIUM",
+      "competitionIndex": 46,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 1900,
+      "cpc": 1.6,
+      "competition": "MEDIUM",
+      "competitionIndex": 47,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo parlor fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 1900,
+      "cpc": 1.6,
+      "competition": "MEDIUM",
+      "competitionIndex": 47,
+      "isCovered": false
+    },
+    {
+      "keyword": "best tattoo shop fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 110,
+      "cpc": 3.11,
+      "competition": "MEDIUM",
+      "competitionIndex": 51,
+      "isCovered": false
+    },
+    {
+      "keyword": "fine line tattoo fort collins",
+      "city": "Fort Collins",
+      "state": "CO",
+      "searchVolume": 140,
+      "cpc": 1.25,
+      "competition": "MEDIUM",
+      "competitionIndex": 56,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop tempe",
+      "city": "Tempe",
+      "state": "AZ",
+      "searchVolume": 590,
+      "cpc": 2.34,
+      "competition": "HIGH",
+      "competitionIndex": 70,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo parlor tempe",
+      "city": "Tempe",
+      "state": "AZ",
+      "searchVolume": 590,
+      "cpc": 2.34,
+      "competition": "HIGH",
+      "competitionIndex": 70,
+      "isCovered": false
+    },
+    {
+      "keyword": "fine line tattoo tempe",
+      "city": "Tempe",
+      "state": "AZ",
+      "searchVolume": 30,
+      "cpc": 1.94,
+      "competition": "MEDIUM",
+      "competitionIndex": 62,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop lawrence",
+      "city": "Lawrence",
+      "state": "KS",
+      "searchVolume": 590,
+      "cpc": 0.58,
+      "competition": "LOW",
+      "competitionIndex": 14,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop norman",
+      "city": "Norman",
+      "state": "OK",
+      "searchVolume": 880,
+      "cpc": 1.31,
+      "competition": "LOW",
+      "competitionIndex": 30,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo artist lubbock",
+      "city": "Lubbock",
+      "state": "TX",
+      "searchVolume": 170,
+      "cpc": 2.09,
+      "competition": "LOW",
+      "competitionIndex": 7,
+      "isCovered": false
+    },
+    {
+      "keyword": "best tattoo artist lubbock",
+      "city": "Lubbock",
+      "state": "TX",
+      "searchVolume": 70,
+      "cpc": 1.35,
+      "competition": "LOW",
+      "competitionIndex": 6,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop lubbock",
+      "city": "Lubbock",
+      "state": "TX",
+      "searchVolume": 2900,
+      "cpc": 1.31,
+      "competition": "LOW",
+      "competitionIndex": 6,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo parlor lubbock",
+      "city": "Lubbock",
+      "state": "TX",
+      "searchVolume": 2900,
+      "cpc": 1.31,
+      "competition": "LOW",
+      "competitionIndex": 6,
+      "isCovered": false
+    },
+    {
+      "keyword": "fine line tattoo lubbock",
+      "city": "Lubbock",
+      "state": "TX",
+      "searchVolume": 50,
+      "cpc": 0.76,
+      "competition": "LOW",
+      "competitionIndex": 7,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop amarillo",
+      "city": "Amarillo",
+      "state": "TX",
+      "searchVolume": 1900,
+      "cpc": 1.1,
+      "competition": "LOW",
+      "competitionIndex": 5,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo artist mobile",
+      "city": "Mobile",
+      "state": "AL",
+      "searchVolume": 720,
+      "cpc": 3.93,
+      "competition": "LOW",
+      "competitionIndex": 24,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop huntsville",
+      "city": "Huntsville",
+      "state": "AL",
+      "searchVolume": 1900,
+      "cpc": 1.23,
+      "competition": "LOW",
+      "competitionIndex": 17,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop syracuse",
+      "city": "Syracuse",
+      "state": "NY",
+      "searchVolume": 1300,
+      "cpc": 0.93,
+      "competition": "LOW",
+      "competitionIndex": 33,
+      "isCovered": false
+    },
+    {
+      "keyword": "fine line tattoo syracuse",
+      "city": "Syracuse",
+      "state": "NY",
+      "searchVolume": 10,
+      "cpc": 0.43,
+      "competition": "LOW",
+      "competitionIndex": 19,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop albany",
+      "city": "Albany",
+      "state": "NY",
+      "searchVolume": 1000,
+      "cpc": 0.82,
+      "competition": "LOW",
+      "competitionIndex": 9,
+      "isCovered": false
+    },
+    {
+      "keyword": "tattoo shop greenville",
+      "city": "Greenville",
+      "state": "SC",
+      "searchVolume": 2400,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 13,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo studio greenville",
+      "city": "Greenville",
+      "state": "SC",
+      "searchVolume": 10,
+      "cpc": 0.66,
+      "competition": "LOW",
+      "competitionIndex": 17,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist chattanooga",
+      "city": "Chattanooga",
+      "state": "TN",
+      "searchVolume": 390,
+      "cpc": 4.73,
+      "competition": "LOW",
+      "competitionIndex": 3,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop chattanooga",
+      "city": "Chattanooga",
+      "state": "TN",
+      "searchVolume": 1900,
+      "cpc": 0.42,
+      "competition": "LOW",
+      "competitionIndex": 2,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor chattanooga",
+      "city": "Chattanooga",
+      "state": "TN",
+      "searchVolume": 390,
+      "cpc": 4.73,
+      "competition": "LOW",
+      "competitionIndex": 3,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo artist knoxville",
+      "city": "Knoxville",
+      "state": "TN",
+      "searchVolume": 390,
+      "cpc": 2.47,
+      "competition": "LOW",
+      "competitionIndex": 20,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo shop knoxville",
+      "city": "Knoxville",
+      "state": "TN",
+      "searchVolume": 2400,
+      "cpc": 2.22,
+      "competition": "LOW",
+      "competitionIndex": 19,
+      "isCovered": true
+    },
+    {
+      "keyword": "tattoo parlor knoxville",
+      "city": "Knoxville",
+      "state": "TN",
+      "searchVolume": 70,
+      "cpc": 1.84,
+      "competition": "LOW",
+      "competitionIndex": 33,
+      "isCovered": true
+    },
+    {
+      "keyword": "fine line tattoo knoxville",
+      "city": "Knoxville",
+      "state": "TN",
+      "searchVolume": 70,
+      "cpc": 1.95,
+      "competition": "LOW",
+      "competitionIndex": 12,
+      "isCovered": true
+    }
+  ]
+}

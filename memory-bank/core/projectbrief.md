@@ -7,7 +7,7 @@ Status: Launched - Full US Coverage
 # Project Brief: Inkdex
 
 ## Project Overview
-Inkdex is an AI-powered tattoo artist discovery platform that revolutionizes how people find tattoo artists by letting them search in *their language* (images, vibes, plain descriptions) rather than forcing them to learn tattoo industry terminology.
+Inkdex is a tattoo artist discovery platform that lets people find tattoo artists by searching in *their language* (images, vibes, plain descriptions) rather than forcing them to learn tattoo industry terminology.
 
 **Product Name:** Inkdex
 **Domain:** inkdex.io
@@ -152,18 +152,13 @@ Let users express themselves naturally:
 
 ## Next Priorities
 
-### Immediate
-1. Deploy Stripe to production (add live keys)
-2. Run image scraping pipeline for ~10k pending artists
-3. Marketing/outreach to drive artist claims
-
 ### Short-term
 - Monitor search performance and optimize
 - Expand style library based on demand
 - Artist outreach campaigns
 
 ### Medium-term
-- International expansion (Canada, UK, Australia)
+- International expansion (Canada, UK, Australia) - VPS miner active
 - Mobile app consideration
 - Style trend analytics
 

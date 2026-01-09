@@ -13,7 +13,7 @@ Status: Launched - Full US Coverage
 - **Scale**: 116 cities, 15,626 artists, 68,440 images with embeddings
 
 ## Project Summary
-Inkdex - AI-powered tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions) using multi-modal CLIP embeddings. Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
+Inkdex - tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions). Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
 
 ## Live Cities (116 Total Across All 50 States + DC)
 
@@ -77,13 +77,9 @@ npx supabase gen types typescript --local > types/database.ts
 All 15 implementation phases complete:
 - ✅ Phase 1-4: Database, OAuth, Claim Flow, Add Artist
 - ✅ Phase 5-8: Onboarding, Portfolio, Profile, Legal Pages
-- ✅ Phase 9: Stripe Integration (test mode working, production pending)
+- ✅ Phase 9: Stripe Integration (live in production)
 - ✅ Phase 10-12: Email, Auto-Sync, Search Ranking
 - ✅ Phase 13-15: Analytics, Admin Panel, Multi-Location
-
-**Pending Production Tasks:**
-- Deploy Stripe live keys to Vercel
-- Run image scraping for ~10k pending artists
 
 ## Critical Architecture Points
 - **Search**: Multi-modal (image + text) using CLIP embeddings
@@ -164,8 +160,6 @@ NEXT_PUBLIC_APP_URL=
 - **Monthly (96 cities)**: ~$12-20 (storage + re-scraping + Redis)
 
 ## Next Immediate Steps
-1. Add Stripe live keys to Vercel environment variables
-2. Run pending GDPR migration (`npm run db:push`)
-3. Process pending artists through scraping pipeline
-4. Monitor production for issues
-5. Begin marketing/artist outreach
+1. Monitor production for issues
+2. Continue marketing/artist outreach
+3. International expansion via VPS miner

@@ -1,0 +1,1659 @@
+{
+  "generatedAt": "2026-01-09T10:01:53.488Z",
+  "budget": 250,
+  "totalKeywordsResearched": 68,
+  "validResultsWithCpc": 68,
+  "categorySummaries": [
+    {
+      "category": "visual_search",
+      "avgCpc": 1.16,
+      "avgVolume": 1300,
+      "avgCompetition": 1,
+      "totalKeywords": 1,
+      "estimatedClicksFor250": 215,
+      "keywords": [
+        {
+          "keyword": "tattoo ideas los angeles",
+          "category": "visual_search",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 1300,
+          "cpc": 1.16,
+          "competition": "LOW",
+          "competitionIndex": 1
+        }
+      ]
+    },
+    {
+      "category": "shop_queries",
+      "avgCpc": 1.9419230769230764,
+      "avgVolume": 2451.923076923077,
+      "avgCompetition": 38.26923076923077,
+      "totalKeywords": 26,
+      "estimatedClicksFor250": 128,
+      "keywords": [
+        {
+          "keyword": "tattoo studio richmond",
+          "category": "shop_queries",
+          "city": "Richmond",
+          "state": "VA",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 10,
+          "cpc": 0.49,
+          "competition": "MEDIUM",
+          "competitionIndex": 43
+        },
+        {
+          "keyword": "tattoo shop fargo",
+          "category": "shop_queries",
+          "city": "Fargo",
+          "state": "ND",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 2900,
+          "cpc": 0.64,
+          "competition": "LOW",
+          "competitionIndex": 14
+        },
+        {
+          "keyword": "tattoo shop richmond",
+          "category": "shop_queries",
+          "city": "Richmond",
+          "state": "VA",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 2900,
+          "cpc": 0.94,
+          "competition": "LOW",
+          "competitionIndex": 9
+        },
+        {
+          "keyword": "tattoo parlor richmond",
+          "category": "shop_queries",
+          "city": "Richmond",
+          "state": "VA",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 2900,
+          "cpc": 0.94,
+          "competition": "LOW",
+          "competitionIndex": 9
+        },
+        {
+          "keyword": "tattoo shop sioux falls",
+          "category": "shop_queries",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21
+        },
+        {
+          "keyword": "tattoo parlor sioux falls",
+          "category": "shop_queries",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21
+        },
+        {
+          "keyword": "tattoo shop albuquerque",
+          "category": "shop_queries",
+          "city": "Albuquerque",
+          "state": "NM",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 2900,
+          "cpc": 1.08,
+          "competition": "LOW",
+          "competitionIndex": 15
+        },
+        {
+          "keyword": "tattoo parlor albuquerque",
+          "category": "shop_queries",
+          "city": "Albuquerque",
+          "state": "NM",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 2900,
+          "cpc": 1.08,
+          "competition": "LOW",
+          "competitionIndex": 15
+        },
+        {
+          "keyword": "tattoo studio seattle",
+          "category": "shop_queries",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 90,
+          "cpc": 1.45,
+          "competition": "LOW",
+          "competitionIndex": 27
+        },
+        {
+          "keyword": "tattoo parlor salt lake city",
+          "category": "shop_queries",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 70,
+          "cpc": 1.49,
+          "competition": "MEDIUM",
+          "competitionIndex": 40
+        },
+        {
+          "keyword": "tattoo shop nashville",
+          "category": "shop_queries",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 6600,
+          "cpc": 1.66,
+          "competition": "MEDIUM",
+          "competitionIndex": 63
+        },
+        {
+          "keyword": "tattoo parlor nashville",
+          "category": "shop_queries",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 6600,
+          "cpc": 1.66,
+          "competition": "MEDIUM",
+          "competitionIndex": 63
+        },
+        {
+          "keyword": "tattoo studio nashville",
+          "category": "shop_queries",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 1300,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 37
+        },
+        {
+          "keyword": "tattoo parlor seattle",
+          "category": "shop_queries",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 1900,
+          "cpc": 1.86,
+          "competition": "MEDIUM",
+          "competitionIndex": 56
+        },
+        {
+          "keyword": "tattoo shop austin",
+          "category": "shop_queries",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 5400,
+          "cpc": 1.92,
+          "competition": "MEDIUM",
+          "competitionIndex": 46
+        },
+        {
+          "keyword": "tattoo parlor austin",
+          "category": "shop_queries",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 5400,
+          "cpc": 1.92,
+          "competition": "MEDIUM",
+          "competitionIndex": 46
+        },
+        {
+          "keyword": "tattoo shop salt lake city",
+          "category": "shop_queries",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 2400,
+          "cpc": 2.04,
+          "competition": "MEDIUM",
+          "competitionIndex": 52
+        },
+        {
+          "keyword": "tattoo shop boise",
+          "category": "shop_queries",
+          "city": "Boise",
+          "state": "ID",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 2400,
+          "cpc": 2.26,
+          "competition": "MEDIUM",
+          "competitionIndex": 52
+        },
+        {
+          "keyword": "tattoo parlor boise",
+          "category": "shop_queries",
+          "city": "Boise",
+          "state": "ID",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 2400,
+          "cpc": 2.26,
+          "competition": "MEDIUM",
+          "competitionIndex": 52
+        },
+        {
+          "keyword": "tattoo studio austin",
+          "category": "shop_queries",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 260,
+          "cpc": 2.36,
+          "competition": "MEDIUM",
+          "competitionIndex": 45
+        },
+        {
+          "keyword": "tattoo shop asheville",
+          "category": "shop_queries",
+          "city": "Asheville",
+          "state": "NC",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 2400,
+          "cpc": 2.41,
+          "competition": "LOW",
+          "competitionIndex": 29
+        },
+        {
+          "keyword": "tattoo shop seattle",
+          "category": "shop_queries",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 1600,
+          "cpc": 2.44,
+          "competition": "MEDIUM",
+          "competitionIndex": 62
+        },
+        {
+          "keyword": "tattoo studio los angeles",
+          "category": "shop_queries",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 170,
+          "cpc": 3.24,
+          "competition": "MEDIUM",
+          "competitionIndex": 56
+        },
+        {
+          "keyword": "tattoo parlor los angeles",
+          "category": "shop_queries",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 110,
+          "cpc": 3.45,
+          "competition": "LOW",
+          "competitionIndex": 33
+        },
+        {
+          "keyword": "tattoo parlor asheville",
+          "category": "shop_queries",
+          "city": "Asheville",
+          "state": "NC",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 40,
+          "cpc": 4.54,
+          "competition": "LOW",
+          "competitionIndex": 24
+        },
+        {
+          "keyword": "tattoo shop los angeles",
+          "category": "shop_queries",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 2900,
+          "cpc": 4.55,
+          "competition": "MEDIUM",
+          "competitionIndex": 65
+        }
+      ]
+    },
+    {
+      "category": "style_specific",
+      "avgCpc": 2.1286363636363634,
+      "avgVolume": 159.0909090909091,
+      "avgCompetition": 44.27272727272727,
+      "totalKeywords": 22,
+      "estimatedClicksFor250": 117,
+      "keywords": [
+        {
+          "keyword": "blackwork tattoo seattle",
+          "category": "style_specific",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 50,
+          "cpc": 0.74,
+          "competition": "LOW",
+          "competitionIndex": 33
+        },
+        {
+          "keyword": "traditional tattoo austin",
+          "category": "style_specific",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 70,
+          "cpc": 0.89,
+          "competition": "MEDIUM",
+          "competitionIndex": 57
+        },
+        {
+          "keyword": "fine line tattoo fargo",
+          "category": "style_specific",
+          "city": "Fargo",
+          "state": "ND",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 50,
+          "cpc": 0.9,
+          "competition": "LOW",
+          "competitionIndex": 25
+        },
+        {
+          "keyword": "realism tattoo nashville",
+          "category": "style_specific",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 10,
+          "cpc": 1.18,
+          "competition": "MEDIUM",
+          "competitionIndex": 60
+        },
+        {
+          "keyword": "blackwork tattoo los angeles",
+          "category": "style_specific",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 30,
+          "cpc": 1.21,
+          "competition": "MEDIUM",
+          "competitionIndex": 45
+        },
+        {
+          "keyword": "fine line tattoo austin",
+          "category": "style_specific",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 590,
+          "cpc": 1.36,
+          "competition": "MEDIUM",
+          "competitionIndex": 48
+        },
+        {
+          "keyword": "traditional tattoo seattle",
+          "category": "style_specific",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 140,
+          "cpc": 1.39,
+          "competition": "MEDIUM",
+          "competitionIndex": 45
+        },
+        {
+          "keyword": "fine line tattoo salt lake city",
+          "category": "style_specific",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 110,
+          "cpc": 1.55,
+          "competition": "MEDIUM",
+          "competitionIndex": 35
+        },
+        {
+          "keyword": "fine line tattoo nashville",
+          "category": "style_specific",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 590,
+          "cpc": 1.59,
+          "competition": "MEDIUM",
+          "competitionIndex": 44
+        },
+        {
+          "keyword": "realism tattoo seattle",
+          "category": "style_specific",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 10,
+          "cpc": 1.64,
+          "competition": "HIGH",
+          "competitionIndex": 70
+        },
+        {
+          "keyword": "realism tattoo austin",
+          "category": "style_specific",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 20,
+          "cpc": 1.65,
+          "competition": "MEDIUM",
+          "competitionIndex": 64
+        },
+        {
+          "keyword": "fine line tattoo boise",
+          "category": "style_specific",
+          "city": "Boise",
+          "state": "ID",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 170,
+          "cpc": 1.84,
+          "competition": "HIGH",
+          "competitionIndex": 74
+        },
+        {
+          "keyword": "fine line tattoo seattle",
+          "category": "style_specific",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 590,
+          "cpc": 1.99,
+          "competition": "MEDIUM",
+          "competitionIndex": 60
+        },
+        {
+          "keyword": "fine line tattoo asheville",
+          "category": "style_specific",
+          "city": "Asheville",
+          "state": "NC",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 90,
+          "cpc": 2.17,
+          "competition": "LOW",
+          "competitionIndex": 31
+        },
+        {
+          "keyword": "fine line tattoo richmond",
+          "category": "style_specific",
+          "city": "Richmond",
+          "state": "VA",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 70,
+          "cpc": 2.18,
+          "competition": "LOW",
+          "competitionIndex": 9
+        },
+        {
+          "keyword": "minimalist tattoo seattle",
+          "category": "style_specific",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 10,
+          "cpc": 2.47,
+          "competition": "MEDIUM",
+          "competitionIndex": 49
+        },
+        {
+          "keyword": "realism tattoo los angeles",
+          "category": "style_specific",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 20,
+          "cpc": 2.78,
+          "competition": "MEDIUM",
+          "competitionIndex": 46
+        },
+        {
+          "keyword": "fine line tattoo sioux falls",
+          "category": "style_specific",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 140,
+          "cpc": 2.8,
+          "competition": "LOW",
+          "competitionIndex": 17
+        },
+        {
+          "keyword": "fine line tattoo albuquerque",
+          "category": "style_specific",
+          "city": "Albuquerque",
+          "state": "NM",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 90,
+          "cpc": 3.38,
+          "competition": "LOW",
+          "competitionIndex": 11
+        },
+        {
+          "keyword": "traditional tattoo los angeles",
+          "category": "style_specific",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 140,
+          "cpc": 4.27,
+          "competition": "LOW",
+          "competitionIndex": 31
+        },
+        {
+          "keyword": "blackwork tattoo austin",
+          "category": "style_specific",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 30,
+          "cpc": 4.37,
+          "competition": "MEDIUM",
+          "competitionIndex": 43
+        },
+        {
+          "keyword": "fine line tattoo los angeles",
+          "category": "style_specific",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 480,
+          "cpc": 4.48,
+          "competition": "HIGH",
+          "competitionIndex": 77
+        }
+      ]
+    },
+    {
+      "category": "high_intent",
+      "avgCpc": 2.2621052631578946,
+      "avgVolume": 891.578947368421,
+      "avgCompetition": 42.473684210526315,
+      "totalKeywords": 19,
+      "estimatedClicksFor250": 110,
+      "keywords": [
+        {
+          "keyword": "tattoo artist sioux falls",
+          "category": "high_intent",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 3600,
+          "cpc": 0.98,
+          "competition": "LOW",
+          "competitionIndex": 21
+        },
+        {
+          "keyword": "tattoo artist richmond",
+          "category": "high_intent",
+          "city": "Richmond",
+          "state": "VA",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 720,
+          "cpc": 1.41,
+          "competition": "LOW",
+          "competitionIndex": 6
+        },
+        {
+          "keyword": "tattoo artist seattle",
+          "category": "high_intent",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 1900,
+          "cpc": 1.67,
+          "competition": "MEDIUM",
+          "competitionIndex": 60
+        },
+        {
+          "keyword": "best tattoo artist sioux falls",
+          "category": "high_intent",
+          "city": "Sioux Falls",
+          "state": "SD",
+          "cityTier": "tier4_small_market",
+          "searchVolume": 40,
+          "cpc": 1.67,
+          "competition": "LOW",
+          "competitionIndex": 31
+        },
+        {
+          "keyword": "tattoo artist nashville",
+          "category": "high_intent",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 1300,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 37
+        },
+        {
+          "keyword": "tattoo artist salt lake city",
+          "category": "high_intent",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 720,
+          "cpc": 1.85,
+          "competition": "MEDIUM",
+          "competitionIndex": 46
+        },
+        {
+          "keyword": "best tattoo artist nashville",
+          "category": "high_intent",
+          "city": "Nashville",
+          "state": "TN",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 880,
+          "cpc": 1.89,
+          "competition": "HIGH",
+          "competitionIndex": 78
+        },
+        {
+          "keyword": "best tattoo artist seattle",
+          "category": "high_intent",
+          "city": "Seattle",
+          "state": "WA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 590,
+          "cpc": 1.92,
+          "competition": "MEDIUM",
+          "competitionIndex": 66
+        },
+        {
+          "keyword": "best tattoo artist austin",
+          "category": "high_intent",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 590,
+          "cpc": 2.03,
+          "competition": "HIGH",
+          "competitionIndex": 67
+        },
+        {
+          "keyword": "best tattoo artist salt lake city",
+          "category": "high_intent",
+          "city": "Salt Lake City",
+          "state": "UT",
+          "cityTier": "tier2_mid_market",
+          "searchVolume": 110,
+          "cpc": 2.08,
+          "competition": "MEDIUM",
+          "competitionIndex": 42
+        },
+        {
+          "keyword": "tattoo artist asheville",
+          "category": "high_intent",
+          "city": "Asheville",
+          "state": "NC",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 590,
+          "cpc": 2.31,
+          "competition": "LOW",
+          "competitionIndex": 19
+        },
+        {
+          "keyword": "best tattoo artist boise",
+          "category": "high_intent",
+          "city": "Boise",
+          "state": "ID",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 140,
+          "cpc": 2.37,
+          "competition": "HIGH",
+          "competitionIndex": 80
+        },
+        {
+          "keyword": "tattoo artist albuquerque",
+          "category": "high_intent",
+          "city": "Albuquerque",
+          "state": "NM",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 590,
+          "cpc": 2.39,
+          "competition": "LOW",
+          "competitionIndex": 17
+        },
+        {
+          "keyword": "tattoo artist austin",
+          "category": "high_intent",
+          "city": "Austin",
+          "state": "TX",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 1300,
+          "cpc": 2.45,
+          "competition": "MEDIUM",
+          "competitionIndex": 53
+        },
+        {
+          "keyword": "tattoo artist boise",
+          "category": "high_intent",
+          "city": "Boise",
+          "state": "ID",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 480,
+          "cpc": 2.62,
+          "competition": "MEDIUM",
+          "competitionIndex": 55
+        },
+        {
+          "keyword": "best tattoo artist albuquerque",
+          "category": "high_intent",
+          "city": "Albuquerque",
+          "state": "NM",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 260,
+          "cpc": 2.71,
+          "competition": "LOW",
+          "competitionIndex": 17
+        },
+        {
+          "keyword": "best tattoo artist los angeles",
+          "category": "high_intent",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 590,
+          "cpc": 3.41,
+          "competition": "MEDIUM",
+          "competitionIndex": 53
+        },
+        {
+          "keyword": "tattoo artist los angeles",
+          "category": "high_intent",
+          "city": "Los Angeles",
+          "state": "CA",
+          "cityTier": "tier1_high_coverage",
+          "searchVolume": 2400,
+          "cpc": 3.67,
+          "competition": "MEDIUM",
+          "competitionIndex": 35
+        },
+        {
+          "keyword": "best tattoo artist asheville",
+          "category": "high_intent",
+          "city": "Asheville",
+          "state": "NC",
+          "cityTier": "tier3_low_competition",
+          "searchVolume": 140,
+          "cpc": 3.7,
+          "competition": "LOW",
+          "competitionIndex": 24
+        }
+      ]
+    }
+  ],
+  "tierSummaries": [
+    {
+      "tier": "tier4_small_market",
+      "avgCpc": 1.2785714285714285,
+      "avgVolume": 1990,
+      "cities": [
+        "Fargo",
+        "Sioux Falls"
+      ],
+      "estimatedClicksFor250": 195
+    },
+    {
+      "tier": "tier2_mid_market",
+      "avgCpc": 1.5676470588235294,
+      "avgVolume": 1605.2941176470588,
+      "cities": [
+        "Nashville",
+        "Salt Lake City",
+        "Richmond"
+      ],
+      "estimatedClicksFor250": 159
+    },
+    {
+      "tier": "tier1_high_coverage",
+      "avgCpc": 2.3703448275862073,
+      "avgVolume": 988.9655172413793,
+      "cities": [
+        "Los Angeles",
+        "Austin",
+        "Seattle"
+      ],
+      "estimatedClicksFor250": 105
+    },
+    {
+      "tier": "tier3_low_competition",
+      "avgCpc": 2.4746666666666663,
+      "avgVolume": 1039.3333333333333,
+      "cities": [
+        "Asheville",
+        "Boise",
+        "Albuquerque"
+      ],
+      "estimatedClicksFor250": 101
+    }
+  ],
+  "allResults": [
+    {
+      "keyword": "tattoo artist los angeles",
+      "category": "high_intent",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 2400,
+      "cpc": 3.67,
+      "competition": "MEDIUM",
+      "competitionIndex": 35
+    },
+    {
+      "keyword": "best tattoo artist los angeles",
+      "category": "high_intent",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 590,
+      "cpc": 3.41,
+      "competition": "MEDIUM",
+      "competitionIndex": 53
+    },
+    {
+      "keyword": "fine line tattoo los angeles",
+      "category": "style_specific",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 480,
+      "cpc": 4.48,
+      "competition": "HIGH",
+      "competitionIndex": 77
+    },
+    {
+      "keyword": "blackwork tattoo los angeles",
+      "category": "style_specific",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 30,
+      "cpc": 1.21,
+      "competition": "MEDIUM",
+      "competitionIndex": 45
+    },
+    {
+      "keyword": "realism tattoo los angeles",
+      "category": "style_specific",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 20,
+      "cpc": 2.78,
+      "competition": "MEDIUM",
+      "competitionIndex": 46
+    },
+    {
+      "keyword": "traditional tattoo los angeles",
+      "category": "style_specific",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 140,
+      "cpc": 4.27,
+      "competition": "LOW",
+      "competitionIndex": 31
+    },
+    {
+      "keyword": "tattoo ideas los angeles",
+      "category": "visual_search",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 1300,
+      "cpc": 1.16,
+      "competition": "LOW",
+      "competitionIndex": 1
+    },
+    {
+      "keyword": "tattoo shop los angeles",
+      "category": "shop_queries",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 2900,
+      "cpc": 4.55,
+      "competition": "MEDIUM",
+      "competitionIndex": 65
+    },
+    {
+      "keyword": "tattoo parlor los angeles",
+      "category": "shop_queries",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 110,
+      "cpc": 3.45,
+      "competition": "LOW",
+      "competitionIndex": 33
+    },
+    {
+      "keyword": "tattoo studio los angeles",
+      "category": "shop_queries",
+      "city": "Los Angeles",
+      "state": "CA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 170,
+      "cpc": 3.24,
+      "competition": "MEDIUM",
+      "competitionIndex": 56
+    },
+    {
+      "keyword": "tattoo artist austin",
+      "category": "high_intent",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 1300,
+      "cpc": 2.45,
+      "competition": "MEDIUM",
+      "competitionIndex": 53
+    },
+    {
+      "keyword": "best tattoo artist austin",
+      "category": "high_intent",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 590,
+      "cpc": 2.03,
+      "competition": "HIGH",
+      "competitionIndex": 67
+    },
+    {
+      "keyword": "fine line tattoo austin",
+      "category": "style_specific",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 590,
+      "cpc": 1.36,
+      "competition": "MEDIUM",
+      "competitionIndex": 48
+    },
+    {
+      "keyword": "blackwork tattoo austin",
+      "category": "style_specific",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 30,
+      "cpc": 4.37,
+      "competition": "MEDIUM",
+      "competitionIndex": 43
+    },
+    {
+      "keyword": "realism tattoo austin",
+      "category": "style_specific",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 20,
+      "cpc": 1.65,
+      "competition": "MEDIUM",
+      "competitionIndex": 64
+    },
+    {
+      "keyword": "traditional tattoo austin",
+      "category": "style_specific",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 70,
+      "cpc": 0.89,
+      "competition": "MEDIUM",
+      "competitionIndex": 57
+    },
+    {
+      "keyword": "tattoo shop austin",
+      "category": "shop_queries",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 5400,
+      "cpc": 1.92,
+      "competition": "MEDIUM",
+      "competitionIndex": 46
+    },
+    {
+      "keyword": "tattoo parlor austin",
+      "category": "shop_queries",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 5400,
+      "cpc": 1.92,
+      "competition": "MEDIUM",
+      "competitionIndex": 46
+    },
+    {
+      "keyword": "tattoo studio austin",
+      "category": "shop_queries",
+      "city": "Austin",
+      "state": "TX",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 260,
+      "cpc": 2.36,
+      "competition": "MEDIUM",
+      "competitionIndex": 45
+    },
+    {
+      "keyword": "tattoo artist seattle",
+      "category": "high_intent",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 1900,
+      "cpc": 1.67,
+      "competition": "MEDIUM",
+      "competitionIndex": 60
+    },
+    {
+      "keyword": "best tattoo artist seattle",
+      "category": "high_intent",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 590,
+      "cpc": 1.92,
+      "competition": "MEDIUM",
+      "competitionIndex": 66
+    },
+    {
+      "keyword": "fine line tattoo seattle",
+      "category": "style_specific",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 590,
+      "cpc": 1.99,
+      "competition": "MEDIUM",
+      "competitionIndex": 60
+    },
+    {
+      "keyword": "blackwork tattoo seattle",
+      "category": "style_specific",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 50,
+      "cpc": 0.74,
+      "competition": "LOW",
+      "competitionIndex": 33
+    },
+    {
+      "keyword": "realism tattoo seattle",
+      "category": "style_specific",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 10,
+      "cpc": 1.64,
+      "competition": "HIGH",
+      "competitionIndex": 70
+    },
+    {
+      "keyword": "traditional tattoo seattle",
+      "category": "style_specific",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 140,
+      "cpc": 1.39,
+      "competition": "MEDIUM",
+      "competitionIndex": 45
+    },
+    {
+      "keyword": "minimalist tattoo seattle",
+      "category": "style_specific",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 10,
+      "cpc": 2.47,
+      "competition": "MEDIUM",
+      "competitionIndex": 49
+    },
+    {
+      "keyword": "tattoo shop seattle",
+      "category": "shop_queries",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 1600,
+      "cpc": 2.44,
+      "competition": "MEDIUM",
+      "competitionIndex": 62
+    },
+    {
+      "keyword": "tattoo parlor seattle",
+      "category": "shop_queries",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 1900,
+      "cpc": 1.86,
+      "competition": "MEDIUM",
+      "competitionIndex": 56
+    },
+    {
+      "keyword": "tattoo studio seattle",
+      "category": "shop_queries",
+      "city": "Seattle",
+      "state": "WA",
+      "cityTier": "tier1_high_coverage",
+      "searchVolume": 90,
+      "cpc": 1.45,
+      "competition": "LOW",
+      "competitionIndex": 27
+    },
+    {
+      "keyword": "tattoo artist nashville",
+      "category": "high_intent",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 1300,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 37
+    },
+    {
+      "keyword": "best tattoo artist nashville",
+      "category": "high_intent",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 880,
+      "cpc": 1.89,
+      "competition": "HIGH",
+      "competitionIndex": 78
+    },
+    {
+      "keyword": "fine line tattoo nashville",
+      "category": "style_specific",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 590,
+      "cpc": 1.59,
+      "competition": "MEDIUM",
+      "competitionIndex": 44
+    },
+    {
+      "keyword": "realism tattoo nashville",
+      "category": "style_specific",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 10,
+      "cpc": 1.18,
+      "competition": "MEDIUM",
+      "competitionIndex": 60
+    },
+    {
+      "keyword": "tattoo shop nashville",
+      "category": "shop_queries",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 6600,
+      "cpc": 1.66,
+      "competition": "MEDIUM",
+      "competitionIndex": 63
+    },
+    {
+      "keyword": "tattoo parlor nashville",
+      "category": "shop_queries",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 6600,
+      "cpc": 1.66,
+      "competition": "MEDIUM",
+      "competitionIndex": 63
+    },
+    {
+      "keyword": "tattoo studio nashville",
+      "category": "shop_queries",
+      "city": "Nashville",
+      "state": "TN",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 1300,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 37
+    },
+    {
+      "keyword": "tattoo artist salt lake city",
+      "category": "high_intent",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 720,
+      "cpc": 1.85,
+      "competition": "MEDIUM",
+      "competitionIndex": 46
+    },
+    {
+      "keyword": "best tattoo artist salt lake city",
+      "category": "high_intent",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 110,
+      "cpc": 2.08,
+      "competition": "MEDIUM",
+      "competitionIndex": 42
+    },
+    {
+      "keyword": "fine line tattoo salt lake city",
+      "category": "style_specific",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 110,
+      "cpc": 1.55,
+      "competition": "MEDIUM",
+      "competitionIndex": 35
+    },
+    {
+      "keyword": "tattoo shop salt lake city",
+      "category": "shop_queries",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 2400,
+      "cpc": 2.04,
+      "competition": "MEDIUM",
+      "competitionIndex": 52
+    },
+    {
+      "keyword": "tattoo parlor salt lake city",
+      "category": "shop_queries",
+      "city": "Salt Lake City",
+      "state": "UT",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 70,
+      "cpc": 1.49,
+      "competition": "MEDIUM",
+      "competitionIndex": 40
+    },
+    {
+      "keyword": "tattoo artist richmond",
+      "category": "high_intent",
+      "city": "Richmond",
+      "state": "VA",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 720,
+      "cpc": 1.41,
+      "competition": "LOW",
+      "competitionIndex": 6
+    },
+    {
+      "keyword": "fine line tattoo richmond",
+      "category": "style_specific",
+      "city": "Richmond",
+      "state": "VA",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 70,
+      "cpc": 2.18,
+      "competition": "LOW",
+      "competitionIndex": 9
+    },
+    {
+      "keyword": "tattoo shop richmond",
+      "category": "shop_queries",
+      "city": "Richmond",
+      "state": "VA",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 2900,
+      "cpc": 0.94,
+      "competition": "LOW",
+      "competitionIndex": 9
+    },
+    {
+      "keyword": "tattoo parlor richmond",
+      "category": "shop_queries",
+      "city": "Richmond",
+      "state": "VA",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 2900,
+      "cpc": 0.94,
+      "competition": "LOW",
+      "competitionIndex": 9
+    },
+    {
+      "keyword": "tattoo studio richmond",
+      "category": "shop_queries",
+      "city": "Richmond",
+      "state": "VA",
+      "cityTier": "tier2_mid_market",
+      "searchVolume": 10,
+      "cpc": 0.49,
+      "competition": "MEDIUM",
+      "competitionIndex": 43
+    },
+    {
+      "keyword": "tattoo artist asheville",
+      "category": "high_intent",
+      "city": "Asheville",
+      "state": "NC",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 590,
+      "cpc": 2.31,
+      "competition": "LOW",
+      "competitionIndex": 19
+    },
+    {
+      "keyword": "best tattoo artist asheville",
+      "category": "high_intent",
+      "city": "Asheville",
+      "state": "NC",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 140,
+      "cpc": 3.7,
+      "competition": "LOW",
+      "competitionIndex": 24
+    },
+    {
+      "keyword": "fine line tattoo asheville",
+      "category": "style_specific",
+      "city": "Asheville",
+      "state": "NC",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 90,
+      "cpc": 2.17,
+      "competition": "LOW",
+      "competitionIndex": 31
+    },
+    {
+      "keyword": "tattoo shop asheville",
+      "category": "shop_queries",
+      "city": "Asheville",
+      "state": "NC",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 2400,
+      "cpc": 2.41,
+      "competition": "LOW",
+      "competitionIndex": 29
+    },
+    {
+      "keyword": "tattoo parlor asheville",
+      "category": "shop_queries",
+      "city": "Asheville",
+      "state": "NC",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 40,
+      "cpc": 4.54,
+      "competition": "LOW",
+      "competitionIndex": 24
+    },
+    {
+      "keyword": "tattoo artist boise",
+      "category": "high_intent",
+      "city": "Boise",
+      "state": "ID",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 480,
+      "cpc": 2.62,
+      "competition": "MEDIUM",
+      "competitionIndex": 55
+    },
+    {
+      "keyword": "best tattoo artist boise",
+      "category": "high_intent",
+      "city": "Boise",
+      "state": "ID",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 140,
+      "cpc": 2.37,
+      "competition": "HIGH",
+      "competitionIndex": 80
+    },
+    {
+      "keyword": "fine line tattoo boise",
+      "category": "style_specific",
+      "city": "Boise",
+      "state": "ID",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 170,
+      "cpc": 1.84,
+      "competition": "HIGH",
+      "competitionIndex": 74
+    },
+    {
+      "keyword": "tattoo shop boise",
+      "category": "shop_queries",
+      "city": "Boise",
+      "state": "ID",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 2400,
+      "cpc": 2.26,
+      "competition": "MEDIUM",
+      "competitionIndex": 52
+    },
+    {
+      "keyword": "tattoo parlor boise",
+      "category": "shop_queries",
+      "city": "Boise",
+      "state": "ID",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 2400,
+      "cpc": 2.26,
+      "competition": "MEDIUM",
+      "competitionIndex": 52
+    },
+    {
+      "keyword": "tattoo artist albuquerque",
+      "category": "high_intent",
+      "city": "Albuquerque",
+      "state": "NM",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 590,
+      "cpc": 2.39,
+      "competition": "LOW",
+      "competitionIndex": 17
+    },
+    {
+      "keyword": "best tattoo artist albuquerque",
+      "category": "high_intent",
+      "city": "Albuquerque",
+      "state": "NM",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 260,
+      "cpc": 2.71,
+      "competition": "LOW",
+      "competitionIndex": 17
+    },
+    {
+      "keyword": "fine line tattoo albuquerque",
+      "category": "style_specific",
+      "city": "Albuquerque",
+      "state": "NM",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 90,
+      "cpc": 3.38,
+      "competition": "LOW",
+      "competitionIndex": 11
+    },
+    {
+      "keyword": "tattoo shop albuquerque",
+      "category": "shop_queries",
+      "city": "Albuquerque",
+      "state": "NM",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 2900,
+      "cpc": 1.08,
+      "competition": "LOW",
+      "competitionIndex": 15
+    },
+    {
+      "keyword": "tattoo parlor albuquerque",
+      "category": "shop_queries",
+      "city": "Albuquerque",
+      "state": "NM",
+      "cityTier": "tier3_low_competition",
+      "searchVolume": 2900,
+      "cpc": 1.08,
+      "competition": "LOW",
+      "competitionIndex": 15
+    },
+    {
+      "keyword": "fine line tattoo fargo",
+      "category": "style_specific",
+      "city": "Fargo",
+      "state": "ND",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 50,
+      "cpc": 0.9,
+      "competition": "LOW",
+      "competitionIndex": 25
+    },
+    {
+      "keyword": "tattoo shop fargo",
+      "category": "shop_queries",
+      "city": "Fargo",
+      "state": "ND",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 2900,
+      "cpc": 0.64,
+      "competition": "LOW",
+      "competitionIndex": 14
+    },
+    {
+      "keyword": "tattoo artist sioux falls",
+      "category": "high_intent",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21
+    },
+    {
+      "keyword": "best tattoo artist sioux falls",
+      "category": "high_intent",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 40,
+      "cpc": 1.67,
+      "competition": "LOW",
+      "competitionIndex": 31
+    },
+    {
+      "keyword": "fine line tattoo sioux falls",
+      "category": "style_specific",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 140,
+      "cpc": 2.8,
+      "competition": "LOW",
+      "competitionIndex": 17
+    },
+    {
+      "keyword": "tattoo shop sioux falls",
+      "category": "shop_queries",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21
+    },
+    {
+      "keyword": "tattoo parlor sioux falls",
+      "category": "shop_queries",
+      "city": "Sioux Falls",
+      "state": "SD",
+      "cityTier": "tier4_small_market",
+      "searchVolume": 3600,
+      "cpc": 0.98,
+      "competition": "LOW",
+      "competitionIndex": 21
+    }
+  ],
+  "recommendations": {
+    "bestCategory": "visual_search",
+    "bestTier": "tier4_small_market",
+    "targetCpc": 1.16,
+    "estimatedClicks": 215,
+    "recommendedKeywords": [
+      {
+        "keyword": "blackwork tattoo seattle",
+        "city": "Seattle",
+        "cpc": 0.74,
+        "volume": 50
+      },
+      {
+        "keyword": "traditional tattoo austin",
+        "city": "Austin",
+        "cpc": 0.89,
+        "volume": 70
+      },
+      {
+        "keyword": "fine line tattoo fargo",
+        "city": "Fargo",
+        "cpc": 0.9,
+        "volume": 50
+      },
+      {
+        "keyword": "tattoo ideas los angeles",
+        "city": "Los Angeles",
+        "cpc": 1.16,
+        "volume": 1300
+      },
+      {
+        "keyword": "fine line tattoo austin",
+        "city": "Austin",
+        "cpc": 1.36,
+        "volume": 590
+      },
+      {
+        "keyword": "traditional tattoo seattle",
+        "city": "Seattle",
+        "cpc": 1.39,
+        "volume": 140
+      },
+      {
+        "keyword": "fine line tattoo salt lake city",
+        "city": "Salt Lake City",
+        "cpc": 1.55,
+        "volume": 110
+      },
+      {
+        "keyword": "fine line tattoo nashville",
+        "city": "Nashville",
+        "cpc": 1.59,
+        "volume": 590
+      },
+      {
+        "keyword": "fine line tattoo boise",
+        "city": "Boise",
+        "cpc": 1.84,
+        "volume": 170
+      },
+      {
+        "keyword": "fine line tattoo seattle",
+        "city": "Seattle",
+        "cpc": 1.99,
+        "volume": 590
+      }
+    ]
+  }
+}
