@@ -106,8 +106,8 @@ export default async function ClaimVerifyPage({ searchParams }: PageProps) {
       console.error('[Claim] Storage cleanup failed (non-critical):', err)
     )
 
-    // Redirect to onboarding
-    redirect(`/onboarding/fetch?artist_id=${artist_id}&claimed=true`)
+    // Redirect to dashboard
+    redirect(`/dashboard?artist_id=${artist_id}`)
 
   } catch (error) {
     // Re-throw Next.js redirect errors (they're not real errors)
