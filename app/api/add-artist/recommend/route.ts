@@ -60,12 +60,27 @@ export async function POST(request: NextRequest) {
   try {
     // CSRF Protection: Verify request origin
     const origin = request.headers.get('origin');
-    const allowedOrigins = [
-      process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io',
-      'http://localhost:3000', // Development
-    ];
 
-    if (!origin || !allowedOrigins.some(allowed => origin === allowed)) {
+    // Normalize hostname (strip www prefix for comparison)
+    const normalizeHost = (url: string) => {
+      try {
+        return new URL(url).hostname.replace(/^www\./, '');
+      } catch {
+        return '';
+      }
+    };
+
+    const configuredUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io';
+    const originHost = origin ? normalizeHost(origin) : '';
+    const configuredHost = normalizeHost(configuredUrl);
+
+    // Allow if normalized hostnames match (handles www vs non-www)
+    // Also allow localhost variants in development
+    const isLocalhost = originHost === 'localhost' || originHost === '127.0.0.1';
+    const isAllowedOrigin = origin && (originHost === configuredHost || isLocalhost);
+
+    if (!origin || !isAllowedOrigin) {
+      console.error('[Recommend API] Origin rejected:', { origin, originHost, configuredHost });
       return NextResponse.json(
         { error: 'INVALID_ORIGIN', message: 'Request origin not allowed' },
         { status: 403 }
