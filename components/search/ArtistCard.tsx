@@ -126,9 +126,10 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     }
   }, [hoverTimeout])
 
-  // Pro and Featured cards span 2 columns and use horizontal layout on desktop only
+  // Only Pro cards span 2 columns and use horizontal layout on desktop
+  // Featured artists get badge + boost but standard single-width layout
   // On mobile, all cards use standard vertical layout for consistent grid
-  const isProOrFeatured = (is_pro || is_featured) && displayMode === 'search'
+  const isWideLayout = is_pro && displayMode === 'search'
 
   // Determine href: for pending artists, link to Instagram; otherwise artist profile
   // For searched artists that have a DB id, link to their profile
@@ -145,16 +146,16 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
       href={href}
       {...linkProps}
       className={`group block w-full min-w-0 bg-paper border-2 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast min-h-[280px] sm:min-h-[320px] lg:min-h-[360px] ${
-        isProOrFeatured ? 'lg:col-span-2' : ''
+        isWideLayout ? 'lg:col-span-2' : ''
       } ${is_searched_artist ? 'border-orange-400 ring-2 ring-orange-400/20' : 'border-ink/20'}`}
     >
       {/* On mobile/tablet: vertical layout. On lg+: Pro/Featured use horizontal layout */}
-      <div className={isProOrFeatured ? 'lg:flex lg:flex-row h-full lg:gap-4' : ''}>
+      <div className={isWideLayout ? 'lg:flex lg:flex-row h-full lg:gap-4' : ''}>
         {/* Hero Image (tap to rotate) - Editorial */}
         {currentImage && (
           <div
             className={`relative overflow-hidden bg-gray-100 cursor-pointer ${
-              isProOrFeatured
+              isWideLayout
                 ? 'aspect-square lg:aspect-auto lg:flex-1 lg:h-auto'
                 : 'aspect-square'
             }`}
@@ -170,7 +171,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
 
             {/* Featured badge on image - show on mobile/tablet, hide on lg+ for Pro/Featured (shown in details instead) */}
             {is_featured && (
-              <div className={`absolute top-3 left-3 ${isProOrFeatured ? 'lg:hidden' : ''}`}>
+              <div className={`absolute top-3 left-3 ${isWideLayout ? 'lg:hidden' : ''}`}>
                 <FeaturedBadge variant="badge" />
               </div>
             )}
@@ -187,7 +188,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
         )}
 
         {/* Mobile/tablet info section for Pro/Featured cards - standard compact layout */}
-        {isProOrFeatured && (
+        {isWideLayout && (
           <div className="p-3 space-y-1 min-w-0 lg:hidden">
             <div className="flex items-center gap-1.5 min-w-0">
               <h3 className="font-heading text-sm font-bold text-ink tracking-tight truncate min-w-0">
@@ -220,9 +221,9 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
         )}
 
         {/* Artist Info - Editorial Typography (Desktop lg+ Pro layout OR standard layout) */}
-        <div className={`${isProOrFeatured ? 'hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between lg:p-0 lg:py-6 lg:px-1 min-w-0' : 'p-3 sm:p-4 space-y-1 min-w-0'}`}>
+        <div className={`${isWideLayout ? 'hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between lg:p-0 lg:py-6 lg:px-1 min-w-0' : 'p-3 sm:p-4 space-y-1 min-w-0'}`}>
           {/* Pro layout - Editorial stats block (md+ only) */}
-          {isProOrFeatured && (
+          {isWideLayout && (
             <>
               <div className="flex flex-col space-y-3 sm:space-y-5">
                 {/* Pro or Featured badge and percentage row */}
@@ -310,7 +311,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
             </>
           )}
           {/* Standard layout (non-enhanced cards) */}
-          {!isProOrFeatured && (
+          {!isWideLayout && (
             <div className="space-y-1 min-w-0">
               {instagramHandle && (
                 <div className="flex items-center gap-1.5 min-w-0">
