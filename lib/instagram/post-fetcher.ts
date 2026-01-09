@@ -1,9 +1,11 @@
 /**
  * Instagram Post Image Fetcher
  *
- * Fetches image URLs from Instagram posts using the public oEmbed API
+ * Fetches image URLs from Instagram posts using Apify's Instagram Scraper
+ * (Migrated from oEmbed API for reliability - Jan 2026)
  */
 
+import { ApifyClient } from 'apify-client';
 import { isInstagramDomain } from './url-detector';
 
 export interface InstagramPostData {
@@ -32,8 +34,12 @@ export const ERROR_MESSAGES = {
   FETCH_FAILED: "Couldn't fetch image from Instagram. Try uploading it directly.",
 } as const;
 
+// Apify configuration
+const APIFY_ACTOR = 'apify/instagram-scraper';
+const DEFAULT_TIMEOUT_SECS = 60; // 1 minute max for single post
+
 /**
- * Fetches image data from an Instagram post using oEmbed API
+ * Fetches image data from an Instagram post using Apify
  *
  * @param postIdOrUrl - Instagram post ID (e.g., "abc123") or full URL
  * @returns Post data including image URL and metadata
@@ -52,44 +58,54 @@ export async function fetchInstagramPostImage(
     throw new InstagramError(ERROR_MESSAGES.INVALID_URL, 'INVALID_URL');
   }
 
-  // Instagram oEmbed API endpoint
-  const oembedUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(postUrl)}`;
+  // Check for Apify API token
+  const apifyToken = process.env.APIFY_API_TOKEN_FREE || process.env.APIFY_API_TOKEN;
+  if (!apifyToken) {
+    console.error('[Apify] Neither APIFY_API_TOKEN_FREE nor APIFY_API_TOKEN is configured');
+    throw new InstagramError(
+      'Instagram scraping service temporarily unavailable. Please try again later.',
+      'FETCH_FAILED'
+    );
+  }
 
   try {
-    const response = await fetch(oembedUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; InkdexBot/1.0)',
-      },
-      // 10 second timeout
-      signal: AbortSignal.timeout(10000),
+    console.log(`[Apify] Fetching post: ${postUrl}`);
+
+    // Initialize Apify client
+    const client = new ApifyClient({
+      token: apifyToken,
     });
 
-    // Handle different HTTP status codes
-    if (response.status === 404) {
-      throw new InstagramError(ERROR_MESSAGES.POST_NOT_FOUND, 'POST_NOT_FOUND');
-    }
+    // Prepare actor input for single post
+    const runInput = {
+      directUrls: [postUrl],
+      resultsType: 'posts',
+      resultsLimit: 1,
+      addParentData: false,
+    };
 
-    if (response.status === 429) {
-      throw new InstagramError(ERROR_MESSAGES.RATE_LIMITED, 'RATE_LIMITED');
-    }
+    // Run the actor and wait for completion
+    const run = await client.actor(APIFY_ACTOR).call(runInput, {
+      timeout: DEFAULT_TIMEOUT_SECS,
+    });
 
-    if (response.status === 403 || response.status === 401) {
-      throw new InstagramError(ERROR_MESSAGES.PRIVATE_ACCOUNT, 'PRIVATE_ACCOUNT');
-    }
+    // Fetch results from dataset
+    const { items } = await client.dataset(run.defaultDatasetId).listItems();
 
-    if (!response.ok) {
+    if (!items || items.length === 0) {
       throw new InstagramError(
-        `Instagram API returned ${response.status}`,
-        'FETCH_FAILED'
+        ERROR_MESSAGES.POST_NOT_FOUND,
+        'POST_NOT_FOUND'
       );
     }
 
-    const data = await response.json();
+    // Extract post data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const post = items[0] as any;
 
-    // Extract image URL from oEmbed response
-    // The oEmbed API returns thumbnail_url for images
-    const imageUrl = data.thumbnail_url || data.url;
-    const username = extractUsernameFromTitle(data.author_name || data.title || '');
+    // Get image URL - for videos, use displayUrl (thumbnail)
+    const imageUrl = post.displayUrl;
+    const username = post.ownerUsername || 'unknown';
 
     if (!imageUrl) {
       throw new InstagramError(
@@ -98,11 +114,13 @@ export async function fetchInstagramPostImage(
       );
     }
 
+    console.log(`[Apify] Found post by @${username}`);
+
     return {
       imageUrl,
-      username: username || 'unknown',
-      caption: data.title || undefined,
-      thumbnailUrl: data.thumbnail_url,
+      username,
+      caption: post.caption || undefined,
+      thumbnailUrl: imageUrl,
     };
   } catch (error) {
     // Re-throw InstagramError as-is
@@ -110,20 +128,23 @@ export async function fetchInstagramPostImage(
       throw error;
     }
 
-    // Handle timeout errors
-    if (error instanceof Error && error.name === 'TimeoutError') {
-      throw new InstagramError(
-        'Instagram is taking too long to respond. Try uploading an image directly.',
-        'FETCH_FAILED'
-      );
-    }
+    // Handle Apify-specific errors
+    if (error instanceof Error) {
+      console.error('[Apify] Error fetching post:', error.message);
 
-    // Handle network errors
-    if (error instanceof Error && error.name === 'TypeError') {
-      throw new InstagramError(
-        'Network error while fetching from Instagram. Please try again.',
-        'FETCH_FAILED'
-      );
+      if (error.message.includes('timeout') || error.message.includes('TIMEOUT')) {
+        throw new InstagramError(
+          'Instagram is taking too long to respond. Try uploading an image directly.',
+          'FETCH_FAILED'
+        );
+      }
+
+      if (error.message.includes('rate limit') || error.message.includes('429')) {
+        throw new InstagramError(
+          ERROR_MESSAGES.RATE_LIMITED,
+          'RATE_LIMITED'
+        );
+      }
     }
 
     // Generic error
@@ -213,32 +234,6 @@ export async function downloadImageAsBuffer(imageUrl: string): Promise<Buffer> {
       'FETCH_FAILED'
     );
   }
-}
-
-/**
- * Extracts username from Instagram oEmbed title
- *
- * oEmbed title format is typically: "Username on Instagram: caption..."
- *
- * @param title - oEmbed title or author_name
- * @returns Extracted username or empty string
- */
-function extractUsernameFromTitle(title: string): string {
-  if (!title) return '';
-
-  // Try to extract from "Username on Instagram" format
-  const match = title.match(/^(.+?)\s+on\s+Instagram/i);
-  if (match && match[1]) {
-    return match[1].trim();
-  }
-
-  // Try to extract from "@username" format
-  const atMatch = title.match(/@([a-zA-Z0-9._]+)/);
-  if (atMatch && atMatch[1]) {
-    return atMatch[1];
-  }
-
-  return title.trim();
 }
 
 /**

@@ -16,7 +16,8 @@ import { checkRateLimit, resetRateLimit as redisResetRateLimit } from './redis/r
 /**
  * Rate limit Instagram search requests
  *
- * Limits: 10 Instagram searches per hour per IP
+ * Limits: 50 Instagram searches per hour per IP
+ * (Raised from 10 after migrating from oEmbed to Apify - Jan 2026)
  *
  * @param identifier - Unique identifier (IP address or user ID)
  * @returns Rate limit check result
@@ -24,7 +25,7 @@ import { checkRateLimit, resetRateLimit as redisResetRateLimit } from './redis/r
 export async function checkInstagramSearchRateLimit(identifier: string) {
   return checkRateLimit(
     `instagram_search:${identifier}`,
-    10, // 10 requests
+    50, // 50 requests per hour (Apify handles its own limits)
     60 * 60 * 1000 // per hour
   );
 }
