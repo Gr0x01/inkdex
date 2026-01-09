@@ -200,11 +200,20 @@ async function checkMaintenanceMode(request: NextRequest): Promise<boolean> {
   }
 }
 
+/** Validate 2-letter ISO country code format */
+function isValidCountryCode(code: string | null): code is string {
+  return code !== null && /^[A-Z]{2}$/i.test(code)
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Run cleanup periodically
   cleanupStaleEntries()
+
+  // Get country code from Vercel's geo header for cookie
+  const rawCountry = request.headers.get('x-vercel-ip-country')
+  const country = isValidCountryCode(rawCountry) ? rawCountry.toUpperCase() : 'US'
 
   // Maintenance mode - check Redis via internal API
   // Skip for admin routes, the maintenance page itself, and the status API
@@ -256,7 +265,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL(`/artist/${slug}`, request.url), 301)
   }
 
-  return await updateSession(request)
+  // Run Supabase middleware to get auth-handled response
+  const response = await updateSession(request)
+
+  // Set geo cookie if not already set or different
+  const existingGeo = request.cookies.get('inkdex_geo')?.value?.toUpperCase()
+  if (existingGeo !== country) {
+    response.cookies.set('inkdex_geo', country, {
+      httpOnly: false, // Allow client-side JS to read
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/',
+    })
+  }
+
+  return response
 }
 
 export const config = {

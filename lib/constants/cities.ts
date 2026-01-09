@@ -1073,6 +1073,95 @@ export const CITIES = [
     monthlySearches: 247760,
     competition: 7,
   },
+  // Google Ads Expansion Cities (Jan 2026) - Low CPC markets
+  // Texas
+  {
+    name: 'Lubbock',
+    slug: 'lubbock',
+    state: 'TX',
+    fullName: 'Lubbock, TX',
+    opportunityScore: 85,
+    monthlySearches: 6090,
+    competition: 8,
+  },
+  {
+    name: 'Amarillo',
+    slug: 'amarillo',
+    state: 'TX',
+    fullName: 'Amarillo, TX',
+    opportunityScore: 85,
+    monthlySearches: 1900,
+    competition: 6,
+  },
+  // Colorado
+  {
+    name: 'Fort Collins',
+    slug: 'fort-collins',
+    state: 'CO',
+    fullName: 'Fort Collins, CO',
+    opportunityScore: 83,
+    monthlySearches: 4420,
+    competition: 12,
+  },
+  // New York
+  {
+    name: 'Syracuse',
+    slug: 'syracuse',
+    state: 'NY',
+    fullName: 'Syracuse, NY',
+    opportunityScore: 86,
+    monthlySearches: 1310,
+    competition: 4,
+  },
+  {
+    name: 'Albany',
+    slug: 'albany',
+    state: 'NY',
+    fullName: 'Albany, NY',
+    opportunityScore: 85,
+    monthlySearches: 1000,
+    competition: 5,
+  },
+  // Minnesota
+  {
+    name: 'Duluth',
+    slug: 'duluth',
+    state: 'MN',
+    fullName: 'Duluth, MN',
+    opportunityScore: 85,
+    monthlySearches: 1600,
+    competition: 6,
+  },
+  // Alabama
+  {
+    name: 'Huntsville',
+    slug: 'huntsville',
+    state: 'AL',
+    fullName: 'Huntsville, AL',
+    opportunityScore: 84,
+    monthlySearches: 1900,
+    competition: 8,
+  },
+  // Kansas
+  {
+    name: 'Lawrence',
+    slug: 'lawrence',
+    state: 'KS',
+    fullName: 'Lawrence, KS',
+    opportunityScore: 87,
+    monthlySearches: 590,
+    competition: 3,
+  },
+  // Oklahoma
+  {
+    name: 'Norman',
+    slug: 'norman',
+    state: 'OK',
+    fullName: 'Norman, OK',
+    opportunityScore: 84,
+    monthlySearches: 880,
+    competition: 8,
+  },
 ] as const
 
 export const STATES = [
@@ -1080,7 +1169,7 @@ export const STATES = [
     name: 'Texas',
     code: 'TX',
     slug: 'texas',
-    cities: ['austin', 'san-antonio', 'el-paso', 'dallas', 'houston', 'fort-worth'],
+    cities: ['austin', 'san-antonio', 'el-paso', 'dallas', 'houston', 'fort-worth', 'lubbock', 'amarillo'],
   },
   {
     name: 'California',
@@ -1104,7 +1193,7 @@ export const STATES = [
     name: 'New York',
     code: 'NY',
     slug: 'new-york',
-    cities: ['new-york', 'buffalo', 'rochester', 'ithaca'],
+    cities: ['new-york', 'buffalo', 'rochester', 'ithaca', 'syracuse', 'albany'],
   },
   {
     name: 'Washington',
@@ -1218,7 +1307,7 @@ export const STATES = [
     name: 'Minnesota',
     code: 'MN',
     slug: 'minnesota',
-    cities: ['minneapolis'],
+    cities: ['minneapolis', 'duluth'],
   },
   {
     name: 'Wisconsin',
@@ -1230,7 +1319,7 @@ export const STATES = [
     name: 'Oklahoma',
     code: 'OK',
     slug: 'oklahoma',
-    cities: ['oklahoma-city', 'tulsa'],
+    cities: ['oklahoma-city', 'tulsa', 'norman'],
   },
   {
     name: 'Hawaii',
@@ -1248,7 +1337,7 @@ export const STATES = [
     name: 'Colorado',
     code: 'CO',
     slug: 'colorado',
-    cities: ['boulder', 'denver', 'colorado-springs'],
+    cities: ['boulder', 'denver', 'colorado-springs', 'fort-collins'],
   },
   {
     name: 'Indiana',
@@ -1278,7 +1367,7 @@ export const STATES = [
     name: 'Kansas',
     code: 'KS',
     slug: 'kansas',
-    cities: ['wichita'],
+    cities: ['wichita', 'lawrence'],
   },
   {
     name: 'Arkansas',
@@ -1308,7 +1397,7 @@ export const STATES = [
     name: 'Alabama',
     code: 'AL',
     slug: 'alabama',
-    cities: ['birmingham'],
+    cities: ['birmingham', 'huntsville'],
   },
   {
     name: 'Maine',
