@@ -269,10 +269,20 @@ export async function POST(request: NextRequest) {
 
         try {
           const username = detectedUrl.id
+          const supabaseService = createServiceClient()
 
-          // OPTIMIZATION: Check if artist exists in DB first (instant search)
+          // Step 1: Check if artist exists by handle (simple query, no image requirement)
           console.log(`[Profile Search] Checking DB for @${username}...`)
-          const existingArtist = await getArtistByInstagramHandle(username)
+          const { data: artistRecord } = await supabaseService
+            .from('artists')
+            .select('id, name, slug')
+            .eq('instagram_handle', username)
+            .single()
+
+          // Step 2: If artist exists, check if they have enough images with embeddings
+          const existingArtist = artistRecord
+            ? await getArtistByInstagramHandle(username)
+            : null
 
           if (existingArtist && existingArtist.portfolio_images && existingArtist.portfolio_images.length >= 3) {
             // Use existing embeddings - instant search!
@@ -357,7 +367,12 @@ export async function POST(request: NextRequest) {
             console.log(`[Profile Search] Instant search completed (DB lookup)`)
           } else {
             // Scrape profile via Apify
-            console.log(`[Profile Search] Not in DB - scraping via Apify...`)
+            // Artist may exist but have no images, or may not exist at all
+            if (artistRecord) {
+              console.log(`[Profile Search] Artist exists (${artistRecord.id}) but has insufficient images - scraping via Apify...`)
+            } else {
+              console.log(`[Profile Search] Artist not in DB - scraping via Apify...`)
+            }
             const profileData = await fetchInstagramProfileImages(username, 6)
 
             if (profileData.images.length < 3) {
@@ -414,65 +429,72 @@ export async function POST(request: NextRequest) {
             instagramUsername = username
             queryText = `Artists similar to @${username}`
 
-            // Build searched artist data for immediate display (using scraped data)
-            // This gets updated with the DB id if artist creation succeeds
+            // Determine artist ID - use existing or create new
+            let artistId: string | null = artistRecord?.id || null
+
+            // Only create new artist if they don't exist
+            if (!artistRecord) {
+              console.log(`[Profile Search] Creating new artist @${username}...`)
+              try {
+                const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
+
+                const { data: newArtist, error: artistError } = await supabaseService
+                  .from('artists')
+                  .insert({
+                    instagram_handle: username,
+                    name: profileData.username || username,
+                    slug,
+                    instagram_url: `https://www.instagram.com/${username}/`,
+                    bio: profileData.bio || null,
+                    follower_count: profileData.followerCount || null,
+                    discovery_source: 'profile_search',
+                    verification_status: 'unclaimed',
+                  })
+                  .select('id')
+                  .single()
+
+                if (newArtist) {
+                  artistId = newArtist.id
+                  console.log(`[Profile Search] Created artist ${artistId}`)
+                } else if (artistError) {
+                  console.error(`[Profile Search] Failed to create artist:`, artistError.message)
+                }
+              } catch (createError) {
+                console.error(`[Profile Search] Error creating artist:`, createError)
+              }
+            }
+
+            // Build searched artist data for immediate display
             searchedArtist = {
-              id: null,  // Will be set if DB insert succeeds
+              id: artistId,
               instagram_handle: username,
-              name: profileData.username || username,
+              name: artistRecord?.name || profileData.username || username,
               profile_image_url: profileData.profileImageUrl || null,
               bio: profileData.bio || null,
               follower_count: profileData.followerCount || null,
-              city: null,  // Unknown for new artists
-              images: profileData.images.slice(0, 3),  // The scraped images!
+              city: null,
+              images: profileData.images.slice(0, 3),
             }
 
-            // Save artist to database for future instant searches
-            console.log(`[Profile Search] Saving @${username} to database...`)
-            try {
-              const supabaseService = createServiceClient()
-              const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
-
-              const { data: newArtist, error: artistError } = await supabaseService
-                .from('artists')
-                .insert({
-                  instagram_handle: username,
-                  name: profileData.username || username,
-                  slug,
-                  instagram_url: `https://www.instagram.com/${username}/`,
-                  bio: profileData.bio || null,
-                  follower_count: profileData.followerCount || null,
-                  discovery_source: 'profile_search',
-                  verification_status: 'unclaimed',
-                })
-                .select('id')
-                .single()
-
-              if (newArtist) {
-                console.log(`[Profile Search] Created artist ${newArtist.id}`)
-
-                // Update searched artist with the new DB id
-                if (searchedArtist) {
-                  searchedArtist.id = newArtist.id
-                }
-
-                // Save downloaded images to temp directory (we already have them!)
+            // Process images for the artist (existing or new)
+            if (artistId) {
+              try {
                 const imagesWithUrls = imageBuffers.map((buffer, i) => ({
                   url: profileData.images[i],
                   buffer,
                 }))
 
                 const saveResult = await saveImagesToTempFromBuffers(
-                  newArtist.id,
+                  artistId,
                   imagesWithUrls,
                   profileData.profileImageUrl
                 )
 
                 if (saveResult.success) {
-                  console.log(`[Profile Search] ✅ Images saved to temp, processing in background...`)
+                  console.log(`[Profile Search] Images saved to temp, processing in background...`)
 
                   // Fire-and-forget: process images in background
-                  processArtistImages(newArtist.id)
+                  processArtistImages(artistId)
                     .then((result) => {
                       console.log(`[Profile Search] Background processing complete: ${result.imagesProcessed} images`)
                     })
@@ -483,22 +505,16 @@ export async function POST(request: NextRequest) {
                   console.warn(`[Profile Search] Failed to save images: ${saveResult.error}`)
                 }
 
-                // Always create scraping job as fallback
-                await supabaseService.from('scraping_jobs').insert({
-                  artist_id: newArtist.id,
+                // Create/update scraping job as fallback
+                await supabaseService.from('scraping_jobs').upsert({
+                  artist_id: artistId,
                   status: saveResult.success ? 'processing' : 'pending',
                   images_scraped: 0,
-                })
-                console.log(`[Profile Search] Created scraping job for @${username}`)
-              } else if (artistError?.code === '23505') {
-                // Duplicate - someone else added them, that's fine
-                console.log(`[Profile Search] @${username} already exists (race condition)`)
-              } else if (artistError) {
-                console.error(`[Profile Search] Failed to save artist:`, artistError.message)
+                }, { onConflict: 'artist_id' })
+                console.log(`[Profile Search] Upserted scraping job for @${username}`)
+              } catch (saveError) {
+                console.error(`[Profile Search] Error saving images:`, saveError)
               }
-            } catch (saveError) {
-              // Don't fail the search if saving fails
-              console.error(`[Profile Search] Error saving artist:`, saveError)
             }
 
             console.log(`[Profile Search] Apify scraping completed`)
