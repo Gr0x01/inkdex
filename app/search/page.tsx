@@ -76,6 +76,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   // Get search type and searched artist data (for profile searches)
   const searchType = search.query_type as string
   const searchedArtistData = search.searched_artist as SearchedArtistData | null
+  const queryText = search.query_text as string | null
+  const instagramUsername = search.instagram_username as string | null
+  const instagramPostId = search.instagram_post_id as string | null
 
   // Parse location filters - convert slugs to proper format for DB query
   const countryFilter = country?.toUpperCase() || null
@@ -210,8 +213,104 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {/* Separator */}
             <div className="w-px h-4 md:h-5 bg-ink/10 flex-shrink-0" />
 
-            {/* Location Filter - Scrollable on Mobile */}
-            <div className="flex-1 overflow-visible">
+            {/* Query Info - Desktop Only */}
+            {searchType === 'text' && queryText && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
+                  <svg
+                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <span className="truncate">
+                    &ldquo;{queryText}&rdquo;
+                  </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10" aria-hidden="true" />
+              </>
+            )}
+
+            {searchType === 'image' && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 flex-1">
+                  <svg
+                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span>Image search</span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
+            {searchType === 'instagram_post' && instagramUsername && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
+                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <span className="truncate">
+                    Post by{' '}
+                    {instagramPostId ? (
+                      <a
+                        href={`https://instagram.com/p/${instagramPostId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-body-medium text-ink hover:text-purple-600 transition-colors"
+                      >
+                        @{instagramUsername}
+                      </a>
+                    ) : (
+                      <span className="font-body-medium text-ink">@{instagramUsername}</span>
+                    )}
+                  </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
+            {searchType === 'instagram_profile' && instagramUsername && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
+                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <span className="truncate">
+                    Similar to{' '}
+                    <a
+                      href={`https://instagram.com/${instagramUsername}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-body-medium text-ink hover:text-purple-600 transition-colors"
+                    >
+                      @{instagramUsername}
+                    </a>
+                  </span>
+                </div>
+                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+              </>
+            )}
+
+            {/* Spacer on mobile (when query info is hidden) */}
+            <div className="flex-1 sm:hidden" />
+
+            {/* Location Filter - Right aligned */}
+            <div className="overflow-visible flex-shrink-0">
               <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
                 <LocationFilter searchId={id} />
               </ErrorBoundary>
