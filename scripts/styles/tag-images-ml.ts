@@ -16,6 +16,7 @@ import { createClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import dotenv from 'dotenv';
+import { STYLE_THRESHOLDS } from '../../lib/styles/thresholds';
 
 dotenv.config({ path: '.env.local' });
 
@@ -29,16 +30,6 @@ const classifierPath = path.join(process.cwd(), 'models', 'style-classifier.json
 const classifier = JSON.parse(fs.readFileSync(classifierPath, 'utf-8'));
 
 const STYLES: string[] = classifier.styles;
-
-// Per-style threshold overrides (higher = more strict)
-// These styles tend to have more false positives, so require higher confidence
-// Jan 9, 2026: Raised anime/japanese significantly after finding blackwork images
-// being incorrectly tagged at 0.74-0.76 confidence
-const STYLE_THRESHOLDS: Record<string, number> = {
-  anime: 0.80,      // Raised from 0.65 - blackwork was being tagged at 0.74
-  japanese: 0.75,   // Raised from 0.60 - blackwork was being tagged at 0.72-0.76
-  surrealism: 0.55, // Was over-tagging at 28%
-};
 
 interface ParsedArgs {
   clear: boolean;

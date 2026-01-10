@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceClient } from '@/lib/supabase/service'
 import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
 import { detectInstagramUrl, extractPostId } from '@/lib/instagram/url-detector'
-import { classifyQueryStyles, StyleClassification } from '@/lib/search/style-classifier'
+import { classifyQueryStyles, StyleMatch } from '@/lib/search/style-classifier'
 import { analyzeImageColor } from '@/lib/search/color-analyzer'
 import { fetchInstagramPostImage, downloadImageAsBuffer, InstagramError, ERROR_MESSAGES } from '@/lib/instagram/post-fetcher'
 import { fetchInstagramProfileImages, PROFILE_ERROR_MESSAGES } from '@/lib/instagram/profile-fetcher'
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     let instagramUsername: string | null = null
     let instagramPostUrl: string | null = null
     let artistIdSource: string | null = null
-    let styleClassification: StyleClassification = { techniques: [], themes: [] }
+    let queryStyles: StyleMatch[] = []
     let isColorQuery: boolean | null = null  // null = unknown (text search), true = colorful, false = B&G
     let searchedArtist: SearchedArtistData | null = null  // For profile searches: the artist being searched
 
@@ -132,11 +132,10 @@ export async function POST(request: NextRequest) {
       isColorQuery = colorResult.isColor
       console.log(`[Search] Color analysis: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
 
-      // Classify query image styles for style-weighted search (multi-axis)
-      styleClassification = await classifyQueryStyles(embedding)
-      if (styleClassification.techniques.length > 0 || styleClassification.themes.length > 0) {
-        console.log(`[Search] Detected techniques: ${styleClassification.techniques.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
-        console.log(`[Search] Detected themes: ${styleClassification.themes.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
+      // Classify query image styles for style-weighted search
+      queryStyles = await classifyQueryStyles(embedding)
+      if (queryStyles.length > 0) {
+        console.log(`[Search] Detected styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
       }
     }
     // Handle application/json (text search or Instagram post)
@@ -205,11 +204,10 @@ export async function POST(request: NextRequest) {
           isColorQuery = colorResult.isColor
           console.log(`[Search] IG post color: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
 
-          // Classify query image styles for style-weighted search (multi-axis)
-          styleClassification = await classifyQueryStyles(embedding)
-          if (styleClassification.techniques.length > 0 || styleClassification.themes.length > 0) {
-            console.log(`[Search] IG post techniques: ${styleClassification.techniques.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
-            console.log(`[Search] IG post themes: ${styleClassification.themes.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
+          // Classify query image styles for style-weighted search
+          queryStyles = await classifyQueryStyles(embedding)
+          if (queryStyles.length > 0) {
+            console.log(`[Search] IG post styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
           }
 
           // Store attribution data
@@ -309,11 +307,10 @@ export async function POST(request: NextRequest) {
               console.log(`[Profile Search] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
             }
 
-            // Classify aggregated embedding styles for style-weighted search (multi-axis)
-            styleClassification = await classifyQueryStyles(embedding)
-            if (styleClassification.techniques.length > 0 || styleClassification.themes.length > 0) {
-              console.log(`[Profile Search] Techniques: ${styleClassification.techniques.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
-              console.log(`[Profile Search] Themes: ${styleClassification.themes.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
+            // Classify aggregated embedding styles for style-weighted search
+            queryStyles = await classifyQueryStyles(embedding)
+            if (queryStyles.length > 0) {
+              console.log(`[Profile Search] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
             }
 
             // Store attribution data
@@ -407,11 +404,10 @@ export async function POST(request: NextRequest) {
                            colorPercentage < 0.4 ? false : null
             console.log(`[Profile Search] Color analysis: ${colorCount}/${colorResults.length} color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
 
-            // Classify aggregated embedding styles for style-weighted search (multi-axis)
-            styleClassification = await classifyQueryStyles(embedding)
-            if (styleClassification.techniques.length > 0 || styleClassification.themes.length > 0) {
-              console.log(`[Profile Search] Techniques: ${styleClassification.techniques.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
-              console.log(`[Profile Search] Themes: ${styleClassification.themes.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
+            // Classify aggregated embedding styles for style-weighted search
+            queryStyles = await classifyQueryStyles(embedding)
+            if (queryStyles.length > 0) {
+              console.log(`[Profile Search] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
             }
 
             // Store attribution data
@@ -604,11 +600,10 @@ export async function POST(request: NextRequest) {
             console.log(`[Similar Artist] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
           }
 
-          // Classify aggregated embedding styles for style-weighted search (multi-axis)
-          styleClassification = await classifyQueryStyles(embedding)
-          if (styleClassification.techniques.length > 0 || styleClassification.themes.length > 0) {
-            console.log(`[Similar Artist] Techniques: ${styleClassification.techniques.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
-            console.log(`[Similar Artist] Themes: ${styleClassification.themes.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ') || 'none'}`)
+          // Classify aggregated embedding styles for style-weighted search
+          queryStyles = await classifyQueryStyles(embedding)
+          if (queryStyles.length > 0) {
+            console.log(`[Similar Artist] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
           }
 
           // Store attribution data
@@ -661,9 +656,6 @@ export async function POST(request: NextRequest) {
     // Store in searches table
     const supabase = await createClient()
 
-    // Combine techniques and themes into flat array for storage (backwards compatible)
-    const allStyles = [...styleClassification.techniques, ...styleClassification.themes]
-
     // Validate searched artist data before storage (security: prevent JSONB injection)
     let validatedSearchedArtist: SearchedArtistData | null = null
     if (searchedArtist) {
@@ -683,16 +675,15 @@ export async function POST(request: NextRequest) {
       instagram_username: instagramUsername,
       instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
       artist_id_source: artistIdSource,
-      detected_styles: allStyles.length > 0 ? allStyles : null,
-      primary_style: styleClassification.techniques[0]?.style_name || null,
+      detected_styles: queryStyles.length > 0 ? queryStyles : null,
+      primary_style: queryStyles[0]?.style_name || null,
       is_color: isColorQuery,
       searched_artist: validatedSearchedArtist,  // Validated for security
     }
 
-    console.log('[Search] Inserting with multi-axis classification:', {
-      techniques: styleClassification.techniques.map(s => s.style_name).join(', ') || 'none',
-      themes: styleClassification.themes.map(s => s.style_name).join(', ') || 'none',
-      primaryTechnique: styleClassification.techniques[0]?.style_name,
+    console.log('[Search] Inserting with style classification:', {
+      styles: queryStyles.map(s => s.style_name).join(', ') || 'none',
+      primaryStyle: queryStyles[0]?.style_name,
       isColor: isColorQuery
     })
 

@@ -5,19 +5,17 @@
 -- Depends on: _shared/gdpr.sql, _shared/location_filter.sql
 --
 -- Functions:
---   - search_artists: Unified vector search with technique/theme/color boosts
+--   - search_artists: Unified vector search with style + color boosts
 --   - find_related_artists: Find similar artists by portfolio
---   - classify_embedding_styles: Classify embedding against style seeds (with taxonomy)
+--   - classify_embedding_styles: Classify embedding against style seeds
 --   - get_search_location_counts: Location counts for filter UI
 --
--- Updated Jan 2026: Multi-axis taxonomy (technique + theme + color)
---   - Techniques (HOW): ONE per image, 0.20 weight
---   - Themes (WHAT): 0-2 per image, 0.10 weight
+-- Updated Jan 2026: Simplified (removed multi-axis taxonomy, ML classifier handles tagging)
 -- ============================================================================
 
 -- ============================================
 -- search_artists
--- Unified vector similarity search function with multi-axis taxonomy
+-- Unified vector similarity search function with style + color boosts
 -- ============================================
 -- OPTIMIZED: Vector search FIRST (uses index), then filter artists
 --
@@ -27,11 +25,10 @@
 --   match_count: Max results to return (default 20)
 --   city_filter/region_filter/country_filter: Location filters (optional)
 --   offset_param: Pagination offset (default 0)
---   query_techniques: JSONB array of {style_name, confidence} for technique boost (optional)
+--   query_styles: JSONB array of {style_name, confidence} for style boost (optional)
 --   is_color_query: true=color, false=B&G, null=no preference (optional)
---   query_themes: JSONB array of {style_name, confidence} for theme boost (optional)
 --
--- Returns: style_boost (technique), theme_boost, color_boost, boosted_score, total_count
+-- Returns: style_boost, color_boost, boosted_score, total_count
 -- ============================================
 DROP FUNCTION IF EXISTS search_artists(vector, float, int, text, text, text, int, jsonb, boolean);
 DROP FUNCTION IF EXISTS search_artists(vector, float, int, text, text, text, int, jsonb, boolean, jsonb);
@@ -48,9 +45,8 @@ CREATE OR REPLACE FUNCTION search_artists(
   region_filter text DEFAULT NULL,
   country_filter text DEFAULT NULL,
   offset_param int DEFAULT 0,
-  query_techniques jsonb DEFAULT NULL,  -- Renamed from query_styles
-  is_color_query boolean DEFAULT NULL,
-  query_themes jsonb DEFAULT NULL       -- NEW: separate themes parameter
+  query_styles jsonb DEFAULT NULL,      -- Simplified: single styles array
+  is_color_query boolean DEFAULT NULL
 )
 RETURNS TABLE (
   artist_id uuid,
@@ -67,9 +63,8 @@ RETURNS TABLE (
   is_pro boolean,
   is_featured boolean,
   similarity float,
-  style_boost float,    -- Now represents technique_boost
+  style_boost float,
   color_boost float,
-  theme_boost float,    -- NEW: separate theme boost
   boosted_score float,
   max_likes bigint,
   matching_images jsonb,
@@ -79,19 +74,13 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 AS $$
 DECLARE
-  v_has_techniques boolean;
-  v_has_themes boolean;
-  v_technique_weight float := 0.20;  -- Increased from 0.15 - primary match
-  v_theme_weight float := 0.10;       -- Secondary boost
+  v_has_styles boolean;
+  v_style_weight float := 0.20;
   v_color_weight float := 0.10;
 BEGIN
-  v_has_techniques := query_techniques IS NOT NULL
-    AND jsonb_typeof(query_techniques) = 'array'
-    AND jsonb_array_length(query_techniques) > 0;
-
-  v_has_themes := query_themes IS NOT NULL
-    AND jsonb_typeof(query_themes) = 'array'
-    AND jsonb_array_length(query_themes) > 0;
+  v_has_styles := query_styles IS NOT NULL
+    AND jsonb_typeof(query_styles) = 'array'
+    AND jsonb_array_length(query_styles) > 0;
 
   RETURN QUERY
   -- Step 1: Vector search FIRST (uses index, fast)
@@ -147,54 +136,35 @@ BEGIN
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+      AND (
+        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
+        OR a.claimed_by_user_id IS NOT NULL  -- Claimed = implicit consent
+      )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
-  -- Step 5: Calculate TECHNIQUE boost per artist
-  artist_technique_boost AS (
+  -- Step 5: Calculate style boost per artist (simplified - no taxonomy)
+  artist_style_boost AS (
     SELECT
-      fa.fa_id as atb_artist_id,
-      CASE WHEN v_has_techniques THEN
+      fa.fa_id as asb_artist_id,
+      CASE WHEN v_has_styles THEN
         COALESCE(
           (
             SELECT SUM(
-              (qt.confidence::float) * (asp.percentage / 100.0) * v_technique_weight
+              (qs.confidence::float) * (asp.percentage / 100.0) * v_style_weight
             )
-            FROM jsonb_to_recordset(query_techniques) AS qt(style_name text, confidence float)
+            FROM jsonb_to_recordset(query_styles) AS qs(style_name text, confidence float)
             INNER JOIN artist_style_profiles asp
               ON asp.artist_id = fa.fa_id
-              AND asp.style_name = qt.style_name
-              AND (asp.taxonomy IS NULL OR asp.taxonomy = 'technique')
+              AND asp.style_name = qs.style_name
           ),
           0.0
         )
       ELSE 0.0
-      END as atb_technique_boost
+      END as asb_style_boost
     FROM filtered_artists fa
   ),
-  -- Step 6: Calculate THEME boost per artist (NEW)
-  artist_theme_boost AS (
-    SELECT
-      fa.fa_id as athb_artist_id,
-      CASE WHEN v_has_themes THEN
-        COALESCE(
-          (
-            SELECT SUM(
-              (qt.confidence::float) * (asp.percentage / 100.0) * v_theme_weight
-            )
-            FROM jsonb_to_recordset(query_themes) AS qt(style_name text, confidence float)
-            INNER JOIN artist_style_profiles asp
-              ON asp.artist_id = fa.fa_id
-              AND asp.style_name = qt.style_name
-              AND asp.taxonomy = 'theme'
-          ),
-          0.0
-        )
-      ELSE 0.0
-      END as athb_theme_boost
-    FROM filtered_artists fa
-  ),
-  -- Step 7: Calculate color boost per artist (aggregated from image-level)
+  -- Step 6: Calculate color boost per artist (aggregated from image-level)
   artist_color_boost AS (
     SELECT
       ti.ri_artist_id as acb_artist_id,
@@ -237,33 +207,30 @@ BEGIN
     FROM artist_ranked_images ari
     GROUP BY ari.ri_artist_id
   ),
-  -- Step 10: Apply all boosts (pro, featured, technique, theme, color)
+  -- Step 9: Apply all boosts (pro, featured, style, color)
   boosted_artists AS (
     SELECT
       aa.aa_artist_id as ba_artist_id,
       aa.aa_best_similarity,
       aa.aa_max_likes,
       aa.aa_matching_images,
-      COALESCE(atb.atb_technique_boost, 0.0)::float as ba_technique_boost,
-      COALESCE(athb.athb_theme_boost, 0.0)::float as ba_theme_boost,
+      COALESCE(asb.asb_style_boost, 0.0)::float as ba_style_boost,
       COALESCE(acb.acb_color_boost, 0.0)::float as ba_color_boost,
       aa.aa_best_similarity
         + CASE WHEN fa.fa_is_pro THEN 0.05 ELSE 0 END
         + CASE WHEN fa.fa_is_featured THEN 0.02 ELSE 0 END
-        + COALESCE(atb.atb_technique_boost, 0.0)
-        + COALESCE(athb.athb_theme_boost, 0.0)
+        + COALESCE(asb.asb_style_boost, 0.0)
         + COALESCE(acb.acb_color_boost, 0.0) as ba_boosted_score
     FROM aggregated_artists aa
     INNER JOIN filtered_artists fa ON fa.fa_id = aa.aa_artist_id
-    LEFT JOIN artist_technique_boost atb ON atb.atb_artist_id = aa.aa_artist_id
-    LEFT JOIN artist_theme_boost athb ON athb.athb_artist_id = aa.aa_artist_id
+    LEFT JOIN artist_style_boost asb ON asb.asb_artist_id = aa.aa_artist_id
     LEFT JOIN artist_color_boost acb ON acb.acb_artist_id = aa.aa_artist_id
   ),
-  -- Step 11: Total count for pagination
+  -- Step 10: Total count for pagination
   total AS (
     SELECT COUNT(*) as cnt FROM aggregated_artists
   ),
-  -- Step 12: Location counts per artist
+  -- Step 11: Location counts per artist
   artist_location_counts AS (
     SELECT al.artist_id, COUNT(*) as loc_count
     FROM artist_locations al
@@ -286,9 +253,8 @@ BEGIN
     fa.fa_is_pro,
     fa.fa_is_featured,
     ba.aa_best_similarity,
-    ba.ba_technique_boost,       -- style_boost now = technique_boost
+    ba.ba_style_boost,
     ba.ba_color_boost,
-    ba.ba_theme_boost,           -- NEW column
     ba.ba_boosted_score,
     ba.aa_max_likes,
     ba.aa_matching_images,
@@ -304,7 +270,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION search_artists IS
-  'Unified vector similarity search with technique + theme + color boosts. Techniques (0.20 weight) match artistic style, themes (0.10 weight) match subject matter.';
+  'Unified vector similarity search with style + color boosts. Style boost (0.20 weight) matches against artist_style_profiles.';
 
 
 -- ============================================
@@ -367,7 +333,11 @@ BEGIN
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+      AND (
+        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
+        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
+        OR a.claimed_by_user_id IS NOT NULL
+      )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   artist_embeddings AS (
@@ -415,7 +385,7 @@ COMMENT ON FUNCTION find_related_artists IS
 
 -- ============================================
 -- classify_embedding_styles
--- Classify an embedding against style seeds (with taxonomy support)
+-- Classify an embedding against style seeds
 -- ============================================
 DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float);
 DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float, style_taxonomy);
@@ -423,13 +393,11 @@ DROP FUNCTION IF EXISTS classify_embedding_styles(vector, int, float, style_taxo
 CREATE OR REPLACE FUNCTION classify_embedding_styles(
   p_embedding vector(768),
   p_max_styles int DEFAULT 3,
-  p_min_confidence float DEFAULT 0.35,
-  p_taxonomy style_taxonomy DEFAULT NULL  -- NULL = all styles, 'technique' or 'theme' to filter
+  p_min_confidence float DEFAULT 0.35
 )
 RETURNS TABLE (
   style_name text,
-  confidence float,
-  taxonomy style_taxonomy
+  confidence float
 )
 LANGUAGE plpgsql STABLE
 AS $$
@@ -437,19 +405,17 @@ BEGIN
   RETURN QUERY
   SELECT
     ss.style_name,
-    (1 - (p_embedding <=> ss.embedding))::FLOAT as confidence,
-    ss.taxonomy
+    (1 - (p_embedding <=> ss.embedding))::FLOAT as confidence
   FROM style_seeds ss
   WHERE ss.embedding IS NOT NULL
     AND (1 - (p_embedding <=> ss.embedding)) >= p_min_confidence
-    AND (p_taxonomy IS NULL OR ss.taxonomy = p_taxonomy)
   ORDER BY p_embedding <=> ss.embedding ASC
   LIMIT p_max_styles;
 END;
 $$;
 
 COMMENT ON FUNCTION classify_embedding_styles IS
-  'Classifies an embedding against style seeds. Optionally filter by taxonomy (technique/theme). Returns top N styles with confidence scores above threshold.';
+  'Classifies an embedding against style seeds. Returns top N styles with confidence scores above threshold.';
 
 
 -- ============================================
@@ -502,8 +468,11 @@ BEGIN
     INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-      AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code))
+      AND (
+        (COALESCE(a.is_gdpr_blocked, FALSE) = FALSE AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code)))
+        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
+        OR a.claimed_by_user_id IS NOT NULL
+      )
   ),
   -- Step 3: Aggregate by country
   country_counts AS (

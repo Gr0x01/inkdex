@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
-import type { StyleMatch, StyleClassification } from '@/lib/search/style-classifier'
+import type { StyleMatch } from '@/lib/search/style-classifier'
 
 /**
  * Internal types for RPC results
@@ -35,11 +35,10 @@ interface SearchArtistRpcResult {
 
 /**
  * Extended result type from unified search_artists RPC
- * Includes style_boost (technique), theme_boost, color_boost
+ * Includes style_boost and color_boost
  */
 interface SearchArtistRpcResultFull extends SearchArtistRpcResult {
-  style_boost: number    // Actually technique_boost from SQL
-  theme_boost: number    // NEW: theme_boost from multi-axis taxonomy
+  style_boost: number    // Style boost from SQL
   color_boost: number
   boosted_score: number
 }
@@ -194,10 +193,8 @@ export async function searchArtists(
     threshold?: number
     limit?: number
     offset?: number
-    /** @deprecated Use styleClassification instead for multi-axis taxonomy */
+    /** Detected styles from query for style boosting */
     queryStyles?: StyleMatch[] | null
-    /** New multi-axis style classification (techniques + themes) */
-    styleClassification?: StyleClassification | null
     isColorQuery?: boolean | null
   } & LocationFilter = {}
 ) {
@@ -218,7 +215,6 @@ export async function searchArtists(
     city = null,
     offset = 0,
     queryStyles = null,
-    styleClassification = null,
     isColorQuery = null,
   } = options
 
@@ -236,20 +232,6 @@ export async function searchArtists(
     return n.toString()
   }).join(',')
 
-  // Determine techniques and themes to pass
-  // Priority: styleClassification > queryStyles (legacy)
-  let queryTechniques: StyleMatch[] | null = null
-  let queryThemes: StyleMatch[] | null = null
-
-  if (styleClassification) {
-    // New multi-axis format
-    queryTechniques = styleClassification.techniques.length > 0 ? styleClassification.techniques : null
-    queryThemes = styleClassification.themes.length > 0 ? styleClassification.themes : null
-  } else if (queryStyles && queryStyles.length > 0) {
-    // Legacy: treat all as techniques for backwards compatibility
-    queryTechniques = queryStyles
-  }
-
   const { data, error } = await supabase.rpc('search_artists', {
     query_embedding: `[${sanitizedEmbedding}]`,
     match_threshold: threshold,
@@ -258,9 +240,8 @@ export async function searchArtists(
     region_filter: region,
     country_filter: country,
     offset_param: offset,
-    query_techniques: queryTechniques,
+    query_styles: queryStyles && queryStyles.length > 0 ? queryStyles : null,
     is_color_query: isColorQuery,
-    query_themes: queryThemes,
   })
 
   if (error) {
@@ -293,8 +274,7 @@ export async function searchArtists(
       likes_count: img.likes_count,
     })),
     max_similarity: result.similarity,
-    style_boost: result.style_boost,       // Technique boost (renamed from style_boost in SQL)
-    theme_boost: result.theme_boost ?? 0,  // NEW: Theme boost
+    style_boost: result.style_boost,
     color_boost: result.color_boost,
     boosted_score: result.boosted_score,
     max_likes: result.max_likes,

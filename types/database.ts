@@ -313,7 +313,6 @@ export type Database = {
           image_count: number
           percentage: number
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -322,7 +321,6 @@ export type Database = {
           image_count?: number
           percentage: number
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -331,7 +329,6 @@ export type Database = {
           image_count?: number
           percentage?: number
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -961,27 +958,21 @@ export type Database = {
           created_at: string | null
           id: string
           image_id: string
-          is_primary: boolean | null
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Insert: {
           confidence: number
           created_at?: string | null
           id?: string
           image_id: string
-          is_primary?: boolean | null
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Update: {
           confidence?: number
           created_at?: string | null
           id?: string
           image_id?: string
-          is_primary?: boolean | null
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Relationships: [
           {
@@ -1774,7 +1765,6 @@ export type Database = {
           id: string
           seed_image_url: string
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -1785,7 +1775,6 @@ export type Database = {
           id?: string
           seed_image_url: string
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -1796,7 +1785,6 @@ export type Database = {
           id?: string
           seed_image_url?: string
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1926,12 +1914,10 @@ export type Database = {
           p_embedding: string
           p_max_styles?: number
           p_min_confidence?: number
-          p_taxonomy?: Database["public"]["Enums"]["style_taxonomy"]
         }
         Returns: {
           confidence: number
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"]
         }[]
       }
       cleanup_old_email_logs: { Args: never; Returns: number }
@@ -2238,8 +2224,7 @@ export type Database = {
           match_threshold?: number
           offset_param?: number
           query_embedding: string
-          query_techniques?: Json
-          query_themes?: Json
+          query_styles?: Json
           region_filter?: string
         }
         Returns: {
@@ -2263,7 +2248,6 @@ export type Database = {
           shop_name: string
           similarity: number
           style_boost: number
-          theme_boost: number
           total_count: number
         }[]
       }
@@ -2322,7 +2306,6 @@ export type Database = {
     }
     Enums: {
       search_tier: "active" | "archive"
-      style_taxonomy: "technique" | "theme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2451,7 +2434,6 @@ export const Constants = {
   public: {
     Enums: {
       search_tier: ["active", "archive"],
-      style_taxonomy: ["technique", "theme"],
     },
   },
 } as const
