@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-05
+Last-Updated: 2026-01-10
 Maintainer: RB
 Status: Launched - Full US Coverage
 ---
@@ -80,6 +80,14 @@ All 15 implementation phases complete:
 - ✅ Phase 9: Stripe Integration (live in production)
 - ✅ Phase 10-12: Email, Auto-Sync, Search Ranking
 - ✅ Phase 13-15: Analytics, Admin Panel, Multi-Location
+
+## URL Structure (IMPORTANT)
+- **City pages**: `/us/{state-code}/{city-slug}` (e.g., `/us/nd/fargo`, `/us/tx/austin`)
+- **State pages**: `/us/{state-code}` (e.g., `/us/nd`, `/us/tx`)
+- **Artist pages**: `/artist/{artist-slug}`
+- **Style pages**: `/us/{state-code}/{city-slug}/{style}` (e.g., `/us/tx/austin/traditional`)
+
+**State codes are lowercase 2-letter codes (nd, tx, ca) - NOT full names (north-dakota).**
 
 ## Critical Architecture Points
 - **Search**: Multi-modal (image + text) using CLIP embeddings

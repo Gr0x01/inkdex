@@ -106,7 +106,7 @@ export default function Footer({ statesWithArtists = [] }: FooterProps) {
             </ul>
             {statesForFooter.length > 8 && (
               <Link
-                href="/browse"
+                href="/us"
                 className="mt-3 inline-block font-jetbrains-mono text-xs text-stone-400 hover:text-accent transition-colors"
               >
                 View all states →
