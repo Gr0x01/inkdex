@@ -82,7 +82,7 @@ export function GoogleAnalytics() {
 
   // Debug logging (temporary)
   if (typeof window !== 'undefined') {
-    console.debug('[GoogleAnalytics] Debug:', {
+    console.log('[GoogleAnalytics] Debug:', {
       hasConsent,
       gaId,
       gadsId,
