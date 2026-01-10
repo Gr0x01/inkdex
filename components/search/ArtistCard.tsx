@@ -71,10 +71,10 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
   const [showTooltip, setShowTooltip] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
 
-  // Extract Instagram handle from URL (just the username)
+  // Extract Instagram handle from URL, fallback to artist_name (which is typically the handle)
   const instagramHandle = instagram_url
     ? instagram_url.split('/').filter(Boolean).pop()
-    : null
+    : artist_name
 
   // Convert raw similarity score to user-friendly percentage
   // Scores now include style/theme/color boosts and can exceed 1.0

@@ -87,8 +87,8 @@ for (const a of uniqueArtists) {
 
   sql += `
 -- ${a.instagram_handle} (${a.city}, ${a.state})
-INSERT INTO artists (instagram_handle, name, slug, verification_status)
-VALUES ('${escapedHandle}', '${escapedName}', '${a.slug}', 'unclaimed')
+INSERT INTO artists (instagram_handle, name, slug, instagram_url, verification_status, discovery_source)
+VALUES ('${escapedHandle}', '${escapedName}', '${a.slug}', 'https://www.instagram.com/${escapedHandle}/', 'unclaimed', 'google_ads_import')
 ON CONFLICT (instagram_handle) DO NOTHING;
 
 INSERT INTO artist_locations (artist_id, city, region, country, country_code, is_primary)

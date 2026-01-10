@@ -242,6 +242,7 @@ export async function POST(request: NextRequest) {
         instagram_handle,
         name: instagram_handle, // Will be updated after scraping
         slug,
+        instagram_url: `https://www.instagram.com/${instagram_handle}/`,
         city: 'pending', // Will be updated during onboarding or manual assignment
         bio: classifierResult.bio,
         follower_count: classifierResult.follower_count,
