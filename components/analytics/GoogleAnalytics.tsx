@@ -80,6 +80,20 @@ export function GoogleAnalytics() {
   const validGaId = isValidGaId(gaId)
   const validGadsId = isValidGadsId(gadsId)
 
+  // Debug logging (temporary)
+  if (typeof window !== 'undefined') {
+    console.debug('[GoogleAnalytics] Debug:', {
+      hasConsent,
+      gaId,
+      gadsId,
+      validGaId,
+      validGadsId,
+      geoCookie: document.cookie.match(/inkdex_geo=([A-Z]{2})/i)?.[1] || 'not set',
+      dnt: navigator.doNotTrack,
+      gpc: (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl,
+    })
+  }
+
   if (!validGaId && gaId) {
     console.error('[GoogleAnalytics] Invalid GA4 Measurement ID format:', gaId)
   }
