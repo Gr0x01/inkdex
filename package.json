@@ -20,6 +20,7 @@
     "mine:followers": "tsx scripts/discovery/follower-mining.ts",
     "mine:classify": "tsx scripts/discovery/classify-pending.ts",
     "mine:status": "tsx scripts/discovery/mining-status.ts",
+    "mine:bio-locations": "tsx scripts/discovery/extract-bio-locations.ts",
     "test-discovery": "tsx scripts/discovery-test/test-tavily-discovery.ts",
     "setup:storage": "tsx scripts/setup/setup-storage-bucket.ts",
     "run-migration": "tsx scripts/setup/run-migration.ts",

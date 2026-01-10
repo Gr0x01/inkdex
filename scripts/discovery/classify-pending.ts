@@ -15,7 +15,7 @@ import OpenAI from 'openai';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import { fetchInstagramProfileImages } from '../../lib/instagram/profile-fetcher';
-import { extractLocationFromBio } from '../../lib/instagram/bio-location-extractor';
+import { extractLocationWithGPT, GPTExtractedLocation } from '../../lib/instagram/gpt-location-extractor';
 import { generateSlugFromInstagram } from '../../lib/utils/slug';
 
 // Load environment variables
@@ -210,7 +210,7 @@ async function updateCandidate(
   }
 }
 
-async function insertArtist(candidate: PendingCandidate, location: ReturnType<typeof extractLocationFromBio>): Promise<string | null> {
+async function insertArtist(candidate: PendingCandidate, location: GPTExtractedLocation | null): Promise<string | null> {
   // Generate slug from handle (uses centralized utility that handles edge cases)
   const slug = generateSlugFromInstagram(candidate.instagram_handle);
 
@@ -249,12 +249,12 @@ async function insertArtist(candidate: PendingCandidate, location: ReturnType<ty
   const artistId = data?.id || null;
 
   // Insert into artist_locations (single source of truth for location data)
-  if (artistId && location?.city && location?.stateCode) {
+  if (artistId && location && (location.city || location.stateCode)) {
     const { error: locError } = await supabase.from('artist_locations').insert({
       artist_id: artistId,
       city: location.city,
       region: location.stateCode,
-      country_code: 'US',
+      country_code: location.countryCode || 'US',
       location_type: 'city',
       is_primary: true,
       display_order: 0,
@@ -289,8 +289,8 @@ async function processCandidate(candidate: PendingCandidate): Promise<{
       return { passed: false, inserted: false };
     }
 
-    // Passed! Extract location and insert artist
-    const location = extractLocationFromBio(profileData.bio);
+    // Passed! Extract location and insert artist (GPT-4.1-mini)
+    const location = await extractLocationWithGPT(profileData.bio);
 
     // GDPR compliance: Skip EU artists
     if (location?.isGDPR) {
