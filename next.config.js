@@ -65,7 +65,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://*.supabase.co https://*.cdninstagram.com https://*.fbcdn.net https://images.unsplash.com https://placehold.co https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://clip.inkdex.io https://vitals.vercel-insights.com",
+              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://clip.inkdex.io https://vitals.vercel-insights.com",
               "frame-src 'self' https://challenges.cloudflare.com https://www.googletagmanager.com https://bid.g.doubleclick.net",
               "object-src 'none'",
               "base-uri 'self'",
