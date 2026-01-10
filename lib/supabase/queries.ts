@@ -99,7 +99,7 @@ interface RelatedArtistRow {
  * Validation helpers
  */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const SLUG_REGEX = /^[a-z0-9-]+$/ // Removed periods and underscores for security
+const SLUG_REGEX = /^[a-z0-9._-]+$/ // Allows lowercase, numbers, periods, underscores, hyphens (Instagram handle format)
 const STATE_CODE_REGEX = /^[A-Z]{2}$/
 
 function validateUUID(id: string, fieldName: string = 'ID'): void {
@@ -117,7 +117,7 @@ function validateSlug(slug: string): void {
     slug.startsWith('-') ||
     slug.endsWith('-')
   ) {
-    throw new Error(`Invalid slug: "${slug}" - must be lowercase alphanumeric with hyphens only, max 50 characters, no leading/trailing hyphens`)
+    throw new Error(`Invalid slug: "${slug}" - must be lowercase alphanumeric with periods, underscores, or hyphens, max 50 characters`)
   }
 }
 
