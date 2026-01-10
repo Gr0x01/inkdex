@@ -19,7 +19,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
   while (portfolioImages.length < 4) {
     portfolioImages.push({
       id: `placeholder-${portfolioImages.length}`,
-      url: '/placeholder-tattoo.jpg',
+      url: '/placeholder-tattoo.svg',
       likes_count: null,
     })
   }

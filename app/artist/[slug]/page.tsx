@@ -96,9 +96,9 @@ export async function generateMetadata({
   // Priority: stored profile image > legacy profile URL > first portfolio image > default
   let ogImage = getProfileImageUrl(artist)
 
-  if (ogImage === '/placeholder-tattoo.jpg' && artist.portfolio_images?.[0]) {
+  if (ogImage === '/placeholder-tattoo.svg' && artist.portfolio_images?.[0]) {
     ogImage = getPortfolioImageUrl(artist.portfolio_images[0])
-  } else if (ogImage === '/placeholder-tattoo.jpg') {
+  } else if (ogImage === '/placeholder-tattoo.svg') {
     ogImage = '/og-default.jpg'
   }
 
@@ -155,7 +155,7 @@ export default async function ArtistPage({
     name: `@${sanitizeForJsonLd(artist.instagram_handle)}`,
     description: sanitizeForJsonLd(artist.bio_override || artist.bio),
     url: `/artist/${slug}`,
-    image: jsonLdImage !== '/placeholder-tattoo.jpg' ? jsonLdImage : undefined,
+    image: jsonLdImage !== '/placeholder-tattoo.svg' ? jsonLdImage : undefined,
     jobTitle: 'Tattoo Artist',
     sameAs: artist.instagram_url ? [artist.instagram_url] : [],
     address: {

@@ -1,8 +1,8 @@
 'use client'
 
-import Image from 'next/image'
 import ClaimProfileButton from './ClaimProfileButton'
 import { ProBadge } from '@/components/badges/ProBadge'
+import { ProfileImage } from '@/components/ui/ProfileImage'
 import { trackClick } from '@/lib/analytics/client'
 import { sanitizeText } from '@/lib/utils/sanitize'
 import { getProfileImageUrl } from '@/lib/utils/images'
@@ -117,43 +117,37 @@ export default function ArtistInfoColumn({
       <div className="relative px-5 pt-2 pb-5 sm:px-6 sm:pt-3 sm:pb-6 lg:px-8 lg:pt-4 lg:pb-8 space-y-2.5">
 
         {/* Profile Image - Portrait 3:4, More Compact */}
-        {(() => {
-          const profileUrl = getProfileImageUrl(artist)
-          return profileUrl !== '/placeholder-tattoo.jpg' ? (
-          <div className="relative w-full max-w-[200px] mx-auto">
-            <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
-              <Image
-                src={profileUrl}
-                alt={`${artist.name} profile`}
-                fill
-                className="object-cover"
-                sizes="200px"
-              />
-            </div>
-
-            {/* Pro Badge - Hanging Tag (0.5rem above Featured when both exist) */}
-            {artist.is_pro && (
-              <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[3.25rem]' : 'bottom-2'}`}>
-                <ProBadge variant="badge" size="md" className="py-3" />
-              </div>
-            )}
-
-            {/* Featured Badge - Hanging Tag (below Pro if both exist) */}
-            {isFeatured && (
-              <div className="absolute bottom-2 -right-1 z-10">
-                <div className="bg-featured px-2 py-3 flex items-center justify-center">
-                  <span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider leading-none">
-                    Featured
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Minimal corner accent - top right only */}
-            <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-warm-gray" />
+        <div className="relative w-full max-w-[200px] mx-auto">
+          <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
+            <ProfileImage
+              src={getProfileImageUrl(artist)}
+              alt={`${artist.name} profile`}
+              sizes="200px"
+              placeholderSize="lg"
+            />
           </div>
-        ) : null
-        })()}
+
+          {/* Pro Badge - Hanging Tag (0.5rem above Featured when both exist) */}
+          {artist.is_pro && (
+            <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[3.25rem]' : 'bottom-2'}`}>
+              <ProBadge variant="badge" size="md" className="py-3" />
+            </div>
+          )}
+
+          {/* Featured Badge - Hanging Tag (below Pro if both exist) */}
+          {isFeatured && (
+            <div className="absolute bottom-2 -right-1 z-10">
+              <div className="bg-featured px-2 py-3 flex items-center justify-center">
+                <span className="font-mono text-xs font-semibold text-ink uppercase tracking-wider leading-none">
+                  Featured
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Minimal corner accent - top right only */}
+          <div className="absolute -top-1 -right-1 w-4 h-4 border-t-2 border-r-2 border-warm-gray" />
+        </div>
 
         {/* Header: Name (overline) + Handle + Badges + Location - TIGHT SPACING */}
         {artist.instagram_handle && (

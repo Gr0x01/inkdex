@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { getRelatedArtists } from '@/lib/supabase/queries'
 import { sanitizeText } from '@/lib/utils/sanitize'
+import { ProfileImage } from '@/components/ui/ProfileImage'
 
 interface RelatedArtist {
   id: string
@@ -75,31 +75,13 @@ export default async function RelatedArtists({
               <div className="relative bg-paper border border-gray-300 overflow-hidden transition-all duration-300 hover:border-ink hover:shadow-xl hover:-translate-y-1">
                 {/* Profile Image */}
                 <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
-                  {artist.profile_image_url ? (
-                    <Image
-                      src={artist.profile_image_url}
-                      alt={artist.name}
-                      fill
-                      sizes="(max-width: 768px) 280px, 25vw"
-                      className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                      <svg
-                        className="w-16 h-16 text-gray-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    </div>
-                  )}
+                  <ProfileImage
+                    src={artist.profile_image_url}
+                    alt={artist.name}
+                    sizes="(max-width: 768px) 280px, 25vw"
+                    className="object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                    placeholderSize="md"
+                  />
 
                   {/* Gradient overlay on hover */}
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/0 to-ink/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

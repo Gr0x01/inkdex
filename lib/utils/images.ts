@@ -19,7 +19,7 @@ export function getImageUrl(
   path: string | null | undefined,
   bucket: string = 'portfolio-images'
 ): string {
-  if (!path) return '/placeholder-tattoo.jpg'
+  if (!path) return '/placeholder-tattoo.svg'
 
   // If already a full URL, return as-is
   if (path.startsWith('http://') || path.startsWith('https://')) {
@@ -47,7 +47,7 @@ export function getBestImageUrl(options: {
     storageThumb640,
     storageThumb320,
     profileImage,
-    fallback = '/placeholder-tattoo.jpg',
+    fallback = '/placeholder-tattoo.svg',
   } = options
 
   const path =
