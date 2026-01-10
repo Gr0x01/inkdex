@@ -137,8 +137,7 @@ BEGIN
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND (
-        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
+        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE  -- is_gdpr_blocked=FALSE means whitelisted
         OR a.claimed_by_user_id IS NOT NULL  -- Claimed = implicit consent
       )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
@@ -335,7 +334,6 @@ BEGIN
       AND a.deleted_at IS NULL
       AND (
         COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
         OR a.claimed_by_user_id IS NOT NULL
       )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
@@ -469,8 +467,7 @@ BEGIN
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
       AND (
-        (COALESCE(a.is_gdpr_blocked, FALSE) = FALSE AND (al.country_code IS NULL OR NOT is_gdpr_country(al.country_code)))
-        OR COALESCE(a.gdpr_consent, FALSE) = TRUE
+        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
         OR a.claimed_by_user_id IS NOT NULL
       )
   ),

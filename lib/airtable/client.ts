@@ -285,7 +285,7 @@ export function formatArtistForAirtable(
     image_3: images[2],
     image_4: images[3],
     status: 'pending',
-    feature_days: 14, // Default featured duration
+    feature_days: 7, // Default featured duration
   }
 }
 

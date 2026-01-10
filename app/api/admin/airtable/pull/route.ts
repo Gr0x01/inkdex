@@ -139,12 +139,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Handle featured status
-        const shouldBeFeatured = fields.featured === true
+        // Airtable checkbox returns true when checked, undefined when unchecked
+        const shouldBeFeatured = Boolean(fields.featured)
         const currentlyFeatured = artist.is_featured
+        // Parse feature_days as number (Airtable may return string or number)
+        const featureDays = Number(fields.feature_days) || 7
 
         if (shouldBeFeatured && !currentlyFeatured) {
           // Add featured status
-          const featureDays = fields.feature_days || 14
           const expiresAt = new Date()
           expiresAt.setDate(expiresAt.getDate() + featureDays)
 
@@ -186,7 +188,6 @@ export async function POST(request: NextRequest) {
           }
         } else if (shouldBeFeatured && currentlyFeatured && fields.feature_days) {
           // Update expiration if feature_days changed
-          const featureDays = fields.feature_days
           const newExpiresAt = new Date(artist.featured_at || new Date())
           newExpiresAt.setDate(newExpiresAt.getDate() + featureDays)
 
