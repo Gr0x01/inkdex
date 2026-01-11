@@ -2272,7 +2272,7 @@ export type Database = {
           match_threshold?: number
           offset_param?: number
           query_embedding: string
-          query_techniques?: Json
+          query_styles?: Json
           query_themes?: Json
           region_filter?: string
         }

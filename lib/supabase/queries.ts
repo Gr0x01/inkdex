@@ -240,7 +240,7 @@ export async function searchArtists(
     region_filter: region,
     country_filter: country,
     offset_param: offset,
-    query_techniques: queryStyles && queryStyles.length > 0 ? queryStyles : null,
+    query_styles: queryStyles && queryStyles.length > 0 ? queryStyles : null,
     is_color_query: isColorQuery,
   })
 
