@@ -21,27 +21,30 @@ test.describe('Homepage', () => {
 
   test('navigation links work', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-    // Check Browse link exists and works
+    // Check Browse dropdown exists (it's a button, not a link)
+    const browseButton = page.locator('button:has-text("Browse")')
+    const hasBrowseButton = await browseButton.count() > 0
+
+    // Either browse button or browse link should exist
     const browseLink = page.getByRole('link', { name: /browse/i })
-    if (await browseLink.isVisible()) {
-      await browseLink.click()
-      await expect(page).toHaveURL(/styles|browse/)
-    }
+    const hasBrowseLink = await browseLink.count() > 0
+
+    expect(hasBrowseButton || hasBrowseLink).toBe(true)
   })
 
   test('featured artists section loads', async ({ page }) => {
     await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-    // Wait for page to load
-    await page.waitForLoadState('networkidle')
-
-    // Check for artist cards or featured section
-    const artistCards = page.locator('[data-testid="artist-card"], .artist-card, a[href^="/artist/"]')
+    // Check for artist cards or city links (homepage content varies)
+    const artistCards = page.locator('a[href^="/artist/"]')
+    const cityLinks = page.locator('a[href*="/us/"]')
 
     // Should have at least some content (featured artists or city links)
     const hasArtistCards = await artistCards.count() > 0
-    const hasCityLinks = await page.locator('a[href*="/us/"]').count() > 0
+    const hasCityLinks = await cityLinks.count() > 0
 
     expect(hasArtistCards || hasCityLinks).toBe(true)
   })

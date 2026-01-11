@@ -5,86 +5,78 @@ test.describe('Artist Page', () => {
   test('loads artist profile from city page link', async ({ page }) => {
     // Start from Austin city page
     await page.goto('/us/tx/austin')
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     // Find first artist link and get its href
     const artistLink = page.locator('a[href^="/artist/"]').first()
     const href = await artistLink.getAttribute('href')
+    expect(href).toBeTruthy()
 
-    if (href) {
-      // Navigate directly to avoid any JS routing issues
-      await page.goto(href)
-      await page.waitForLoadState('networkidle')
+    // Navigate directly to avoid any JS routing issues
+    await page.goto(href!)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-      // Should be on artist page
-      await expect(page).toHaveURL(/\/artist\//)
-
-      // Should have artist name in heading
-      const heading = page.getByRole('heading', { level: 1 })
-      await expect(heading).toBeVisible()
-    }
+    // Should be on artist page
+    await expect(page).toHaveURL(/\/artist\//)
   })
 
   test('displays portfolio images', async ({ page }) => {
     await page.goto('/us/tx/austin')
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
     const href = await artistLink.getAttribute('href')
+    expect(href).toBeTruthy()
 
-    if (href) {
-      await page.goto(href)
-      await page.waitForLoadState('networkidle')
+    await page.goto(href!)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-      // Check for any images on the page (portfolio)
-      const images = page.locator('img')
-      const count = await images.count()
+    // Check for any images on the page (portfolio)
+    const images = page.locator('img')
+    const count = await images.count()
 
-      // Artist should have at least one image
-      expect(count).toBeGreaterThan(0)
-    }
+    // Artist should have at least one image
+    expect(count).toBeGreaterThan(0)
   })
 
   test('shows Instagram link or handle', async ({ page }) => {
     await page.goto('/us/tx/austin')
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
     const href = await artistLink.getAttribute('href')
+    expect(href).toBeTruthy()
 
-    if (href) {
-      await page.goto(href)
-      await page.waitForLoadState('networkidle')
+    await page.goto(href!)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-      // Check for Instagram link (various formats)
-      const instagramLink = page.locator('a[href*="instagram.com"]')
-      const atHandle = page.locator('text=/@[a-zA-Z]/')
+    // Check for Instagram link (various formats)
+    const instagramLink = page.locator('a[href*="instagram.com"]')
+    const atHandle = page.locator('text=/@[a-zA-Z]/')
 
-      const hasInstagram = await instagramLink.count() > 0
-      const hasHandle = await atHandle.count() > 0
+    const hasInstagram = await instagramLink.count() > 0
+    const hasHandle = await atHandle.count() > 0
 
-      // Should have some Instagram reference (link or @handle text)
-      expect(hasInstagram || hasHandle).toBe(true)
-    }
+    // Should have some Instagram reference (link or @handle text)
+    expect(hasInstagram || hasHandle).toBe(true)
   })
 
   test('has location information', async ({ page }) => {
     await page.goto('/us/tx/austin')
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
     const href = await artistLink.getAttribute('href')
+    expect(href).toBeTruthy()
 
-    if (href) {
-      await page.goto(href)
-      await page.waitForLoadState('networkidle')
+    await page.goto(href!)
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-      // Page content should contain location info
-      const pageContent = await page.textContent('body')
-      const hasLocation = /Austin|Texas|TX/i.test(pageContent || '')
+    // Page content should contain location info
+    const pageContent = await page.textContent('body')
+    const hasLocation = /Austin|Texas|TX/i.test(pageContent || '')
 
-      expect(hasLocation).toBe(true)
-    }
+    expect(hasLocation).toBe(true)
   })
 })
 
