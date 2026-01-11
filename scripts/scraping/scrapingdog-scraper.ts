@@ -562,9 +562,13 @@ async function main(): Promise<void> {
   if (shutdownRequested) {
     console.log('Shutdown requested - some artists may not have been processed.');
   }
+
+  // Close database connection
+  await sql.end();
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
   console.error('Fatal error:', error);
+  await sql.end();
   process.exit(1);
 });
