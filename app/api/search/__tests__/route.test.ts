@@ -423,7 +423,7 @@ describe('Search API', () => {
 
     it('returns 404 when artist not found', async () => {
       const mockSupabase = createMockSupabase()
-      // Override to return no artist
+      // Override to return no artist - cast to any to allow different return shape
       mockSupabase.from = vi.fn((table: string) => {
         if (table === 'artists') {
           return {
@@ -438,9 +438,10 @@ describe('Search API', () => {
         return {
           insert: vi.fn().mockReturnThis(),
           select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({ data: { id: 'search-uuid' }, error: null }),
         }
-      })
+      }) as typeof mockSupabase.from
       vi.mocked(createClient).mockResolvedValue(mockSupabase as any)
 
       const request = createJsonRequest({
@@ -485,11 +486,12 @@ describe('Search API', () => {
       mockSupabase.from = vi.fn(() => ({
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
           data: null,
           error: { code: 'PGRST500', message: 'Database error' },
         }),
-      }))
+      })) as typeof mockSupabase.from
       vi.mocked(createClient).mockResolvedValue(mockSupabase as any)
 
       const request = createJsonRequest({ type: 'text', text: 'traditional tattoo' })
