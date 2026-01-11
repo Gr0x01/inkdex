@@ -1,21 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Redirect www to non-www (fixes "Duplicate without user-selected canonical" in GSC)
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'www.inkdex.io',
-          },
-        ],
-        destination: 'https://inkdex.io/:path*',
-        permanent: true, // 308 redirect for SEO
-      },
-    ]
-  },
   images: {
     remotePatterns: [
       {
