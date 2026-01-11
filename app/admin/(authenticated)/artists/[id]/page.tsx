@@ -147,6 +147,21 @@ export default async function AdminArtistDetailPage({ params }: Props) {
     .order('percentage', { ascending: false })
     .limit(5);
 
+  // Fetch pipeline state
+  const { data: pipelineState } = await serviceClient
+    .from('artist_pipeline_state')
+    .select('pipeline_status, scraping_blacklisted, blacklist_reason, last_scraped_at')
+    .eq('artist_id', id)
+    .single();
+
+  // Fetch scraping history
+  const { data: scrapingHistory } = await serviceClient
+    .from('scraping_jobs')
+    .select('id, status, error_message, created_at, completed_at, images_scraped')
+    .eq('artist_id', id)
+    .order('created_at', { ascending: false })
+    .limit(10);
+
   // Transform images to include has_embedding flag
   const transformedImages = (images || []).map((img) => ({
     id: img.id,
@@ -169,6 +184,8 @@ export default async function AdminArtistDetailPage({ params }: Props) {
       initialImageCount={transformedImages.length}
       initialAnalytics={analytics}
       initialStyles={stylesData || []}
+      initialPipelineState={pipelineState}
+      initialScrapingHistory={scrapingHistory || []}
     />
   );
 }

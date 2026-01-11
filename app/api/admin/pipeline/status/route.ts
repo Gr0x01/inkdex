@@ -125,10 +125,11 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .eq('status', 'completed'),
 
+      // Failed artists from artist_pipeline_state (not scraping_jobs)
       adminClient
-        .from('scraping_jobs')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'failed'),
+        .from('artist_pipeline_state')
+        .select('artist_id', { count: 'exact', head: true })
+        .eq('pipeline_status', 'failed'),
 
       // Recent pipeline runs
       adminClient

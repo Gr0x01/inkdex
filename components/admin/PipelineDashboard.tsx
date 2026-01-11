@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Play, Image, Cpu, Database, RotateCcw } from 'lucide-react';
+import { RefreshCw, Play, Image, Cpu, Database } from 'lucide-react';
 import StatsCard from './StatsCard';
 import PipelineRunsTable from './PipelineRunsTable';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import FailedScrapingPanel from './FailedScrapingPanel';
 
 interface PipelineStatus {
   artists: {
@@ -431,21 +432,6 @@ export default function PipelineDashboard() {
               <h3 className="font-heading text-[13px] font-semibold text-ink">
                 Scraping Jobs
               </h3>
-              {status.scrapingJobs.failed > 0 && (
-                <button
-                  onClick={requestRetryJobs}
-                  disabled={retrying}
-                  className="flex items-center gap-1 px-2 py-1 bg-status-error/10 text-status-error text-[11px] font-body
-                           hover:bg-status-error/20 disabled:opacity-50 transition-colors"
-                >
-                  {retrying ? (
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                  ) : (
-                    <RotateCcw className="w-2.5 h-2.5" />
-                  )}
-                  Retry {status.scrapingJobs.failed} Failed
-                </button>
-              )}
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
               <MetricItem label="Total" value={status.scrapingJobs.total} />
@@ -455,6 +441,14 @@ export default function PipelineDashboard() {
               <MetricItem label="Failed" value={status.scrapingJobs.failed} />
             </div>
           </div>
+
+          {/* Failed Scraping Panel */}
+          <FailedScrapingPanel
+            failedCount={status.scrapingJobs.failed}
+            onRetryAll={requestRetryJobs}
+            onRetryComplete={fetchData}
+            retrying={retrying}
+          />
 
           {/* Recent Runs */}
           <div className="bg-paper border border-ink/10">

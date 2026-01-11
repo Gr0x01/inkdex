@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ArtistImageGrid from './ArtistImageGrid';
+import ScrapingStatusCard from './ScrapingStatusCard';
 
 interface Artist {
   id: string;
@@ -79,12 +80,30 @@ interface StyleProfile {
   image_count: number;
 }
 
+interface PipelineState {
+  pipeline_status: string | null;
+  scraping_blacklisted: boolean;
+  blacklist_reason: string | null;
+  last_scraped_at: string | null;
+}
+
+interface ScrapingJob {
+  id: string;
+  status: string;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+  images_scraped: number | null;
+}
+
 interface ArtistDetailViewProps {
   initialArtist: Artist;
   initialImages: PortfolioImage[];
   initialImageCount: number;
   initialAnalytics: Analytics;
   initialStyles: StyleProfile[];
+  initialPipelineState: PipelineState | null;
+  initialScrapingHistory: ScrapingJob[];
 }
 
 export default function ArtistDetailView({
@@ -93,6 +112,8 @@ export default function ArtistDetailView({
   initialImageCount,
   initialAnalytics,
   initialStyles,
+  initialPipelineState,
+  initialScrapingHistory,
 }: ArtistDetailViewProps) {
   const [artist, setArtist] = useState(initialArtist);
   const [images, setImages] = useState(initialImages);
@@ -488,6 +509,16 @@ export default function ArtistDetailView({
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Scraping Status & Analytics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Scraping Status */}
+        <ScrapingStatusCard
+          artistId={artist.id}
+          initialPipelineState={initialPipelineState}
+          initialScrapingHistory={initialScrapingHistory}
+        />
       </div>
 
       {/* Analytics & Styles Row */}

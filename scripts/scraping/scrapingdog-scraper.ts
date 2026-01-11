@@ -83,8 +83,15 @@ interface ScrapeResult {
 }
 
 /**
- * Get artists that need scraping (no portfolio images yet)
- * Uses raw SQL to properly filter artists without images
+ * Get artists that need scraping based on pipeline_status
+ *
+ * Selects artists where:
+ * - pipeline_status is NULL, 'pending', or 'retry_requested'
+ * - NOT blacklisted
+ * - NOT private
+ * - NOT deleted
+ *
+ * Prioritizes 'retry_requested' artists first
  */
 async function getPendingArtists(limit?: number): Promise<PendingArtist[]> {
   try {
@@ -96,10 +103,14 @@ async function getPendingArtists(limit?: number): Promise<PendingArtist[]> {
         AND (ps.scraping_blacklisted IS NULL OR ps.scraping_blacklisted = FALSE)
         AND a.deleted_at IS NULL
         AND a.instagram_handle IS NOT NULL
-        AND NOT EXISTS (
-          SELECT 1 FROM portfolio_images pi WHERE pi.artist_id = a.id
+        AND (
+          ps.pipeline_status IS NULL
+          OR ps.pipeline_status = 'pending'
+          OR ps.pipeline_status = 'retry_requested'
         )
-      ORDER BY a.created_at
+      ORDER BY
+        CASE WHEN ps.pipeline_status = 'retry_requested' THEN 0 ELSE 1 END,
+        a.created_at
       ${limit ? sql`LIMIT ${limit}` : sql``}
     `;
 

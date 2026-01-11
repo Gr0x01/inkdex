@@ -48,24 +48,44 @@ export async function POST(request: Request) {
     const { target, artistIds } = validatedData;
 
     if (target === 'scraping') {
-      // Reset failed scraping jobs to pending
-      let query = adminClient
-        .from('scraping_jobs')
-        .update({
-          status: 'pending',
-          error_message: null,
-          started_at: null,
-          completed_at: null,
-        })
-        .eq('status', 'failed');
+      // Get artist IDs with failed pipeline status
+      let failedQuery = adminClient
+        .from('artist_pipeline_state')
+        .select('artist_id')
+        .eq('pipeline_status', 'failed');
 
       if (artistIds && artistIds.length > 0) {
-        query = query.in('artist_id', artistIds);
+        failedQuery = failedQuery.in('artist_id', artistIds);
       }
 
-      const { count, error } = await query;
+      const { data: failedArtists, error: fetchError } = await failedQuery;
+      if (fetchError) throw fetchError;
 
-      if (error) throw error;
+      const artistIdsToRetry = (failedArtists || []).map((a) => a.artist_id);
+
+      if (artistIdsToRetry.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: 'No failed artists to retry',
+          count: 0,
+        });
+      }
+
+      // Update artist_pipeline_state to 'retry_requested'
+      // This is what the scraper now checks for
+      // Only update if still failed (defensive against race conditions)
+      const { error: updateError } = await adminClient
+        .from('artist_pipeline_state')
+        .update({
+          pipeline_status: 'retry_requested',
+          updated_at: new Date().toISOString(),
+        })
+        .in('artist_id', artistIdsToRetry)
+        .eq('pipeline_status', 'failed');
+
+      if (updateError) throw updateError;
+
+      const count = artistIdsToRetry.length;
 
       // Audit log the action
       const clientInfo = getClientInfo(request);
@@ -79,8 +99,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Reset ${count || 0} failed scraping job(s) to pending`,
-        count: count || 0,
+        message: `Marked ${count} artist(s) for retry - they will be scraped on next run`,
+        count,
       });
     } else {
       // For embeddings, we need to identify images without embeddings
@@ -139,26 +159,47 @@ export async function GET(request: Request) {
 
   try {
     if (target === 'scraping') {
+      // Get artists with failed pipeline status, joined with their most recent scraping job for error info
       const { data, error, count } = await adminClient
-        .from('scraping_jobs')
+        .from('artist_pipeline_state')
         .select(
           `
-          id,
           artist_id,
-          status,
-          error_message,
-          created_at,
-          artists!inner(name, instagram_handle)
+          pipeline_status,
+          last_scraped_at,
+          updated_at,
+          artists!inner(id, name, instagram_handle)
         `,
           { count: 'exact' }
         )
-        .eq('status', 'failed')
-        .order('created_at', { ascending: false })
+        .eq('pipeline_status', 'failed')
+        .order('updated_at', { ascending: false })
         .limit(limit);
 
       if (error) throw error;
 
+      // Get the most recent error message for each failed artist from scraping_jobs
+      const artistIds = (data || []).map((d) => d.artist_id);
+      const errorMessages: Record<string, string> = {};
+
+      if (artistIds.length > 0) {
+        const { data: jobs } = await adminClient
+          .from('scraping_jobs')
+          .select('artist_id, error_message, created_at')
+          .in('artist_id', artistIds)
+          .eq('status', 'failed')
+          .order('created_at', { ascending: false });
+
+        // Get the most recent error for each artist
+        for (const job of jobs || []) {
+          if (!errorMessages[job.artist_id] && job.error_message) {
+            errorMessages[job.artist_id] = job.error_message;
+          }
+        }
+      }
+
       interface ArtistData {
+        id: string;
         name: string;
         instagram_handle: string;
       }
@@ -166,15 +207,16 @@ export async function GET(request: Request) {
       return NextResponse.json({
         target: 'scraping',
         total: count || 0,
-        jobs: (data || []).map((job) => {
-          const artist = job.artists as unknown as ArtistData;
+        artists: (data || []).map((item) => {
+          const artist = item.artists as unknown as ArtistData;
           return {
-            id: job.id,
-            artistId: job.artist_id,
-            artistName: artist?.name,
-            artistHandle: artist?.instagram_handle,
-            errorMessage: job.error_message,
-            createdAt: job.created_at,
+            id: artist?.id,
+            artistId: item.artist_id,
+            name: artist?.name,
+            handle: artist?.instagram_handle,
+            errorMessage: errorMessages[item.artist_id] || 'Unknown error',
+            failedAt: item.updated_at,
+            lastScrapedAt: item.last_scraped_at,
           };
         }),
       });
