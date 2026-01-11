@@ -10,9 +10,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 import { checkRateLimit } from '@/lib/redis/rate-limiter';
 import { z } from 'zod';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -120,15 +123,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // In production, Supabase sends the email automatically when using generateLink
-    // For development, we might want to log the link for testing
+    const actionLink = linkData.properties?.action_link;
+    if (!actionLink) {
+      console.error('[Admin] No action link in response');
+      return NextResponse.json(
+        { error: 'Failed to generate login link' },
+        { status: 500 }
+      );
+    }
+
+    // Log for development
     if (process.env.NODE_ENV === 'development') {
-      // Extract the magic link URL for development testing
-      const actionLink = linkData.properties?.action_link;
-      if (actionLink) {
-        console.log(`[Admin] Development magic link for ${normalizedEmail}:`);
-        console.log(actionLink);
-      }
+      console.log(`[Admin] Development magic link for ${normalizedEmail}:`);
+      console.log(actionLink);
+    }
+
+    // Send email via Resend
+    const { error: emailError } = await resend.emails.send({
+      from: 'Inkdex <no-reply@inkdex.io>',
+      to: normalizedEmail,
+      subject: 'Inkdex Admin Login',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Admin Login</h2>
+          <p>Click the button below to log in to the Inkdex admin panel:</p>
+          <p style="margin: 24px 0;">
+            <a href="${actionLink}"
+               style="background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Log In to Admin
+            </a>
+          </p>
+          <p style="color: #666; font-size: 14px;">
+            This link expires in 1 hour. If you didn't request this, you can ignore this email.
+          </p>
+        </div>
+      `,
+      text: `Log in to Inkdex Admin: ${actionLink}\n\nThis link expires in 1 hour.`,
+    });
+
+    if (emailError) {
+      console.error('[Admin] Failed to send email via Resend:', emailError);
+      return NextResponse.json(
+        { error: 'Failed to send login email' },
+        { status: 500 }
+      );
     }
 
     console.log(`[Admin] Magic link sent to: ${normalizedEmail}`);
