@@ -145,16 +145,16 @@ export async function POST(_request: NextRequest) {
     let classificationResults: boolean[];
 
     if (filterNonTattoo) {
-      console.log(`[Portfolio] Classifying ${profile.images.length} images (filter enabled)...`);
+      console.log(`[Portfolio] Classifying ${profile.posts.length} images (filter enabled)...`);
       const batchSize = 6;
       classificationResults = [];
 
-      for (let i = 0; i < profile.images.length; i += batchSize) {
-        const batch = profile.images.slice(i, i + batchSize);
+      for (let i = 0; i < profile.posts.length; i += batchSize) {
+        const batch = profile.posts.slice(i, i + batchSize);
 
         // Use Promise.allSettled to handle individual failures gracefully
         const batchResults = await Promise.allSettled(
-          batch.map((url, localIdx) => classifyImage(url, i + localIdx))
+          batch.map((post, localIdx) => classifyImage(post.displayUrl, i + localIdx))
         );
 
         // Extract results, defaulting to false on error
@@ -173,15 +173,15 @@ export async function POST(_request: NextRequest) {
         classificationResults.push(...results);
       }
     } else {
-      console.log(`[Portfolio] Filter disabled - showing all ${profile.images.length} images without classification`);
-      classificationResults = new Array(profile.images.length).fill(true);
+      console.log(`[Portfolio] Filter disabled - showing all ${profile.posts.length} images without classification`);
+      classificationResults = new Array(profile.posts.length).fill(true);
     }
 
-    // 6. Build response with classified images
-    const classifiedImages: FetchedImage[] = profile.images.map((url, idx) => ({
-      url,
-      instagram_post_id: `portfolio_${Date.now()}_${idx}`,
-      caption: null,
+    // 6. Build response with classified images (use real Instagram shortcode and URL)
+    const classifiedImages: FetchedImage[] = profile.posts.map((post, idx) => ({
+      url: post.displayUrl,
+      instagram_post_id: post.shortcode,
+      caption: post.caption,
       classified: classificationResults[idx] || false,
     }));
 
@@ -194,7 +194,7 @@ export async function POST(_request: NextRequest) {
       images: classifiedImages,
       profileData: {
         username: userData.instagram_username,
-        totalImages: profile.images.length,
+        totalImages: profile.posts.length,
         tattooImages: tattooCount,
       },
     });

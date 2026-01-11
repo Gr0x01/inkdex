@@ -538,7 +538,7 @@ async function processHashtag(
           }
 
           // Stage 2: Image classification (if not skipped)
-          if (!skipImages && profileData.images.length >= 3) {
+          if (!skipImages && profileData.posts.length >= 3) {
             stats.openaiCost += COSTS.openaiPerClassification;
 
             const classResult = await classifyTattooArtist(username);

@@ -330,7 +330,7 @@ export async function classifyTattooArtist(
       };
     }
 
-    const { bio, followerCount, images, profileImageUrl } = profileData;
+    const { bio, followerCount, posts, profileImageUrl } = profileData;
 
     // Stage 1: Bio keyword check (instant, free)
     // For bio-pass, we still need to download images for saving
@@ -340,9 +340,9 @@ export async function classifyTattooArtist(
 
       // Download images even for bio-pass so we can save them
       const downloadResults = await Promise.all(
-        images.slice(0, 6).map(async (url) => {
-          const result = await downloadImage(url);
-          return result ? { url, ...result } : null;
+        posts.slice(0, 6).map(async (post) => {
+          const result = await downloadImage(post.displayUrl);
+          return result ? { url: post.displayUrl, ...result } : null;
         })
       );
       const downloadedImages = downloadResults.filter((img): img is DownloadedImage => img !== null);
@@ -362,7 +362,8 @@ export async function classifyTattooArtist(
     console.log('[Classifier] No bio keywords found, checking images...');
 
     // Stage 2: Image classification (GPT-5-mini, ~$0.02)
-    const imageResult = await classifyImages(images);
+    const imageUrls = posts.map(post => post.displayUrl);
+    const imageResult = await classifyImages(imageUrls);
 
     if (imageResult.passed) {
       console.log('[Classifier] ✅ PASS - Portfolio shows tattoo work');

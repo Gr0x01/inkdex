@@ -18,8 +18,18 @@ export const PROFILE_ERROR_MESSAGES = {
   APIFY_ERROR: "Instagram profile scraping service temporarily unavailable. Try again in a few minutes.",
 } as const;
 
+/** Metadata for a single Instagram post */
+export interface InstagramPostMetadata {
+  shortcode: string;        // Instagram shortcode (e.g., "ABC123def_-")
+  url: string;              // Full Instagram URL (https://instagram.com/p/{shortcode}/)
+  displayUrl: string;       // CDN image URL for downloading
+  caption: string | null;
+  timestamp: string | null; // ISO 8601
+  likesCount: number | null;
+}
+
 export interface InstagramProfileData {
-  images: string[]; // Array of image URLs (displayUrl from posts)
+  posts: InstagramPostMetadata[]; // Array of post metadata with image URLs
   username: string;
   followerCount?: number;
   profileImageUrl?: string;
@@ -56,7 +66,8 @@ function isValidUsername(username: string): boolean {
  * @example
  * ```typescript
  * const profile = await fetchInstagramProfileImages('tattooartist', 6);
- * console.log(profile.images); // ['https://...', 'https://...']
+ * console.log(profile.posts[0].displayUrl); // 'https://...'
+ * console.log(profile.posts[0].shortcode); // 'ABC123def'
  * ```
  */
 export async function fetchInstagramProfileImages(
@@ -150,8 +161,8 @@ export async function fetchInstagramProfileImages(
       );
     }
 
-    // Extract image URLs from posts
-    const images: string[] = [];
+    // Extract posts with full metadata
+    const extractedPosts: InstagramPostMetadata[] = [];
 
     for (const post of posts) {
       // Skip videos
@@ -159,30 +170,40 @@ export async function fetchInstagramProfileImages(
         continue;
       }
 
-      // Get displayUrl (high-quality image)
-      const imageUrl = post.displayUrl;
-      if (imageUrl && typeof imageUrl === 'string') {
-        images.push(imageUrl);
+      // Must have shortcode and displayUrl
+      const shortcode = post.shortCode;
+      const displayUrl = post.displayUrl;
+      if (!shortcode || !displayUrl) {
+        continue;
       }
 
-      // Stop if we have enough images
-      if (images.length >= limit) {
+      extractedPosts.push({
+        shortcode,
+        url: post.url || `https://www.instagram.com/p/${shortcode}/`,
+        displayUrl,
+        caption: post.caption || null,
+        timestamp: post.timestamp || null,
+        likesCount: post.likesCount ?? null,
+      });
+
+      // Stop if we have enough posts
+      if (extractedPosts.length >= limit) {
         break;
       }
     }
 
-    // Validate minimum image count
-    if (images.length < 3) {
+    // Validate minimum post count
+    if (extractedPosts.length < 3) {
       throw new InstagramError(
         PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS,
         'PRIVATE_ACCOUNT' // Reuse code for consistency
       );
     }
 
-    console.log(`[Apify] Extracted ${images.length} image URLs`);
+    console.log(`[Apify] Extracted ${extractedPosts.length} posts with metadata`);
 
     return {
-      images,
+      posts: extractedPosts,
       username: normalizedUsername,
       followerCount,
       profileImageUrl,

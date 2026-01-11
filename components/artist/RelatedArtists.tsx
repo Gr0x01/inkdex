@@ -116,17 +116,19 @@ export default async function RelatedArtists({
                     </p>
                   )}
 
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 pt-3 border-t border-gray-200">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-mono text-[0.9375rem] font-[700] text-ink">
-                        {formatFollowers(artist.follower_count)}
-                      </span>
-                      <span className="font-body text-[0.6875rem] text-gray-500 uppercase tracking-wide">
-                        Followers
-                      </span>
+                  {/* Stats - only show if we have real follower data */}
+                  {artist.follower_count > 0 && (
+                    <div className="flex items-center gap-4 pt-3 border-t border-gray-200">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-mono text-[0.9375rem] font-[700] text-ink">
+                          {formatFollowers(artist.follower_count)}
+                        </span>
+                        <span className="font-body text-[0.6875rem] text-gray-500 uppercase tracking-wide">
+                          Followers
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </Link>

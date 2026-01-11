@@ -193,10 +193,10 @@ export async function syncArtistPortfolio(
 
     try {
       const profile = await fetchInstagramProfileImages(artist.instagram_handle, SYNC_FETCH_LIMIT);
-      fetchedImages = profile.images.map((url) => ({
-        url,
+      fetchedImages = profile.posts.map((post) => ({
+        url: post.displayUrl,
         // Generate consistent media ID from URL for deduplication
-        mediaId: generateMediaId(url),
+        mediaId: generateMediaId(post.displayUrl),
       }));
     } catch (error) {
       console.error('[AutoSync] Instagram fetch failed:', error);

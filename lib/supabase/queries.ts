@@ -738,13 +738,13 @@ export async function getRelatedArtists(
     return []
   }
 
-  // Transform to expected format
+  // Transform to expected format (convert storage paths to full URLs)
   return ((relatedArtists || []) as RelatedArtistRow[]).map((artist) => ({
     id: artist.artist_id,
     name: artist.artist_name,
     slug: artist.artist_slug,
     city: artist.city,
-    profile_image_url: artist.profile_image_url,
+    profile_image_url: getImageUrl(artist.profile_image_url),
     instagram_url: artist.instagram_url,
     shop_name: artist.shop_name || null,
     verification_status: artist.is_verified ? 'verified' : 'unclaimed',

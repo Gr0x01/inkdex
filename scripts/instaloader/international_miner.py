@@ -129,11 +129,11 @@ STYLES = [
     "neo traditional", "illustrative", "portrait", "floral", "tribal",
 ]
 
-# Timing
-DELAY_BETWEEN_ARTISTS = 30  # seconds - be nice to Instagram
-DELAY_BETWEEN_QUERIES = 2   # seconds - Tavily rate limit
-DELAY_BETWEEN_CITIES = 300  # 5 minutes between cities
-IMAGES_PER_ARTIST = 12      # How many images to scrape
+# Timing - conservative to avoid Instagram rate limits
+DELAY_BETWEEN_ARTISTS = 120  # 2 minutes - be very nice to Instagram
+DELAY_BETWEEN_QUERIES = 2    # seconds - Tavily rate limit
+DELAY_BETWEEN_CITIES = 600   # 10 minutes between cities
+IMAGES_PER_ARTIST = 12       # How many images to scrape
 
 # Local database for tracking
 LOCAL_DB_PATH = Path(__file__).parent / "miner_state.db"
@@ -344,12 +344,12 @@ def create_instaloader() -> instaloader.Instaloader:
     )
     return L
 
-def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_images: int = 12) -> list[dict]:
+def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_images: int = 12) -> dict:
     """
     Scrape recent images from an artist's public profile.
-    Returns list of {url, shortcode, timestamp}.
+    Returns dict with {images: list, follower_count: int}.
     """
-    images = []
+    result = {"images": [], "follower_count": 0}
 
     try:
         profile = instaloader.Profile.from_username(loader.context, handle)
@@ -357,7 +357,10 @@ def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_image
         # Skip private profiles
         if profile.is_private:
             logger.info(f"  @{handle} is private, skipping")
-            return []
+            return result
+
+        # Capture follower count
+        result["follower_count"] = profile.followers or 0
 
         # Get recent posts
         for i, post in enumerate(profile.get_posts()):
@@ -368,7 +371,7 @@ def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_image
             if post.is_video:
                 continue
 
-            images.append({
+            result["images"].append({
                 "url": post.url,
                 "shortcode": post.shortcode,
                 "timestamp": post.date_utc.isoformat() if post.date_utc else None,
@@ -377,7 +380,7 @@ def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_image
             # Small delay between post fetches
             time.sleep(1)
 
-        logger.info(f"  @{handle}: found {len(images)} images")
+        logger.info(f"  @{handle}: found {len(result['images'])} images, {result['follower_count']:,} followers")
 
     except instaloader.exceptions.ProfileNotExistsException:
         logger.info(f"  @{handle} doesn't exist")
@@ -389,7 +392,7 @@ def scrape_artist_images(loader: instaloader.Instaloader, handle: str, max_image
     except Exception as e:
         logger.warning(f"  Error scraping @{handle}: {e}")
 
-    return images
+    return result
 
 # ============================================================================
 # Image Processing & Upload
@@ -448,7 +451,7 @@ def artist_exists_in_supabase(supabase: Client, handle: str) -> Optional[str]:
     except:
         return None
 
-def create_artist_in_supabase(supabase: Client, handle: str, city: dict) -> Optional[str]:
+def create_artist_in_supabase(supabase: Client, handle: str, city: dict, follower_count: int = 0) -> Optional[str]:
     """Create artist record, return artist_id."""
     artist_id = None
 
@@ -461,6 +464,7 @@ def create_artist_in_supabase(supabase: Client, handle: str, city: dict) -> Opti
             "slug": slug,
             "instagram_handle": handle.lower(),
             "instagram_url": f"https://instagram.com/{handle}",
+            "follower_count": follower_count if follower_count > 0 else None,
             "discovery_source": f"tavily_international_{city['slug']}",
             "verification_status": "unclaimed",
         }).execute()
@@ -531,20 +535,22 @@ def process_artist(
 
     Returns number of images processed.
     """
-    # Check if already in Supabase
-    artist_id = artist_exists_in_supabase(supabase, handle)
-    if not artist_id:
-        artist_id = create_artist_in_supabase(supabase, handle, city)
-
-    if not artist_id:
-        mark_artist_processed(local_db, handle, city["slug"], 0, "failed")
-        return 0
-
-    # Scrape images
-    images = scrape_artist_images(loader, handle, max_images=IMAGES_PER_ARTIST)
+    # Scrape images and follower count FIRST (before creating artist)
+    scrape_result = scrape_artist_images(loader, handle, max_images=IMAGES_PER_ARTIST)
+    images = scrape_result["images"]
+    follower_count = scrape_result["follower_count"]
 
     if not images:
         mark_artist_processed(local_db, handle, city["slug"], 0, "no_images")
+        return 0
+
+    # Check if already in Supabase, create if not (with follower count)
+    artist_id = artist_exists_in_supabase(supabase, handle)
+    if not artist_id:
+        artist_id = create_artist_in_supabase(supabase, handle, city, follower_count)
+
+    if not artist_id:
+        mark_artist_processed(local_db, handle, city["slug"], 0, "failed")
         return 0
 
     # Process each image

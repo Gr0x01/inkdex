@@ -375,19 +375,30 @@ export async function POST(request: NextRequest) {
             }
             const profileData = await fetchInstagramProfileImages(username, 6)
 
-            if (profileData.images.length < 3) {
+            if (profileData.posts.length < 3) {
               return NextResponse.json(
                 { error: PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS },
                 { status: 400 }
               )
             }
 
-            console.log(`[Profile Search] Downloaded ${profileData.images.length} images, generating embeddings...`)
+            console.log(`[Profile Search] Fetched ${profileData.posts.length} posts, downloading images...`)
 
-            // Download images in parallel
-            const imageBuffers = await Promise.all(
-              profileData.images.map(url => downloadImageAsBuffer(url))
+            // Download images in parallel with metadata
+            const imagesWithMetadata = await Promise.all(
+              profileData.posts.map(async (post) => ({
+                buffer: await downloadImageAsBuffer(post.displayUrl),
+                shortcode: post.shortcode,
+                url: post.url,
+                displayUrl: post.displayUrl,
+                caption: post.caption,
+                timestamp: post.timestamp,
+                likesCount: post.likesCount,
+              }))
             )
+
+            // Extract buffers for processing
+            const imageBuffers = imagesWithMetadata.map(img => img.buffer)
 
             // Convert buffers to Files for embedding generation
             const imageFiles = imageBuffers.map((buffer, i) => {
@@ -473,20 +484,15 @@ export async function POST(request: NextRequest) {
               bio: profileData.bio || null,
               follower_count: profileData.followerCount || null,
               city: null,
-              images: profileData.images.slice(0, 3),
+              images: profileData.posts.slice(0, 3).map(p => p.displayUrl),
             }
 
             // Process images for the artist (existing or new)
             if (artistId) {
               try {
-                const imagesWithUrls = imageBuffers.map((buffer, i) => ({
-                  url: profileData.images[i],
-                  buffer,
-                }))
-
                 const saveResult = await saveImagesToTempFromBuffers(
                   artistId,
-                  imagesWithUrls,
+                  imagesWithMetadata,  // Full metadata from Apify
                   profileData.profileImageUrl
                 )
 

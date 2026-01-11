@@ -11,14 +11,22 @@ import axios from 'axios';
 /** UUID validation regex */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Instagram shortcode validation regex (8-15 alphanumeric chars + underscore/hyphen) */
+const SHORTCODE_REGEX = /^[A-Za-z0-9_-]{8,15}$/;
+
 /** Maximum image download size (10MB) */
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 
 const TEMP_DIR = '/tmp/instagram';
 
 export interface ImageWithUrl {
-  url: string;
   buffer: Buffer;
+  shortcode: string;        // Instagram shortcode (e.g., "ABC123def_-")
+  url: string;              // Instagram post URL (https://instagram.com/p/{shortcode}/)
+  displayUrl: string;       // CDN URL (for reference/debugging)
+  caption: string | null;
+  timestamp: string | null; // ISO 8601
+  likesCount: number | null;
 }
 
 /**
@@ -55,21 +63,30 @@ export async function saveImagesToTempFromBuffers(
       likes: number | null;
     }> = [];
 
-    // Save each image
+    // Save each image with real Instagram metadata
     for (let i = 0; i < images.length; i++) {
       const image = images[i];
-      // Generate deterministic post ID
-      const postId = `img_${i}_${artistId.slice(0, 8)}`;
-      const filename = `${postId}.jpg`;
 
+      // Security: Validate shortcode format to prevent path traversal
+      // Instagram shortcodes are 8-15 chars of alphanumeric + underscore/hyphen
+      let postId: string;
+      if (SHORTCODE_REGEX.test(image.shortcode)) {
+        postId = image.shortcode;
+      } else {
+        // Fallback to generated ID if shortcode is invalid/missing
+        console.warn(`[ImageSaver] Invalid shortcode format, using fallback: ${image.shortcode}`);
+        postId = `img_${i}_${artistId.slice(0, 8)}`;
+      }
+
+      const filename = `${postId}.jpg`;
       writeFileSync(join(artistDir, filename), image.buffer);
 
       metadata.push({
-        post_id: postId,
-        post_url: image.url,
-        caption: null,
-        timestamp: new Date().toISOString(),
-        likes: null,
+        post_id: postId,                    // Real shortcode or fallback
+        post_url: image.url,                // Real Instagram post URL
+        caption: image.caption,
+        timestamp: image.timestamp || new Date().toISOString(),
+        likes: image.likesCount,
       });
     }
 

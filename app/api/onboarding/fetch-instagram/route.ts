@@ -159,33 +159,32 @@ export async function POST(_request: NextRequest) {
       }
     }
 
-    const { images, bio, followerCount, username } = profileData;
+    const { posts, bio, followerCount, username } = profileData;
 
-    console.log(`[Onboarding] Fetched ${images.length} images from @${username}`);
+    console.log(`[Onboarding] Fetched ${posts.length} images from @${username}`);
 
     // 5. Classify images in parallel (6 concurrent GPT-5-mini calls)
     const BATCH_SIZE = 6;
     const classifiedImages: FetchedImage[] = [];
 
-    for (let i = 0; i < images.length; i += BATCH_SIZE) {
-      const batch = images.slice(i, i + BATCH_SIZE);
-      const batchPromises = batch.map((imageUrl, batchIndex) =>
-        classifyImage(imageUrl, i + batchIndex)
+    for (let i = 0; i < posts.length; i += BATCH_SIZE) {
+      const batch = posts.slice(i, i + BATCH_SIZE);
+      const batchPromises = batch.map((post, batchIndex) =>
+        classifyImage(post.displayUrl, i + batchIndex)
       );
 
       const batchResults = await Promise.all(batchPromises);
 
-      batch.forEach((imageUrl, batchIndex) => {
-        const globalIndex = i + batchIndex;
+      batch.forEach((post, batchIndex) => {
         classifiedImages.push({
-          url: imageUrl,
-          instagram_post_id: `onboard_${user.id}_${globalIndex}`, // Temporary ID until finalized
-          caption: null, // Caption not available from profile scraper
+          url: post.displayUrl,
+          instagram_post_id: post.shortcode, // Real Instagram shortcode
+          caption: post.caption,
           classified: batchResults[batchIndex],
         });
       });
 
-      console.log(`[Onboarding] Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(images.length / BATCH_SIZE)}`);
+      console.log(`[Onboarding] Processed batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(posts.length / BATCH_SIZE)}`);
     }
 
     const tattooCount = classifiedImages.filter((img) => img.classified).length;

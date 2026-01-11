@@ -125,7 +125,8 @@ BEGIN
            al.city as fa_city,
            al.region as fa_region,
            al.country_code as fa_country_code,
-           a.profile_image_url as fa_profile_image_url,
+           -- Use storage paths (preferred) with fallback to legacy CDN URL
+           COALESCE(a.profile_storage_thumb_640, a.profile_storage_thumb_320, a.profile_storage_path, a.profile_image_url) as fa_profile_image_url,
            a.follower_count as fa_follower_count,
            a.shop_name as fa_shop_name,
            a.instagram_url as fa_instagram_url,
@@ -323,7 +324,8 @@ BEGIN
            al.city as fa_city,
            al.region as fa_region,
            al.country_code as fa_country_code,
-           a.profile_image_url as fa_profile_image_url,
+           -- Use storage paths (preferred) with fallback to legacy CDN URL
+           COALESCE(a.profile_storage_thumb_640, a.profile_storage_thumb_320, a.profile_storage_path, a.profile_image_url) as fa_profile_image_url,
            a.instagram_url as fa_instagram_url,
            a.shop_name as fa_shop_name,
            a.follower_count as fa_follower_count,

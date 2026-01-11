@@ -276,13 +276,14 @@ async function processCandidate(candidate: PendingCandidate): Promise<{
     // Fetch fresh profile images
     const profileData = await fetchInstagramProfileImages(candidate.instagram_handle, IMAGES_PER_PROFILE);
 
-    if (profileData.images.length < 3) {
+    if (profileData.posts.length < 3) {
       await updateCandidate(candidate.id, false);
       return { passed: false, inserted: false, error: 'Not enough images' };
     }
 
     // Classify images
-    const result = await classifyImages(profileData.images);
+    const imageUrls = profileData.posts.map(p => p.displayUrl);
+    const result = await classifyImages(imageUrls);
 
     if (!result.passed) {
       await updateCandidate(candidate.id, false);
