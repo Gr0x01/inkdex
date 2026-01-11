@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import type Stripe from 'stripe'
 
@@ -103,6 +104,10 @@ describe('Stripe Webhook Handler', () => {
     }
   })
 
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
   describe('Signature Validation', () => {
     it('returns 400 if stripe-signature header is missing', async () => {
       const request = createMockRequest('{}', null)
@@ -158,7 +163,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'checkout.session.completed',
         data: { object: mockSession },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
         id: 'sub_789',
@@ -167,7 +172,7 @@ describe('Stripe Webhook Handler', () => {
         current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
         cancel_at_period_end: false,
         items: { data: [] },
-      } as unknown as Stripe.Subscription)
+      } as unknown as Stripe.Response<Stripe.Subscription>)
 
       // Mock portfolio images query - set the query result
       mockSupabase._setQueryResult([{ id: 'img-1' }, { id: 'img-2' }])
@@ -197,7 +202,7 @@ describe('Stripe Webhook Handler', () => {
             metadata: {}, // Missing user_id and artist_id
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -210,12 +215,10 @@ describe('Stripe Webhook Handler', () => {
       const mockSupabase = createMockSupabase()
       vi.mocked(createAdminClient).mockReturnValue(mockSupabase as any)
 
-      // Mock user query to return synthetic email
-      const originalSingle = mockSupabase._mockChain.single
-      mockSupabase._mockChain.single = vi.fn().mockResolvedValueOnce({
-        data: { email: 'artist_456@instagram.inkdex.io' },
-        error: null,
-      }).mockImplementation(() => originalSingle())
+      // Mock user query to return synthetic email - first call returns synthetic, rest return null
+      mockSupabase._mockChain.single = vi.fn()
+        .mockResolvedValueOnce({ data: { email: 'artist_456@instagram.inkdex.io' }, error: null })
+        .mockResolvedValue({ data: null, error: null })
 
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'checkout.session.completed',
@@ -227,7 +230,7 @@ describe('Stripe Webhook Handler', () => {
             },
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
         id: 'sub_789',
@@ -236,7 +239,7 @@ describe('Stripe Webhook Handler', () => {
         current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
         cancel_at_period_end: false,
         items: { data: [] },
-      } as unknown as Stripe.Subscription)
+      } as unknown as Stripe.Response<Stripe.Subscription>)
 
       mockSupabase._setQueryResult([])
 
@@ -249,7 +252,8 @@ describe('Stripe Webhook Handler', () => {
   })
 
   describe('customer.subscription.updated', () => {
-    const mockSubscription: Partial<Stripe.Subscription> = {
+    // Use custom type since Stripe SDK types don't include deprecated period fields directly
+    const mockSubscription = {
       id: 'sub_789',
       status: 'active',
       metadata: {
@@ -259,8 +263,8 @@ describe('Stripe Webhook Handler', () => {
       current_period_start: Math.floor(Date.now() / 1000),
       current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
       cancel_at_period_end: false,
-      items: { data: [] } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
-    }
+      items: { data: [] },
+    } as unknown as Stripe.Subscription
 
     it('updates subscription status', async () => {
       const mockSupabase = createMockSupabase()
@@ -269,7 +273,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'customer.subscription.updated',
         data: { object: mockSubscription },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -293,7 +297,7 @@ describe('Stripe Webhook Handler', () => {
             status: 'canceled',
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -315,7 +319,7 @@ describe('Stripe Webhook Handler', () => {
             metadata: {}, // Missing artist_id
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -344,7 +348,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'customer.subscription.deleted',
         data: { object: mockSubscription },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -366,7 +370,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'customer.subscription.deleted',
         data: { object: mockSubscription },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       await POST(request)
@@ -380,10 +384,10 @@ describe('Stripe Webhook Handler', () => {
   })
 
   describe('invoice.payment_failed', () => {
-    const mockInvoice: Partial<Stripe.Invoice> = {
+    const mockInvoice = {
       id: 'in_123',
       subscription: 'sub_789',
-    }
+    } as unknown as Stripe.Invoice
 
     it('marks subscription as past_due and sends email', async () => {
       const mockSupabase = createMockSupabase()
@@ -403,7 +407,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'invoice.payment_failed',
         data: { object: mockInvoice },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -429,7 +433,7 @@ describe('Stripe Webhook Handler', () => {
             subscription: null,
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -462,7 +466,7 @@ describe('Stripe Webhook Handler', () => {
             subscription: { id: 'sub_789' } as any, // Object instead of string
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -477,7 +481,7 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'some.other.event',
         data: { object: {} },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
@@ -494,7 +498,8 @@ describe('Stripe Webhook Handler', () => {
       vi.mocked(createAdminClient).mockReturnValue(mockSupabase as any)
 
       // Make upsert throw an error
-      mockSupabase._mockChain.upsert.mockRejectedValueOnce(new Error('Database error'))
+      const upsertMock = mockSupabase._mockChain.upsert as ReturnType<typeof vi.fn>
+      upsertMock.mockRejectedValueOnce(new Error('Database error'))
 
       vi.mocked(stripe.webhooks.constructEvent).mockReturnValue({
         type: 'checkout.session.completed',
@@ -509,7 +514,7 @@ describe('Stripe Webhook Handler', () => {
             customer: 'cus_abc',
           }
         },
-      } as Stripe.Event)
+      } as unknown as Stripe.Event)
 
       vi.mocked(stripe.subscriptions.retrieve).mockResolvedValue({
         id: 'sub_789',
@@ -518,7 +523,7 @@ describe('Stripe Webhook Handler', () => {
         current_period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
         cancel_at_period_end: false,
         items: { data: [] },
-      } as unknown as Stripe.Subscription)
+      } as unknown as Stripe.Response<Stripe.Subscription>)
 
       const request = createMockRequest('{}')
       const response = await POST(request)
