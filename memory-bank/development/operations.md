@@ -11,11 +11,95 @@ Status: Active Guidelines (VPS/Instaloader removed - now using ScrapingDog)
 ```bash
 npm run lint          # Must pass
 npm run type-check    # Must pass
+npm run test:run      # Must pass (47 tests)
 npm run build         # Must succeed
 npm run db:push       # For migrations (runs sqlfluff first)
 ```
 
 **Use `code-reviewer` subagent after significant changes.**
+
+---
+
+## Testing Infrastructure (Jan 11, 2026)
+
+### CI/CD Pipeline
+GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to `main`/`staging` and PRs to `main`:
+
+| Job | Dependencies | What it catches |
+|-----|--------------|-----------------|
+| Lint | None | Code style issues |
+| Type Check | None | TypeScript errors |
+| Test | None | Logic bugs (47 unit tests) |
+| Build | Lint + Type Check | Build failures |
+
+### Unit Test Commands (Vitest)
+```bash
+npm run test          # Watch mode (interactive)
+npm run test:run      # Single run (CI)
+npm run test:coverage # With coverage report
+npm run test:ui       # Vitest UI (browser)
+```
+
+### E2E Test Commands (Playwright)
+```bash
+npm run test:e2e        # Run all E2E tests (17 tests, ~4 min)
+npm run test:e2e:ui     # Playwright UI (interactive debugging)
+npm run test:e2e:headed # Run in visible browser
+```
+
+### Test Files
+
+**Unit Tests (Vitest) - 47 tests:**
+| File | Tests | Coverage |
+|------|-------|----------|
+| `lib/instagram/__tests__/url-detector.test.ts` | 31 | Instagram URL detection |
+| `app/api/stripe/webhook/__tests__/route.test.ts` | 16 | Stripe webhook handler |
+
+**E2E Tests (Playwright) - 17 tests:**
+| File | Tests | Coverage |
+|------|-------|----------|
+| `e2e/homepage.spec.ts` | 4 | Page load, search input, navigation |
+| `e2e/city-page.spec.ts` | 5 | City display, artist grid, 404 handling |
+| `e2e/artist-page.spec.ts` | 5 | Profile, portfolio, Instagram, location |
+| `e2e/search.spec.ts` | 3 | Text search, validation, Instagram URL detection |
+
+### Playwright Configuration
+```typescript
+// playwright.config.ts
+workers: 1,              // Single worker (dev server can't handle parallel)
+timeout: 60000,          // 60s per test
+navigationTimeout: 45000 // 45s for page navigation
+screenshot: 'only-on-failure'
+```
+
+**Key patterns for E2E tests:**
+- Use `pressSequentially()` instead of `fill()` for React inputs (triggers onChange)
+- Wait for specific elements, not `networkidle` (flaky)
+- Use `expect(href).toBeTruthy()` before navigation (explicit failures)
+- Target desktop navbar with `.hidden.md\\:block` selector
+
+### Staging Branch
+The `staging` branch deploys to Vercel preview URL with Stripe **test mode** keys.
+
+**Key difference:** Staging uses `sk_test_*` and `pk_test_*` keys for safe payment testing.
+
+**Setup:** See `memory-bank/development/staging-setup.md` for Vercel env var configuration.
+
+**Warning:** Staging shares the production database - avoid destructive operations.
+
+### Writing Tests
+
+**Unit tests (Vitest):**
+- Pure validation functions: No mocks needed, test edge cases
+- API routes: Mock external dependencies (Supabase, Stripe, etc.)
+- Use `vitest.setup.ts` for global mocks (next/navigation, next/headers)
+- For Stripe types, cast through `unknown`: `as unknown as Stripe.Event`
+
+**E2E tests (Playwright):**
+- Test user flows, not implementation details
+- Use explicit waits for elements, avoid arbitrary timeouts
+- Add `data-testid` attributes for stable selectors
+- Keep tests isolated - each test starts fresh
 
 ---
 

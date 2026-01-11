@@ -51,6 +51,16 @@ npm run lint             # Run ESLint
 npm run type-check       # TypeScript type checking
 npm run storybook        # Start Storybook dev server
 
+# Unit Testing (Vitest - 47 tests)
+npm run test             # Vitest watch mode
+npm run test:run         # Single run (CI uses this)
+npm run test:coverage    # With coverage report
+
+# E2E Testing (Playwright - 17 tests)
+npm run test:e2e         # Run all E2E tests (~4 min)
+npm run test:e2e:ui      # Playwright UI (interactive)
+npm run test:e2e:headed  # Run in visible browser
+
 # Data Pipeline
 npm run analyze-cities   # DataForSEO city analysis
 npm run discover-artists # Google Maps artist discovery (legacy)
