@@ -73,4 +73,43 @@ test.describe('Search', () => {
     const searchButton = getDesktopSearchButton(page)
     await expect(searchButton).toBeEnabled()
   })
+
+  test('search results page shows result count', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    const searchInput = getDesktopSearchInput(page)
+    await searchInput.click()
+    await searchInput.pressSequentially('blackwork', { delay: 20 })
+
+    const searchButton = getDesktopSearchButton(page)
+    await expect(searchButton).toBeEnabled({ timeout: 5000 })
+    await searchButton.click()
+
+    // Wait for search results page
+    await expect(page).toHaveURL(/\/search\?id=/, { timeout: 30000 })
+
+    // Should show result count (e.g., "42 artists found")
+    await expect(page.locator('text=/\\d+ artists? found/')).toBeVisible({ timeout: 15000 })
+  })
+
+  test('search input accepts @username format', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    const searchInput = getDesktopSearchInput(page)
+    await expect(searchInput).toBeVisible()
+
+    // Enter @username format
+    await searchInput.click()
+    await searchInput.pressSequentially('@someartist', { delay: 20 })
+
+    // Should detect as Instagram profile
+    const badge = page.locator('text=/someartist/')
+    await expect(badge).toBeVisible({ timeout: 5000 })
+
+    // Search button should be enabled
+    const searchButton = getDesktopSearchButton(page)
+    await expect(searchButton).toBeEnabled()
+  })
 })
