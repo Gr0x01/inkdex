@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-09
+Last-Updated: 2026-01-11
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -17,6 +17,31 @@ Status: Launched - Production
 **Display Styles:** 11 styles (added japanese + anime after ML accuracy improved)
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
+
+---
+
+## ScrapingDog Migration (Jan 11, 2026) ✅
+
+**Goal:** Replace Instaloader VPS with ScrapingDog API for Instagram scraping (5x cheaper than Apify).
+
+**Status:** Complete - ScrapingDog is now primary, Apify is fallback.
+
+**Architecture:**
+- **Primary:** ScrapingDog API (15 credits per profile + 12 posts)
+- **Fallback:** Apify (for transient ScrapingDog errors)
+- **Cost:** ~$90/mo for 1M credits (~66k profiles) vs VPS at ~$35-65/mo
+
+**Key Files:**
+- `lib/instagram/scrapingdog-client.ts` - ScrapingDog API client
+- `lib/instagram/profile-fetcher.ts` - Uses ScrapingDog first, falls back to Apify
+
+**Removed (archived):**
+- VPS orchestrator system (`scripts/_archive/orchestrator/`)
+- Instaloader scripts (`scripts/_archive/instaloader/`)
+- Admin orchestrator page and VultrMinerStatus component
+- `/api/admin/vultr/*` and `/api/admin/orchestrator/*` routes
+
+**Env var:** `SCRAPINGDOG_API_KEY` (required for primary scraping)
 
 ---
 

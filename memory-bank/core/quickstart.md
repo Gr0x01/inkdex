@@ -170,4 +170,4 @@ NEXT_PUBLIC_APP_URL=
 ## Next Immediate Steps
 1. Monitor production for issues
 2. Continue marketing/artist outreach
-3. International expansion via VPS miner
+3. International expansion via ScrapingDog API

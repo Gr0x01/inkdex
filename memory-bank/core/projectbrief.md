@@ -158,7 +158,7 @@ Let users express themselves naturally:
 - Artist outreach campaigns
 
 ### Medium-term
-- International expansion (Canada, UK, Australia) - VPS miner active
+- International expansion (Canada, UK, Australia) via ScrapingDog API
 - Mobile app consideration
 - Style trend analytics
 

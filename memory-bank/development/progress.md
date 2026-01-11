@@ -60,7 +60,7 @@ All 15 implementation phases complete:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | Vector index | IVFFlat | Better for 10k-100k scale |
-| Scraping | Apify | 10x faster than Instaloader |
+| Scraping | ScrapingDog + Apify fallback | 5x cheaper than Apify alone |
 | Classification | GPT-5-mini flex | ~$0.00012/profile |
 | Embeddings | Hybrid CLIP | Local GPU + Modal fallback (90% cost reduction) |
 | Artist matching | Handle-based | All artists have handles, reliable |
@@ -72,6 +72,11 @@ All 15 implementation phases complete:
 ## Development Timeline
 
 ### Week 2 (Jan 11, 2026)
+- **ScrapingDog Migration** ✅
+  - Replaced Instaloader VPS with ScrapingDog API (5x cheaper than Apify)
+  - ScrapingDog as primary, Apify as fallback
+  - Removed admin orchestrator page and VultrMinerStatus component
+  - Archived VPS scripts (`scripts/_archive/orchestrator/`, `scripts/_archive/instaloader/`)
 - **Schema Drift Reconciliation** ✅
   - Fixed 29 SECURITY DEFINER functions with empty `search_path` bug
   - Consolidated 3 pending migrations into single reconciliation migration

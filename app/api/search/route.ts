@@ -375,7 +375,7 @@ export async function POST(request: NextRequest) {
             }
             const profileData = await fetchInstagramProfileImages(username, 6)
 
-            if (profileData.posts.length < 3) {
+            if (profileData.posts.length < 1) {
               return NextResponse.json(
                 { error: PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS },
                 { status: 400 }

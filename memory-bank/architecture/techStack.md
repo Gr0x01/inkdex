@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-07 (Search SQL Consolidation)
+Last-Updated: 2026-01-11 (ScrapingDog migration)
 Maintainer: RB
 Status: Launched
 ---
@@ -35,28 +35,29 @@ Status: Launched
 
 | Service | Use Case | Cost |
 |---------|----------|------|
-| Apify | Instagram scraping | ~$2.60/1K posts |
+| ScrapingDog | Instagram scraping (primary) | ~$90/mo for 1M credits |
+| Apify | Instagram scraping (fallback) | ~$2.60/1K posts |
 | Tavily | Artist discovery | ~$0.05/query |
 | Modal.com | GPU fallback | ~$0.60/hr |
 | OpenAI GPT-5-mini | Image classification | ~$0.02/profile |
 | Airtable | Marketing outreach hub | $24/mo (Team tier) |
 
-### Apify Dual-Account Strategy
+### Instagram Scraping Strategy
 
-Two separate Apify accounts to optimize costs:
+**Primary:** ScrapingDog API (5x cheaper than Apify)
+- 15 credits per profile + 12 posts in single request
+- Env var: `SCRAPINGDOG_API_KEY`
 
-| Account | Env Var | Use Case | Cost |
-|---------|---------|----------|------|
-| **Free** | `APIFY_API_TOKEN_FREE` | Profile searches, Pro auto-sync | $0 ($5/mo credit) |
-| **Paid** | `APIFY_API_TOKEN` | Heavy pipeline (hashtag/follower mining, bulk scraper) | Pay-as-you-go |
+**Fallback:** Apify (for transient ScrapingDog errors)
+- Dual-account strategy for cost optimization
+- `APIFY_API_TOKEN_FREE` - lightweight operations
+- `APIFY_API_TOKEN` - heavy pipeline scraping
 
 **Token Selection Logic:**
-- `lib/instagram/profile-fetcher.ts` → Uses `FREE` first, falls back to `PAID`
-- `lib/instagram/hashtag-scraper.ts` → Uses `PAID` only
-- `lib/instagram/follower-scraper.ts` → Uses `PAID` only
-- `scripts/scraping/apify-scraper.py` → Uses `PAID` only
-
-**Rationale:** After initial bulk scraping, ongoing needs (Pro auto-sync, profile searches) fit within free tier. Paid account only needed for occasional large discovery batches.
+- `lib/instagram/profile-fetcher.ts` → ScrapingDog first, then Apify FREE, then Apify PAID
+- `lib/instagram/scrapingdog-client.ts` → ScrapingDog API client
+- `lib/instagram/hashtag-scraper.ts` → Uses Apify PAID only
+- `lib/instagram/follower-scraper.ts` → Uses Apify PAID only
 
 ---
 

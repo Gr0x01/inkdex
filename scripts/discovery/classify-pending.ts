@@ -276,9 +276,9 @@ async function processCandidate(candidate: PendingCandidate): Promise<{
     // Fetch fresh profile images
     const profileData = await fetchInstagramProfileImages(candidate.instagram_handle, IMAGES_PER_PROFILE);
 
-    if (profileData.posts.length < 3) {
+    if (profileData.posts.length < 1) {
       await updateCandidate(candidate.id, false);
-      return { passed: false, inserted: false, error: 'Not enough images' };
+      return { passed: false, inserted: false, error: 'No image posts (only videos)' };
     }
 
     // Classify images

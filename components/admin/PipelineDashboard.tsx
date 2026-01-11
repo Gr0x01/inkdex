@@ -5,7 +5,6 @@ import { RefreshCw, Play, Image, Cpu, Database, RotateCcw } from 'lucide-react';
 import StatsCard from './StatsCard';
 import PipelineRunsTable from './PipelineRunsTable';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import VultrMinerStatus from './VultrMinerStatus';
 
 interface PipelineStatus {
   artists: {
@@ -301,9 +300,6 @@ export default function PipelineDashboard() {
           {triggerMessage.text}
         </div>
       )}
-
-      {/* Vultr Miner Status */}
-      <VultrMinerStatus />
 
       {status && (
         <>

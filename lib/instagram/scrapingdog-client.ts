@@ -191,8 +191,8 @@ export async function fetchProfileWithScrapingDog(
       if (extractedPosts.length >= limit) break;
     }
 
-    // Validate minimum post count
-    if (extractedPosts.length < 3) {
+    // Validate minimum post count (need at least 1 image for visual search)
+    if (extractedPosts.length < 1) {
       throw new InstagramError(
         PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS,
         'INSUFFICIENT_POSTS'

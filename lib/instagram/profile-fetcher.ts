@@ -14,7 +14,7 @@ import { fetchProfileWithScrapingDog } from './scrapingdog-client';
 // Extend error messages for profile-specific errors
 export const PROFILE_ERROR_MESSAGES = {
   ...ERROR_MESSAGES,
-  INSUFFICIENT_POSTS: "This profile needs at least 3 public posts for accurate matching.",
+  INSUFFICIENT_POSTS: "This profile only has videos. Visual search needs at least one image post.",
   NO_POSTS: "This profile has no public posts.",
   SCRAPING_FAILED: "Couldn't fetch images from this profile. Try uploading an image directly.",
   APIFY_ERROR: "Instagram profile scraping service temporarily unavailable. Try again in a few minutes.",
@@ -220,11 +220,11 @@ async function fetchWithApify(
       }
     }
 
-    // Validate minimum post count
-    if (extractedPosts.length < 3) {
+    // Validate minimum post count (need at least 1 image for visual search)
+    if (extractedPosts.length < 1) {
       throw new InstagramError(
         PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS,
-        'PRIVATE_ACCOUNT' // Reuse code for consistency
+        'INSUFFICIENT_POSTS'
       );
     }
 
