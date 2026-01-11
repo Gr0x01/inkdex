@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
+import SearchError from '@/components/search/SearchError'
 import styles from './ShimmerSearch.module.css'
 
 interface UnifiedSearchBarProps {
@@ -447,9 +448,7 @@ export default function UnifiedSearchBar({
 
         {/* Error Message */}
         {displayError && !isLoading && (
-          <div className="mt-3 text-center">
-            <p className="text-sm text-red-400 font-body">{displayError}</p>
-          </div>
+          <SearchError message={displayError} variant="banner" />
         )}
 
         {/* Drag Hint */}

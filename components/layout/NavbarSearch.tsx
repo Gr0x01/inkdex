@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
+import SearchError from '@/components/search/SearchError'
 import styles from '@/components/home/ShimmerSearch.module.css'
 
 interface NavbarSearchProps {
@@ -364,6 +365,11 @@ export default function NavbarSearch({
             className="hidden"
             aria-label="Upload reference image"
           />
+
+          {/* Error Message - dropdown below input */}
+          {displayError && !isSubmitting && (
+            <SearchError message={displayError} variant="inline" />
+          )}
         </div>
 
         {/* Search Button - Separate, next to input */}
@@ -384,13 +390,6 @@ export default function NavbarSearch({
           Search
         </button>
       </div>
-
-      {/* Error Message */}
-      {displayError && !isSubmitting && (
-        <div className="absolute top-full left-0 right-0 mt-1.5 px-1">
-          <p className="text-xs md:text-sm text-red-600 font-body">{displayError}</p>
-        </div>
-      )}
     </form>
   )
 }
