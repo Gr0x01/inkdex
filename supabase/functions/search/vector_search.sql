@@ -349,13 +349,6 @@ BEGIN
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
     GROUP BY fa.fa_id
-  ),
-  artist_location_counts AS (
-    SELECT
-      al.artist_id,
-      COUNT(*) as loc_count
-    FROM artist_locations al
-    GROUP BY al.artist_id
   )
   SELECT
     fa.fa_id,
@@ -370,10 +363,10 @@ BEGIN
     fa.fa_is_verified,
     fa.fa_follower_count,
     (1 - (ae.ae_avg_embedding <=> source_avg_embedding))::float as similarity,
-    COALESCE(alc.loc_count, 1) as location_count
+    -- Inline subquery: only counts locations for the few returned artists, not all 16k
+    COALESCE((SELECT COUNT(*) FROM artist_locations al WHERE al.artist_id = fa.fa_id), 1) as location_count
   FROM filtered_artists fa
   INNER JOIN artist_embeddings ae ON ae.ae_artist_id = fa.fa_id
-  LEFT JOIN artist_location_counts alc ON alc.artist_id = fa.fa_id
   ORDER BY ae.ae_avg_embedding <=> source_avg_embedding
   LIMIT match_count;
 END;

@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -11,6 +12,7 @@ import { US_STATES } from '@/lib/constants/states'
 import ArtistInfoColumn from '@/components/artist/ArtistInfoColumn'
 import MasonryPortfolioGrid from '@/components/artist/MasonryPortfolioGrid'
 import RelatedArtists from '@/components/artist/RelatedArtists'
+import RelatedArtistsSkeleton from '@/components/artist/RelatedArtistsSkeleton'
 import FindSimilarArtistsButton from '@/components/artist/FindSimilarArtistsButton'
 import AnalyticsTracker from '@/components/analytics/AnalyticsTracker'
 
@@ -340,12 +342,14 @@ export default async function ArtistPage({
               artistName={artist.name}
             />
 
-            {/* Related Artists Section */}
-            <RelatedArtists
-              artistId={artist.id}
-              artistSlug={artist.slug}
-              city={artistCity}
-            />
+            {/* Related Artists Section - async loaded to not block page render */}
+            <Suspense fallback={<RelatedArtistsSkeleton />}>
+              <RelatedArtists
+                artistId={artist.id}
+                artistSlug={artist.slug}
+                city={artistCity}
+              />
+            </Suspense>
 
             {/* Find Similar Artists - positioned after related artists */}
             <div className="mt-4 mb-12 max-w-md mx-auto">
