@@ -44,8 +44,10 @@ Status: Launched
 
 ### Instagram Scraping Strategy
 
-**Primary:** ScrapingDog API (5x cheaper than Apify)
+**Primary:** ScrapingDog API (Standard plan - 5x cheaper than Apify)
+- 50 concurrent requests (Standard plan limit)
 - 15 credits per profile + 12 posts in single request
+- ~66k profiles/month capacity (1M credits)
 - Env var: `SCRAPINGDOG_API_KEY`
 
 **Fallback:** Apify (for transient ScrapingDog errors)
@@ -53,8 +55,15 @@ Status: Launched
 - `APIFY_API_TOKEN_FREE` - profile fetching fallback
 
 **Implementation:**
-- `lib/instagram/profile-fetcher.ts` → ScrapingDog first, then Apify fallback
+- `scripts/scraping/scrapingdog-scraper.ts` → Batch scraper (50 concurrent)
+- `lib/instagram/profile-fetcher.ts` → Single profile (ScrapingDog → Apify fallback)
 - `lib/instagram/scrapingdog-client.ts` → ScrapingDog API client
+
+**Commands:**
+```bash
+npm run scrape-instagram              # ScrapingDog batch (50 concurrent)
+npm run scrape-instagram:apify        # Legacy Apify (30 concurrent)
+```
 
 ---
 

@@ -284,7 +284,10 @@ npm run storybook     # Component dev (localhost:6006)
 npm run mine:hashtags                    # Discover artists from hashtags
 npm run mine:classify                    # GPT classification of candidates
 npm run mine:status                      # View pipeline stats
-npm run scrape-instagram                 # Apify Instagram scraper
+npm run scrape-instagram                 # ScrapingDog batch (50 concurrent)
+npm run scrape-instagram -- --limit 100  # Test with N artists
+npm run scrape-instagram -- --profile-only  # Profile images only
+npm run scrape-instagram:apify           # Legacy Apify scraper (30 concurrent)
 npm run process-images                   # Process + upload images
 npm run generate-embeddings              # CLIP embeddings (Modal)
 ```

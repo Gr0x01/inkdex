@@ -72,9 +72,14 @@ All 15 implementation phases complete:
 ## Development Timeline
 
 ### Week 2 (Jan 11, 2026)
+- **ScrapingDog Batch Scraper** ✅
+  - Created `scrapingdog-scraper.ts` with 50 concurrent requests (Standard plan)
+  - Replaced Apify as primary batch scraper (was 30 concurrent)
+  - 67% higher throughput + 5x cheaper per profile
+  - Commands: `npm run scrape-instagram` (new), `npm run scrape-instagram:apify` (legacy)
 - **ScrapingDog Migration** ✅
   - Replaced Instaloader VPS with ScrapingDog API (5x cheaper than Apify)
-  - ScrapingDog as primary, Apify as fallback
+  - ScrapingDog as primary for both batch AND single profile fetching
   - Removed admin orchestrator page and VultrMinerStatus component
   - Archived VPS scripts (`scripts/_archive/orchestrator/`, `scripts/_archive/instaloader/`)
 - **Schema Drift Reconciliation** ✅

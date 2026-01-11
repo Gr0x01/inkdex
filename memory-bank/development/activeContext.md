@@ -22,18 +22,23 @@ Status: Launched - Production
 
 ## ScrapingDog Migration (Jan 11, 2026) ✅
 
-**Goal:** Replace Instaloader VPS with ScrapingDog API for Instagram scraping (5x cheaper than Apify).
+**Goal:** Replace Instaloader VPS and Apify with ScrapingDog API for Instagram scraping (5x cheaper than Apify).
 
-**Status:** Complete - ScrapingDog is now primary, Apify is fallback.
+**Status:** Complete - ScrapingDog is now primary for both single profiles AND batch scraping.
 
 **Architecture:**
-- **Primary:** ScrapingDog API (15 credits per profile + 12 posts)
-- **Fallback:** Apify (for transient ScrapingDog errors)
-- **Cost:** ~$90/mo for 1M credits (~66k profiles) vs VPS at ~$35-65/mo
+- **Batch Scraper:** `scripts/scraping/scrapingdog-scraper.ts` - 50 concurrent requests (Standard plan)
+- **Single Profile:** `lib/instagram/profile-fetcher.ts` - ScrapingDog first, Apify fallback
+- **API Client:** `lib/instagram/scrapingdog-client.ts` - Low-level ScrapingDog wrapper
+- **Cost:** ~$90/mo for 1M credits (~66k profiles) - Standard plan with 50 concurrency
 
-**Key Files:**
-- `lib/instagram/scrapingdog-client.ts` - ScrapingDog API client
-- `lib/instagram/profile-fetcher.ts` - Uses ScrapingDog first, falls back to Apify
+**Commands:**
+```bash
+npm run scrape-instagram              # ScrapingDog batch (50 concurrent)
+npm run scrape-instagram -- --limit 100   # Test with N artists
+npm run scrape-instagram -- --profile-only # Profile images only
+npm run scrape-instagram:apify        # Legacy Apify scraper (30 concurrent)
+```
 
 **Removed (archived):**
 - VPS orchestrator system (`scripts/_archive/orchestrator/`)
