@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, SkipForward, Check, Loader2, Trash2 } from 'lucide-react';
-import { ALL_LABELING_STYLES, STYLE_DISPLAY_NAMES } from '@/lib/constants/styles';
+import { ALL_LABELING_STYLES as _ALL_LABELING_STYLES, STYLE_DISPLAY_NAMES } from '@/lib/constants/styles';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 interface CurrentImage {

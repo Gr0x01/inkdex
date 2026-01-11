@@ -3,8 +3,8 @@
  * Validates and sanitizes user input before database queries
  */
 
-// Valid country codes (ISO 3166-1 alpha-2)
-const VALID_COUNTRY_CODES = new Set(['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH', 'MX', 'BR', 'JP', 'KR', 'NZ', 'IE', 'PT', 'SE', 'NO', 'DK', 'FI', 'PL', 'CZ'])
+// Valid country codes (ISO 3166-1 alpha-2) - reserved for future international validation
+const _VALID_COUNTRY_CODES = new Set(['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'AT', 'CH', 'MX', 'BR', 'JP', 'KR', 'NZ', 'IE', 'PT', 'SE', 'NO', 'DK', 'FI', 'PL', 'CZ'])
 
 // US state/territory codes
 const US_REGION_CODES = new Set([

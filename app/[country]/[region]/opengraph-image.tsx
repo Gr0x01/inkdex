@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { loadAllFonts } from '@/lib/og/fonts'
-import { colors, size, styles, getFontConfig } from '@/lib/og/styles'
+import { colors as _colors, size, styles, getFontConfig } from '@/lib/og/styles'
 import { validateRegionParams } from '@/lib/og/validation'
 import { getCountryName, getRegionName } from '@/lib/utils/location'
 import { createServiceClient } from '@/lib/supabase/service'

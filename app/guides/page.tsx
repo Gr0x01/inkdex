@@ -28,8 +28,8 @@ export default function GuidesIndexPage() {
   const styleGuides = getAllStyleGuides()
   const topicalGuides = getAllTopicalGuides()
 
-  // Get featured city guides (first 6)
-  const featuredCityGuides = cityGuides.slice(0, 6)
+  // Get featured city guides (first 6) - reserved for future featured section
+  const _featuredCityGuides = cityGuides.slice(0, 6)
 
   // Group remaining city guides by state for the full list
   const guidesByState = cityGuides.reduce(

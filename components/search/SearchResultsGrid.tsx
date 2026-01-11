@@ -154,7 +154,7 @@ export default function SearchResultsGrid({
       hasTrackedRef.current = true
       trackSearchConversion()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentionally run once on mount
+  }, []) // Intentionally run once on mount - empty deps array is correct here
 
   return (
     <>

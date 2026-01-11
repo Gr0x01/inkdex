@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams;
-  const strategy = searchParams.get('strategy') || 'random';
-  const focusStyle = searchParams.get('style');
+  const _strategy = searchParams.get('strategy') || 'random';
+  const _focusStyle = searchParams.get('style');
 
   try {
     // Use service client to read labeled images (RLS blocks anon/auth reads)

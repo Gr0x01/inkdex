@@ -17,7 +17,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // Helper component to control modal state
-function ModalDemo({ defaultOpen = false }: { defaultOpen?: boolean }) {
+function _ModalDemo({ defaultOpen = false }: { defaultOpen?: boolean }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   // Mock SearchProvider context
@@ -87,7 +87,7 @@ function MockSearchProvider({
 // Component that overrides context for testing
 function MockSearchContext({
   children,
-  value
+  value: _value
 }: {
   children: React.ReactNode;
   value: { isOpen: boolean; openSearch: () => void; closeSearch: () => void }

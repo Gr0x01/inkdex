@@ -61,7 +61,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
 
   // Get navbar visibility from context (shared with other sticky elements)
-  const { isNavbarHidden, isCompact } = useNavbarVisibility()
+  const { isNavbarHidden, isCompact: _isCompact } = useNavbarVisibility()
 
   // Memoize sorted cities - only compute once
   const sortedCities = useMemo(

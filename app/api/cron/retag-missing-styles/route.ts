@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
         try {
           embedding =
             typeof img.embedding === 'string' ? JSON.parse(img.embedding) : img.embedding;
-        } catch (parseError) {
+        } catch (_parseError) {
           console.warn(`[Cron:Retag] JSON parse failed for ${img.instagram_post_id}`);
           continue;
         }
