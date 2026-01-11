@@ -44,7 +44,7 @@ describe('Maintenance Mode', () => {
 
         // Maintenance should be OFF (key doesn't exist or is not 'true')
         expect(value).not.toBe('true');
-      } catch (error) {
+      } catch (_error) {
         await redis.quit().catch(() => {});
         // If Redis is unreachable, we can't verify - skip
         console.warn('Could not connect to Redis to verify maintenance mode');
