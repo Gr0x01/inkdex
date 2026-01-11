@@ -37,7 +37,10 @@ const envSchema = z.object({
   INSTAGRAM_CLIENT_SECRET: z.string().optional(),
   NEXT_PUBLIC_INSTAGRAM_CLIENT_ID: z.string().optional(),
 
-  // Apify (Optional - for Instagram scraping)
+  // ScrapingDog (Primary - 5x cheaper than Apify for profile scraping)
+  SCRAPINGDOG_API_KEY: z.string().min(20).optional(),
+
+  // Apify (Fallback - for Instagram scraping)
   // PAID account - heavy pipeline scraping (hashtag mining, follower mining, bulk scraper)
   APIFY_API_TOKEN: z.string().startsWith('apify_api_').optional(),
   // FREE account - lightweight operations (Pro auto-sync, profile searches)

@@ -18,7 +18,15 @@ export interface InstagramPostData {
 export class InstagramError extends Error {
   constructor(
     message: string,
-    public code: 'PRIVATE_ACCOUNT' | 'POST_NOT_FOUND' | 'RATE_LIMITED' | 'INVALID_URL' | 'FETCH_FAILED'
+    public code:
+      | 'PRIVATE_ACCOUNT'
+      | 'POST_NOT_FOUND'
+      | 'RATE_LIMITED'
+      | 'INVALID_URL'
+      | 'FETCH_FAILED'
+      | 'AUTH_FAILED'
+      | 'ACCOUNT_NOT_FOUND'
+      | 'INSUFFICIENT_POSTS'
   ) {
     super(message);
     this.name = 'InstagramError';
@@ -32,6 +40,9 @@ export const ERROR_MESSAGES = {
   RATE_LIMITED: "Too many requests. Please try again in a few minutes.",
   INVALID_URL: "This doesn't look like a valid Instagram link.",
   FETCH_FAILED: "Couldn't fetch image from Instagram. Try uploading it directly.",
+  AUTH_FAILED: "Instagram scraping service configuration error. Please contact support.",
+  ACCOUNT_NOT_FOUND: "This Instagram account does not exist or has been deleted.",
+  INSUFFICIENT_POSTS: "This profile needs at least 3 public posts for accurate matching.",
 } as const;
 
 // Apify configuration

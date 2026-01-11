@@ -2,12 +2,14 @@
 /**
  * Instagram Profile Image Fetcher
  *
- * Fetches multiple images from an Instagram profile using Apify's Instagram Profile Scraper
- * Used for Instagram profile URL searches to aggregate portfolio embeddings
+ * Fetches multiple images from an Instagram profile.
+ * Primary: ScrapingDog (5x cheaper)
+ * Fallback: Apify
  */
 
 import { ApifyClient } from 'apify-client';
 import { InstagramError, ERROR_MESSAGES } from './post-fetcher';
+import { fetchProfileWithScrapingDog } from './scrapingdog-client';
 
 // Extend error messages for profile-specific errors
 export const PROFILE_ERROR_MESSAGES = {
@@ -52,11 +54,9 @@ function isValidUsername(username: string): boolean {
 }
 
 /**
- * Fetches recent images from an Instagram profile using Apify
+ * Fetches recent images from an Instagram profile
  *
- * This function calls Apify's Instagram Profile Scraper actor to fetch
- * recent public posts from a profile. Images are extracted from the
- * latestPosts array and returned as URLs.
+ * Uses ScrapingDog as primary (5x cheaper), falls back to Apify.
  *
  * @param username - Instagram username (without @ prefix)
  * @param limit - Maximum number of images to fetch (default: 6, max: 50)
@@ -98,8 +98,36 @@ export async function fetchInstagramProfileImages(
     throw new Error('Limit must be between 1 and 50');
   }
 
+  // Try ScrapingDog first (5x cheaper than Apify)
+  if (process.env.SCRAPINGDOG_API_KEY) {
+    try {
+      const result = await fetchProfileWithScrapingDog(normalizedUsername, limit);
+      return result;
+    } catch (error) {
+      // Don't fallback for auth/config errors - these won't self-heal
+      if (error instanceof InstagramError && error.code === 'AUTH_FAILED') {
+        console.error(`[Instagram] ScrapingDog auth failed - check SCRAPINGDOG_API_KEY`);
+        throw error;
+      }
+
+      // Log and fall through to Apify for transient errors
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.log(`[Instagram] ScrapingDog failed for @${normalizedUsername}, falling back to Apify: ${errorMessage}`);
+    }
+  }
+
+  // Fallback to Apify
+  return fetchWithApify(normalizedUsername, limit);
+}
+
+/**
+ * Internal: Fetches profile using Apify
+ */
+async function fetchWithApify(
+  normalizedUsername: string,
+  limit: number
+): Promise<InstagramProfileData> {
   // Check for Apify API token - prefer FREE tier for lightweight operations
-  // Falls back to main token if FREE not configured
   const apifyToken = process.env.APIFY_API_TOKEN_FREE || process.env.APIFY_API_TOKEN;
   if (!apifyToken) {
     console.error('[Apify] Neither APIFY_API_TOKEN_FREE nor APIFY_API_TOKEN is configured');
