@@ -121,7 +121,7 @@ export async function generateMetadata({
       images: [ogImage],
     },
     alternates: {
-      canonical: `/artist/${slug}`,
+      canonical: `https://inkdex.io/artist/${slug}`,
     },
   }
 }

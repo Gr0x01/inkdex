@@ -56,7 +56,7 @@ export async function generateMetadata({
       // Twitter image generated dynamically by opengraph-image.tsx
     },
     alternates: {
-      canonical: `/${countrySlug}/${regionSlug}`,
+      canonical: `https://inkdex.io/${countrySlug}/${regionSlug}`,
     },
   }
 }

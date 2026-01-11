@@ -20,6 +20,60 @@ Status: Launched - Production
 
 ---
 
+## Google Search Console SEO Fixes (Jan 11, 2026) ✅
+
+**Problem:** Google Search Console reported:
+- 4.46K pages "Discovered - currently not indexed" (404 URLs!)
+- 26 pages "Duplicate without user-selected canonical" (www vs non-www)
+- 23 pages "Crawled - currently not indexed"
+
+**Root Causes:**
+
+1. **CRITICAL: Sitemap URL format was wrong** - Generated `/texas/austin` instead of `/us/tx/austin`
+   - State URLs: `/${state.slug}` → should be `/us/${state.code.toLowerCase()}`
+   - City URLs: `/${state.slug}/${citySlug}` → should be `/us/${regionCode}/${citySlug}`
+   - Style URLs: similar fix
+   - This caused 4.46K pages to be 404 errors in sitemap!
+
+2. **No www → non-www redirect** - Both www.inkdex.io and inkdex.io served same content
+
+3. **Conflicting robots.txt files** - `public/robots.txt` (allows AI) vs `app/robots.ts` (blocks AI)
+
+4. **Relative canonical URLs** - Some pages used `/artist/slug` instead of `https://inkdex.io/artist/slug`
+
+**Fixes Applied:**
+
+| Fix | File |
+|-----|------|
+| Fixed sitemap URL format | `app/sitemap.ts` |
+| Added www redirect (308) | `next.config.js` |
+| Deleted conflicting robots | Removed `public/robots.txt` |
+| Made canonicals absolute | `app/artist/[slug]/page.tsx`, `app/[country]/page.tsx`, `app/[country]/[region]/page.tsx` |
+| Added missing pages to sitemap | Style guides, learn guides, marketing pages |
+
+**Pages Added to Sitemap:**
+- `/styles`, `/for-artists`, `/how-it-works`, `/first-tattoo`, `/how-to-find-tattoo-artist`, `/pricing`
+- `/guides/styles`, `/guides/styles/{style}` (style guide pages)
+- `/guides/learn`, `/guides/learn/{topic}` (topical guide pages)
+
+**Next Steps:**
+1. Deploy to production
+2. Resubmit sitemap in GSC (`https://inkdex.io/sitemap.xml`)
+3. Click "Validate Fix" on GSC issues
+4. Wait 2-7 days for Google to re-crawl and index
+
+**Verification:**
+```bash
+# Check sitemap locally
+npm run dev
+# Visit http://localhost:3000/sitemap.xml - verify URLs are /us/tx/austin format
+
+# Test www redirect
+curl -I https://www.inkdex.io/  # Should return 308 → https://inkdex.io/
+```
+
+---
+
 ## ScrapingDog Migration (Jan 11, 2026) ✅
 
 **Goal:** Replace Instaloader VPS and Apify with ScrapingDog API for Instagram scraping (5x cheaper than Apify).

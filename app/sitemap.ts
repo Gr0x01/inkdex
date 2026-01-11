@@ -5,6 +5,8 @@ import { STATES, CITIES } from '@/lib/constants/cities'
 import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
 import { getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 import { getAllCityGuides } from '@/lib/content/editorial/guides'
+import { getAllStyleGuides } from '@/lib/content/editorial/style-guides'
+import { getAllTopicalGuides } from '@/lib/content/editorial/topical-guides'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
@@ -25,9 +27,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     })) ?? []
 
-  // State pages
+  // State pages - URL format: /us/{state-code} (e.g., /us/tx)
   const stateUrls: MetadataRoute.Sitemap = STATES.map((state) => ({
-    url: `${baseUrl}/${state.slug}`,
+    url: `${baseUrl}/us/${state.code.toLowerCase()}`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
     priority: 0.7,
@@ -47,23 +49,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         artist_count: 0
       }))
 
-  // City pages - with priority tiers (featured vs auto-generated)
+  // City pages - URL format: /us/{state-code}/{city-slug} (e.g., /us/tx/austin)
   const cityUrls: MetadataRoute.Sitemap = citiesToUse.map((cityData: any) => {
     const state = STATES.find((s) => s.code === cityData.region)
     if (!state) return null
 
     const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
     const isFeatured = featuredCitySlugs.has(citySlug)
+    const regionCode = state.code.toLowerCase()
 
     return {
-      url: `${baseUrl}/${state.slug}/${citySlug}`,
+      url: `${baseUrl}/us/${regionCode}/${citySlug}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: isFeatured ? 0.9 : 0.7, // Featured cities get higher priority
     }
   }).filter(Boolean) as MetadataRoute.Sitemap
 
-  // Style landing pages (SEO-critical: [city] × [style] combinations)
+  // Style landing pages - URL format: /us/{state-code}/{city-slug}/{style} (e.g., /us/tx/austin/blackwork)
   const styleUrls: MetadataRoute.Sitemap = []
 
   for (const cityData of citiesToUse) {
@@ -72,10 +75,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
     const isFeatured = featuredCitySlugs.has(citySlug)
+    const regionCode = state.code.toLowerCase()
 
     for (const style of styleSeedsData) {
       styleUrls.push({
-        url: `${baseUrl}/${state.slug}/${citySlug}/${style.styleName}`,
+        url: `${baseUrl}/us/${regionCode}/${citySlug}/${style.styleName}`,
         lastModified: new Date(),
         changeFrequency: 'daily' as const,
         priority: isFeatured ? 0.85 : 0.65, // Featured cities get higher priority
@@ -117,8 +121,48 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
+  // Marketing and info pages (high SEO value)
+  const marketingUrls: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/styles`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/for-artists`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/how-it-works`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/first-tattoo`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/how-to-find-tattoo-artist`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    },
+  ]
+
   // City guide pages (long-form editorial content)
-  const guides = getAllCityGuides()
+  const cityGuides = getAllCityGuides()
   const guideUrls: MetadataRoute.Sitemap = [
     // Guides index page
     {
@@ -127,9 +171,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
-    // Individual guide pages
-    ...guides.map((guide) => ({
+    // Individual city guide pages
+    ...cityGuides.map((guide) => ({
       url: `${baseUrl}/guides/${guide.citySlug}`,
+      lastModified: guide.updatedAt ? new Date(guide.updatedAt) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+  ]
+
+  // Style guide pages (long-form editorial about tattoo styles)
+  const styleGuides = getAllStyleGuides()
+  const styleGuideUrls: MetadataRoute.Sitemap = [
+    // Style guides index page
+    {
+      url: `${baseUrl}/guides/styles`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    },
+    // Individual style guide pages
+    ...styleGuides.map((guide) => ({
+      url: `${baseUrl}/guides/styles/${guide.styleSlug}`,
+      lastModified: guide.updatedAt ? new Date(guide.updatedAt) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+  ]
+
+  // Topical/learn guide pages (first tattoo tips, aftercare, etc.)
+  const topicalGuides = getAllTopicalGuides()
+  const learnGuideUrls: MetadataRoute.Sitemap = [
+    // Learn guides index page
+    {
+      url: `${baseUrl}/guides/learn`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    },
+    // Individual learn/topical guide pages
+    ...topicalGuides.map((guide) => ({
+      url: `${baseUrl}/guides/learn/${guide.topicSlug}`,
       lastModified: guide.updatedAt ? new Date(guide.updatedAt) : new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
@@ -143,8 +225,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1,
     },
+    ...marketingUrls,
     ...legalUrls,
     ...guideUrls,
+    ...styleGuideUrls,
+    ...learnGuideUrls,
     ...stateUrls,
     ...cityUrls,
     ...styleUrls,
