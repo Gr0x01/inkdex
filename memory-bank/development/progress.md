@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11
+Last-Updated: 2026-01-12
 Maintainer: RB
 Status: Launched - All 15 Phases Complete + ML Style Classifier
 ---
@@ -70,6 +70,30 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 2 (Jan 12, 2026)
+- **Test Coverage Expansion** ✅
+  - Added 88 new unit tests (47 → 135 total)
+  - Added 6 new E2E tests (17 → 23 total)
+  - Stripe checkout/portal tests (21 tests) - auth, validation, promo codes
+  - Search API tests (32 tests) - all input types, security (SQL injection, XSS, protocol injection)
+  - Classifier bio detection (27 tests) - keywords, edge cases
+  - Claim utilities (5 tests) - storage deletion, cascade handling
+  - Self-add redirect (2 tests)
+  - E2E add-artist page (6 tests) - form validation, OAuth button
+  - Uses `vi.stubEnv()` for proper env isolation
+  - Key files: 8 new test files in `__tests__/` directories
+- **Database Schema Consolidation** ✅
+  - Reduced tables from 38 → 30 (-8)
+  - Reduced functions from ~65 → ~55 (-10)
+  - Consolidated 5 audit tables → `unified_audit_log`
+  - Consolidated 2 job tables → `pipeline_jobs`
+  - Merged 6 increment functions → `increment_analytics()`
+  - Merged 5 location functions → `get_location_counts()`
+  - Fixed RPC parameter bug (`query_techniques` → `query_styles`)
+  - Removed unused functions and legacy CSS
+  - All 25 E2E tests pass on production
+  - Key files: 6 new migrations, updated `lib/supabase/queries.ts`, `lib/admin/audit-log.ts`
 
 ### Week 2 (Jan 11, 2026)
 - **Testing Infrastructure** ✅

@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11
+Last-Updated: 2026-01-12
 Maintainer: RB
 Status: Active Guidelines (VPS/Instaloader removed - now using ScrapingDog)
 ---
@@ -11,7 +11,7 @@ Status: Active Guidelines (VPS/Instaloader removed - now using ScrapingDog)
 ```bash
 npm run lint          # Must pass
 npm run type-check    # Must pass
-npm run test:run      # Must pass (47 tests)
+npm run test:run      # Must pass (135 tests)
 npm run build         # Must succeed
 npm run db:push       # For migrations (runs sqlfluff first)
 ```
@@ -29,7 +29,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push to `main
 |-----|--------------|-----------------|
 | Lint | None | Code style issues |
 | Type Check | None | TypeScript errors |
-| Test | None | Logic bugs (47 unit tests) |
+| Test | None | Logic bugs (135 unit tests) |
 | Build | Lint + Type Check | Build failures |
 
 ### Unit Test Commands (Vitest)
@@ -42,26 +42,34 @@ npm run test:ui       # Vitest UI (browser)
 
 ### E2E Test Commands (Playwright)
 ```bash
-npm run test:e2e        # Run all E2E tests (17 tests, ~4 min)
+npm run test:e2e        # Run all E2E tests (23 tests, ~5 min)
 npm run test:e2e:ui     # Playwright UI (interactive debugging)
 npm run test:e2e:headed # Run in visible browser
 ```
 
 ### Test Files
 
-**Unit Tests (Vitest) - 47 tests:**
+**Unit Tests (Vitest) - 135 tests:**
 | File | Tests | Coverage |
 |------|-------|----------|
 | `lib/instagram/__tests__/url-detector.test.ts` | 31 | Instagram URL detection |
+| `lib/instagram/__tests__/classifier.test.ts` | 27 | Bio keyword detection |
 | `app/api/stripe/webhook/__tests__/route.test.ts` | 16 | Stripe webhook handler |
+| `app/api/stripe/create-checkout/__tests__/route.test.ts` | 14 | Checkout session creation |
+| `app/api/stripe/portal/__tests__/route.test.ts` | 7 | Customer portal |
+| `app/api/search/__tests__/route.test.ts` | 32 | Search API (all types + security) |
+| `lib/artist/__tests__/claim.test.ts` | 5 | Image deletion, cascade handling |
+| `app/api/add-artist/self-add/__tests__/route.test.ts` | 2 | OAuth redirect |
+| `lib/maintenance/__tests__/redis.test.ts` | 1 | Redis maintenance |
 
-**E2E Tests (Playwright) - 17 tests:**
+**E2E Tests (Playwright) - 23 tests:**
 | File | Tests | Coverage |
 |------|-------|----------|
 | `e2e/homepage.spec.ts` | 4 | Page load, search input, navigation |
 | `e2e/city-page.spec.ts` | 5 | City display, artist grid, 404 handling |
 | `e2e/artist-page.spec.ts` | 5 | Profile, portfolio, Instagram, location |
-| `e2e/search.spec.ts` | 3 | Text search, validation, Instagram URL detection |
+| `e2e/search.spec.ts` | 5 | Text search, validation, Instagram URL, @username |
+| `e2e/add-artist.spec.ts` | 6 | Page load, OAuth button, form validation |
 
 ### Playwright Configuration
 ```typescript
