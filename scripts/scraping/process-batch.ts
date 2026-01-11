@@ -11,9 +11,13 @@ dotenv.config({ path: '.env.local' });
 import { readdirSync, readFileSync, unlinkSync, statSync, rmSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { createClient } from '@supabase/supabase-js';
+import pLimit from 'p-limit';
 import { processLocalImage } from '../../lib/processing/image-processor';
 import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImages } from '../../lib/storage/supabase-storage';
 import { analyzeImageColor } from '../../lib/search/color-analyzer';
+
+// Concurrency for parallel artist processing
+const ARTIST_CONCURRENCY = 10;
 
 /**
  * Sleep utility for retry delays
@@ -390,48 +394,53 @@ async function main() {
     process.exit(0);
   }
 
-  console.log(`📂 Found ${artistDirs.length} artists to process\n`);
+  console.log(`📂 Found ${artistDirs.length} artists to process (${ARTIST_CONCURRENCY} concurrent)\n`);
 
   let totalProcessed = 0;
   let totalErrors = 0;
   let completed = 0;
 
-  // Process artists sequentially (called frequently by apify-scraper.py)
-  for (const artistId of artistDirs) {
-    const artistDir = join(TEMP_DIR, artistId);
+  // Process artists in parallel with concurrency limit
+  const limit = pLimit(ARTIST_CONCURRENCY);
 
-    const { success, imagesProcessed, errors } = await processArtistImages(artistId, artistDir);
+  const tasks = artistDirs.map((artistId) =>
+    limit(async () => {
+      const artistDir = join(TEMP_DIR, artistId);
 
-    // Track progress
-    completed++;
-    const progress = ((completed / artistDirs.length) * 100).toFixed(1);
-    console.log(`📊 Progress: ${progress}% (${completed}/${artistDirs.length}) - ${imagesProcessed} images uploaded`);
+      const { success, imagesProcessed, errors } = await processArtistImages(artistId, artistDir);
 
-    if (errors.length > 0) {
-      console.log(`   ⚠️  ${artistId}: ${errors.length} errors`);
-      totalErrors += errors.length;
-    }
+      // Track progress (atomic increment)
+      completed++;
+      const progress = ((completed / artistDirs.length) * 100).toFixed(1);
+      console.log(`📊 Progress: ${progress}% (${completed}/${artistDirs.length}) - ${imagesProcessed} images [${artistId.slice(0, 8)}]`);
 
-    totalProcessed += imagesProcessed;
+      if (errors.length > 0) {
+        console.log(`   ⚠️  ${artistId}: ${errors.length} errors`);
+        totalErrors += errors.length;
+      }
 
-    // Update scraping job
-    try {
-      await supabase
-        .from('scraping_jobs')
-        .update({ images_scraped: imagesProcessed })
-        .eq('artist_id', artistId);
-    } catch (error) {
-      // Non-critical error
-    }
+      totalProcessed += imagesProcessed;
 
-    // Clean up artist directory
-    try {
-      rmSync(artistDir, { recursive: true });
-      console.log(`   🗑️  Cleaned up ${artistId}\n`);
-    } catch (error: any) {
-      console.warn(`   ⚠️  Cleanup failed for ${artistId}: ${error.message}\n`);
-    }
-  }
+      // Update scraping job
+      try {
+        await supabase
+          .from('scraping_jobs')
+          .update({ images_scraped: imagesProcessed })
+          .eq('artist_id', artistId);
+      } catch (error) {
+        // Non-critical error
+      }
+
+      // Clean up artist directory
+      try {
+        rmSync(artistDir, { recursive: true });
+      } catch (error: any) {
+        console.warn(`   ⚠️  Cleanup failed for ${artistId}: ${error.message}`);
+      }
+    })
+  );
+
+  await Promise.all(tasks);
 
   // Summary
   console.log('📊 Batch Processing Summary:');

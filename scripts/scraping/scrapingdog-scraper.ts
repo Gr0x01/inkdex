@@ -517,9 +517,12 @@ async function main(): Promise<void> {
       const rate = (completed / (parseInt(elapsed) || 1)).toFixed(1);
       console.log(`  Progress: ${pct}% (${completed}/${artists.length}) - ${rate}/s\n`);
 
-      // Update pipeline progress
-      if (pipelineRunId && completed % 10 === 0) {
-        await updatePipelineProgress(pipelineRunId, artists.length, successful, failed);
+      // Update pipeline progress (every artist for small batches, every 10 for large)
+      if (pipelineRunId) {
+        const updateFrequency = artists.length <= 20 ? 1 : 10;
+        if (completed % updateFrequency === 0) {
+          await updatePipelineProgress(pipelineRunId, artists.length, successful, failed);
+        }
       }
 
       // Run process-batch periodically
