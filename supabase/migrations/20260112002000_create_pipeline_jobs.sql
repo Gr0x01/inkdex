@@ -42,18 +42,7 @@ CREATE INDEX idx_pipeline_jobs_type_status ON pipeline_jobs(job_type, status);
 CREATE INDEX idx_pipeline_jobs_heartbeat ON pipeline_jobs(last_heartbeat_at) WHERE status = 'running';
 CREATE INDEX idx_pipeline_jobs_pid ON pipeline_jobs(process_pid) WHERE process_pid IS NOT NULL;
 
--- Prevent duplicate active scrape jobs for the same artist
-CREATE UNIQUE INDEX idx_pipeline_jobs_unique_active_artist_scrape
-    ON pipeline_jobs(artist_id)
-    WHERE status IN ('pending', 'running')
-    AND job_type = 'scrape_single'
-    AND artist_id IS NOT NULL;
-
--- Unique constraint for active batch jobs (only one pending/running job per batch type)
-CREATE UNIQUE INDEX idx_pipeline_jobs_unique_active_batch
-    ON pipeline_jobs(job_type)
-    WHERE status = ANY (ARRAY['pending', 'running'])
-    AND job_type != 'scrape_single';
+-- Note: Unique indexes for active jobs added AFTER data migration to avoid conflicts
 
 -- Foreign key to artists (for individual scraping jobs)
 ALTER TABLE pipeline_jobs
@@ -178,6 +167,33 @@ SELECT
     last_heartbeat_at,
     COALESCE(result_summary, '{}'::jsonb)
 FROM pipeline_runs;
+
+-- Clean up duplicate pending/running jobs before adding unique constraint
+-- Keep only the most recent pending/running job per artist
+WITH duplicates AS (
+    SELECT id, ROW_NUMBER() OVER (
+        PARTITION BY artist_id
+        ORDER BY created_at DESC
+    ) as rn
+    FROM pipeline_jobs
+    WHERE status IN ('pending', 'running')
+    AND job_type = 'scrape_single'
+    AND artist_id IS NOT NULL
+)
+UPDATE pipeline_jobs SET status = 'cancelled'
+WHERE id IN (SELECT id FROM duplicates WHERE rn > 1);
+
+-- Now add unique indexes for active jobs
+CREATE UNIQUE INDEX idx_pipeline_jobs_unique_active_artist_scrape
+    ON pipeline_jobs(artist_id)
+    WHERE status IN ('pending', 'running')
+    AND job_type = 'scrape_single'
+    AND artist_id IS NOT NULL;
+
+CREATE UNIQUE INDEX idx_pipeline_jobs_unique_active_batch
+    ON pipeline_jobs(job_type)
+    WHERE status = ANY (ARRAY['pending', 'running'])
+    AND job_type != 'scrape_single';
 
 -- Drop old tables and their triggers
 DROP TABLE IF EXISTS scraping_jobs CASCADE;
