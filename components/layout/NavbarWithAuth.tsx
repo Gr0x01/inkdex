@@ -22,7 +22,7 @@ export default async function NavbarWithAuth() {
         .from('users')
         .select('id, avatar_url, instagram_username')
         .eq('id', authUser.id)
-        .single(),
+        .maybeSingle(), // Use maybeSingle since admin users don't have users table entries
       supabase
         .from('artists')
         .select('is_pro, slug')
