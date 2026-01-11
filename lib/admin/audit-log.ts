@@ -57,15 +57,24 @@ export async function logAdminAction(entry: AuditLogEntry): Promise<void> {
       },
     });
 
-    const { error } = await supabase.from('admin_audit_log').insert({
-      admin_email: entry.adminEmail,
-      action: entry.action,
+    // Parse resource_id as UUID if valid, otherwise store in event_data
+    const isValidUuid = entry.resourceId &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.resourceId);
+
+    const { error } = await supabase.from('unified_audit_log').insert({
+      event_category: 'admin',
+      event_type: entry.action,
+      actor_type: 'admin',
+      actor_id: entry.adminEmail,
+      actor_ip: entry.ipAddress,
+      actor_user_agent: entry.userAgent,
       resource_type: entry.resourceType,
-      resource_id: entry.resourceId,
-      old_value: entry.oldValue,
-      new_value: entry.newValue,
-      ip_address: entry.ipAddress,
-      user_agent: entry.userAgent,
+      resource_id: isValidUuid ? entry.resourceId : null,
+      event_data: {
+        old_value: entry.oldValue,
+        new_value: entry.newValue,
+        ...(entry.resourceId && !isValidUuid ? { resource_id_string: entry.resourceId } : {}),
+      },
     });
 
     if (error) {

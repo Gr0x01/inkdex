@@ -2224,7 +2224,7 @@ export type Database = {
           match_threshold?: number
           offset_param?: number
           query_embedding: string
-          query_styles?: Json
+          query_techniques?: Json
           region_filter?: string
         }
         Returns: {

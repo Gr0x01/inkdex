@@ -61,7 +61,7 @@ STRUCTURE:
 Total target: ~300 words. Keep it informative but accessible.`
 
 interface CountryWithCount {
-  country_code: string
+  location_code: string // country_code from get_location_counts
   artist_count: number
 }
 
@@ -96,9 +96,10 @@ export async function GET(request: NextRequest) {
       env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
 
-    // Get countries with artists (via RPC function)
+    // Get countries with artists (via consolidated RPC function)
     const { data: countriesWithArtists, error: countriesError } = await supabase.rpc(
-      'get_countries_with_counts'
+      'get_location_counts',
+      { p_grouping: 'countries' }
     )
 
     if (countriesError) {
@@ -110,8 +111,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter: exclude US (has city content), GDPR countries
+    // location_code contains country_code from get_location_counts
     const eligibleCountries = (countriesWithArtists as CountryWithCount[] || [])
-      .filter((c) => c.country_code !== 'US' && !isGDPRCountry(c.country_code))
+      .filter((c) => c.location_code !== 'US' && !isGDPRCountry(c.location_code))
 
     // Get existing content
     const { data: existingContent } = await supabase
@@ -124,7 +126,7 @@ export async function GET(request: NextRequest) {
 
     // Find countries needing content
     const countriesNeedingContent = eligibleCountries
-      .filter((c) => !existingCodes.has(c.country_code))
+      .filter((c) => !existingCodes.has(c.location_code))
       .sort((a, b) => b.artist_count - a.artist_count) // Most artists first
       .slice(0, MAX_COUNTRIES_PER_RUN)
 
@@ -144,7 +146,7 @@ export async function GET(request: NextRequest) {
 
     // Generate content for each country
     for (const country of countriesNeedingContent) {
-      const rawCountryName = getCountryName(country.country_code) || country.country_code
+      const rawCountryName = getCountryName(country.location_code) || country.location_code
       const countryName = sanitizeForPrompt(rawCountryName) // Prevent prompt injection
       results.processed++
 
@@ -152,7 +154,7 @@ export async function GET(request: NextRequest) {
         const prompt = `Generate SEO editorial content for ${countryName}'s tattoo scene.
 
 COUNTRY CONTEXT:
-- Country: ${countryName} (${country.country_code})
+- Country: ${countryName} (${country.location_code})
 - Artists on platform: ${country.artist_count}
 - Consider: cultural identity, tattoo traditions, major cities, art influences
 
@@ -201,7 +203,7 @@ Keep content accurate - avoid fabricating specific details you're not certain ab
         const { error: insertError } = await supabase
           .from('country_editorial_content')
           .insert({
-            country_code: country.country_code,
+            country_code: country.location_code,
             hero_text: sanitizedContent.heroText,
             scene_heading: sanitizedContent.sceneHeading,
             scene_text: sanitizedContent.sceneText,

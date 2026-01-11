@@ -39,8 +39,8 @@ export async function GET() {
             .from('portfolio_images')
             .select('id', { count: 'exact', head: true }),
 
-          // Scraping jobs
-          adminClient.from('scraping_jobs').select('status'),
+          // Scraping jobs (individual artist scraping)
+          adminClient.from('pipeline_jobs').select('status').eq('job_type', 'scrape_single'),
 
           // Searches count
           adminClient.from('searches').select('id', { count: 'exact', head: true }),

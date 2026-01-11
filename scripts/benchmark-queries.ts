@@ -12,9 +12,9 @@
  *   Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env
  *
  * Thresholds (fail if exceeded):
- *   - get_countries_with_counts: 500ms
- *   - get_regions_with_counts: 500ms
- *   - get_cities_with_counts: 1000ms
+ *   - get_location_counts (countries): 500ms
+ *   - get_location_counts (regions): 500ms
+ *   - get_location_counts (cities): 1000ms
  *   - search_artists_by_embedding: 2000ms (with location filter)
  */
 
@@ -65,26 +65,30 @@ async function runBenchmarks(): Promise<void> {
   console.log('\n🚀 Running Query Performance Benchmarks\n')
   console.log('=' .repeat(60))
 
-  // Benchmark: get_countries_with_counts
-  await benchmark('get_countries_with_counts', 500, async () => {
-    const { error } = await supabase.rpc('get_countries_with_counts')
+  // Benchmark: get_location_counts (countries)
+  await benchmark('get_location_counts(countries)', 500, async () => {
+    const { error } = await supabase.rpc('get_location_counts', {
+      p_grouping: 'countries'
+    })
     if (error) throw error
   })
 
-  // Benchmark: get_regions_with_counts (US)
-  await benchmark('get_regions_with_counts(US)', 500, async () => {
-    const { error } = await supabase.rpc('get_regions_with_counts', {
+  // Benchmark: get_location_counts (regions)
+  await benchmark('get_location_counts(regions, US)', 500, async () => {
+    const { error } = await supabase.rpc('get_location_counts', {
+      p_grouping: 'regions',
       p_country_code: 'US'
     })
     if (error) throw error
   })
 
-  // Benchmark: get_cities_with_counts (US, TX)
-  await benchmark('get_cities_with_counts(US, TX)', 1000, async () => {
-    const { error } = await supabase.rpc('get_cities_with_counts', {
-      min_count: 1,
+  // Benchmark: get_location_counts (cities)
+  await benchmark('get_location_counts(cities, US, TX)', 1000, async () => {
+    const { error } = await supabase.rpc('get_location_counts', {
+      p_grouping: 'cities',
       p_country_code: 'US',
-      p_region: 'TX'
+      p_region: 'TX',
+      p_min_count: 1
     })
     if (error) throw error
   })

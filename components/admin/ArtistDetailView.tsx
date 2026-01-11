@@ -93,7 +93,7 @@ interface ScrapingJob {
   error_message: string | null;
   created_at: string;
   completed_at: string | null;
-  images_scraped: number | null;
+  result_data: { images_scraped?: number } | null;
 }
 
 interface ArtistDetailViewProps {

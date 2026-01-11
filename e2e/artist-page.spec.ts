@@ -3,8 +3,8 @@ import { test, expect } from '@playwright/test'
 test.describe('Artist Page', () => {
   // We'll navigate to an artist from the city page to get a valid slug
   test('loads artist profile from city page link', async ({ page }) => {
-    // Start from Austin city page
-    await page.goto('/us/tx/austin')
+    // Start from Dallas city page
+    await page.goto('/us/tx/dallas')
     await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     // Find first artist link and get its href
@@ -21,7 +21,7 @@ test.describe('Artist Page', () => {
   })
 
   test('displays portfolio images', async ({ page }) => {
-    await page.goto('/us/tx/austin')
+    await page.goto('/us/tx/dallas')
     await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
@@ -40,7 +40,7 @@ test.describe('Artist Page', () => {
   })
 
   test('shows Instagram link or handle', async ({ page }) => {
-    await page.goto('/us/tx/austin')
+    await page.goto('/us/tx/dallas')
     await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
@@ -62,7 +62,7 @@ test.describe('Artist Page', () => {
   })
 
   test('has location information', async ({ page }) => {
-    await page.goto('/us/tx/austin')
+    await page.goto('/us/tx/dallas')
     await expect(page.locator('a[href^="/artist/"]').first()).toBeVisible()
 
     const artistLink = page.locator('a[href^="/artist/"]').first()
@@ -74,7 +74,7 @@ test.describe('Artist Page', () => {
 
     // Page content should contain location info
     const pageContent = await page.textContent('body')
-    const hasLocation = /Austin|Texas|TX/i.test(pageContent || '')
+    const hasLocation = /Dallas|Texas|TX/i.test(pageContent || '')
 
     expect(hasLocation).toBe(true)
   })

@@ -7,91 +7,33 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.1"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
-      admin_audit_log: {
-        Row: {
-          action: string
-          admin_email: string
-          created_at: string | null
-          id: string
-          ip_address: string | null
-          new_value: Json | null
-          old_value: Json | null
-          resource_id: string | null
-          resource_type: string
-          user_agent: string | null
-        }
-        Insert: {
-          action: string
-          admin_email: string
-          created_at?: string | null
-          id?: string
-          ip_address?: string | null
-          new_value?: Json | null
-          old_value?: Json | null
-          resource_id?: string | null
-          resource_type: string
-          user_agent?: string | null
-        }
-        Update: {
-          action?: string
-          admin_email?: string
-          created_at?: string | null
-          id?: string
-          ip_address?: string | null
-          new_value?: Json | null
-          old_value?: Json | null
-          resource_id?: string | null
-          resource_type?: string
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
-      airtable_sync_log: {
-        Row: {
-          completed_at: string | null
-          direction: string
-          errors: Json | null
-          id: string
-          records_created: number | null
-          records_processed: number | null
-          records_updated: number | null
-          started_at: string | null
-          sync_type: string
-          triggered_by: string | null
-        }
-        Insert: {
-          completed_at?: string | null
-          direction: string
-          errors?: Json | null
-          id?: string
-          records_created?: number | null
-          records_processed?: number | null
-          records_updated?: number | null
-          started_at?: string | null
-          sync_type: string
-          triggered_by?: string | null
-        }
-        Update: {
-          completed_at?: string | null
-          direction?: string
-          errors?: Json | null
-          id?: string
-          records_created?: number | null
-          records_processed?: number | null
-          records_updated?: number | null
-          started_at?: string | null
-          sync_type?: string
-          triggered_by?: string | null
-        }
-        Relationships: []
-      }
       artist_analytics: {
         Row: {
           artist_id: string | null
@@ -129,38 +71,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "artist_analytics_artist_id_fkey"
-            columns: ["artist_id"]
-            isOneToOne: false
-            referencedRelation: "artists"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      artist_audit_log: {
-        Row: {
-          action: string
-          artist_id: string
-          created_at: string
-          details: Json | null
-          id: string
-        }
-        Insert: {
-          action: string
-          artist_id: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-        }
-        Update: {
-          action?: string
-          artist_id?: string
-          created_at?: string
-          details?: Json | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "artist_audit_log_artist_id_fkey"
             columns: ["artist_id"]
             isOneToOne: false
             referencedRelation: "artists"
@@ -313,7 +223,6 @@ export type Database = {
           image_count: number
           percentage: number
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -322,7 +231,6 @@ export type Database = {
           image_count?: number
           percentage: number
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -331,7 +239,6 @@ export type Database = {
           image_count?: number
           percentage?: number
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -468,6 +375,7 @@ export type Database = {
           featured_expires_at: string | null
           filter_non_tattoo_content: boolean | null
           follower_count: number | null
+          gdpr_consent: boolean | null
           google_place_id: string | null
           id: string
           instagram_handle: string
@@ -507,6 +415,7 @@ export type Database = {
           featured_expires_at?: string | null
           filter_non_tattoo_content?: boolean | null
           follower_count?: number | null
+          gdpr_consent?: boolean | null
           google_place_id?: string | null
           id?: string
           instagram_handle: string
@@ -546,6 +455,7 @@ export type Database = {
           featured_expires_at?: string | null
           filter_non_tattoo_content?: boolean | null
           follower_count?: number | null
+          gdpr_consent?: boolean | null
           google_place_id?: string | null
           id?: string
           instagram_handle?: string
@@ -578,27 +488,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      artists_slug_backup: {
-        Row: {
-          backed_up_at: string | null
-          id: string
-          instagram_handle: string
-          old_slug: string
-        }
-        Insert: {
-          backed_up_at?: string | null
-          id: string
-          instagram_handle: string
-          old_slug: string
-        }
-        Update: {
-          backed_up_at?: string | null
-          id?: string
-          instagram_handle?: string
-          old_slug?: string
-        }
-        Relationships: []
       }
       claim_attempts: {
         Row: {
@@ -850,138 +739,27 @@ export type Database = {
           },
         ]
       }
-      follower_mining_runs: {
-        Row: {
-          apify_cost_estimate: number | null
-          artists_inserted: number | null
-          artists_skipped_private: number | null
-          bio_filter_passed: number | null
-          completed_at: string | null
-          created_at: string | null
-          error_message: string | null
-          followers_scraped: number | null
-          id: string
-          image_filter_passed: number | null
-          openai_cost_estimate: number | null
-          seed_account: string
-          seed_type: string | null
-          started_at: string | null
-          status: string | null
-        }
-        Insert: {
-          apify_cost_estimate?: number | null
-          artists_inserted?: number | null
-          artists_skipped_private?: number | null
-          bio_filter_passed?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          followers_scraped?: number | null
-          id?: string
-          image_filter_passed?: number | null
-          openai_cost_estimate?: number | null
-          seed_account: string
-          seed_type?: string | null
-          started_at?: string | null
-          status?: string | null
-        }
-        Update: {
-          apify_cost_estimate?: number | null
-          artists_inserted?: number | null
-          artists_skipped_private?: number | null
-          bio_filter_passed?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          followers_scraped?: number | null
-          id?: string
-          image_filter_passed?: number | null
-          openai_cost_estimate?: number | null
-          seed_account?: string
-          seed_type?: string | null
-          started_at?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
-      hashtag_mining_runs: {
-        Row: {
-          apify_cost_estimate: number | null
-          artists_inserted: number | null
-          bio_filter_passed: number | null
-          completed_at: string | null
-          created_at: string | null
-          error_message: string | null
-          hashtag: string
-          id: string
-          image_filter_passed: number | null
-          openai_cost_estimate: number | null
-          posts_scraped: number | null
-          started_at: string | null
-          status: string | null
-          unique_handles_found: number | null
-        }
-        Insert: {
-          apify_cost_estimate?: number | null
-          artists_inserted?: number | null
-          bio_filter_passed?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          hashtag: string
-          id?: string
-          image_filter_passed?: number | null
-          openai_cost_estimate?: number | null
-          posts_scraped?: number | null
-          started_at?: string | null
-          status?: string | null
-          unique_handles_found?: number | null
-        }
-        Update: {
-          apify_cost_estimate?: number | null
-          artists_inserted?: number | null
-          bio_filter_passed?: number | null
-          completed_at?: string | null
-          created_at?: string | null
-          error_message?: string | null
-          hashtag?: string
-          id?: string
-          image_filter_passed?: number | null
-          openai_cost_estimate?: number | null
-          posts_scraped?: number | null
-          started_at?: string | null
-          status?: string | null
-          unique_handles_found?: number | null
-        }
-        Relationships: []
-      }
       image_style_tags: {
         Row: {
           confidence: number
           created_at: string | null
           id: string
           image_id: string
-          is_primary: boolean | null
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Insert: {
           confidence: number
           created_at?: string | null
           id?: string
           image_id: string
-          is_primary?: boolean | null
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Update: {
           confidence?: number
           created_at?: string | null
           id?: string
           image_id?: string
-          is_primary?: boolean | null
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Relationships: [
           {
@@ -989,102 +767,6 @@ export type Database = {
             columns: ["image_id"]
             isOneToOne: false
             referencedRelation: "portfolio_images"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      indexnow_submissions: {
-        Row: {
-          created_at: string | null
-          engine: string
-          id: string
-          response_body: Json | null
-          response_status: number | null
-          submitted_at: string | null
-          trigger_source: string
-          triggered_by: string | null
-          url_count: number
-          urls: string[]
-        }
-        Insert: {
-          created_at?: string | null
-          engine: string
-          id?: string
-          response_body?: Json | null
-          response_status?: number | null
-          submitted_at?: string | null
-          trigger_source: string
-          triggered_by?: string | null
-          url_count: number
-          urls: string[]
-        }
-        Update: {
-          created_at?: string | null
-          engine?: string
-          id?: string
-          response_body?: Json | null
-          response_status?: number | null
-          submitted_at?: string | null
-          trigger_source?: string
-          triggered_by?: string | null
-          url_count?: number
-          urls?: string[]
-        }
-        Relationships: []
-      }
-      instagram_sync_log: {
-        Row: {
-          artist_id: string | null
-          completed_at: string | null
-          error_message: string | null
-          id: string
-          images_added: number | null
-          images_fetched: number | null
-          images_skipped: number | null
-          started_at: string | null
-          status: string
-          sync_type: string
-          user_id: string | null
-        }
-        Insert: {
-          artist_id?: string | null
-          completed_at?: string | null
-          error_message?: string | null
-          id?: string
-          images_added?: number | null
-          images_fetched?: number | null
-          images_skipped?: number | null
-          started_at?: string | null
-          status: string
-          sync_type: string
-          user_id?: string | null
-        }
-        Update: {
-          artist_id?: string | null
-          completed_at?: string | null
-          error_message?: string | null
-          id?: string
-          images_added?: number | null
-          images_fetched?: number | null
-          images_skipped?: number | null
-          started_at?: string | null
-          status?: string
-          sync_type?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "instagram_sync_log_artist_id_fkey"
-            columns: ["artist_id"]
-            isOneToOne: false
-            referencedRelation: "artists"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "instagram_sync_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1218,60 +900,6 @@ export type Database = {
           },
         ]
       }
-      mining_candidates: {
-        Row: {
-          bio_filter_passed: boolean | null
-          biography: string | null
-          created_at: string | null
-          extracted_city: string | null
-          extracted_state: string | null
-          follower_count: number | null
-          id: string
-          image_filter_passed: boolean | null
-          inserted_as_artist_id: string | null
-          instagram_handle: string
-          is_private: boolean | null
-          location_confidence: string | null
-          processed_at: string | null
-          source_id: string | null
-          source_type: string
-        }
-        Insert: {
-          bio_filter_passed?: boolean | null
-          biography?: string | null
-          created_at?: string | null
-          extracted_city?: string | null
-          extracted_state?: string | null
-          follower_count?: number | null
-          id?: string
-          image_filter_passed?: boolean | null
-          inserted_as_artist_id?: string | null
-          instagram_handle: string
-          is_private?: boolean | null
-          location_confidence?: string | null
-          processed_at?: string | null
-          source_id?: string | null
-          source_type: string
-        }
-        Update: {
-          bio_filter_passed?: boolean | null
-          biography?: string | null
-          created_at?: string | null
-          extracted_city?: string | null
-          extracted_state?: string | null
-          follower_count?: number | null
-          id?: string
-          image_filter_passed?: boolean | null
-          inserted_as_artist_id?: string | null
-          instagram_handle?: string
-          is_private?: boolean | null
-          location_confidence?: string | null
-          processed_at?: string | null
-          source_id?: string | null
-          source_type?: string
-        }
-        Relationships: []
-      }
       onboarding_sessions: {
         Row: {
           artist_id: string | null
@@ -1338,10 +966,11 @@ export type Database = {
           },
         ]
       }
-      pipeline_runs: {
+      pipeline_jobs: {
         Row: {
+          artist_id: string | null
           completed_at: string | null
-          created_at: string | null
+          created_at: string
           error_message: string | null
           failed_items: number | null
           id: string
@@ -1349,19 +978,20 @@ export type Database = {
           last_heartbeat_at: string | null
           process_pid: number | null
           processed_items: number | null
-          result_summary: Json | null
+          result_data: Json | null
           started_at: string | null
           status: string
           target_artist_ids: string[] | null
           target_city: string | null
-          target_scope: string
+          target_scope: string | null
           total_items: number | null
           triggered_by: string
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          artist_id?: string | null
           completed_at?: string | null
-          created_at?: string | null
+          created_at?: string
           error_message?: string | null
           failed_items?: number | null
           id?: string
@@ -1369,19 +999,20 @@ export type Database = {
           last_heartbeat_at?: string | null
           process_pid?: number | null
           processed_items?: number | null
-          result_summary?: Json | null
+          result_data?: Json | null
           started_at?: string | null
           status?: string
           target_artist_ids?: string[] | null
           target_city?: string | null
-          target_scope?: string
+          target_scope?: string | null
           total_items?: number | null
-          triggered_by: string
-          updated_at?: string | null
+          triggered_by?: string
+          updated_at?: string
         }
         Update: {
+          artist_id?: string | null
           completed_at?: string | null
-          created_at?: string | null
+          created_at?: string
           error_message?: string | null
           failed_items?: number | null
           id?: string
@@ -1389,17 +1020,25 @@ export type Database = {
           last_heartbeat_at?: string | null
           process_pid?: number | null
           processed_items?: number | null
-          result_summary?: Json | null
+          result_data?: Json | null
           started_at?: string | null
           status?: string
           target_artist_ids?: string[] | null
           target_city?: string | null
-          target_scope?: string
+          target_scope?: string | null
           total_items?: number | null
           triggered_by?: string
-          updated_at?: string | null
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_jobs_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       portfolio_image_analytics: {
         Row: {
@@ -1607,49 +1246,274 @@ export type Database = {
           },
         ]
       }
-      scraping_jobs: {
+      scraper_artist_queue: {
         Row: {
           artist_id: string | null
+          city_slug: string
+          claimed_at: string | null
+          claimed_by_worker_id: string | null
           completed_at: string | null
           created_at: string | null
           error_message: string | null
+          follower_count: number | null
           id: string
-          images_scraped: number
+          images_scraped: number | null
+          instagram_handle: string
           retry_count: number | null
-          started_at: string | null
-          status: string
+          status: string | null
         }
         Insert: {
           artist_id?: string | null
+          city_slug: string
+          claimed_at?: string | null
+          claimed_by_worker_id?: string | null
           completed_at?: string | null
           created_at?: string | null
           error_message?: string | null
+          follower_count?: number | null
           id?: string
-          images_scraped?: number
+          images_scraped?: number | null
+          instagram_handle: string
           retry_count?: number | null
-          started_at?: string | null
-          status?: string
+          status?: string | null
         }
         Update: {
           artist_id?: string | null
+          city_slug?: string
+          claimed_at?: string | null
+          claimed_by_worker_id?: string | null
           completed_at?: string | null
           created_at?: string | null
           error_message?: string | null
+          follower_count?: number | null
           id?: string
-          images_scraped?: number
+          images_scraped?: number | null
+          instagram_handle?: string
           retry_count?: number | null
-          started_at?: string | null
-          status?: string
+          status?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "scraping_jobs_artist_id_fkey"
-            columns: ["artist_id"]
+            foreignKeyName: "scraper_artist_queue_claimed_by_worker_id_fkey"
+            columns: ["claimed_by_worker_id"]
             isOneToOne: false
-            referencedRelation: "artists"
+            referencedRelation: "scraper_workers"
             referencedColumns: ["id"]
           },
         ]
+      }
+      scraper_city_queue: {
+        Row: {
+          artists_discovered: number | null
+          artists_processed: number | null
+          city_name: string
+          city_slug: string
+          claimed_at: string | null
+          claimed_by_worker_id: string | null
+          completed_at: string | null
+          country_code: string
+          created_at: string | null
+          id: string
+          last_processed_at: string | null
+          priority: number | null
+          region: string | null
+          retry_count: number | null
+          started_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          artists_discovered?: number | null
+          artists_processed?: number | null
+          city_name: string
+          city_slug: string
+          claimed_at?: string | null
+          claimed_by_worker_id?: string | null
+          completed_at?: string | null
+          country_code: string
+          created_at?: string | null
+          id?: string
+          last_processed_at?: string | null
+          priority?: number | null
+          region?: string | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          artists_discovered?: number | null
+          artists_processed?: number | null
+          city_name?: string
+          city_slug?: string
+          claimed_at?: string | null
+          claimed_by_worker_id?: string | null
+          completed_at?: string | null
+          country_code?: string
+          created_at?: string | null
+          id?: string
+          last_processed_at?: string | null
+          priority?: number | null
+          region?: string | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraper_city_queue_claimed_by_worker_id_fkey"
+            columns: ["claimed_by_worker_id"]
+            isOneToOne: false
+            referencedRelation: "scraper_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scraper_orchestrator_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          new_instance_id: string | null
+          new_ip: unknown
+          old_instance_id: string | null
+          old_ip: unknown
+          reason: string | null
+          worker_id: string | null
+          worker_name: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          new_instance_id?: string | null
+          new_ip?: unknown
+          old_instance_id?: string | null
+          old_ip?: unknown
+          reason?: string | null
+          worker_id?: string | null
+          worker_name?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          new_instance_id?: string | null
+          new_ip?: unknown
+          old_instance_id?: string | null
+          old_ip?: unknown
+          reason?: string | null
+          worker_id?: string | null
+          worker_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraper_orchestrator_log_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "scraper_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scraper_rate_limit_events: {
+        Row: {
+          artist_handle: string | null
+          created_at: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          ip_address: unknown
+          worker_id: string | null
+        }
+        Insert: {
+          artist_handle?: string | null
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address: unknown
+          worker_id?: string | null
+        }
+        Update: {
+          artist_handle?: string | null
+          created_at?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scraper_rate_limit_events_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "scraper_workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scraper_workers: {
+        Row: {
+          artists_processed: number | null
+          consecutive_401s: number | null
+          created_at: string | null
+          current_artist_handle: string | null
+          current_city_slug: string | null
+          id: string
+          images_processed: number | null
+          ip_address: unknown
+          last_error: string | null
+          last_heartbeat_at: string | null
+          started_at: string | null
+          status: string | null
+          total_401s_lifetime: number | null
+          updated_at: string | null
+          vultr_instance_id: string | null
+          worker_name: string
+        }
+        Insert: {
+          artists_processed?: number | null
+          consecutive_401s?: number | null
+          created_at?: string | null
+          current_artist_handle?: string | null
+          current_city_slug?: string | null
+          id?: string
+          images_processed?: number | null
+          ip_address?: unknown
+          last_error?: string | null
+          last_heartbeat_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          total_401s_lifetime?: number | null
+          updated_at?: string | null
+          vultr_instance_id?: string | null
+          worker_name: string
+        }
+        Update: {
+          artists_processed?: number | null
+          consecutive_401s?: number | null
+          created_at?: string | null
+          current_artist_handle?: string | null
+          current_city_slug?: string | null
+          id?: string
+          images_processed?: number | null
+          ip_address?: unknown
+          last_error?: string | null
+          last_heartbeat_at?: string | null
+          started_at?: string | null
+          status?: string | null
+          total_401s_lifetime?: number | null
+          updated_at?: string | null
+          vultr_instance_id?: string | null
+          worker_name?: string
+        }
+        Relationships: []
       }
       search_appearances: {
         Row: {
@@ -1774,7 +1638,6 @@ export type Database = {
           id: string
           seed_image_url: string
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -1785,7 +1648,6 @@ export type Database = {
           id?: string
           seed_image_url: string
           style_name: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -1796,7 +1658,6 @@ export type Database = {
           id?: string
           seed_image_url?: string
           style_name?: string
-          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1841,6 +1702,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      unified_audit_log: {
+        Row: {
+          actor_id: string | null
+          actor_ip: string | null
+          actor_type: string
+          actor_user_agent: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          event_category: string
+          event_data: Json | null
+          event_type: string
+          id: string
+          items_failed: number | null
+          items_processed: number | null
+          items_succeeded: number | null
+          resource_id: string | null
+          resource_secondary_id: string | null
+          resource_type: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_ip?: string | null
+          actor_type?: string
+          actor_user_agent?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_category: string
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          items_failed?: number | null
+          items_processed?: number | null
+          items_succeeded?: number | null
+          resource_id?: string | null
+          resource_secondary_id?: string | null
+          resource_type?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          actor_ip?: string | null
+          actor_type?: string
+          actor_user_agent?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_category?: string
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          items_failed?: number | null
+          items_processed?: number | null
+          items_succeeded?: number | null
+          resource_id?: string | null
+          resource_secondary_id?: string | null
+          resource_type?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
       }
       users: {
         Row: {
@@ -1921,20 +1848,49 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_next_artist: {
+        Args: { p_city_slug: string; p_worker_id: string }
+        Returns: {
+          city_slug: string
+          id: string
+          instagram_handle: string
+          retry_count: number
+        }[]
+      }
+      claim_next_city: {
+        Args: { p_worker_id: string }
+        Returns: {
+          city_name: string
+          city_slug: string
+          country_code: string
+          id: string
+          priority: number
+          region: string
+        }[]
+      }
       classify_embedding_styles: {
         Args: {
           p_embedding: string
           p_max_styles?: number
           p_min_confidence?: number
-          p_taxonomy?: Database["public"]["Enums"]["style_taxonomy"]
         }
         Returns: {
           confidence: number
           style_name: string
-          taxonomy: Database["public"]["Enums"]["style_taxonomy"]
         }[]
       }
       cleanup_old_email_logs: { Args: never; Returns: number }
+      complete_artist: {
+        Args: {
+          p_artist_id?: string
+          p_artist_queue_id: string
+          p_error_message?: string
+          p_follower_count?: number
+          p_images_scraped?: number
+          p_status: string
+        }
+        Returns: undefined
+      }
       count_artists_without_images: { Args: never; Returns: number }
       count_matching_artists: {
         Args: {
@@ -2116,6 +2072,26 @@ export type Database = {
         Args: { p_encryption_key: string; p_user_id: string }
         Returns: string
       }
+      get_fleet_status: {
+        Args: never
+        Returns: {
+          artists_processed: number
+          consecutive_401s: number
+          current_artist_handle: string
+          current_city_slug: string
+          id: string
+          images_processed: number
+          ip_address: unknown
+          last_error: string
+          last_heartbeat_at: string
+          started_at: string
+          status: string
+          total_401s_lifetime: number
+          uptime_seconds: number
+          vultr_instance_id: string
+          worker_name: string
+        }[]
+      }
       get_homepage_stats: {
         Args: never
         Returns: {
@@ -2125,8 +2101,37 @@ export type Database = {
           image_count: number
         }[]
       }
+      get_location_counts: {
+        Args: {
+          p_country_code?: string
+          p_grouping: string
+          p_min_count?: number
+          p_region?: string
+          p_state_code?: string
+        }
+        Returns: {
+          artist_count: number
+          country_code: string
+          display_name: string
+          location_code: string
+          region_code: string
+        }[]
+      }
       get_mining_city_distribution: { Args: never; Returns: Json }
       get_mining_stats: { Args: never; Returns: Json }
+      get_queue_stats: {
+        Args: never
+        Returns: {
+          artists_completed: number
+          artists_failed: number
+          artists_in_progress: number
+          artists_pending: number
+          cities_completed: number
+          cities_in_progress: number
+          cities_pending: number
+          total_images_scraped: number
+        }[]
+      }
       get_recent_search_appearances: {
         Args: { p_artist_id: string; p_days: number; p_limit?: number }
         Returns: {
@@ -2141,7 +2146,7 @@ export type Database = {
         }[]
       }
       get_regions_with_counts: {
-        Args: { p_country_code?: string }
+        Args: { p_country_code: string }
         Returns: {
           artist_count: number
           region: string
@@ -2179,25 +2184,12 @@ export type Database = {
           state: string
         }[]
       }
-      increment_booking_click: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_image_view: { Args: { p_image_id: string }; Returns: undefined }
-      increment_instagram_click: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_pipeline_progress: {
-        Args: { failed_delta: number; processed_delta: number; run_id: string }
-        Returns: undefined
-      }
-      increment_profile_view: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_search_appearances: {
-        Args: { p_artist_ids: string[] }
+      increment_analytics: {
+        Args: {
+          p_artist_id?: string
+          p_event_type: string
+          p_image_id?: string
+        }
         Returns: undefined
       }
       is_gdpr_country: { Args: { country_code: string }; Returns: boolean }
@@ -2214,6 +2206,20 @@ export type Database = {
         }
         Returns: string
       }
+      log_orchestrator_action: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_new_instance_id?: string
+          p_new_ip?: unknown
+          p_old_instance_id?: string
+          p_old_ip?: unknown
+          p_reason?: string
+          p_worker_id?: string
+          p_worker_name?: string
+        }
+        Returns: string
+      }
       matches_location_filter: {
         Args: {
           city_filter: string
@@ -2227,6 +2233,34 @@ export type Database = {
       }
       recompute_artist_styles: {
         Args: { p_artist_id: string }
+        Returns: undefined
+      }
+      register_worker: {
+        Args: {
+          p_ip_address?: unknown
+          p_vultr_instance_id?: string
+          p_worker_name: string
+        }
+        Returns: string
+      }
+      release_stale_claims: {
+        Args: { p_stale_threshold_minutes?: number }
+        Returns: {
+          released_artists: number
+          released_cities: number
+        }[]
+      }
+      report_rate_limit: {
+        Args: {
+          p_artist_handle?: string
+          p_error_code: string
+          p_error_message?: string
+          p_worker_id: string
+        }
+        Returns: number
+      }
+      reset_rate_limit_counter: {
+        Args: { p_worker_id: string }
         Returns: undefined
       }
       search_artists: {
@@ -2267,6 +2301,8 @@ export type Database = {
           total_count: number
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       store_encrypted_token: {
         Args: {
           p_encryption_key: string
@@ -2319,10 +2355,19 @@ export type Database = {
         Args: { new_secret: string; secret_id: string }
         Returns: undefined
       }
+      worker_heartbeat: {
+        Args: {
+          p_artists_processed?: number
+          p_current_artist_handle?: string
+          p_current_city_slug?: string
+          p_images_processed?: number
+          p_worker_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       search_tier: "active" | "archive"
-      style_taxonomy: "technique" | "theme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2448,10 +2493,13 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       search_tier: ["active", "archive"],
-      style_taxonomy: ["technique", "theme"],
     },
   },
 } as const
+

@@ -43,10 +43,11 @@ export default async function Image({
 
   // Fetch stats with error handling
   const supabase = createServiceClient()
-  const { data: cities, error } = await supabase.rpc('get_cities_with_counts', {
-    min_count: 1,
+  const { data: cities, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'cities',
     p_country_code: countryCode,
     p_region: regionCode,
+    p_min_count: 1,
   })
 
   if (error) {

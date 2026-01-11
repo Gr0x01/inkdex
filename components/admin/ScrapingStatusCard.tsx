@@ -9,7 +9,7 @@ interface ScrapingJob {
   error_message: string | null;
   created_at: string;
   completed_at: string | null;
-  images_scraped: number | null;
+  result_data: { images_scraped?: number } | null;
 }
 
 interface PipelineState {
@@ -263,8 +263,8 @@ export default function ScrapingStatusCard({
                 }`}>
                   {job.status}
                 </span>
-                {job.status === 'completed' && job.images_scraped !== null && (
-                  <span className="text-gray-400">({job.images_scraped} imgs)</span>
+                {job.status === 'completed' && job.result_data?.images_scraped != null && (
+                  <span className="text-gray-400">({job.result_data.images_scraped} imgs)</span>
                 )}
                 {job.status === 'failed' && job.error_message && (
                   <span className="text-red-400 truncate max-w-[200px]" title={job.error_message}>

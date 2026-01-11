@@ -123,7 +123,7 @@ async function submitToEndpoint(
 }
 
 /**
- * Log submission to database for auditing
+ * Log submission to unified audit log for auditing
  */
 async function logSubmission(
   submission: IndexNowSubmission,
@@ -131,15 +131,23 @@ async function logSubmission(
 ): Promise<void> {
   try {
     const supabase = await createClient()
+    const triggeredBy = submission.triggeredBy || 'system'
+    const responseStatus = results[0]?.status
 
-    await supabase.from('indexnow_submissions').insert({
-      urls: submission.urls,
-      url_count: submission.urls.length,
-      engine: submission.engine,
-      trigger_source: submission.triggerSource,
-      triggered_by: submission.triggeredBy || 'system',
-      response_status: results[0]?.status,
-      response_body: results,
+    await supabase.from('unified_audit_log').insert({
+      event_category: 'seo',
+      event_type: 'indexnow.submit',
+      actor_type: triggeredBy.includes('@') ? 'admin' : 'system',
+      actor_id: triggeredBy,
+      status: responseStatus && responseStatus >= 200 && responseStatus < 300 ? 'success' : 'failed',
+      items_processed: submission.urls.length,
+      event_data: {
+        urls: submission.urls,
+        engine: submission.engine,
+        trigger_source: submission.triggerSource,
+        response_status: responseStatus,
+        response_body: results,
+      },
     })
   } catch (error) {
     // Log but don't fail - submission tracking is non-critical
@@ -314,36 +322,50 @@ export async function getRecentSubmissions(limit: number = 20): Promise<{
 }> {
   const supabase = await createClient()
 
-  // Get recent submissions
-  const { data: submissions } = await supabase
-    .from('indexnow_submissions')
-    .select('id, submitted_at, url_count, engine, trigger_source, response_status, triggered_by')
-    .order('submitted_at', { ascending: false })
+  // Get recent submissions from unified audit log
+  const { data: rawSubmissions } = await supabase
+    .from('unified_audit_log')
+    .select('id, created_at, items_processed, actor_id, event_data, status')
+    .eq('event_type', 'indexnow.submit')
+    .order('created_at', { ascending: false })
     .limit(limit)
+
+  // Transform to expected format
+  const submissions = (rawSubmissions || []).map((s) => ({
+    id: s.id,
+    submitted_at: s.created_at,
+    url_count: s.items_processed || 0,
+    engine: (s.event_data as { engine?: string })?.engine || 'unknown',
+    trigger_source: (s.event_data as { trigger_source?: string })?.trigger_source || 'unknown',
+    response_status: (s.event_data as { response_status?: number })?.response_status || null,
+    triggered_by: s.actor_id || 'system',
+  }))
 
   // Get stats
   const now = new Date()
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
   const { count: total } = await supabase
-    .from('indexnow_submissions')
+    .from('unified_audit_log')
     .select('*', { count: 'exact', head: true })
+    .eq('event_type', 'indexnow.submit')
 
   const { count: last24h } = await supabase
-    .from('indexnow_submissions')
+    .from('unified_audit_log')
     .select('*', { count: 'exact', head: true })
-    .gte('submitted_at', oneDayAgo.toISOString())
+    .eq('event_type', 'indexnow.submit')
+    .gte('created_at', oneDayAgo.toISOString())
 
   const { count: successful } = await supabase
-    .from('indexnow_submissions')
+    .from('unified_audit_log')
     .select('*', { count: 'exact', head: true })
-    .gte('response_status', 200)
-    .lt('response_status', 300)
+    .eq('event_type', 'indexnow.submit')
+    .eq('status', 'success')
 
   const successRate = total && total > 0 ? ((successful || 0) / total) * 100 : 100
 
   return {
-    submissions: submissions || [],
+    submissions,
     stats: {
       total: total || 0,
       last24h: last24h || 0,

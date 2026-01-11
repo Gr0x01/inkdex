@@ -220,14 +220,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Log sync
-    await supabase.from('airtable_sync_log').insert({
-      sync_type: 'outreach',
-      direction: 'pull',
-      records_processed: results.processed,
-      records_updated: results.updated,
-      errors: results.errors.length > 0 ? results.errors : null,
-      triggered_by: 'manual',
+    await supabase.from('unified_audit_log').insert({
+      event_category: 'sync',
+      event_type: 'airtable.pull',
+      actor_type: 'admin',
+      actor_id: 'manual',
+      status: results.errors.length > 0 ? 'partial' : 'success',
       completed_at: new Date().toISOString(),
+      items_processed: results.processed,
+      items_succeeded: results.updated,
+      event_data: {
+        sync_type: 'outreach',
+        records_updated: results.updated,
+        errors: results.errors.length > 0 ? results.errors : null,
+      },
     })
 
     return NextResponse.json({

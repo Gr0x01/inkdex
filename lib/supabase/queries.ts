@@ -240,7 +240,7 @@ export async function searchArtists(
     region_filter: region,
     country_filter: country,
     offset_param: offset,
-    query_styles: queryStyles && queryStyles.length > 0 ? queryStyles : null,
+    query_techniques: queryStyles && queryStyles.length > 0 ? queryStyles : null,
     is_color_query: isColorQuery,
   })
 
@@ -284,16 +284,7 @@ export async function searchArtists(
   return { artists, totalCount }
 }
 
-// Legacy aliases for backwards compatibility during migration
-// TODO: Remove these after all callers are updated
-export const searchArtistsByEmbedding = async (
-  embedding: number[],
-  options: { threshold?: number; limit?: number; offset?: number } & LocationFilter = {}
-) => {
-  const { artists } = await searchArtists(embedding, options)
-  return artists
-}
-
+// Alias for callers that use the old name
 export const searchArtistsWithStyleBoost = searchArtists
 
 /**
@@ -765,9 +756,10 @@ export async function getStateWithCities(state: string) {
 
   const supabase = await createClient()
 
-  // Use SQL GROUP BY to aggregate in database
-  const { data, error } = await supabase.rpc('get_state_cities_with_counts', {
-    state_code: state
+  // Use consolidated location counts function
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'state_cities',
+    p_state_code: state
   })
 
   if (error) {
@@ -775,10 +767,10 @@ export async function getStateWithCities(state: string) {
     return { cities: [], total: 0 }
   }
 
-  // Transform to expected format
-  const cities = ((data || []) as StateCityRow[]).map((row) => ({
-    name: row.city,
-    slug: row.city.toLowerCase().replace(/\s+/g, '-'),
+  // Transform to expected format (display_name from consolidated function)
+  const cities = ((data || []) as { display_name: string; artist_count: number }[]).map((row) => ({
+    name: row.display_name,
+    slug: row.display_name.toLowerCase().replace(/\s+/g, '-'),
     artistCount: row.artist_count,
   }))
 
@@ -1351,10 +1343,11 @@ export async function getCitiesWithCounts(
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase.rpc('get_cities_with_counts', {
-    min_count: minCount,
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'cities',
     p_country_code: country,
     p_region: region,
+    p_min_count: minCount,
   })
 
   if (error) {
@@ -1362,7 +1355,13 @@ export async function getCitiesWithCounts(
     return []
   }
 
-  return data || []
+  // Map consolidated function output to expected format
+  return (data || []).map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
+    city: row.display_name,
+    region: row.region_code,
+    country_code: row.country_code,
+    artist_count: row.artist_count,
+  }))
 }
 
 /**
@@ -1377,7 +1376,8 @@ export async function getRegionsWithCounts(
 
   const supabase = await createClient()
 
-  const { data, error } = await supabase.rpc('get_regions_with_counts', {
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'regions',
     p_country_code: country,
   })
 
@@ -1386,7 +1386,12 @@ export async function getRegionsWithCounts(
     return []
   }
 
-  return data || []
+  // Map consolidated function output to expected format
+  return (data || []).map((row: { location_code: string; display_name: string; artist_count: number }) => ({
+    region: row.location_code,
+    region_name: row.display_name,
+    artist_count: row.artist_count,
+  }))
 }
 
 /**
@@ -1396,14 +1401,20 @@ export async function getRegionsWithCounts(
 export async function getCountriesWithCounts(): Promise<Array<{ country_code: string; artist_count: number }>> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.rpc('get_countries_with_counts')
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'countries',
+  })
 
   if (error) {
     console.error('Error fetching countries with counts:', error)
     return []
   }
 
-  return data || []
+  // Map consolidated function output to expected format
+  return (data || []).map((row: { location_code: string; artist_count: number }) => ({
+    country_code: row.location_code,
+    artist_count: row.artist_count,
+  }))
 }
 
 /**
@@ -1426,9 +1437,9 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
     supabase = createServiceClient()
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- RPC function not in generated types
-  const { data, error } = await supabase.rpc('get_all_cities_with_min_artists' as any, {
-    min_artist_count: minArtistCount
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'all_cities',
+    p_min_count: minArtistCount,
   })
 
   if (error) {
@@ -1436,7 +1447,12 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
     return []
   }
 
-  return data || []
+  // Map consolidated function output to expected format
+  return (data || []).map((row: { display_name: string; region_code: string; artist_count: number }) => ({
+    city: row.display_name.split(', ')[0], // "City, State" -> "City"
+    region: row.region_code,
+    artist_count: row.artist_count,
+  }))
 }
 
 /**

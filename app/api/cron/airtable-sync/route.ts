@@ -57,12 +57,12 @@ export async function GET(request: NextRequest) {
       env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
 
-    // Get last sync time
+    // Get last sync time from unified audit log
     const { data: lastSyncData } = await supabase
-      .from('airtable_sync_log')
+      .from('unified_audit_log')
       .select('completed_at')
-      .eq('direction', 'pull')
-      .eq('triggered_by', 'cron')
+      .eq('event_type', 'airtable.pull')
+      .eq('actor_id', 'cron')
       .order('completed_at', { ascending: false })
       .limit(1)
       .single()
@@ -187,15 +187,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Log sync
-    await supabase.from('airtable_sync_log').insert({
-      sync_type: 'outreach',
-      direction: 'pull',
-      records_processed: results.processed,
-      records_updated: results.updated,
-      errors: results.errors.length > 0 ? results.errors : null,
-      triggered_by: 'cron',
+    // Log sync to unified audit log
+    await supabase.from('unified_audit_log').insert({
+      event_category: 'sync',
+      event_type: 'airtable.pull',
+      actor_type: 'cron',
+      actor_id: 'cron',
+      status: results.errors.length > 0 ? 'partial' : 'success',
       completed_at: new Date().toISOString(),
+      items_processed: results.processed,
+      items_succeeded: results.updated,
+      event_data: {
+        sync_type: 'outreach',
+        records_updated: results.updated,
+        errors: results.errors.length > 0 ? results.errors : null,
+      },
     })
 
     return NextResponse.json({

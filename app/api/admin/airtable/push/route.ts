@@ -225,17 +225,22 @@ export async function POST(request: NextRequest) {
       console.error('Error creating marketing_outreach records:', upsertError)
     }
 
-    // Log sync
-    await supabase.from('airtable_sync_log').insert({
-      sync_type: 'outreach',
-      direction: 'push',
-      records_processed: artists.length,
-      records_created: airtableResult.created,
-      records_updated: airtableResult.updated,
-      errors:
-        airtableResult.errors.length > 0 ? airtableResult.errors : null,
-      triggered_by: 'manual',
+    // Log sync to unified audit log
+    await supabase.from('unified_audit_log').insert({
+      event_category: 'sync',
+      event_type: 'airtable.push',
+      actor_type: 'admin',
+      actor_id: 'manual',
+      status: airtableResult.errors.length > 0 ? 'partial' : 'success',
       completed_at: new Date().toISOString(),
+      items_processed: artists.length,
+      items_succeeded: airtableResult.created + airtableResult.updated,
+      event_data: {
+        sync_type: 'outreach',
+        records_created: airtableResult.created,
+        records_updated: airtableResult.updated,
+        errors: airtableResult.errors.length > 0 ? airtableResult.errors : null,
+      },
     })
 
     return NextResponse.json({

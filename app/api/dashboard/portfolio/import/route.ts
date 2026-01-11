@@ -155,15 +155,18 @@ async function logImportResult(
   errors: string[]
 ) {
   try {
-    await serviceClient.from('artist_audit_log').insert({
-      artist_id: artistId,
-      action: failed > 0 ? 'portfolio_import_partial' : 'portfolio_import_complete',
-      details: JSON.stringify({
-        successful,
-        failed,
+    await serviceClient.from('unified_audit_log').insert({
+      event_category: 'artist',
+      event_type: failed > 0 ? 'portfolio_import_partial' : 'portfolio_import_complete',
+      resource_type: 'artist',
+      resource_id: artistId,
+      status: failed > 0 ? 'partial' : 'success',
+      items_processed: successful + failed,
+      items_succeeded: successful,
+      items_failed: failed,
+      event_data: {
         errors: errors.slice(0, 10), // Limit to 10 errors
-        timestamp: new Date().toISOString(),
-      }),
+      },
     });
   } catch (error) {
     // Non-fatal - just log

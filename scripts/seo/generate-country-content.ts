@@ -152,7 +152,10 @@ If you're not certain about specific details, keep the content accurate but gene
 
 async function getCountriesWithArtists(): Promise<Array<{ country_code: string; artist_count: number }>> {
   // Query countries with artists (excluding GDPR and US which uses city-level content)
-  const { data, error } = await supabase.rpc('get_countries_with_counts')
+  // Uses consolidated get_location_counts function
+  const { data, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'countries'
+  })
 
   if (error) {
     console.error('Error fetching countries:', error)
@@ -160,9 +163,13 @@ async function getCountriesWithArtists(): Promise<Array<{ country_code: string; 
   }
 
   // Filter out US (has city-level content) and GDPR countries
-  return (data || []).filter(
-    (c: { country_code: string }) => c.country_code !== 'US' && !isGDPRCountry(c.country_code)
-  )
+  // Map location_code to country_code for downstream compatibility
+  return (data || [])
+    .filter((c: { location_code: string }) => c.location_code !== 'US' && !isGDPRCountry(c.location_code))
+    .map((c: { location_code: string; artist_count: number }) => ({
+      country_code: c.location_code,
+      artist_count: c.artist_count
+    }))
 }
 
 async function getExistingContent(): Promise<Set<string>> {

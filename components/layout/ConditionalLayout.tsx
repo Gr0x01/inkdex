@@ -31,9 +31,17 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
 
   // Fetch real state data for footer (only states with artists that have images)
   const supabase = await createClient();
-  const { data: statesData } = await supabase.rpc('get_regions_with_counts', {
+  const { data: statesData } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'regions',
     p_country_code: 'US'
   });
+
+  // Map to Footer's expected format (location_code -> region, display_name -> region_name)
+  const statesForFooter = (statesData || []).map((s: { location_code: string; display_name: string; artist_count: number }) => ({
+    region: s.location_code,
+    region_name: s.display_name,
+    artist_count: s.artist_count
+  }));
 
   // All other pages get the full site layout
   return (
@@ -42,7 +50,7 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
         <NavbarWithAuth />
         <GlobalSearchModal />
         {children}
-        <Footer statesWithArtists={statesData || []} />
+        <Footer statesWithArtists={statesForFooter} />
         <CookieBanner />
       </NavbarVisibilityProvider>
     </SearchProvider>

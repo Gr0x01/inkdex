@@ -421,12 +421,13 @@ async function main() {
 
       totalProcessed += imagesProcessed;
 
-      // Update scraping job
+      // Update pipeline job
       try {
         await supabase
-          .from('scraping_jobs')
-          .update({ images_scraped: imagesProcessed })
-          .eq('artist_id', artistId);
+          .from('pipeline_jobs')
+          .update({ result_data: { images_scraped: imagesProcessed } })
+          .eq('artist_id', artistId)
+          .eq('job_type', 'scrape_single');
       } catch (error) {
         // Non-critical error
       }

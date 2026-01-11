@@ -796,58 +796,6 @@ a:hover {
   text-decoration: none;
 }
 
-/* Legacy Navigation Styles (Backwards Compatibility) */
-.nav-link {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--gray-700);
-  transition: color var(--duration-medium) var(--ease-smooth);
-}
-
-.nav-link:hover {
-  color: var(--ink-black);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  margin-top: 0.5rem;
-  background: var(--paper-white);
-  border: 2px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  opacity: 0;
-  visibility: hidden;
-  transition: all var(--duration-medium) var(--ease-smooth);
-  min-width: 200px;
-  padding: 0.5rem 0;
-  z-index: 50;
-}
-
-.group:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-}
-
-.dropdown-item {
-  display: block;
-  padding: 0.5rem 1rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
-  color: var(--gray-700);
-  transition: all var(--duration-fast) var(--ease-smooth);
-}
-
-.dropdown-item:hover {
-  background: var(--gray-100);
-  color: var(--ink-black);
-}
-
 /* ═══════════════════════════════════════════════════════════════
    STICKY NAVBAR - HIDE ON SCROLL
    ═══════════════════════════════════════════════════════════════ */

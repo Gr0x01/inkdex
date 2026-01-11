@@ -178,21 +178,22 @@ export async function GET(request: Request) {
 
       if (error) throw error;
 
-      // Get the most recent error message for each failed artist from scraping_jobs
+      // Get the most recent error message for each failed artist from pipeline_jobs
       const artistIds = (data || []).map((d) => d.artist_id);
       const errorMessages: Record<string, string> = {};
 
       if (artistIds.length > 0) {
         const { data: jobs } = await adminClient
-          .from('scraping_jobs')
+          .from('pipeline_jobs')
           .select('artist_id, error_message, created_at')
+          .eq('job_type', 'scrape_single')
           .in('artist_id', artistIds)
           .eq('status', 'failed')
           .order('created_at', { ascending: false });
 
         // Get the most recent error for each artist
         for (const job of jobs || []) {
-          if (!errorMessages[job.artist_id] && job.error_message) {
+          if (job.artist_id && !errorMessages[job.artist_id] && job.error_message) {
             errorMessages[job.artist_id] = job.error_message;
           }
         }

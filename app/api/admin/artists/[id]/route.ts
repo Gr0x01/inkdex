@@ -411,14 +411,14 @@ export async function DELETE(
     }
 
     // Delete or nullify related records without ON DELETE CASCADE
-    // 1. scraping_jobs - delete (audit data, not needed after artist deletion)
-    const { error: scrapingJobsError } = await serviceClient
-      .from('scraping_jobs')
+    // 1. pipeline_jobs - delete (audit data, not needed after artist deletion)
+    const { error: pipelineJobsError } = await serviceClient
+      .from('pipeline_jobs')
       .delete()
       .eq('artist_id', id);
 
-    if (scrapingJobsError) {
-      console.error('[Admin Artist] Scraping jobs delete error:', scrapingJobsError);
+    if (pipelineJobsError) {
+      console.error('[Admin Artist] Pipeline jobs delete error:', pipelineJobsError);
     }
 
     // 2. searches.artist_id_source - set null (preserve search history)

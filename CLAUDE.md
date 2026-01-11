@@ -122,9 +122,19 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
 - Keep diffs surgical—strip logs, commented code, and unused exports
 - Update docs as part of the definition of done; long narratives move to `archive/`
 - Document significant subagent feedback in commit messages or memory bank when relevant
+- **Run tests before deploying**: `npm run test:run` (unit) and `npm run test:e2e` (E2E) must pass
+- **Use staging for risky changes**: Push to `staging` branch first to test on Vercel preview
+- **Use local DB for schema changes**: `npm run db:local:start` before testing migrations
 - **SQL migrations**: Always run `npm run db:push` (lints with sqlfluff first) instead of raw `npx supabase db push`
 - **SQL naming**: Follow CTE column prefixes (`ri_`, `aa_`, `fa_`, `ba_`) - see `operations.md` for details
 - **Search functions**: NEVER create new migrations that rewrite search functions. Edit `supabase/functions/search_functions.sql` instead (single source of truth)
+
+### Testing Commands
+```bash
+npm run test:run      # 47 unit tests (fast, run frequently)
+npm run test:e2e      # 17 E2E tests (slower, run before deploy)
+npm run db:local:start # Local Supabase for migration testing
+```
 
 ### Performance Guidelines
 - Follow established performance patterns

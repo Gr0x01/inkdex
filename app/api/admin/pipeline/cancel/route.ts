@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     // Get the pipeline run to find the PID
     const { data: run, error: fetchError } = await supabase
-      .from('pipeline_runs')
+      .from('pipeline_jobs')
       .select('id, process_pid, status')
       .eq('id', runId)
       .in('status', ['pending', 'running'])
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
     // Update the pipeline run to cancelled status
     const { error } = await supabase
-      .from('pipeline_runs')
+      .from('pipeline_jobs')
       .update({
         status: 'cancelled',
         completed_at: new Date().toISOString(),

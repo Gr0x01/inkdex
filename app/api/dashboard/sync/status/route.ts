@@ -63,12 +63,13 @@ export async function GET(_request: NextRequest) {
       ? artist.artist_sync_state[0]
       : artist.artist_sync_state;
 
-    // 3. Get recent sync logs (last 5)
+    // 3. Get recent sync logs from unified audit log (last 5)
     const { data: logs, error: logsError } = await supabase
-      .from('instagram_sync_log')
-      .select('*')
-      .eq('artist_id', artist.id)
-      .order('started_at', { ascending: false })
+      .from('unified_audit_log')
+      .select('id, event_type, status, error_message, items_processed, items_succeeded, items_failed, created_at, completed_at')
+      .eq('resource_id', artist.id)
+      .like('event_type', 'instagram.%')
+      .order('created_at', { ascending: false })
       .limit(5);
 
     if (logsError) {
@@ -77,13 +78,13 @@ export async function GET(_request: NextRequest) {
 
     const recentLogs: SyncLog[] = (logs || []).map((log) => ({
       id: log.id,
-      syncType: log.sync_type as 'auto' | 'manual',
-      imagesFetched: log.images_fetched || 0,
-      imagesAdded: log.images_added || 0,
-      imagesSkipped: log.images_skipped || 0,
-      status: log.status as 'success' | 'partial' | 'failed',
+      syncType: log.event_type === 'instagram.auto' ? 'auto' : 'manual',
+      imagesFetched: log.items_processed || 0,
+      imagesAdded: log.items_succeeded || 0,
+      imagesSkipped: log.items_failed || 0,
+      status: (log.status || 'failed') as 'success' | 'partial' | 'failed',
       errorMessage: log.error_message,
-      startedAt: log.started_at,
+      startedAt: log.created_at,
       completedAt: log.completed_at,
     }));
 

@@ -156,9 +156,10 @@ export default async function AdminArtistDetailPage({ params }: Props) {
 
   // Fetch scraping history
   const { data: scrapingHistory } = await serviceClient
-    .from('scraping_jobs')
-    .select('id, status, error_message, created_at, completed_at, images_scraped')
+    .from('pipeline_jobs')
+    .select('id, status, error_message, created_at, completed_at, result_data')
     .eq('artist_id', id)
+    .eq('job_type', 'scrape_single')
     .order('created_at', { ascending: false })
     .limit(10);
 

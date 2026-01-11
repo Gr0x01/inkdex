@@ -4,6 +4,8 @@
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+// Allow separate storage URL for local dev (DB local, images from production)
+const STORAGE_URL = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL || SUPABASE_URL
 
 if (!SUPABASE_URL) {
   throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is not set')
@@ -27,7 +29,7 @@ export function getImageUrl(
   }
 
   // Construct Supabase storage public URL
-  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`
+  return `${STORAGE_URL}/storage/v1/object/public/${bucket}/${path}`
 }
 
 /**

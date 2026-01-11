@@ -36,27 +36,20 @@ export async function POST(request: NextRequest) {
     // Call appropriate RPC function
     const supabase = await createClient()
 
-    let rpcResult
-    switch (type) {
-      case 'profile_view':
-        rpcResult = await supabase.rpc('increment_profile_view', { p_artist_id: artistId })
-        break
-      case 'image_view':
-        if (!imageId) {
-          return NextResponse.json(
-            { error: 'imageId required for image_view' },
-            { status: 400 }
-          )
-        }
-        rpcResult = await supabase.rpc('increment_image_view', { p_image_id: imageId })
-        break
-      case 'instagram_click':
-        rpcResult = await supabase.rpc('increment_instagram_click', { p_artist_id: artistId })
-        break
-      case 'booking_click':
-        rpcResult = await supabase.rpc('increment_booking_click', { p_artist_id: artistId })
-        break
+    // Validate imageId for image_view
+    if (type === 'image_view' && !imageId) {
+      return NextResponse.json(
+        { error: 'imageId required for image_view' },
+        { status: 400 }
+      )
     }
+
+    // Call unified increment_analytics function
+    const rpcResult = await supabase.rpc('increment_analytics', {
+      p_event_type: type,
+      p_artist_id: type === 'image_view' ? null : artistId,
+      p_image_id: type === 'image_view' ? imageId : null,
+    })
 
     if (rpcResult?.error) {
       console.error(`[Analytics] Error tracking ${type}:`, rpcResult.error)

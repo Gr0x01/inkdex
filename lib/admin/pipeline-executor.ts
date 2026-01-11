@@ -2,7 +2,7 @@
  * Pipeline Job Executor
  *
  * Runs pipeline commands as background processes.
- * Updates pipeline_runs table with progress.
+ * Updates pipeline_jobs table with progress.
  */
 
 import { spawn, ChildProcess } from 'child_process';
@@ -141,7 +141,7 @@ async function executeJob(runId: string, jobType: JobType, limit?: number): Prom
 
   // Update status to running
   await adminClient
-    .from('pipeline_runs')
+    .from('pipeline_jobs')
     .update({
       status: 'running',
       started_at: new Date().toISOString(),
@@ -162,7 +162,7 @@ async function executeJob(runId: string, jobType: JobType, limit?: number): Prom
     // Store the PID for cancellation
     if (childProcess.pid) {
       void adminClient
-        .from('pipeline_runs')
+        .from('pipeline_jobs')
         .update({ process_pid: childProcess.pid })
         .eq('id', runId)
         .then(
@@ -183,7 +183,7 @@ async function executeJob(runId: string, jobType: JobType, limit?: number): Prom
     const sendHeartbeat = async () => {
       try {
         await adminClient
-          .from('pipeline_runs')
+          .from('pipeline_jobs')
           .update({ last_heartbeat_at: new Date().toISOString() })
           .eq('id', runId);
       } catch (err) {
@@ -231,12 +231,12 @@ async function executeJob(runId: string, jobType: JobType, limit?: number): Prom
         : stderr.slice(-1000);
 
       await adminClient
-        .from('pipeline_runs')
+        .from('pipeline_jobs')
         .update({
           status: isSuccess ? 'completed' : 'failed',
           completed_at: new Date().toISOString(),
           error_message: isSuccess ? null : errorMessage,
-          result_summary: {
+          result_data: {
             exitCode: code,
             timedOut,
             stdoutLength: stdout.length,
@@ -263,7 +263,7 @@ async function executeJob(runId: string, jobType: JobType, limit?: number): Prom
       clearInterval(heartbeatHandle);
 
       await adminClient
-        .from('pipeline_runs')
+        .from('pipeline_jobs')
         .update({
           status: 'failed',
           completed_at: new Date().toISOString(),
@@ -283,7 +283,7 @@ export async function hasRunningJob(jobType: JobType): Promise<boolean> {
   const adminClient = createAdminClient();
 
   const { count } = await adminClient
-    .from('pipeline_runs')
+    .from('pipeline_jobs')
     .select('id', { count: 'exact', head: true })
     .eq('job_type', jobType)
     .in('status', ['pending', 'running']);
@@ -298,7 +298,7 @@ export async function cancelJob(runId: string): Promise<void> {
   const adminClient = createAdminClient();
 
   await adminClient
-    .from('pipeline_runs')
+    .from('pipeline_jobs')
     .update({
       status: 'cancelled',
       completed_at: new Date().toISOString(),

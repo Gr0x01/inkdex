@@ -11,16 +11,20 @@ import { createClient } from '@supabase/supabase-js'
 import { isAirtableConfigured, getAirtableConfig } from '@/lib/airtable/client'
 import { env } from '@/lib/config/env'
 
-interface SyncLogEntry {
+interface AuditLogEntry {
   id: string
-  sync_type: string
-  direction: string
-  records_processed: number
-  records_created: number
-  records_updated: number
-  errors: unknown
-  triggered_by: string
-  started_at: string
+  event_type: string
+  actor_id: string | null
+  status: string | null
+  items_processed: number | null
+  items_succeeded: number | null
+  event_data: {
+    sync_type?: string
+    records_created?: number
+    records_updated?: number
+    errors?: unknown
+  } | null
+  created_at: string
   completed_at: string | null
 }
 
@@ -35,19 +39,22 @@ export async function GET() {
       env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
 
-    // Fetch recent sync logs
+    // Fetch recent sync logs from unified_audit_log
     const { data: recentSyncs, error: syncError } = await supabase
-      .from('airtable_sync_log')
-      .select('*')
-      .order('started_at', { ascending: false })
+      .from('unified_audit_log')
+      .select('id, event_type, actor_id, status, items_processed, items_succeeded, event_data, created_at, completed_at')
+      .like('event_type', 'airtable.%')
+      .order('created_at', { ascending: false })
       .limit(10)
 
     if (syncError) {
       console.error('Error fetching sync logs:', syncError)
     }
 
+    const typedSyncs = recentSyncs as AuditLogEntry[] | null
+
     // Get last successful sync
-    const lastSync = (recentSyncs as SyncLogEntry[] | null)?.find(
+    const lastSync = typedSyncs?.find(
       (s) => s.completed_at !== null
     )
 
@@ -56,18 +63,24 @@ export async function GET() {
     yesterday.setDate(yesterday.getDate() - 1)
 
     const { data: recentStats } = await supabase
-      .from('airtable_sync_log')
-      .select('records_processed, records_created, records_updated, direction')
-      .gte('started_at', yesterday.toISOString())
+      .from('unified_audit_log')
+      .select('event_type, items_processed, event_data')
+      .like('event_type', 'airtable.%')
+      .gte('created_at', yesterday.toISOString())
+
+    const typedStats = recentStats as AuditLogEntry[] | null
 
     const stats24h = {
-      syncs: recentStats?.length || 0,
-      pushes: recentStats?.filter((s) => s.direction === 'push').length || 0,
-      pulls: recentStats?.filter((s) => s.direction === 'pull').length || 0,
+      syncs: typedStats?.length || 0,
+      pushes: typedStats?.filter((s) => s.event_type === 'airtable.push').length || 0,
+      pulls: typedStats?.filter((s) => s.event_type === 'airtable.pull').length || 0,
       recordsProcessed:
-        recentStats?.reduce((sum, s) => sum + (s.records_processed || 0), 0) ||
+        typedStats?.reduce((sum, s) => sum + (s.items_processed || 0), 0) ||
         0,
     }
+
+    // Extract direction from event_type (airtable.push -> push, airtable.pull -> pull)
+    const getDirection = (eventType: string) => eventType.replace('airtable.', '')
 
     return NextResponse.json({
       configured: isConfigured,
@@ -77,24 +90,24 @@ export async function GET() {
       lastSync: lastSync
         ? {
             timestamp: lastSync.completed_at,
-            direction: lastSync.direction,
-            processed: lastSync.records_processed,
-            created: lastSync.records_created,
-            updated: lastSync.records_updated,
-            hasErrors: lastSync.errors !== null,
+            direction: getDirection(lastSync.event_type),
+            processed: lastSync.items_processed || 0,
+            created: lastSync.event_data?.records_created || 0,
+            updated: lastSync.event_data?.records_updated || 0,
+            hasErrors: lastSync.event_data?.errors !== null && lastSync.event_data?.errors !== undefined,
           }
         : null,
       stats24h,
-      recentSyncs: (recentSyncs as SyncLogEntry[] | null)?.map((s) => ({
+      recentSyncs: typedSyncs?.map((s) => ({
         id: s.id,
-        type: s.sync_type,
-        direction: s.direction,
-        processed: s.records_processed,
-        created: s.records_created,
-        updated: s.records_updated,
-        hasErrors: s.errors !== null,
-        triggeredBy: s.triggered_by,
-        startedAt: s.started_at,
+        type: s.event_data?.sync_type || 'outreach',
+        direction: getDirection(s.event_type),
+        processed: s.items_processed || 0,
+        created: s.event_data?.records_created || 0,
+        updated: s.event_data?.records_updated || 0,
+        hasErrors: s.event_data?.errors !== null && s.event_data?.errors !== undefined,
+        triggeredBy: s.actor_id || 'system',
+        startedAt: s.created_at,
         completedAt: s.completed_at,
       })) || [],
     })

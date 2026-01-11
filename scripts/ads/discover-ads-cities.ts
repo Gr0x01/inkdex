@@ -150,12 +150,12 @@ async function createArtist(
   });
 
   // Create scraping job
-  await supabase.from('scraping_jobs').insert({
+  await supabase.from('pipeline_jobs').insert({
     artist_id: artist.id,
-    job_type: 'full',
+    job_type: 'scrape_single',
+    triggered_by: 'google-ads-expansion',
     status: 'pending',
-    priority: 5,
-    metadata: { source: 'google-ads-expansion', city: slug },
+    result_data: { source: 'google-ads-expansion', city: slug },
   });
 
   return true;

@@ -147,10 +147,11 @@ export default async function VerifyPage() {
   }
 
   // Create scraping job (optional - may be handled in onboarding)
-  await supabase.from('scraping_jobs').insert({
+  await supabase.from('pipeline_jobs').insert({
     artist_id: newArtist.id,
+    job_type: 'scrape_single',
+    triggered_by: 'add-artist-flow',
     status: 'pending',
-    images_scraped: 0,
   });
 
   // 6. Redirect to onboarding with artist_id

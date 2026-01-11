@@ -39,17 +39,18 @@ async function validateScrapedImages() {
 
     // 2. Get scraping job statistics
     const { data: jobs, error: jobsError } = await supabase
-      .from('scraping_jobs')
-      .select('status, images_scraped, error_message');
+      .from('pipeline_jobs')
+      .select('status, result_data, error_message')
+      .eq('job_type', 'scrape_single');
 
     if (jobsError) {
-      console.error('❌ Failed to fetch scraping jobs:', jobsError.message);
+      console.error('❌ Failed to fetch pipeline jobs:', jobsError.message);
       process.exit(1);
     }
 
     const completedJobs = jobs?.filter(j => j.status === 'completed') || [];
     const failedJobs = jobs?.filter(j => j.status === 'failed') || [];
-    const inProgressJobs = jobs?.filter(j => j.status === 'in_progress') || [];
+    const inProgressJobs = jobs?.filter(j => j.status === 'running') || [];
 
     console.log(`\n📋 Scraping Jobs:`);
     console.log(`   Completed: ${completedJobs.length}`);

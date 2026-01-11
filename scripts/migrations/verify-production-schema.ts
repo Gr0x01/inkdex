@@ -23,32 +23,27 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // Expected functions (from codebase RPC calls)
+// Updated after db-consolidation: location functions consolidated into get_location_counts,
+// increment functions consolidated into increment_analytics
 const EXPECTED_FUNCTIONS = [
   'can_receive_email',
   'check_email_rate_limit',
   'claim_artist_profile',
   'count_artists_without_images',
   'create_pipeline_run',
-  'get_all_cities_with_min_artists',
   'get_artist_by_handle',
   'get_artist_portfolio',
   'get_artist_stats',
   'get_artist_tier_counts',
   'get_artists_with_image_counts',
-  'get_cities_with_counts',
-  'get_countries_with_counts',
   'get_homepage_stats',
+  'get_location_counts',        // Consolidated: replaces 5 location functions
   'get_mining_city_distribution',
   'get_mining_stats',
   'get_recent_search_appearances',
-  'get_regions_with_counts',
   'get_search_location_counts',
-  'get_state_cities_with_counts',
   'get_top_artists_by_style',
-  'increment_booking_click',
-  'increment_image_view',
-  'increment_instagram_click',
-  'increment_profile_view',
+  'increment_analytics',        // Consolidated: replaces 4 increment functions
   'log_email_send',
   'search_artists',
   'sync_artist_to_locations',
@@ -65,10 +60,7 @@ const EXPECTED_FUNCTIONS = [
 
 // Expected tables (from codebase .from() calls)
 const EXPECTED_TABLES = [
-  'admin_audit_log',
-  'airtable_sync_log',
   'artist_analytics',
-  'artist_audit_log',
   'artist_locations',
   'artist_pipeline_state',
   'artist_recommendations',
@@ -81,25 +73,20 @@ const EXPECTED_TABLES = [
   'discovery_queries',
   'email_log',
   'email_preferences',
-  'follower_mining_runs',
-  'hashtag_mining_runs',
   'image_style_tags',
-  'indexnow_submissions',
-  'instagram_sync_log',
   'locations',
   'marketing_outreach',
-  'mining_candidates',
   'onboarding_sessions',
-  'pipeline_runs',
+  'pipeline_jobs',
   'portfolio_image_analytics',
   'portfolio_images',
   'promo_codes',
   'saved_artists',
-  'scraping_jobs',
   'search_appearances',
   'searches',
   'style_seeds',
   'style_training_labels',
+  'unified_audit_log',
   'users',
 ];
 

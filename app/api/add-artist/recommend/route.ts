@@ -318,10 +318,11 @@ export async function POST(request: NextRequest) {
     // Always create scraping job as fallback
     // If background processing succeeds, the job will find images already uploaded
     // If it fails (e.g., serverless timeout), the scraping pipeline will handle it
-    const { error: jobError } = await supabase.from('scraping_jobs').insert({
+    const { error: jobError } = await supabase.from('pipeline_jobs').insert({
       artist_id: newArtist.id,
-      status: imagesSaved ? 'processing' : 'pending',
-      images_scraped: 0,
+      job_type: 'scrape_single',
+      triggered_by: 'recommend-flow',
+      status: imagesSaved ? 'running' : 'pending',
     });
 
     if (jobError && jobError.code !== '23505') { // Ignore duplicate key errors

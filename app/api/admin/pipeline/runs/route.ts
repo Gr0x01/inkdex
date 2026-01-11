@@ -21,8 +21,9 @@ export async function GET(request: Request) {
 
   try {
     let query = adminClient
-      .from('pipeline_runs')
+      .from('pipeline_jobs')
       .select('*')
+      .neq('job_type', 'scrape_single') // Exclude individual artist scraping jobs
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
       completedAt: run.completed_at,
       createdAt: run.created_at,
       errorMessage: run.error_message,
-      resultSummary: run.result_summary,
+      resultSummary: run.result_data, // Column renamed to result_data
     }));
 
     return NextResponse.json({ runs });

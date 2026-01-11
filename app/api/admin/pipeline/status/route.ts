@@ -105,24 +105,28 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .not('embedding', 'is', null),
 
-      // Scraping jobs counts by status (optimized: 5 count queries instead of loading all rows)
+      // Scraping jobs counts by status (individual artist scraping jobs)
       adminClient
-        .from('scraping_jobs')
-        .select('id', { count: 'exact', head: true }),
+        .from('pipeline_jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'scrape_single'),
 
       adminClient
-        .from('scraping_jobs')
+        .from('pipeline_jobs')
         .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'scrape_single')
         .eq('status', 'pending'),
 
       adminClient
-        .from('scraping_jobs')
+        .from('pipeline_jobs')
         .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'scrape_single')
         .eq('status', 'running'),
 
       adminClient
-        .from('scraping_jobs')
+        .from('pipeline_jobs')
         .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'scrape_single')
         .eq('status', 'completed'),
 
       // Failed artists from artist_pipeline_state (not scraping_jobs)
@@ -131,10 +135,11 @@ export async function GET() {
         .select('artist_id', { count: 'exact', head: true })
         .eq('pipeline_status', 'failed'),
 
-      // Recent pipeline runs
+      // Recent pipeline jobs (batch jobs, not individual scrape_single)
       adminClient
-        .from('pipeline_runs')
+        .from('pipeline_jobs')
         .select('*')
+        .neq('job_type', 'scrape_single')
         .order('created_at', { ascending: false })
         .limit(10),
     ]);
@@ -239,7 +244,7 @@ export async function GET() {
 
     if (runningJobIds.length > 0) {
       const { data: freshRunningJobs } = await adminClient
-        .from('pipeline_runs')
+        .from('pipeline_jobs')
         .select('id, job_type, status, last_heartbeat_at, started_at')
         .in('id', runningJobIds)
         .eq('status', 'running');
@@ -271,10 +276,10 @@ export async function GET() {
           `Auto-cancelling stale job ${staleJob.id} (${staleJob.job_type}) - no heartbeat for ${staleMinutes} minutes`
         );
 
-        // Mark pipeline run as failed with optimistic concurrency check
+        // Mark pipeline job as failed with optimistic concurrency check
         // Only update if heartbeat hasn't changed (job didn't recover)
         const { count } = await adminClient
-          .from('pipeline_runs')
+          .from('pipeline_jobs')
           .update({
             status: 'failed',
             completed_at: new Date().toISOString(),
@@ -289,17 +294,8 @@ export async function GET() {
           return;
         }
 
-        // Reset stuck scraping_jobs for THIS run only (not all running jobs)
-        if (staleJob.job_type === 'scraping') {
-          await adminClient
-            .from('scraping_jobs')
-            .update({
-              status: 'pending',
-              started_at: null,
-            })
-            .eq('status', 'running')
-            .eq('pipeline_run_id', staleJob.id); // Only reset jobs from THIS run
-        }
+        // Note: Individual scrape_single jobs are now in the same table (pipeline_jobs)
+        // They have their own status and don't need special reset handling
       });
 
       await Promise.allSettled(cancelPromises);

@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('City Page', () => {
-  // Using Austin as it's a known populated city
-  const cityUrl = '/us/tx/austin'
+  // Using Dallas as it's a known populated city in our seed data
+  const cityUrl = '/us/tx/dallas'
 
   test('loads and displays city name', async ({ page }) => {
     await page.goto(cityUrl)
 
-    // Check page has Austin in title or heading
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Austin/i)
+    // Check page has Dallas in title or heading
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Dallas/i)
   })
 
   test('displays artist grid', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('City Page', () => {
     const artistCards = page.locator('a[href^="/artist/"]')
     const count = await artistCards.count()
 
-    // Austin should have artists
+    // Dallas should have artists
     expect(count).toBeGreaterThan(0)
   })
 
@@ -46,9 +46,9 @@ test.describe('City Page', () => {
     await page.goto(cityUrl)
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
 
-    // Check for style filter links (e.g., /us/tx/austin/traditional)
+    // Check for style filter links (e.g., /us/tx/dallas/traditional)
     // This is an informational check - style links are optional
-    const styleLinks = page.locator('a[href*="/us/tx/austin/"]')
+    const styleLinks = page.locator('a[href*="/us/tx/dallas/"]')
     const count = await styleLinks.count()
 
     // Log the count for debugging, but don't fail if none exist

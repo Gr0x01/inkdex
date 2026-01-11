@@ -511,13 +511,16 @@ export async function POST(request: NextRequest) {
                   console.warn(`[Profile Search] Failed to save images: ${saveResult.error}`)
                 }
 
-                // Create/update scraping job as fallback
-                await supabaseService.from('scraping_jobs').upsert({
+                // Create scraping job as fallback (upsert not supported on pipeline_jobs without unique constraint on artist_id)
+                const { error: jobError } = await supabaseService.from('pipeline_jobs').insert({
                   artist_id: artistId,
-                  status: saveResult.success ? 'processing' : 'pending',
-                  images_scraped: 0,
-                }, { onConflict: 'artist_id' })
-                console.log(`[Profile Search] Upserted scraping job for @${username}`)
+                  job_type: 'scrape_single',
+                  triggered_by: 'profile-search',
+                  status: saveResult.success ? 'running' : 'pending',
+                })
+                if (!jobError || jobError.code === '23505') {
+                  console.log(`[Profile Search] Created scraping job for @${username}`)
+                }
               } catch (saveError) {
                 console.error(`[Profile Search] Error saving images:`, saveError)
               }

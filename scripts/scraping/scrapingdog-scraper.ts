@@ -216,8 +216,10 @@ async function downloadImage(url: string, destPath: string): Promise<boolean> {
  */
 async function createScrapingJob(artistId: string): Promise<string | null> {
   const { data, error } = await supabase
-    .from('scraping_jobs')
+    .from('pipeline_jobs')
     .insert({
+      job_type: 'scrape_single',
+      triggered_by: 'script',
       artist_id: artistId,
       status: 'running',
       started_at: new Date().toISOString(),
@@ -253,12 +255,12 @@ async function updateScrapingJob(
   artistId?: string
 ): Promise<void> {
   await supabase
-    .from('scraping_jobs')
+    .from('pipeline_jobs')
     .update({
       status,
-      images_scraped: imagesScraped,
       error_message: errorMessage || null,
       completed_at: status === 'completed' ? new Date().toISOString() : null,
+      result_data: { images_scraped: imagesScraped },
     })
     .eq('id', jobId);
 
@@ -424,7 +426,7 @@ async function updatePipelineProgress(
   failedItems: number
 ): Promise<void> {
   await supabase
-    .from('pipeline_runs')
+    .from('pipeline_jobs')
     .update({
       total_items: totalItems,
       processed_items: processedItems,

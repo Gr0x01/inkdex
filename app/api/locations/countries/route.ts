@@ -22,8 +22,10 @@ export async function GET(request: NextRequest) {
 
     if (withArtists) {
       // Return countries that have artists (from artist_locations)
-      // The RPC now returns both code and name in a single query
-      const { data, error } = await supabase.rpc('get_countries_with_counts')
+      // Uses consolidated get_location_counts function
+      const { data, error } = await supabase.rpc('get_location_counts', {
+        p_grouping: 'countries',
+      })
 
       if (error) {
         console.error('Error fetching countries with counts:', error)
@@ -33,10 +35,10 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      // Map RPC response to API format
-      const countries = (data || []).map((d: { country_code: string; country_name: string; artist_count: number }) => ({
-        code: d.country_code,
-        name: d.country_name,
+      // Map RPC response to API format (location_code = country_code, display_name = country_name)
+      const countries = (data || []).map((d: { location_code: string; display_name: string; artist_count: number }) => ({
+        code: d.location_code,
+        name: d.display_name,
         artist_count: d.artist_count,
       }))
 

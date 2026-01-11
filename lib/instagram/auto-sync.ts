@@ -12,7 +12,7 @@
  * 4. For tattoo posts: Download, generate embedding, predict styles
  * 5. Insert into portfolio_images with auto_synced=true
  * 6. Insert style tags into image_style_tags (triggers artist_style_profiles update)
- * 7. Log result to instagram_sync_log
+ * 7. Log result to unified_audit_log
  */
 
 import { createClient as createServiceClient } from '@supabase/supabase-js';
@@ -766,7 +766,7 @@ function formatFailureReason(reason: string): string {
 }
 
 /**
- * Log sync result to instagram_sync_log
+ * Log sync result to unified_audit_log
  */
 async function logSyncResult(
   supabase: ReturnType<typeof getServiceClient>,
@@ -781,17 +781,21 @@ async function logSyncResult(
     errorMessage?: string;
   }
 ): Promise<void> {
-  const { error } = await supabase.from('instagram_sync_log').insert({
-    artist_id: artistId,
-    user_id: userId,
-    sync_type: syncType,
-    images_fetched: result.imagesFetched,
-    images_added: result.imagesAdded,
-    images_skipped: result.imagesSkipped,
+  const { error } = await supabase.from('unified_audit_log').insert({
+    event_category: 'sync',
+    event_type: `instagram.${syncType}`,
+    actor_type: syncType === 'auto' ? 'cron' : 'user',
+    actor_id: userId,
+    resource_type: 'artist',
+    resource_id: artistId,
+    resource_secondary_id: userId,
     status: result.status,
     error_message: result.errorMessage || null,
     started_at: new Date().toISOString(),
     completed_at: new Date().toISOString(),
+    items_processed: result.imagesFetched,
+    items_succeeded: result.imagesAdded,
+    items_failed: result.imagesSkipped,
   });
 
   if (error) {

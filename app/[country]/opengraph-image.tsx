@@ -42,7 +42,8 @@ export default async function Image({
 
   // Fetch stats with error handling
   const supabase = createServiceClient()
-  const { data: regions, error } = await supabase.rpc('get_regions_with_counts', {
+  const { data: regions, error } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'regions',
     p_country_code: countryCode,
   })
 
