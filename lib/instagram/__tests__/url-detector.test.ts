@@ -157,6 +157,27 @@ describe('url-detector', () => {
       expect(detectInstagramUrl('https://instagram.com/stories')).toBe(null);
       expect(detectInstagramUrl('https://instagram.com/accounts')).toBe(null);
       expect(detectInstagramUrl('https://instagram.com/direct')).toBe(null);
+      expect(detectInstagramUrl('https://instagram.com/tv')).toBe(null);
+      expect(detectInstagramUrl('https://instagram.com/reels')).toBe(null);
+      expect(detectInstagramUrl('https://instagram.com/tagged')).toBe(null);
+    });
+
+    it('handles profile URLs with trailing slash', () => {
+      const result = detectInstagramUrl('https://instagram.com/artist_name/');
+      expect(result?.type).toBe('profile');
+      expect(result?.id).toBe('artist_name');
+    });
+
+    it('preserves case in usernames from URLs', () => {
+      const result = detectInstagramUrl('https://instagram.com/ArtistName');
+      expect(result?.type).toBe('profile');
+      expect(result?.id).toBe('ArtistName');
+    });
+
+    it('rejects path traversal attempts', () => {
+      expect(detectInstagramUrl('https://instagram.com/../etc/passwd')).toBe(null);
+      expect(detectInstagramUrl('https://instagram.com/p/../../secrets')).toBe(null);
+      expect(detectInstagramUrl('https://instagram.com/..%2f..%2fetc')).toBe(null);
     });
 
     it('returns null for non-Instagram content', () => {

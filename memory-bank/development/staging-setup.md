@@ -40,6 +40,10 @@ Add these variables with **Preview** environment selected (not Production):
 - `REDIS_URL`
 - All other env vars
 
+> **Warning:** Staging shares the production database. Any data modifications
+> (create/update/delete) will affect real users. Test carefully and avoid
+> destructive operations. Scraping API calls also count against production quota.
+
 ### Step 2: Get Your Preview URL
 
 After pushing to `staging`, Vercel will deploy and give you a preview URL like:
