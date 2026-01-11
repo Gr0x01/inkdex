@@ -112,13 +112,18 @@ async function handleDbPath(
   existingArtist: Awaited<ReturnType<typeof getArtistByInstagramHandle>>,
   username: string
 ): Promise<SearchInput> {
+  // Guard: ensure artist data is complete (caller already validated, but TypeScript needs this)
+  if (!existingArtist || !existingArtist.portfolio_images) {
+    throw new InstagramProfileValidationError('Artist data is incomplete')
+  }
+
   console.log(
-    `[Profile Search] Found in DB with ${existingArtist!.portfolio_images!.length} images - using existing embeddings`
+    `[Profile Search] Found in DB with ${existingArtist.portfolio_images.length} images - using existing embeddings`
   )
 
   // Parse embeddings from database
   const embeddings = parseDbEmbeddings(
-    existingArtist!.portfolio_images as Array<{ embedding: string | number[] }>
+    existingArtist.portfolio_images as Array<{ embedding: string | number[] }>
   )
 
   // Aggregate embeddings
@@ -129,7 +134,7 @@ async function handleDbPath(
   const { data: colorStats } = await supabase
     .from('portfolio_images')
     .select('is_color')
-    .eq('artist_id', existingArtist!.id)
+    .eq('artist_id', existingArtist.id)
     .eq('status', 'active')
     .not('is_color', 'is', null)
 
@@ -160,7 +165,7 @@ async function handleDbPath(
       artist_locations!left (city, is_primary)
     `
     )
-    .eq('id', existingArtist!.id)
+    .eq('id', existingArtist.id)
     .single()
 
   // Get primary city from artist_locations
@@ -177,14 +182,14 @@ async function handleDbPath(
 
   // Build searched artist data for immediate display
   const searchedArtist: SearchedArtistData = {
-    id: existingArtist!.id,
+    id: existingArtist.id,
     instagram_handle: username,
-    name: existingArtist!.name,
+    name: existingArtist.name,
     profile_image_url: artistDetails?.profile_image_url || null,
     bio: artistDetails?.bio || null,
     follower_count: artistDetails?.follower_count || null,
     city: artistCity,
-    images: (existingArtist!.portfolio_images as Array<{ storage_thumb_640?: string | null }>)
+    images: (existingArtist.portfolio_images as Array<{ storage_thumb_640?: string | null }>)
       .slice(0, 3)
       .map((img) => img.storage_thumb_640)
       .filter(Boolean) as string[],

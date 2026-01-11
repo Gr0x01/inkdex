@@ -58,4 +58,17 @@ describe('parseDbEmbeddings', () => {
     expect(result[0].length).toBe(768)
     expect(result[0][0]).toBe(0.001)
   })
+
+  it('throws on malformed JSON string', () => {
+    const images = [{ embedding: 'not-valid-json' }]
+    expect(() => parseDbEmbeddings(images)).toThrow('Failed to parse embedding at index 0')
+  })
+
+  it('throws with correct index on malformed JSON', () => {
+    const images = [
+      { embedding: [0.1, 0.2] },
+      { embedding: 'invalid' },
+    ]
+    expect(() => parseDbEmbeddings(images)).toThrow('index 1')
+  })
 })
