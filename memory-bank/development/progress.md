@@ -72,6 +72,14 @@ All 15 implementation phases complete:
 ## Development Timeline
 
 ### Week 2 (Jan 11, 2026)
+- **Testing Infrastructure** ✅
+  - Created `staging` branch for Vercel preview with Stripe test mode
+  - GitHub Actions CI workflow (lint, type-check, test, build)
+  - Vitest configured with 47 tests passing
+  - Instagram URL detector tests (31 tests) - validation, edge cases, security
+  - Stripe webhook handler tests (16 tests) - all 4 event types + error handling
+  - Key files: `.github/workflows/ci.yml`, `vitest.config.ts`, `vitest.setup.ts`
+  - Documentation: `memory-bank/development/staging-setup.md`
 - **ScrapingDog Batch Scraper** ✅
   - Created `scrapingdog-scraper.ts` with 50 concurrent requests (Standard plan)
   - Replaced Apify as primary batch scraper (was 30 concurrent)

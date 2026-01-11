@@ -360,9 +360,8 @@ supabase/functions/
 npm run scrape-instagram           # ScrapingDog parallel scraping
 npm run process-images             # Upload to Supabase Storage
 
-# Embeddings (choose one):
-python3 scripts/embeddings/local_batch_embeddings.py  # A2000 only (5 hours/20k)
-python3 scripts/embeddings/dual_gpu_embeddings.py     # Dual-GPU (1.5 hours/20k, local only)
+# Embeddings (dual-GPU: 4080 60% + A2000 40%)
+python3 scripts/embeddings/dual_gpu_embeddings.py     # 1.5 hours/20k images
 
 npx tsx scripts/embeddings/create-vector-index.ts     # Rebuild vector index
 ```
@@ -381,7 +380,7 @@ npx tsx scripts/embeddings/create-vector-index.ts     # Rebuild vector index
 1. Add to `lib/constants/cities.ts`
 2. `npm run discover-artists -- --city "City" --state "XX"`
 3. `npm run scrape-instagram -- --city "city-slug"`
-4. `python scripts/embeddings/local_batch_embeddings.py`
+4. `python scripts/embeddings/dual_gpu_embeddings.py`
 5. Update vector index via `npx tsx scripts/embeddings/create-vector-index.ts`
 
 ## Admin Access
@@ -778,8 +777,31 @@ npm run db:push     # Applied fixes (partially, then via MCP)
 
 ---
 
+## Testing Infrastructure (Jan 11, 2026) ✅
+
+**Goal:** Automated testing to catch bugs before production.
+
+**Status:** Complete - CI/CD pipeline running on GitHub Actions.
+
+**What's in place:**
+- `staging` branch with Vercel preview + Stripe test mode
+- GitHub Actions CI: lint → type-check → test → build
+- Vitest with 47 tests (URL detector + Stripe webhooks)
+- Test commands: `npm run test`, `npm run test:run`, `npm run test:coverage`
+
+**Key Files:**
+- `.github/workflows/ci.yml` - CI workflow
+- `vitest.config.ts` / `vitest.setup.ts` - Test configuration
+- `lib/instagram/__tests__/url-detector.test.ts` - 31 URL validation tests
+- `app/api/stripe/webhook/__tests__/route.test.ts` - 16 webhook tests
+- `memory-bank/development/staging-setup.md` - Staging env setup guide
+
+**Next (optional):** Playwright E2E tests for critical user flows.
+
+---
+
 ## Reference Docs
 
 - **Detailed specs:** `/memory-bank/projects/user-artist-account-implementation.md`
 - **Tech stack:** `/memory-bank/architecture/techStack.md`
-- **Testing guide:** `/memory-bank/development/testing-guide.md`
+- **Staging setup:** `/memory-bank/development/staging-setup.md`
