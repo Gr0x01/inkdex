@@ -101,6 +101,36 @@ The `staging` branch deploys to Vercel preview URL with Stripe **test mode** key
 - Add `data-testid` attributes for stable selectors
 - Keep tests isolated - each test starts fresh
 
+### Test Coverage Status
+
+**What's Tested:**
+| Area | Type | Tests | Coverage |
+|------|------|-------|----------|
+| Instagram URL detection | Unit | 31 | Full - all URL formats |
+| Stripe webhook handler | Unit | 16 | Full - all event types |
+| Homepage | E2E | 4 | Load, search, navigation |
+| City page | E2E | 5 | Display, grid, links, 404 |
+| Artist page | E2E | 5 | Profile, portfolio, location, 404 |
+| Search flow | E2E | 3 | Text search, validation, IG detection |
+
+**Known Gaps (not yet tested):**
+
+| Area | Priority | Reason Not Tested |
+|------|----------|-------------------|
+| `/api/search` route | High | Complex - needs embedding mocks |
+| Add Artist form | Medium | Form submission + validation |
+| Style pages | Low | Similar to city page |
+| Login/Auth flow | Medium | Requires test user setup |
+| Artist claim flow | Low | Complex - Instagram OAuth |
+| Dashboard pages | Medium | Requires authenticated state |
+| Stripe checkout | Low | Requires Stripe test mode setup |
+| Onboarding flow | Low | Multi-step, requires auth |
+
+**Recommended Next Tests (if adding more):**
+1. Add Artist form E2E - catches form validation bugs
+2. `/api/search` unit test - catches search API regressions
+3. Style page E2E - simple, extends city page coverage
+
 ---
 
 ## Migration Workflow (CRITICAL)
