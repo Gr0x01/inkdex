@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11
+Last-Updated: 2026-01-12
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -17,6 +17,50 @@ Status: Launched - Production
 **Display Styles:** 11 styles (added japanese + anime after ML accuracy improved)
 
 **Color Search:** 92,033 images analyzed, 10,704 artists with color profiles
+
+---
+
+## Database Schema Consolidation (Jan 12, 2026) ✅
+
+**Goal:** Reduce schema complexity and eliminate bloat from 6 months of incremental development.
+
+**Results:**
+
+| Category | Before | After | Change |
+|----------|--------|-------|--------|
+| Tables | 38 | 30 | -8 |
+| SQL Functions | ~65 | ~55 | -10 |
+
+**Tables Consolidated:**
+- `admin_audit_log`, `artist_audit_log`, `instagram_sync_log`, `airtable_sync_log`, `indexnow_submissions` → `unified_audit_log`
+- `pipeline_runs`, `scraping_jobs` → `pipeline_jobs`
+
+**Tables Dropped:**
+- `artists_slug_backup` (one-time backup from Jan 2025)
+- `mining_candidates`, `follower_mining_runs`, `hashtag_mining_runs` (unused)
+
+**Functions Consolidated:**
+- 6 increment functions → `increment_analytics(p_event_type, p_artist_id, p_image_id)`
+- 5 location functions → `get_location_counts(p_grouping, p_country_code, p_region, p_state_code, p_min_count)`
+
+**Bug Fix:** RPC parameter mismatch (`query_techniques` → `query_styles`) was breaking style-weighted search.
+
+**Migrations Applied:**
+- `20260112001000_create_unified_audit_log.sql`
+- `20260112002000_create_pipeline_jobs.sql`
+- `20260112003000_consolidate_increment_functions.sql`
+- `20260112004000_consolidate_location_functions.sql`
+- `20260112005000_add_style_taxonomy.sql`
+- `20260112006000_update_create_pipeline_run.sql`
+
+**Code Updated:**
+- `lib/supabase/queries.ts` - Uses consolidated functions
+- `lib/admin/audit-log.ts` - Uses `unified_audit_log`
+- `app/api/analytics/track/route.ts` - Uses `increment_analytics()`
+- All location query callers updated
+- Removed unused: `searchArtistsByEmbedding`, `isArtistFeatured`, legacy CSS
+
+**Verification:** All 25 E2E tests pass on production.
 
 ---
 
