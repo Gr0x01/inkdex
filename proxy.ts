@@ -216,10 +216,11 @@ export async function proxy(request: NextRequest) {
   const country = isValidCountryCode(rawCountry) ? rawCountry.toUpperCase() : 'US'
 
   // Maintenance mode - check Redis via internal API
-  // Skip for admin routes, the maintenance page itself, and the status API
+  // Skip for admin routes (pages and API), the maintenance page itself, and health checks
   const isMaintenanceExempt =
     pathname === '/maintenance' ||
     pathname.startsWith('/admin') ||
+    pathname.startsWith('/api/admin') ||
     pathname.startsWith('/api/maintenance') ||
     pathname === '/api/health'
 
