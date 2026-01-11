@@ -20,18 +20,22 @@ const ENV_WHITELIST = [
   'NODE_ENV',
   'PATH',
   'HOME',
+  // Supabase
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'DATABASE_URL',
-  'LOCAL_CLIP_URL',
-  'CLIP_API_KEY',
+  // Instagram scraping
   'SCRAPINGDOG_API_KEY',
   'APIFY_API_TOKEN',
   'APIFY_API_TOKEN_FREE',
-  'OPENAI_API_KEY',
+  // Embeddings
+  'LOCAL_CLIP_URL',
+  'CLIP_API_KEY',
   'WINDOWS_GPU_URL',
   'WINDOWS_GPU_API_KEY',
+  // Classification
+  'OPENAI_API_KEY',
 ];
 
 function getFilteredEnv(): Record<string, string | undefined> {

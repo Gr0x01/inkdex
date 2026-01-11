@@ -14,7 +14,8 @@
 
 import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import postgres from 'postgres';
 import { mkdir, writeFile, rm } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -32,10 +33,16 @@ const MAX_POSTS = 12; // ScrapingDog returns up to 12 posts per request
 // Environment validation
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const DATABASE_URL = process.env.DATABASE_URL;
 const SCRAPINGDOG_API_KEY = process.env.SCRAPINGDOG_API_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+if (!DATABASE_URL) {
+  console.error('Missing DATABASE_URL');
   process.exit(1);
 }
 
@@ -47,6 +54,9 @@ if (!SCRAPINGDOG_API_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+
+// Direct PostgreSQL connection for complex queries
+const sql = postgres(DATABASE_URL);
 
 // Graceful shutdown handling
 let shutdownRequested = false;
@@ -74,56 +84,34 @@ interface ScrapeResult {
 
 /**
  * Get artists that need scraping (no portfolio images yet)
+ * Uses raw SQL to properly filter artists without images
  */
 async function getPendingArtists(limit?: number): Promise<PendingArtist[]> {
-  let query = supabase
-    .from('artists')
-    .select(`
-      id,
-      instagram_handle,
-      name,
-      artist_pipeline_state!left(scraping_blacklisted)
-    `)
-    .is('deleted_at', null)
-    .not('instagram_handle', 'is', null)
-    .neq('instagram_private', true);
+  try {
+    const rows = await sql`
+      SELECT a.id, a.instagram_handle, a.name
+      FROM artists a
+      LEFT JOIN artist_pipeline_state ps ON ps.artist_id = a.id
+      WHERE a.instagram_private != TRUE
+        AND (ps.scraping_blacklisted IS NULL OR ps.scraping_blacklisted = FALSE)
+        AND a.deleted_at IS NULL
+        AND a.instagram_handle IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM portfolio_images pi WHERE pi.artist_id = a.id
+        )
+      ORDER BY a.created_at
+      ${limit ? sql`LIMIT ${limit}` : sql``}
+    `;
 
-  if (limit) {
-    query = query.limit(limit);
-  }
-
-  const { data: artists, error } = await query;
-
-  if (error) {
+    return rows.map((a) => ({
+      id: a.id as string,
+      instagram_handle: a.instagram_handle as string,
+      name: (a.name || a.instagram_handle) as string,
+    }));
+  } catch (error) {
     console.error('Failed to fetch pending artists:', error);
     return [];
   }
-
-  // Filter out blacklisted and artists with images
-  const artistIds = artists?.map((a) => a.id) || [];
-
-  // Get artists that already have images
-  const { data: artistsWithImages } = await supabase
-    .from('portfolio_images')
-    .select('artist_id')
-    .in('artist_id', artistIds);
-
-  const hasImagesSet = new Set(artistsWithImages?.map((a) => a.artist_id) || []);
-
-  return (artists || [])
-    .filter((a) => {
-      // Skip if blacklisted
-      const pipelineState = a.artist_pipeline_state as { scraping_blacklisted?: boolean } | null;
-      if (pipelineState?.scraping_blacklisted) return false;
-      // Skip if already has images
-      if (hasImagesSet.has(a.id)) return false;
-      return true;
-    })
-    .map((a) => ({
-      id: a.id,
-      instagram_handle: a.instagram_handle!,
-      name: a.name || a.instagram_handle!,
-    }));
 }
 
 /**
