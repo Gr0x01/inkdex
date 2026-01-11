@@ -50,6 +50,48 @@ npm run scrape-instagram:apify        # Legacy Apify scraper (30 concurrent)
 
 ---
 
+## Style Tag Retrigger Fix (Jan 11, 2026) ✅
+
+**Problem 1: Image deletion didn't retrigger style recomputation**
+
+Migration `20260110150600` removed the `recompute_styles_on_image_delete` trigger, assuming statement-level triggers on `image_style_tags` would handle it. This was architecturally flawed - when an image is deleted, the cascade delete on tags happens *after* the image is gone, so the JOIN to find the artist returns empty.
+
+**Fix:** Restored BEFORE DELETE trigger on `portfolio_images` in migration `20260111220000_restore_image_delete_trigger.sql`.
+
+**Problem 2: Auto-sync bypassed style tagging**
+
+`lib/instagram/auto-sync.ts` generated embeddings but never called `predictStyles()` or wrote to `image_style_tags`. Pro artists' auto-synced images had no style tags.
+
+**Fix:** Added style prediction to auto-sync flow - now calls `predictStyles()` after embedding generation and inserts to `image_style_tags`.
+
+**Files Changed:**
+- `supabase/migrations/20260111220000_restore_image_delete_trigger.sql` - New: Restore trigger
+- `lib/instagram/auto-sync.ts` - Add style prediction + tag insertion
+- `scripts/maintenance/retag-missing-styles.ts` - Fix infinite loop on no-style images
+- `scripts/maintenance/recompute-all-artist-profiles.ts` - New: Recompute ALL profiles
+
+**Additional Issue Found:** The `trg_update_artist_styles_on_tag_insert` trigger wasn't reliably aggregating image_style_tags into artist_style_profiles. 11,578 of 12,120 artists were missing profiles. Ran full recompute to fix.
+
+**Verification:**
+```bash
+# Check trigger exists
+npx supabase migration list
+
+# Check orphaned images (should be 0 or very low)
+npx tsx scripts/maintenance/retag-missing-styles.ts --dry-run
+
+# Count artists with profiles (should be ~12k)
+npx tsx scripts/debug/check-artist-tags.ts --count-profiles
+
+# Check specific artist
+npx tsx scripts/debug/check-artist-tags.ts <artist-id>
+
+# Recompute all profiles (if needed)
+npx tsx scripts/maintenance/recompute-all-artist-profiles.ts
+```
+
+---
+
 ## Local Supabase Setup (Jan 9, 2026) ✅
 
 **Purpose:** Safe testing environment for style tagging system iteration (threshold tuning, retraining classifier, new styles) without affecting production.

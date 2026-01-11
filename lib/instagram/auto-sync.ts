@@ -6,17 +6,19 @@
  * Used by both cron job (daily auto-sync) and manual sync triggers.
  *
  * Process:
- * 1. Fetch latest 20 posts from Instagram (via Apify)
+ * 1. Fetch latest 20 posts from Instagram (via ScrapingDog/Apify)
  * 2. Compare with existing portfolio (deduplication by instagram_media_id)
  * 3. For new posts: Classify with GPT-5-mini → filter non-tattoos
- * 4. For tattoo posts: Download, generate embedding, upload to storage
+ * 4. For tattoo posts: Download, generate embedding, predict styles
  * 5. Insert into portfolio_images with auto_synced=true
- * 6. Log result to instagram_sync_log
+ * 6. Insert style tags into image_style_tags (triggers artist_style_profiles update)
+ * 7. Log result to instagram_sync_log
  */
 
 import { createClient as createServiceClient } from '@supabase/supabase-js';
 import { fetchInstagramProfileImages } from './profile-fetcher';
 import { generateImageEmbedding } from '@/lib/embeddings/hybrid-client';
+import { predictStyles, StylePrediction } from '@/lib/styles/predictor';
 import OpenAI from 'openai';
 import { randomUUID, createHash } from 'crypto';
 import { sendSyncFailedEmail } from '@/lib/email';
@@ -39,6 +41,7 @@ interface ProcessedImage {
   url: string;
   instagramMediaId: string;
   embedding: number[] | null;
+  stylePredictions: StylePrediction[] | null;
   classified: boolean;
 }
 
@@ -312,6 +315,33 @@ export async function syncArtistPortfolio(
         await handleSyncFailure(supabase, artistId, 'insert_failed');
         return createFailedResult(artistId, startTime, `Insert failed: ${insertError.message}`);
       }
+
+      // 6b. Insert style tags for images with predictions
+      const styleTagRecords: { image_id: string; style_name: string; confidence: number }[] = [];
+      for (const img of successfulImages) {
+        if (img.stylePredictions && img.stylePredictions.length > 0) {
+          for (const pred of img.stylePredictions) {
+            styleTagRecords.push({
+              image_id: img.id,
+              style_name: pred.style,
+              confidence: pred.confidence,
+            });
+          }
+        }
+      }
+
+      if (styleTagRecords.length > 0) {
+        const { error: tagError } = await supabase
+          .from('image_style_tags')
+          .upsert(styleTagRecords, { onConflict: 'image_id,style_name' });
+
+        if (tagError) {
+          // Log but don't fail the sync - images are saved, tags can be backfilled
+          console.error('[AutoSync] Style tag insert failed:', tagError);
+        } else {
+          console.log(`[AutoSync] Inserted ${styleTagRecords.length} style tags`);
+        }
+      }
     }
 
     // 7. Update artist and log success
@@ -478,7 +508,7 @@ Only answer 'yes' or 'no'.`,
 }
 
 /**
- * Process a single image: download, generate embedding
+ * Process a single image: download, generate embedding, predict styles
  */
 async function processSingleImage(
   img: { url: string; mediaId: string; classified: boolean }
@@ -502,6 +532,7 @@ async function processSingleImage(
         url: img.url,
         instagramMediaId: img.mediaId,
         embedding: null,
+        stylePredictions: null,
         classified: img.classified,
       };
     }
@@ -513,6 +544,7 @@ async function processSingleImage(
         url: img.url,
         instagramMediaId: img.mediaId,
         embedding: null,
+        stylePredictions: null,
         classified: img.classified,
       };
     }
@@ -526,11 +558,15 @@ async function processSingleImage(
     // Generate embedding
     const embedding = await generateImageEmbedding(file);
 
+    // Predict styles from embedding (if embedding succeeded)
+    const stylePredictions = embedding ? predictStyles(embedding) : null;
+
     return {
       id: randomUUID(),
       url: img.url,
       instagramMediaId: img.mediaId,
       embedding,
+      stylePredictions,
       classified: img.classified,
     };
   } catch (error) {
@@ -540,6 +576,7 @@ async function processSingleImage(
       url: img.url,
       instagramMediaId: img.mediaId,
       embedding: null,
+      stylePredictions: null,
       classified: img.classified,
     };
   }

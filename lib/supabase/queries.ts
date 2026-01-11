@@ -332,7 +332,8 @@ export const getArtistBySlug = cache(async (slug: string) => {
       ),
       style_profiles:artist_style_profiles (
         style_name,
-        percentage
+        percentage,
+        image_count
       )
     `)
     .eq('slug', slug)

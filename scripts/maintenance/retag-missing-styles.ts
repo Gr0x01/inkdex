@@ -158,6 +158,8 @@ async function main() {
         } else {
           roundNoStyles++;
           totalNoStyles++;
+          // Mark as processed even with no styles to prevent infinite loop
+          taggedImageIds.add(img.id);
         }
 
         roundProcessed++;
