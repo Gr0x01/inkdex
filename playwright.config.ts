@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 3, // Limit workers to avoid overwhelming dev server
+  workers: 1, // Single worker to avoid overwhelming dev server
   reporter: 'html',
   timeout: 60000, // 60s per test (dev server can be slow)
   use: {
