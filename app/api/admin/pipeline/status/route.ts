@@ -3,8 +3,11 @@ import { NextResponse } from 'next/server';
 import { isAdminEmail } from '@/lib/admin/whitelist';
 import { getCached, invalidateCache } from '@/lib/redis/cache';
 
-// Stale job threshold: 5 minutes without heartbeat
+// Stale job threshold: 5 minutes without heartbeat (for running jobs)
 const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+
+// Stale pending threshold: 30 minutes without starting (for pending jobs)
+const STALE_PENDING_THRESHOLD_MS = 30 * 60 * 1000;
 
 export interface PipelineStatus {
   artists: {
@@ -237,7 +240,10 @@ export async function GET() {
     );
 
     // Auto-cancel stale jobs with FRESH data (not cached)
-    // Query fresh heartbeat data to avoid race condition with cached timestamps
+    const now = Date.now();
+    let jobsCancelled = 0;
+
+    // 1. Cancel stale RUNNING jobs (no heartbeat for 5 minutes)
     const runningJobIds = response.recentRuns
       .filter((run) => run.status === 'running')
       .map((run) => run.id);
@@ -249,8 +255,7 @@ export async function GET() {
         .in('id', runningJobIds)
         .eq('status', 'running');
 
-      const now = Date.now();
-      const staleJobs = (freshRunningJobs || []).filter((job) => {
+      const staleRunningJobs = (freshRunningJobs || []).filter((job) => {
         const heartbeatAge = job.last_heartbeat_at
           ? now - new Date(job.last_heartbeat_at).getTime()
           : null;
@@ -263,8 +268,7 @@ export async function GET() {
         );
       });
 
-      // Process stale jobs in parallel
-      const cancelPromises = staleJobs.map(async (staleJob) => {
+      for (const staleJob of staleRunningJobs) {
         const staleDuration = staleJob.last_heartbeat_at
           ? now - new Date(staleJob.last_heartbeat_at).getTime()
           : staleJob.started_at
@@ -273,11 +277,9 @@ export async function GET() {
         const staleMinutes = Math.floor(staleDuration / 60000);
 
         console.log(
-          `Auto-cancelling stale job ${staleJob.id} (${staleJob.job_type}) - no heartbeat for ${staleMinutes} minutes`
+          `Auto-cancelling stale running job ${staleJob.id} (${staleJob.job_type}) - no heartbeat for ${staleMinutes} minutes`
         );
 
-        // Mark pipeline job as failed with optimistic concurrency check
-        // Only update if heartbeat hasn't changed (job didn't recover)
         const { count } = await adminClient
           .from('pipeline_jobs')
           .update({
@@ -287,25 +289,60 @@ export async function GET() {
           })
           .eq('id', staleJob.id)
           .eq('status', 'running')
-          .eq('last_heartbeat_at', staleJob.last_heartbeat_at); // Optimistic concurrency
+          .eq('last_heartbeat_at', staleJob.last_heartbeat_at);
 
-        if (count === 0) {
-          console.log(`Job ${staleJob.id} recovered or already cancelled, skipping`);
-          return;
-        }
+        if ((count || 0) > 0) jobsCancelled++;
+      }
+    }
 
-        // Note: Individual scrape_single jobs are now in the same table (pipeline_jobs)
-        // They have their own status and don't need special reset handling
+    // 2. Cancel stale PENDING jobs (created over 30 minutes ago but never started)
+    const pendingJobIds = response.recentRuns
+      .filter((run) => run.status === 'pending')
+      .map((run) => run.id);
+
+    if (pendingJobIds.length > 0) {
+      const { data: freshPendingJobs } = await adminClient
+        .from('pipeline_jobs')
+        .select('id, job_type, status, created_at')
+        .in('id', pendingJobIds)
+        .eq('status', 'pending');
+
+      const stalePendingJobs = (freshPendingJobs || []).filter((job) => {
+        const createdAge = job.created_at
+          ? now - new Date(job.created_at).getTime()
+          : 0;
+        return createdAge > STALE_PENDING_THRESHOLD_MS;
       });
 
-      await Promise.allSettled(cancelPromises);
+      for (const staleJob of stalePendingJobs) {
+        const createdAge = staleJob.created_at
+          ? now - new Date(staleJob.created_at).getTime()
+          : 0;
+        const staleMinutes = Math.floor(createdAge / 60000);
 
-      // Invalidate cache if any jobs were cancelled so next request shows fresh data
-      if (staleJobs.length > 0) {
-        await invalidateCache('admin:dashboard').catch((err) => {
-          console.error('Failed to invalidate cache after stale job cancellation:', err);
-        });
+        console.log(
+          `Auto-cancelling stale pending job ${staleJob.id} (${staleJob.job_type}) - pending for ${staleMinutes} minutes without starting`
+        );
+
+        const { count } = await adminClient
+          .from('pipeline_jobs')
+          .update({
+            status: 'cancelled',
+            completed_at: new Date().toISOString(),
+            error_message: `Job never started: pending for ${staleMinutes} minutes. Auto-cancelled.`,
+          })
+          .eq('id', staleJob.id)
+          .eq('status', 'pending');
+
+        if ((count || 0) > 0) jobsCancelled++;
       }
+    }
+
+    // Invalidate cache if any jobs were cancelled
+    if (jobsCancelled > 0) {
+      await invalidateCache('admin:dashboard').catch((err) => {
+        console.error('Failed to invalidate cache after stale job cancellation:', err);
+      });
     }
 
     return NextResponse.json(response);

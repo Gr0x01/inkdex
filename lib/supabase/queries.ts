@@ -71,7 +71,7 @@ interface PortfolioImageRow {
   status?: string
 }
 
-interface StateCityRow {
+interface _StateCityRow {
   city: string
   artist_count: number
 }
