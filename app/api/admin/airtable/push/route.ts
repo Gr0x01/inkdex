@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
           follower_count,
           bio,
           slug,
+          is_featured,
           portfolio_images (
             storage_original_path,
             storage_thumb_640
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
           ...artist,
           city: locationData?.city || null,
           state: locationData?.region || null,
+          is_featured: artist.is_featured || false,
           portfolio_images: artist.portfolio_images || [],
         })
       }
@@ -115,6 +117,7 @@ export async function POST(request: NextRequest) {
           follower_count,
           bio,
           slug,
+          is_featured,
           portfolio_images!inner (
             storage_original_path,
             storage_thumb_640,
@@ -172,6 +175,7 @@ export async function POST(request: NextRequest) {
           ...artist,
           city: locationData?.city || null,
           state: locationData?.region || null,
+          is_featured: artist.is_featured || false,
           portfolio_images: artist.portfolio_images || [],
         })
       }

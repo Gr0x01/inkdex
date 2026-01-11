@@ -66,6 +66,7 @@ export interface ArtistForAirtable {
   follower_count: number | null
   bio: string | null
   slug: string
+  is_featured: boolean
   portfolio_images: Array<{
     storage_original_path: string | null
     storage_thumb_640: string | null
@@ -285,6 +286,7 @@ export function formatArtistForAirtable(
     image_3: images[2],
     image_4: images[3],
     status: 'pending',
+    featured: artist.is_featured, // Sync featured status from DB
     feature_days: 7, // Default featured duration
   }
 }
@@ -323,7 +325,7 @@ export async function batchUpsertRecords(
       try {
         const existing = await findRecordByHandle(record.instagram_handle)
         if (existing) {
-          // Update existing record (don't overwrite user-editable fields)
+          // Update existing record (include featured status from DB)
           toUpdate.push({
             id: existing.id,
             fields: {
@@ -337,6 +339,7 @@ export async function batchUpsertRecords(
               image_2: record.image_2,
               image_3: record.image_3,
               image_4: record.image_4,
+              featured: record.featured, // Sync featured status from DB
             },
           })
         } else {
