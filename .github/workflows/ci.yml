@@ -58,8 +58,9 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          # Minimal env vars for build (no secrets needed)
+          # Minimal env vars for build (placeholders for required vars)
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
           NEXT_PUBLIC_APP_URL: https://inkdex.io
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_placeholder
+          STRIPE_SECRET_KEY: sk_placeholder
