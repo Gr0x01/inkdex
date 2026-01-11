@@ -712,7 +712,7 @@ def main():
         print(f"✅ Successful artists: {total_successful}")
         print(f"❌ Failed artists: {total_failed}")
         print(f"\n📋 Next steps:")
-        print(f"   1. Generate embeddings: python3 scripts/embeddings/local_batch_embeddings.py")
+        print(f"   1. Generate embeddings: python3 scripts/embeddings/dual_gpu_embeddings.py")
         print(f"   2. Rebuild vector index: npx tsx scripts/embeddings/create-vector-index.ts")
 
     except KeyboardInterrupt:

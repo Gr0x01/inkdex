@@ -261,13 +261,11 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
             print(f"🚀 Starting embedding job: {' '.join(cmd)}")
 
             try:
+                # Stream output in real-time (not captured)
                 result = subprocess.run(
                     cmd,
                     env=env,
-                    capture_output=True,
-                    text=True,
-                    encoding='utf-8',  # Explicitly use UTF-8
-                    errors='replace',  # Replace decode errors instead of crashing
+                    capture_output=False,  # Show output in real-time
                     timeout=7200  # 2 hour timeout
                 )
 
@@ -278,8 +276,8 @@ class EmbeddingRequestHandler(BaseHTTPRequestHandler):
                         print(f"✅ Embedding job completed successfully")
                     else:
                         current_job['status'] = 'error'
-                        current_job['error'] = result.stderr[:500] if result.stderr else 'Unknown error'
-                        print(f"❌ Embedding job failed: {result.stderr}")
+                        current_job['error'] = f'Exit code {result.returncode}'
+                        print(f"❌ Embedding job failed with exit code {result.returncode}")
 
             except subprocess.TimeoutExpired:
                 with job_lock:

@@ -1,23 +1,17 @@
 #!/bin/bash
 # Generate embeddings for recently uploaded images (incremental)
-# Called by apify-scraper.py during incremental pipeline
+# Uses dual-GPU setup: RTX 4080 (60%) + A2000 (40%)
 #
 # Usage:
-#   ./scripts/scraping/generate-embeddings-batch.sh       # Process 5 batches (default)
-#   ./scripts/scraping/generate-embeddings-batch.sh 10    # Process 10 batches
+#   ./scripts/scraping/generate-embeddings-batch.sh       # Process all pending
+#   ./scripts/scraping/generate-embeddings-batch.sh 10    # Limit to 10 batches
 
 set -e
 
-MAX_BATCHES=${1:-5}  # Default to 5 batches (500 images)
-
-echo "🔮 Generating embeddings for recently uploaded images..."
-echo "   Max batches: ${MAX_BATCHES} (100 images per batch)"
+echo "🔮 Generating embeddings (dual-GPU: 4080 + A2000)..."
 echo ""
 
-python3 scripts/embeddings/local_batch_embeddings.py \
-  --parallel 4 \
-  --batch-size 100 \
-  --max-batches ${MAX_BATCHES}
+python3 scripts/embeddings/dual_gpu_embeddings.py
 
 echo ""
 echo "✅ Embedding generation complete"
