@@ -1,766 +1,140 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
-import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
-import { generateImageEmbedding, generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
-import { detectInstagramUrl, extractPostId } from '@/lib/instagram/url-detector'
-import { classifyQueryStyles, StyleMatch } from '@/lib/search/style-classifier'
-import { analyzeImageColor } from '@/lib/search/color-analyzer'
-import { fetchInstagramPostImage, downloadImageAsBuffer, InstagramError, ERROR_MESSAGES } from '@/lib/instagram/post-fetcher'
-import { fetchInstagramProfileImages, PROFILE_ERROR_MESSAGES } from '@/lib/instagram/profile-fetcher'
-import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
-import { getArtistByInstagramHandle } from '@/lib/supabase/queries'
-import { checkInstagramSearchRateLimit, getClientIp } from '@/lib/rate-limiter'
-import { saveImagesToTempFromBuffers } from '@/lib/instagram/image-saver'
-import { processArtistImages } from '@/lib/processing/process-artist'
-import type { SearchedArtistData } from '@/types/search'
-
-// Zod schema for validating searched artist data before storage
-const searchedArtistSchema = z.object({
-  id: z.string().uuid().nullable(),
-  instagram_handle: z.string().min(1).max(30),
-  name: z.string().min(1).max(100),
-  profile_image_url: z.string().nullable().or(z.literal(null)),  // Can be URL or storage path
-  bio: z.string().max(2000).nullable().or(z.literal(null)),
-  follower_count: z.number().int().min(0).nullable().or(z.literal(null)),
-  city: z.string().max(100).nullable().or(z.literal(null)),
-  images: z.array(z.string().min(1)).max(10),  // Can be URLs or storage paths
-  is_pro: z.boolean().optional(),
-  is_featured: z.boolean().optional(),
-  is_verified: z.boolean().optional(),
-})
-
-// Validation schemas
-const textSearchSchema = z.object({
-  type: z.literal('text'),
-  text: z.string().min(3).max(200),
-  city: z.string().optional(),
-})
-
-const instagramPostSchema = z.object({
-  type: z.literal('instagram_post'),
-  instagram_url: z.string().min(1),
-  city: z.string().optional(),
-})
-
-const instagramProfileSchema = z.object({
-  type: z.literal('instagram_profile'),
-  instagram_url: z.string().min(1),
-  city: z.string().optional(),
-})
-
-const similarArtistSchema = z.object({
-  type: z.literal('similar_artist'),
-  artist_id: z.string().uuid(),
-  city: z.string().optional(),
-})
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+import { handleImageSearch, ImageValidationError } from './handlers/image'
+import { handleTextSearch } from './handlers/text'
+import {
+  handleInstagramPostSearch,
+  RateLimitError,
+  InstagramError,
+  ERROR_MESSAGES,
+  InstagramPostValidationError,
+} from './handlers/instagram-post'
+import {
+  handleInstagramProfileSearch,
+  InstagramProfileValidationError,
+  PROFILE_ERROR_MESSAGES,
+} from './handlers/instagram-profile'
+import { handleSimilarArtistSearch, SimilarArtistError } from './handlers/similar-artist'
+import { storeSearch, SearchInput } from '@/lib/search/search-storage'
 
 /**
  * POST /api/search
  *
  * Accepts image upload or text query, generates CLIP embedding,
  * stores in searches table, returns searchId
+ *
+ * Search types:
+ * - image: multipart/form-data with image file
+ * - text: application/json with text query
+ * - instagram_post: application/json with Instagram post URL
+ * - instagram_profile: application/json with Instagram profile URL
+ * - similar_artist: application/json with artist_id UUID
  */
 export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get('content-type') || ''
-
-    let searchType: 'image' | 'text' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
-    let embedding: number[]
-    let queryText: string | null = null
-    let instagramUsername: string | null = null
-    let instagramPostUrl: string | null = null
-    let artistIdSource: string | null = null
-    let queryStyles: StyleMatch[] = []
-    let isColorQuery: boolean | null = null  // null = unknown (text search), true = colorful, false = B&G
-    let searchedArtist: SearchedArtistData | null = null  // For profile searches: the artist being searched
+    let searchInput: SearchInput
 
     // Handle multipart/form-data (image upload)
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData()
-
-      const type = formData.get('type') as string
-      const imageFile = formData.get('image') as File | null
-
-      // Validate
-      if (type !== 'image') {
-        return NextResponse.json(
-          { error: 'Invalid search type for form data' },
-          { status: 400 }
-        )
-      }
-
-      if (!imageFile) {
-        return NextResponse.json(
-          { error: 'No image file provided' },
-          { status: 400 }
-        )
-      }
-
-      // Validate file size
-      if (imageFile.size > MAX_FILE_SIZE) {
-        return NextResponse.json(
-          { error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` },
-          { status: 400 }
-        )
-      }
-
-      // Validate file type
-      if (!ALLOWED_TYPES.includes(imageFile.type)) {
-        return NextResponse.json(
-          { error: `File type must be one of: ${ALLOWED_TYPES.join(', ')}` },
-          { status: 400 }
-        )
-      }
-
-      searchType = 'image'
-
-      // Convert file to buffer for color analysis
-      const imageArrayBuffer = await imageFile.arrayBuffer()
-      const imageBuffer = Buffer.from(imageArrayBuffer)
-
-      // Analyze color in parallel with embedding generation
-      const [embeddingResult, colorResult] = await Promise.all([
-        generateImageEmbedding(imageFile),
-        analyzeImageColor(imageBuffer)
-      ])
-
-      embedding = embeddingResult
-      isColorQuery = colorResult.isColor
-      console.log(`[Search] Color analysis: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
-
-      // Classify query image styles for style-weighted search
-      queryStyles = await classifyQueryStyles(embedding)
-      if (queryStyles.length > 0) {
-        console.log(`[Search] Detected styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
-      }
+      searchInput = await handleImageSearch(request)
     }
-    // Handle application/json (text search or Instagram post)
+    // Handle application/json (text search or Instagram)
     else if (contentType.includes('application/json')) {
       const body = await request.json()
 
-      // Try Instagram post schema first
-      const instagramParsed = instagramPostSchema.safeParse(body)
-      if (instagramParsed.success) {
-        searchType = 'instagram_post'
-
-        // Detect and validate Instagram URL
-        const detectedUrl = detectInstagramUrl(instagramParsed.data.instagram_url)
-        if (!detectedUrl || detectedUrl.type !== 'post') {
-          return NextResponse.json(
-            { error: 'Invalid Instagram post URL. Please provide a valid post or reel link.' },
-            { status: 400 }
-          )
-        }
-
-        // Rate limiting for Instagram searches (10 per hour per IP)
-        const clientIp = getClientIp(request)
-        const rateLimitResult = await checkInstagramSearchRateLimit(clientIp)
-
-        if (!rateLimitResult.success) {
-          return NextResponse.json(
-            {
-              error: 'Too many Instagram searches. Please try again later.',
-              retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
-            },
-            {
-              status: 429,
-              headers: {
-                'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
-                'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-                'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-                'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-              },
-            }
-          )
-        }
-
-        try {
-          // Fetch image from Instagram post
-          const postData = await fetchInstagramPostImage(detectedUrl.id)
-
-          // Download image as buffer
-          const imageBuffer = await downloadImageAsBuffer(postData.imageUrl)
-
-          // Convert Buffer to ArrayBuffer, then to File for embedding generation
-          const arrayBuffer = imageBuffer.buffer.slice(
-            imageBuffer.byteOffset,
-            imageBuffer.byteOffset + imageBuffer.byteLength
-          ) as ArrayBuffer
-          const imageFile = new File([arrayBuffer], 'instagram-post.jpg', {
-            type: 'image/jpeg'
-          })
-
-          // Generate embedding and analyze color in parallel
-          const [embeddingResult, colorResult] = await Promise.all([
-            generateImageEmbedding(imageFile),
-            analyzeImageColor(imageBuffer)
-          ])
-
-          embedding = embeddingResult
-          isColorQuery = colorResult.isColor
-          console.log(`[Search] IG post color: ${isColorQuery ? 'COLOR' : 'B&G'} (sat: ${colorResult.avgSaturation.toFixed(3)})`)
-
-          // Classify query image styles for style-weighted search
-          queryStyles = await classifyQueryStyles(embedding)
-          if (queryStyles.length > 0) {
-            console.log(`[Search] IG post styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
-          }
-
-          // Store attribution data
-          instagramUsername = postData.username
-          instagramPostUrl = detectedUrl.originalUrl
-          queryText = `Instagram post by @${postData.username}`
-        } catch (error) {
-          if (error instanceof InstagramError) {
-            return NextResponse.json(
-              { error: ERROR_MESSAGES[error.code] || error.message },
-              { status: 400 }
-            )
-          }
-          throw error
-        }
-      }
-      // Try Instagram profile schema
-      else if (instagramProfileSchema.safeParse(body).success) {
-        const profileParsed = instagramProfileSchema.safeParse(body)
-        if (!profileParsed.success) {
-          return NextResponse.json(
-            { error: 'Invalid Instagram profile URL request' },
-            { status: 400 }
-          )
-        }
-
-        searchType = 'instagram_profile'
-
-        // Detect and validate Instagram URL
-        const detectedUrl = detectInstagramUrl(profileParsed.data.instagram_url)
-        if (!detectedUrl || detectedUrl.type !== 'profile') {
-          return NextResponse.json(
-            { error: 'Invalid Instagram profile URL. Please provide a valid profile link or @username.' },
-            { status: 400 }
-          )
-        }
-
-        // Rate limiting for Instagram searches (10 per hour per IP)
-        const clientIp = getClientIp(request)
-        const rateLimitResult = await checkInstagramSearchRateLimit(clientIp)
-
-        if (!rateLimitResult.success) {
-          return NextResponse.json(
-            {
-              error: 'Too many Instagram searches. Please try again later.',
-              retryAfter: Math.ceil((rateLimitResult.reset - Date.now()) / 1000),
-            },
-            {
-              status: 429,
-              headers: {
-                'Retry-After': Math.ceil((rateLimitResult.reset - Date.now()) / 1000).toString(),
-                'X-RateLimit-Limit': rateLimitResult.limit.toString(),
-                'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-                'X-RateLimit-Reset': rateLimitResult.reset.toString(),
-              },
-            }
-          )
-        }
-
-        try {
-          const username = detectedUrl.id
-          const supabaseService = createServiceClient()
-
-          // Step 1: Check if artist exists by handle (simple query, no image requirement)
-          console.log(`[Profile Search] Checking DB for @${username}...`)
-          const { data: artistRecord } = await supabaseService
-            .from('artists')
-            .select('id, name, slug')
-            .eq('instagram_handle', username)
-            .single()
-
-          // Step 2: If artist exists, check if they have enough images with embeddings
-          const existingArtist = artistRecord
-            ? await getArtistByInstagramHandle(username)
-            : null
-
-          if (existingArtist && existingArtist.portfolio_images && existingArtist.portfolio_images.length >= 3) {
-            // Use existing embeddings - instant search!
-            console.log(`[Profile Search] Found in DB with ${existingArtist.portfolio_images.length} images - using existing embeddings`)
-
-            const embeddings = existingArtist.portfolio_images.map((img: { embedding: string | number[] }) => {
-              // Parse embedding from database (pgvector returns as string like "[0.1,0.2,...]")
-              if (typeof img.embedding === 'string') {
-                return JSON.parse(img.embedding)
-              }
-              return img.embedding
-            })
-
-            // Aggregate embeddings
-            embedding = aggregateEmbeddings(embeddings)
-
-            // For DB artists, calculate color profile from portfolio images
-            const supabase = await createClient()
-            const { data: colorStats } = await supabase
-              .from('portfolio_images')
-              .select('is_color')
-              .eq('artist_id', existingArtist.id)
-              .eq('status', 'active')
-              .not('is_color', 'is', null)
-
-            if (colorStats && colorStats.length > 0) {
-              const colorCount = colorStats.filter(img => img.is_color === true).length
-              const colorPercentage = colorCount / colorStats.length
-              // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
-              isColorQuery = colorPercentage > 0.6 ? true :
-                             colorPercentage < 0.4 ? false : null
-              console.log(`[Profile Search] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
-            }
-
-            // Classify aggregated embedding styles for style-weighted search
-            queryStyles = await classifyQueryStyles(embedding)
-            if (queryStyles.length > 0) {
-              console.log(`[Profile Search] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
-            }
-
-            // Store attribution data
-            instagramUsername = username
-            queryText = `Artists similar to @${username}`
-
-            // Fetch additional artist fields for search result card
-            const { data: artistDetails } = await supabase
-              .from('artists')
-              .select(`
-                profile_image_url, bio, follower_count, is_pro, is_featured, verification_status,
-                artist_locations!left (city, is_primary)
-              `)
-              .eq('id', existingArtist.id)
-              .single()
-
-            // Get primary city from artist_locations
-            const locations = artistDetails?.artist_locations as Array<{ city: string | null; is_primary: boolean }> | null
-            const primaryLocation = locations?.find(l => l.is_primary) || locations?.[0]
-            const artistCity = primaryLocation?.city || null
-
-            // Calculate is_verified from verification_status
-            const verificationStatus = artistDetails?.verification_status as string | null
-            const isVerified = verificationStatus === 'verified' || verificationStatus === 'claimed'
-
-            // Build searched artist data for immediate display
-            searchedArtist = {
-              id: existingArtist.id,
-              instagram_handle: username,
-              name: existingArtist.name,
-              profile_image_url: artistDetails?.profile_image_url || null,
-              bio: artistDetails?.bio || null,
-              follower_count: artistDetails?.follower_count || null,
-              city: artistCity,
-              images: existingArtist.portfolio_images
-                .slice(0, 3)
-                .map((img: { storage_thumb_640?: string | null }) => img.storage_thumb_640)
-                .filter(Boolean) as string[],
-              is_pro: artistDetails?.is_pro ?? false,
-              is_featured: artistDetails?.is_featured ?? false,
-              is_verified: isVerified,
-            }
-
-            console.log(`[Profile Search] Instant search completed (DB lookup)`)
-          } else {
-            // Scrape profile via Apify
-            // Artist may exist but have no images, or may not exist at all
-            if (artistRecord) {
-              console.log(`[Profile Search] Artist exists (${artistRecord.id}) but has insufficient images - scraping via Apify...`)
-            } else {
-              console.log(`[Profile Search] Artist not in DB - scraping via Apify...`)
-            }
-            const profileData = await fetchInstagramProfileImages(username, 6)
-
-            if (profileData.posts.length < 1) {
-              return NextResponse.json(
-                { error: PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS },
-                { status: 400 }
-              )
-            }
-
-            console.log(`[Profile Search] Fetched ${profileData.posts.length} posts, downloading images...`)
-
-            // Download images in parallel with metadata
-            const imagesWithMetadata = await Promise.all(
-              profileData.posts.map(async (post) => ({
-                buffer: await downloadImageAsBuffer(post.displayUrl),
-                shortcode: post.shortcode,
-                url: post.url,
-                displayUrl: post.displayUrl,
-                caption: post.caption,
-                timestamp: post.timestamp,
-                likesCount: post.likesCount,
-              }))
-            )
-
-            // Extract buffers for processing
-            const imageBuffers = imagesWithMetadata.map(img => img.buffer)
-
-            // Convert buffers to Files for embedding generation
-            const imageFiles = imageBuffers.map((buffer, i) => {
-              const arrayBuffer = buffer.buffer.slice(
-                buffer.byteOffset,
-                buffer.byteOffset + buffer.byteLength
-              ) as ArrayBuffer
-
-              return new File([arrayBuffer], `profile-${i}.jpg`, {
-                type: 'image/jpeg'
-              })
-            })
-
-            // Generate embeddings and analyze colors in parallel
-            const [embeddings, colorResults] = await Promise.all([
-              Promise.all(imageFiles.map(file => generateImageEmbedding(file))),
-              Promise.all(imageBuffers.map(buffer => analyzeImageColor(buffer)))
-            ])
-
-            console.log(`[Profile Search] Generated ${embeddings.length} embeddings, aggregating...`)
-
-            // Aggregate embeddings
-            embedding = aggregateEmbeddings(embeddings)
-
-            // Determine overall color using majority vote
-            const colorCount = colorResults.filter(r => r.isColor).length
-            const colorPercentage = colorCount / colorResults.length
-            isColorQuery = colorPercentage > 0.6 ? true :
-                           colorPercentage < 0.4 ? false : null
-            console.log(`[Profile Search] Color analysis: ${colorCount}/${colorResults.length} color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
-
-            // Classify aggregated embedding styles for style-weighted search
-            queryStyles = await classifyQueryStyles(embedding)
-            if (queryStyles.length > 0) {
-              console.log(`[Profile Search] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
-            }
-
-            // Store attribution data
-            instagramUsername = username
-            queryText = `Artists similar to @${username}`
-
-            // Determine artist ID - use existing or create new
-            let artistId: string | null = artistRecord?.id || null
-
-            // Only create new artist if they don't exist
-            if (!artistRecord) {
-              console.log(`[Profile Search] Creating new artist @${username}...`)
-              try {
-                const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
-
-                const { data: newArtist, error: artistError } = await supabaseService
-                  .from('artists')
-                  .insert({
-                    instagram_handle: username,
-                    name: profileData.username || username,
-                    slug,
-                    instagram_url: `https://www.instagram.com/${username}/`,
-                    bio: profileData.bio || null,
-                    follower_count: profileData.followerCount || null,
-                    discovery_source: 'profile_search',
-                    verification_status: 'unclaimed',
-                  })
-                  .select('id')
-                  .single()
-
-                if (newArtist) {
-                  artistId = newArtist.id
-                  console.log(`[Profile Search] Created artist ${artistId}`)
-                } else if (artistError) {
-                  console.error(`[Profile Search] Failed to create artist:`, artistError.message)
-                }
-              } catch (createError) {
-                console.error(`[Profile Search] Error creating artist:`, createError)
-              }
-            }
-
-            // Build searched artist data for immediate display
-            searchedArtist = {
-              id: artistId,
-              instagram_handle: username,
-              name: artistRecord?.name || profileData.username || username,
-              profile_image_url: profileData.profileImageUrl || null,
-              bio: profileData.bio || null,
-              follower_count: profileData.followerCount || null,
-              city: null,
-              images: profileData.posts.slice(0, 3).map(p => p.displayUrl),
-            }
-
-            // Process images for the artist (existing or new)
-            if (artistId) {
-              try {
-                const saveResult = await saveImagesToTempFromBuffers(
-                  artistId,
-                  imagesWithMetadata,  // Full metadata from Apify
-                  profileData.profileImageUrl
-                )
-
-                if (saveResult.success) {
-                  console.log(`[Profile Search] Images saved to temp, processing in background...`)
-
-                  // Fire-and-forget: process images in background
-                  processArtistImages(artistId)
-                    .then((result) => {
-                      console.log(`[Profile Search] Background processing complete: ${result.imagesProcessed} images`)
-                    })
-                    .catch((err) => {
-                      console.error(`[Profile Search] Background processing failed:`, err)
-                    })
-                } else {
-                  console.warn(`[Profile Search] Failed to save images: ${saveResult.error}`)
-                }
-
-                // Create scraping job as fallback (upsert not supported on pipeline_jobs without unique constraint on artist_id)
-                const { error: jobError } = await supabaseService.from('pipeline_jobs').insert({
-                  artist_id: artistId,
-                  job_type: 'scrape_single',
-                  triggered_by: 'profile-search',
-                  status: saveResult.success ? 'running' : 'pending',
-                })
-                if (!jobError || jobError.code === '23505') {
-                  console.log(`[Profile Search] Created scraping job for @${username}`)
-                }
-              } catch (saveError) {
-                console.error(`[Profile Search] Error saving images:`, saveError)
-              }
-            }
-
-            console.log(`[Profile Search] Apify scraping completed`)
-          }
-        } catch (error) {
-          if (error instanceof InstagramError) {
-            return NextResponse.json(
-              { error: PROFILE_ERROR_MESSAGES[error.code] || error.message },
-              { status: 400 }
-            )
-          }
-          throw error
-        }
-      }
-      // Try similar artist schema
-      else if (similarArtistSchema.safeParse(body).success) {
-        const artistParsed = similarArtistSchema.safeParse(body)
-        if (!artistParsed.success) {
-          return NextResponse.json(
-            { error: 'Invalid similar artist request' },
-            { status: 400 }
-          )
-        }
-
-        searchType = 'similar_artist'
-
-        try {
-          const artistId = artistParsed.data.artist_id
-
-          console.log(`[Similar Artist] Fetching portfolio for artist ${artistId}...`)
-
-          // Fetch artist with portfolio images and embeddings
-          const supabase = await createClient()
-          const { data: artist, error: artistError } = await supabase
-            .from('artists')
-            .select(`
-              id,
-              name,
-              slug,
-              instagram_handle,
-              city,
-              portfolio_images!inner (
-                id,
-                embedding,
-                status
-              )
-            `)
-            .eq('id', artistId)
-            .single()
-
-          // Filter images client-side for active status and non-null embeddings
-          if (artist) {
-            artist.portfolio_images = artist.portfolio_images.filter(
-              (img: { status: string; embedding: unknown }) => img.status === 'active' && img.embedding != null
-            )
-          }
-
-          if (artistError || !artist) {
-            return NextResponse.json(
-              { error: 'Artist not found or has no portfolio images' },
-              { status: 404 }
-            )
-          }
-
-          if (artist.portfolio_images.length < 3) {
-            return NextResponse.json(
-              { error: 'Artist must have at least 3 portfolio images for similarity search' },
-              { status: 400 }
-            )
-          }
-
-          console.log(`[Similar Artist] Found ${artist.portfolio_images.length} images, aggregating embeddings...`)
-
-          // Parse embeddings
-          const embeddings = artist.portfolio_images.map((img: { embedding: string | number[] }) => {
-            if (typeof img.embedding === 'string') {
-              return JSON.parse(img.embedding)
-            }
-            return img.embedding
-          })
-
-          // Aggregate embeddings (same as Instagram profile search)
-          embedding = aggregateEmbeddings(embeddings)
-
-          // Calculate artist's color profile from portfolio images
-          const { data: colorStats } = await supabase
-            .from('portfolio_images')
-            .select('is_color')
-            .eq('artist_id', artistId)
-            .eq('status', 'active')
-            .not('is_color', 'is', null)
-
-          if (colorStats && colorStats.length > 0) {
-            const colorCount = colorStats.filter(img => img.is_color === true).length
-            const colorPercentage = colorCount / colorStats.length
-            // Use artist's color profile: >60% = color, <40% = B&G, else null (mixed)
-            isColorQuery = colorPercentage > 0.6 ? true :
-                           colorPercentage < 0.4 ? false : null
-            console.log(`[Similar Artist] Artist color profile: ${(colorPercentage * 100).toFixed(0)}% color → ${isColorQuery === null ? 'mixed' : isColorQuery ? 'COLOR' : 'B&G'}`)
-          }
-
-          // Classify aggregated embedding styles for style-weighted search
-          queryStyles = await classifyQueryStyles(embedding)
-          if (queryStyles.length > 0) {
-            console.log(`[Similar Artist] Styles: ${queryStyles.map(s => `${s.style_name}(${(s.confidence * 100).toFixed(0)}%)`).join(', ')}`)
-          }
-
-          // Store attribution data
-          queryText = `Artists similar to ${artist.name}`
-          artistIdSource = artistId
-
-          console.log(`[Similar Artist] Aggregated ${embeddings.length} embeddings`)
-        } catch (error) {
-          console.error('[Similar Artist] Error:', error)
-          return NextResponse.json(
-            { error: 'Failed to process similar artist search' },
-            { status: 500 }
-          )
-        }
+      // Route to appropriate handler based on type
+      if (body.type === 'instagram_post') {
+        searchInput = await handleInstagramPostSearch(body, request)
+      } else if (body.type === 'instagram_profile') {
+        searchInput = await handleInstagramProfileSearch(body, request)
+      } else if (body.type === 'similar_artist') {
+        searchInput = await handleSimilarArtistSearch(body)
       } else {
-        // Try text search schema
-        const textParsed = textSearchSchema.safeParse(body)
-        if (!textParsed.success) {
-          return NextResponse.json(
-            { error: 'Invalid request body', details: textParsed.error.errors },
-            { status: 400 }
-          )
-        }
-
-        searchType = 'text'
-        queryText = textParsed.data.text
-
-        // Enhance query for better CLIP understanding
-        // Add "tattoo" context if not present to help with niche style queries
-        const enhancedQuery = queryText.toLowerCase().includes('tattoo')
-          ? queryText
-          : `${queryText} tattoo`
-
-        // Generate text embedding with enhanced query
-        embedding = await generateTextEmbedding(enhancedQuery)
+        // Default to text search
+        searchInput = await handleTextSearch(body)
       }
-    }
-    else {
+    } else {
       return NextResponse.json(
         { error: 'Content-Type must be multipart/form-data or application/json' },
         { status: 400 }
       )
     }
 
-    // Verify embedding is valid
-    if (!embedding || embedding.length !== 768) {
-      throw new Error(`Invalid embedding dimension: ${embedding?.length}`)
-    }
+    // Store search and return ID
+    const { searchId } = await storeSearch(searchInput)
 
-    // Store in searches table
-    const supabase = await createClient()
-
-    // Validate searched artist data before storage (security: prevent JSONB injection)
-    let validatedSearchedArtist: SearchedArtistData | null = null
-    if (searchedArtist) {
-      const validation = searchedArtistSchema.safeParse(searchedArtist)
-      if (validation.success) {
-        validatedSearchedArtist = validation.data
-      } else {
-        console.warn('[Search] Invalid searched_artist data, skipping:', validation.error.errors)
-      }
-    }
-
-    // Build insert payload with style and color data
-    const insertPayload: Record<string, unknown> = {
-      embedding: `[${embedding.join(',')}]`,
-      query_type: searchType,
-      query_text: queryText,
-      instagram_username: instagramUsername,
-      instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
-      artist_id_source: artistIdSource,
-      detected_styles: queryStyles.length > 0 ? queryStyles : null,
-      primary_style: queryStyles[0]?.style_name || null,
-      is_color: isColorQuery,
-      searched_artist: validatedSearchedArtist,  // Validated for security
-    }
-
-    console.log('[Search] Inserting with style classification:', {
-      styles: queryStyles.map(s => s.style_name).join(', ') || 'none',
-      primaryStyle: queryStyles[0]?.style_name,
-      isColor: isColorQuery
-    })
-
-    let { data, error } = await supabase
-      .from('searches')
-      .insert(insertPayload)
-      .select('id')
-      .single()
-
-    console.log('[Search] Insert result:', { success: !error, errorCode: error?.code })
-
-    // Fallback: if schema cache is stale, retry without style columns
-    if (error?.code === 'PGRST204' && error?.message?.includes('detected_styles')) {
-      console.warn('[Search] Schema cache stale, retrying without style columns')
-      const fallbackPayload = {
-        embedding: `[${embedding.join(',')}]`,
-        query_type: searchType,
-        query_text: queryText,
-        instagram_username: instagramUsername,
-        instagram_post_id: instagramPostUrl ? extractPostId(instagramPostUrl) : null,
-        artist_id_source: artistIdSource,
-      }
-      const result = await supabase
-        .from('searches')
-        .insert(fallbackPayload)
-        .select('id')
-        .single()
-      data = result.data
-      error = result.error
-    }
-
-    if (error || !data) {
-      console.error('Error storing search:', error)
-      throw error || new Error('No data returned from search insert')
-    }
-
-    // Return search ID
     return NextResponse.json(
       {
-        searchId: data.id,
-        queryType: searchType,
+        searchId,
+        queryType: searchInput.searchType,
       },
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store'
-        }
+          'Cache-Control': 'no-store',
+        },
       }
     )
   } catch (error) {
-    console.error('Search API error:', error)
+    // Handle validation errors
+    if (error instanceof ImageValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
 
+    if (error instanceof InstagramPostValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
+    if (error instanceof InstagramProfileValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
+    if (error instanceof SimilarArtistError) {
+      return NextResponse.json({ error: error.message }, { status: error.status })
+    }
+
+    // Handle rate limiting
+    if (error instanceof RateLimitError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          retryAfter: error.retryAfter,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': error.retryAfter.toString(),
+            'X-RateLimit-Limit': error.limit.toString(),
+            'X-RateLimit-Remaining': error.remaining.toString(),
+            'X-RateLimit-Reset': error.reset.toString(),
+          },
+        }
+      )
+    }
+
+    // Handle Instagram-specific errors
+    if (error instanceof InstagramError) {
+      const message =
+        ERROR_MESSAGES[error.code] ||
+        PROFILE_ERROR_MESSAGES[error.code] ||
+        error.message
+      return NextResponse.json({ error: message }, { status: 400 })
+    }
+
+    // Handle text search validation errors (have details property)
+    if (
+      error instanceof Error &&
+      'details' in error &&
+      error.message === 'Invalid request body'
+    ) {
+      return NextResponse.json(
+        { error: error.message, details: (error as Error & { details: unknown }).details },
+        { status: 400 }
+      )
+    }
+
+    // Generic error
+    console.error('Search API error:', error)
     return NextResponse.json(
       {
         error: 'Failed to process search',
