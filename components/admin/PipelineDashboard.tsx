@@ -57,7 +57,7 @@ interface ConfirmState {
 const JOB_DESCRIPTIONS: Record<JobType | 'retry', { title: string; message: string }> = {
   scraping: {
     title: 'Start Scraping Job',
-    message: 'This will scrape Instagram images for all pending artists. This operation uses Apify credits and may take several hours for large batches. Continue?',
+    message: 'This will scrape Instagram images for pending artists. This operation uses ScrapingDog credits. Continue?',
   },
   processing: {
     title: 'Start Processing Job',
@@ -87,6 +87,7 @@ export default function PipelineDashboard() {
     title: '',
     message: '',
   });
+  const [scrapingLimit, setScrapingLimit] = useState<number>(100);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -117,11 +118,16 @@ export default function PipelineDashboard() {
   // Show confirmation dialog before triggering job
   const requestTriggerJob = (jobType: JobType) => {
     const desc = JOB_DESCRIPTIONS[jobType];
+    let message = desc.message;
+    // Add limit info for scraping jobs
+    if (jobType === 'scraping' && scrapingLimit) {
+      message = `This will scrape Instagram images for up to ${scrapingLimit.toLocaleString()} artists. This operation uses ScrapingDog credits. Continue?`;
+    }
     setConfirmState({
       isOpen: true,
       jobType,
       title: desc.title,
-      message: desc.message,
+      message,
     });
   };
 
@@ -160,10 +166,16 @@ export default function PipelineDashboard() {
     setTriggerMessage(null);
 
     try {
+      const payload: { jobType: JobType; scope: string; limit?: number } = { jobType, scope: 'pending' };
+      // Add limit for scraping jobs
+      if (jobType === 'scraping' && scrapingLimit) {
+        payload.limit = scrapingLimit;
+      }
+
       const res = await fetch('/api/admin/pipeline/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ jobType, scope: 'pending' }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -341,19 +353,31 @@ export default function PipelineDashboard() {
                 <MetricItem label="Artists" value={status.artists.withoutImages} />
                 <MetricItem label="Pending Jobs" value={status.scrapingJobs.pending} />
               </div>
-              <button
-                onClick={() => requestTriggerJob('scraping')}
-                disabled={triggering === 'scraping' || status.artists.withoutImages === 0}
-                className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
-                         hover:bg-ink/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {triggering === 'scraping' ? (
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
-                ) : (
-                  <Play className="w-2.5 h-2.5" />
-                )}
-                Start Scraping
-              </button>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={scrapingLimit}
+                  onChange={(e) => setScrapingLimit(Math.max(1, Math.min(10000, parseInt(e.target.value) || 100)))}
+                  min={1}
+                  max={10000}
+                  className="w-20 px-2 py-1 text-[11px] font-mono border border-ink/20 bg-paper text-ink
+                           focus:outline-none focus:border-ink/40"
+                  title="Number of artists to scrape"
+                />
+                <button
+                  onClick={() => requestTriggerJob('scraping')}
+                  disabled={triggering === 'scraping' || status.artists.withoutImages === 0}
+                  className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
+                           hover:bg-ink/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {triggering === 'scraping' ? (
+                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    <Play className="w-2.5 h-2.5" />
+                  )}
+                  Start Scraping
+                </button>
+              </div>
             </div>
 
             {/* Need Embeddings Card */}

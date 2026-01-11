@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11 (ScrapingDog migration)
+Last-Updated: 2026-01-11 (Mining removal, ScrapingDog migration)
 Maintainer: RB
 Status: Launched
 ---
@@ -49,15 +49,12 @@ Status: Launched
 - Env var: `SCRAPINGDOG_API_KEY`
 
 **Fallback:** Apify (for transient ScrapingDog errors)
-- Dual-account strategy for cost optimization
-- `APIFY_API_TOKEN_FREE` - lightweight operations
-- `APIFY_API_TOKEN` - heavy pipeline scraping
+- Free tier only (backup for when ScrapingDog fails)
+- `APIFY_API_TOKEN_FREE` - profile fetching fallback
 
-**Token Selection Logic:**
-- `lib/instagram/profile-fetcher.ts` → ScrapingDog first, then Apify FREE, then Apify PAID
+**Implementation:**
+- `lib/instagram/profile-fetcher.ts` → ScrapingDog first, then Apify fallback
 - `lib/instagram/scrapingdog-client.ts` → ScrapingDog API client
-- `lib/instagram/hashtag-scraper.ts` → Uses Apify PAID only
-- `lib/instagram/follower-scraper.ts` → Uses Apify PAID only
 
 ---
 
@@ -198,7 +195,7 @@ Key optimizations:
 **Auth:** Magic link, email whitelist in `lib/admin/whitelist.ts`
 
 **Key endpoints:**
-- `GET /api/admin/mining/stats` - Pipeline stats
+- `GET /api/admin/dashboard` - Dashboard stats
 - `GET /api/admin/artists` - Paginated list
 - `PATCH /api/admin/artists/[id]/featured` - Toggle featured
 
@@ -259,9 +256,11 @@ LOCAL_CLIP_URL=https://clip.inkdex.io
 CLIP_API_KEY
 MODAL_FUNCTION_URL
 
-# Apify (Instagram scraping)
-APIFY_API_TOKEN          # Paid account - heavy pipeline
-APIFY_API_TOKEN_FREE     # Free account - lightweight ops (optional, falls back to PAID)
+# ScrapingDog (Instagram scraping - primary)
+SCRAPINGDOG_API_KEY
+
+# Apify (Instagram scraping - fallback only)
+APIFY_API_TOKEN_FREE     # Free account - fallback when ScrapingDog fails
 
 # Stripe
 STRIPE_SECRET_KEY

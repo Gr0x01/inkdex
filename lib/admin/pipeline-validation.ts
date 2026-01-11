@@ -25,6 +25,7 @@ export const triggerJobSchema = z
     }),
     artistIds: z.array(z.string().uuid('Invalid artist ID format')).optional(),
     city: z.string().max(100).optional(),
+    limit: z.number().int().min(1).max(10000).optional(),
   })
   .refine(
     (data) => {

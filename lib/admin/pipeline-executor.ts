@@ -81,6 +81,7 @@ export interface TriggerJobOptions {
   triggeredBy: string;
   artistIds?: string[];
   city?: string;
+  limit?: number;
 }
 
 /**
@@ -88,7 +89,7 @@ export interface TriggerJobOptions {
  * Uses atomic RPC function to prevent race conditions
  */
 export async function triggerPipelineJob(options: TriggerJobOptions): Promise<string> {
-  const { jobType, scope, triggeredBy, artistIds, city } = options;
+  const { jobType, scope, triggeredBy, artistIds, city, limit } = options;
   const adminClient = createAdminClient();
 
   // Use atomic RPC function to create the run (prevents race conditions via unique index)
@@ -113,7 +114,7 @@ export async function triggerPipelineJob(options: TriggerJobOptions): Promise<st
   }
 
   // Start the job in background (fire-and-forget)
-  executeJob(runId, jobType).catch((err) => {
+  executeJob(runId, jobType, limit).catch((err) => {
     console.error(`Pipeline job ${runId} failed:`, err);
   });
 
@@ -123,9 +124,14 @@ export async function triggerPipelineJob(options: TriggerJobOptions): Promise<st
 /**
  * Execute a pipeline job and update progress
  */
-async function executeJob(runId: string, jobType: JobType): Promise<void> {
+async function executeJob(runId: string, jobType: JobType, limit?: number): Promise<void> {
   const adminClient = createAdminClient();
-  const config = JOB_CONFIGS[jobType];
+  const config = { ...JOB_CONFIGS[jobType] };
+
+  // Add --limit argument for scraping jobs if specified
+  if (jobType === 'scraping' && limit) {
+    config.args = [...config.args, '--', '--limit', String(limit)];
+  }
 
   // Update status to running
   await adminClient

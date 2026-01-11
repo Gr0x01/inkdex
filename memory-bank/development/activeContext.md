@@ -303,21 +303,14 @@ supabase/functions/
 | 11 | ✅ | Instagram auto-sync for Pro (daily cron) |
 | 12 | ✅ | Search ranking boosts + Pro/Featured badges |
 | 13 | ✅ | Analytics dashboard (Redis caching, tracking, Recharts visualization) |
-| 14 | ✅ | Admin panel (mining dashboard, featured artist management) |
+| 14 | ✅ | Admin panel (pipeline dashboard, featured artist management) |
 | 15 | ✅ | Multi-location support (international, tier-based limits) |
 
 ## Ready-to-Run Pipelines
 
-**Instagram Mining** (discover new artists):
-```bash
-npm run mine:hashtags              # ~$2.60/1K posts
-npm run mine:followers             # ~$0.10/1K followers
-npm run mine:status                # View stats
-```
-
 **Content Pipeline** (process artists to searchable):
 ```bash
-npm run scrape-instagram           # Apify parallel scraping
+npm run scrape-instagram           # ScrapingDog parallel scraping
 npm run process-images             # Upload to Supabase Storage
 
 # Embeddings (choose one):

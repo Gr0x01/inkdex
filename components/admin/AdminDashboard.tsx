@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Users, Image, Activity, Crown, Star, ArrowRight } from 'lucide-react';
+import { RefreshCw, Users, Image, Crown, Star, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import StatsCard from './StatsCard';
 import MaintenanceToggle from './MaintenanceToggle';
@@ -17,13 +17,6 @@ interface DashboardData {
   content: {
     totalImages: number;
     imagesWithEmbeddings: number;
-  };
-  mining: {
-    hashtag: { total: number; completed: number; failed: number; running: number };
-    follower: { total: number; completed: number; failed: number; running: number };
-    totalCost: number;
-    costPerArtist: number;
-    totalArtistsInserted: number;
   };
   activity: {
     totalSearches: number;
@@ -99,11 +92,6 @@ export default function AdminDashboard() {
   const unclaimedPercent = data.artists.total > 0
     ? Math.round((data.artists.unclaimed / data.artists.total) * 100)
     : 0;
-
-  const totalMiningRuns = data.mining.hashtag.total + data.mining.follower.total;
-  const runningRuns = data.mining.hashtag.running + data.mining.follower.running;
-  const completedRuns = data.mining.hashtag.completed + data.mining.follower.completed;
-  const failedRuns = data.mining.hashtag.failed + data.mining.follower.failed;
 
   return (
     <div className="space-y-6">
@@ -227,51 +215,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Pipeline Health */}
-        <div className="bg-paper border-2 border-ink/10 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-1.5">
-              <Activity className="w-3.5 h-3.5 text-gray-500" />
-              <h3 className="font-heading text-[13px] font-semibold text-ink">Mining Pipeline</h3>
-            </div>
-            <Link
-              href="/admin/mining"
-              className="text-[11px] text-gray-500 hover:text-ink flex items-center gap-0.5 transition-colors"
-            >
-              View all <ArrowRight className="w-2.5 h-2.5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            <MetricRow label="Total Runs" value={totalMiningRuns} />
-            <MetricRow
-              label="Running"
-              value={runningRuns}
-              variant={runningRuns > 0 ? 'warning' : 'default'}
-            />
-            <MetricRow label="Completed" value={completedRuns} variant="success" />
-            <MetricRow
-              label="Failed"
-              value={failedRuns}
-              variant={failedRuns > 0 ? 'error' : 'default'}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-ink/5">
-            <div>
-              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-wider">Cost/Artist</span>
-              <p className="font-mono text-ink font-medium">${data.mining.costPerArtist.toFixed(4)}</p>
-            </div>
-            <div>
-              <span className="font-mono text-[10px] text-gray-500 uppercase tracking-wider">Total Cost</span>
-              <p className="font-mono text-ink font-medium">${data.mining.totalCost.toFixed(2)}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Pipeline & Quick Links */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Content Pipeline */}
         <div className="bg-paper border-2 border-ink/10 p-4">
           <div className="flex items-center justify-between mb-3">
@@ -320,32 +263,32 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Recent Claims */}
-        <div className="bg-paper border-2 border-ink/10 p-4">
-          <div className="flex items-center gap-1.5 mb-3">
-            <Crown className="w-3.5 h-3.5 text-gray-500" />
-            <h3 className="font-heading text-[13px] font-semibold text-ink">Recent Claims</h3>
-          </div>
-
-          {data.activity.recentClaims.length === 0 ? (
-            <p className="text-gray-400 text-[12px]">No recent claims</p>
-          ) : (
-            <div className="space-y-1.5">
-              {data.activity.recentClaims.map((claim) => (
-                <div key={claim.id} className="flex items-center justify-between">
-                  <div className="min-w-0">
-                    <span className="text-ink text-[13px] truncate block">{claim.name}</span>
-                    <span className="text-gray-400 font-mono text-[11px]">@{claim.instagramHandle}</span>
-                  </div>
-                  <span className="text-gray-400 text-[11px] font-mono flex-shrink-0">
-                    {new Date(claim.claimedAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* Recent Claims */}
+      <div className="bg-paper border-2 border-ink/10 p-4">
+        <div className="flex items-center gap-1.5 mb-3">
+          <Crown className="w-3.5 h-3.5 text-gray-500" />
+          <h3 className="font-heading text-[13px] font-semibold text-ink">Recent Claims</h3>
         </div>
+
+        {data.activity.recentClaims.length === 0 ? (
+          <p className="text-gray-400 text-[12px]">No recent claims</p>
+        ) : (
+          <div className="space-y-1.5">
+            {data.activity.recentClaims.map((claim) => (
+              <div key={claim.id} className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <span className="text-ink text-[13px] truncate block">{claim.name}</span>
+                  <span className="text-gray-400 font-mono text-[11px]">@{claim.instagramHandle}</span>
+                </div>
+                <span className="text-gray-400 text-[11px] font-mono flex-shrink-0">
+                  {new Date(claim.claimedAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
     </div>

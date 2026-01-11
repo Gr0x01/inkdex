@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-10
+Last-Updated: 2026-01-11
 Maintainer: RB
 Status: Launched - Full US Coverage
 ---
@@ -51,20 +51,12 @@ npm run lint             # Run ESLint
 npm run type-check       # TypeScript type checking
 npm run storybook        # Start Storybook dev server
 
-# Instagram Mining Pipeline
-npm run mine:hashtags              # Mine artists from Instagram hashtags
-npm run mine:hashtags -- --hashtag blackworktattoo --posts 100 --skip-images
-npm run mine:followers             # Mine from seed account followers
-npm run mine:classify              # Batch classify pending candidates (GPT-5-mini)
-npm run mine:classify -- --limit 50 --dry-run  # Preview what would be classified
-npm run mine:status                # View mining statistics and costs
-
 # Data Pipeline
 npm run analyze-cities   # DataForSEO city analysis
 npm run discover-artists # Google Maps artist discovery (legacy)
 npx tsx scripts/discovery/tavily-artist-discovery-v2.ts  # Tavily web discovery (new)
 npx tsx scripts/seo/generate-city-content.ts              # GPT-4.1 SEO content generation
-npm run scrape-instagram # Apify Instagram portfolio scraping
+npm run scrape-instagram # ScrapingDog Instagram portfolio scraping
 npm run generate-embeddings # Modal.com CLIP embedding generation
 
 # Database
@@ -130,7 +122,10 @@ DATAFORSEO_PASSWORD=
 INSTAGRAM_CLIENT_ID=
 INSTAGRAM_CLIENT_SECRET=
 
-# Apify (Instagram Mining)
+# ScrapingDog (Instagram scraping - primary)
+SCRAPINGDOG_API_KEY=
+
+# Apify (Instagram scraping - fallback only)
 APIFY_API_TOKEN=
 
 # Analytics

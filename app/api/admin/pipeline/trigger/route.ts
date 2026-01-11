@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     // Parse and validate request body with Zod
     const body = await request.json();
     const validatedData = triggerJobSchema.parse(body);
-    const { jobType, scope, artistIds, city } = validatedData;
+    const { jobType, scope, artistIds, city, limit } = validatedData;
 
     // Check if there's already a running job of this type
     const alreadyRunning = await hasRunningJob(jobType);
@@ -66,6 +66,7 @@ export async function POST(request: Request) {
       triggeredBy: user.email || 'unknown',
       artistIds,
       city,
+      limit,
     });
 
     // Audit log the action
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
       action: 'pipeline.trigger',
       resourceType: 'pipeline_run',
       resourceId: runId,
-      newValue: { jobType, scope, artistIds, city },
+      newValue: { jobType, scope, artistIds, city, limit },
       ...clientInfo,
     });
 
