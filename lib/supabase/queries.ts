@@ -68,6 +68,8 @@ interface PortfolioImageRow {
   storage_thumb_640?: string | null
   instagram_url?: string | null
   likes_count?: number | null
+  is_pinned?: boolean | null
+  pinned_position?: number | null
   status?: string
 }
 
@@ -946,7 +948,14 @@ export async function getLocationArtists(
     profile_image_url: string | null | undefined
     instagram_handle: string | null | undefined
     follower_count: number | null | undefined
-    portfolio_images: Array<{ id: string; url: string; instagram_url: string | null | undefined; likes_count: number | null | undefined }>
+    portfolio_images: Array<{
+      id: string
+      url: string
+      instagram_url: string | null | undefined
+      likes_count: number | null | undefined
+      is_pinned: boolean | null | undefined
+      pinned_position: number | null | undefined
+    }>
   }
 
   const artistsMap = new Map<string, ProcessedLocationArtist>()
@@ -972,6 +981,8 @@ export async function getLocationArtists(
           storage_thumb_640,
           instagram_url,
           likes_count,
+          is_pinned,
+          pinned_position,
           status
         )
       )
@@ -1017,6 +1028,8 @@ export async function getLocationArtists(
               url: publicUrl,
               instagram_url: image.instagram_url,
               likes_count: image.likes_count,
+              is_pinned: image.is_pinned,
+              pinned_position: image.pinned_position,
             })
           }
         })
@@ -1024,8 +1037,19 @@ export async function getLocationArtists(
     })
   }
 
-  // Legacy fallback to artists table has been removed.
-  // artist_locations is now the single source of truth.
+  // Sort each artist's images: pinned first (by position), then by likes_count
+  artistsMap.forEach((artistData) => {
+    artistData.portfolio_images.sort((a, b) => {
+      // 1. Pinned images first (by pinned_position)
+      if (a.is_pinned && !b.is_pinned) return -1
+      if (!a.is_pinned && b.is_pinned) return 1
+      if (a.is_pinned && b.is_pinned) {
+        return (a.pinned_position || 0) - (b.pinned_position || 0)
+      }
+      // 2. By likes_count (highest first)
+      return (b.likes_count || 0) - (a.likes_count || 0)
+    })
+  })
 
   // Convert to array, filter, and sort
   const allArtists = Array.from(artistsMap.values())

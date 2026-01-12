@@ -61,6 +61,7 @@ export default function ArtistCard({
     matching_images,
     similarity,
     follower_count,
+    profile_image_url,
     is_pro = false,
     is_featured = false,
     is_searched_artist = false,
@@ -89,6 +90,9 @@ export default function ArtistCard({
   const allImages = (matching_images || []).filter(img => img.url)
   const [currentIndex, setCurrentIndex] = useState(0)
   const currentImage = allImages[currentIndex]
+
+  // Profile image error state - hide if load fails
+  const [profileImageError, setProfileImageError] = useState(false)
 
   // Tooltip state - shows after 2s hover
   const [showTooltip, setShowTooltip] = useState(false)
@@ -120,7 +124,8 @@ export default function ArtistCard({
   const matchPercentage = is_searched_artist ? 100 : rescaleToUserFriendlyPercentage(similarity)
 
   const handleImageClick = (e: React.MouseEvent) => {
-    if (allImages.length > 1) {
+    // Only allow image rotation on search results, not browse pages
+    if (displayMode === 'search' && allImages.length > 1) {
       e.preventDefault()
       setCurrentIndex((prev) => (prev + 1) % allImages.length)
     }
@@ -200,8 +205,8 @@ export default function ArtistCard({
               </div>
             )}
 
-            {/* Image counter - Top-right */}
-            {allImages.length > 1 && (
+            {/* Image counter - Top-right (search mode only) */}
+            {displayMode === 'search' && allImages.length > 1 && (
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-1.5 py-1 sm:px-2.5 sm:py-1.5 bg-ink/80 backdrop-blur-sm">
                 <span className="font-mono text-[10px] sm:text-xs font-medium text-paper tracking-[0.1em] uppercase">
                   {currentIndex + 1}/{allImages.length}
@@ -215,6 +220,16 @@ export default function ArtistCard({
         {isWideLayout && (
           <div className="p-3 space-y-1 min-w-0 lg:hidden">
             <div className="flex items-center gap-1.5 min-w-0">
+              {profile_image_url && !profileImageError && (
+                <Image
+                  src={getImageUrl(profile_image_url)}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover flex-shrink-0"
+                  onError={() => setProfileImageError(true)}
+                />
+              )}
               <h3 className="font-heading text-sm font-bold text-ink tracking-tight truncate min-w-0">
                 @{instagramHandle}
               </h3>
@@ -289,9 +304,21 @@ export default function ArtistCard({
 
                 {/* Handle */}
                 {instagramHandle && (
-                  <h3 className="font-heading text-base lg:text-xl font-bold text-ink tracking-tight truncate">
-                    @{instagramHandle}
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    {profile_image_url && !profileImageError && (
+                      <Image
+                        src={getImageUrl(profile_image_url)}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="rounded-full object-cover flex-shrink-0"
+                        onError={() => setProfileImageError(true)}
+                      />
+                    )}
+                    <h3 className="font-heading text-base lg:text-xl font-bold text-ink tracking-tight truncate">
+                      @{instagramHandle}
+                    </h3>
+                  </div>
                 )}
 
                 {/* Location */}
@@ -339,6 +366,16 @@ export default function ArtistCard({
             <div className="space-y-1 min-w-0">
               {instagramHandle && (
                 <div className="flex items-center gap-1.5 min-w-0">
+                  {profile_image_url && !profileImageError && (
+                    <Image
+                      src={getImageUrl(profile_image_url)}
+                      alt=""
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover flex-shrink-0"
+                      onError={() => setProfileImageError(true)}
+                    />
+                  )}
                   <h3 className="font-heading text-sm sm:text-base font-bold text-ink tracking-tight truncate min-w-0">
                     @{instagramHandle}
                   </h3>
