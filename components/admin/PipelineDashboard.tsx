@@ -11,6 +11,7 @@ interface PipelineStatus {
   artists: {
     total: number;
     withoutImages: number;
+    blacklisted: number;
     withImages: number;
     pendingEmbeddings: number;
     complete: number;
@@ -350,9 +351,10 @@ export default function PipelineDashboard() {
                 <Image className="w-3.5 h-3.5 text-gray-500" />
                 <h3 className="font-heading text-[13px] font-semibold text-ink">Need Images</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <MetricItem label="Artists" value={status.artists.withoutImages} />
-                <MetricItem label="Pending Jobs" value={status.scrapingJobs.pending} />
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <MetricItem label="Need Scraping" value={status.artists.withoutImages} />
+                <MetricItem label="Blacklisted" value={status.artists.blacklisted} />
+                <MetricItem label="Have Images" value={status.artists.withImages} />
               </div>
               <div className="flex items-center gap-2">
                 <input

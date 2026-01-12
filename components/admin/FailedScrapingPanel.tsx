@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AlertCircle, RotateCcw, Ban, ExternalLink, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import InputDialog from '@/components/ui/InputDialog';
 
 interface FailedArtist {
   id: string;
@@ -33,6 +34,11 @@ export default function FailedScrapingPanel({
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [blacklistDialog, setBlacklistDialog] = useState<{
+    isOpen: boolean;
+    artistId?: string; // Single artist ID, or undefined for bulk
+    isBulk: boolean;
+  }>({ isOpen: false, isBulk: false });
 
   const fetchFailedArtists = useCallback(async () => {
     if (!expanded) return;
@@ -92,9 +98,44 @@ export default function FailedScrapingPanel({
     }
   };
 
-  const handleBlacklist = async (artistId: string) => {
-    const reason = prompt('Enter reason for blacklisting (e.g., "Repost account", "Not a tattoo artist"):');
-    if (!reason) return;
+  const handleBlacklistSelected = () => {
+    if (selectedIds.size === 0) return;
+    setBlacklistDialog({ isOpen: true, isBulk: true });
+  };
+
+  const executeBlacklistBulk = async (reason: string) => {
+    setBlacklistDialog({ isOpen: false, isBulk: false });
+    setActionLoading('blacklist');
+    try {
+      const res = await fetch('/api/admin/artists/bulk-blacklist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistIds: Array.from(selectedIds),
+          reason,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to blacklist selected artists');
+
+      setSelectedIds(new Set());
+      fetchFailedArtists();
+      onRetryComplete();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to blacklist');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBlacklist = (artistId: string) => {
+    setBlacklistDialog({ isOpen: true, artistId, isBulk: false });
+  };
+
+  const executeBlacklistSingle = async (reason: string) => {
+    const artistId = blacklistDialog.artistId;
+    setBlacklistDialog({ isOpen: false, isBulk: false });
+    if (!artistId) return;
 
     setActionLoading(artistId);
     try {
@@ -112,6 +153,14 @@ export default function FailedScrapingPanel({
       setError(err instanceof Error ? err.message : 'Failed to blacklist');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleBlacklistConfirm = (reason: string) => {
+    if (blacklistDialog.isBulk) {
+      executeBlacklistBulk(reason);
+    } else {
+      executeBlacklistSingle(reason);
     }
   };
 
@@ -218,15 +267,26 @@ export default function FailedScrapingPanel({
             </div>
             <div className="flex items-center gap-2">
               {selectedIds.size > 0 && (
-                <button
-                  onClick={handleRetrySelected}
-                  disabled={actionLoading !== null}
-                  className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
-                           hover:bg-ink/80 disabled:opacity-50 transition-colors"
-                >
-                  <RotateCcw className="w-2.5 h-2.5" />
-                  Retry Selected
-                </button>
+                <>
+                  <button
+                    onClick={handleRetrySelected}
+                    disabled={actionLoading !== null}
+                    className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
+                             hover:bg-ink/80 disabled:opacity-50 transition-colors"
+                  >
+                    <RotateCcw className="w-2.5 h-2.5" />
+                    Retry Selected
+                  </button>
+                  <button
+                    onClick={handleBlacklistSelected}
+                    disabled={actionLoading !== null}
+                    className="flex items-center gap-1 px-2 py-1 bg-status-error/10 text-status-error text-[11px] font-body
+                             hover:bg-status-error/20 disabled:opacity-50 transition-colors"
+                  >
+                    <Ban className="w-2.5 h-2.5" />
+                    Blacklist Selected
+                  </button>
+                </>
               )}
               <button
                 onClick={onRetryAll}
@@ -332,6 +392,24 @@ export default function FailedScrapingPanel({
           )}
         </div>
       )}
+
+      {/* Blacklist Dialog */}
+      <InputDialog
+        isOpen={blacklistDialog.isOpen}
+        title={blacklistDialog.isBulk ? `Blacklist ${selectedIds.size} Artist(s)` : 'Blacklist Artist'}
+        message={
+          blacklistDialog.isBulk
+            ? 'These artists will be permanently excluded from scraping. Their existing images will be deleted.'
+            : 'This artist will be permanently excluded from scraping. Their existing images will be deleted.'
+        }
+        inputLabel="Reason"
+        inputPlaceholder="e.g., Account deleted, Private account"
+        confirmLabel="Blacklist"
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleBlacklistConfirm}
+        onCancel={() => setBlacklistDialog({ isOpen: false, isBulk: false })}
+      />
     </div>
   );
 }

@@ -12,7 +12,8 @@ const STALE_PENDING_THRESHOLD_MS = 30 * 60 * 1000;
 export interface PipelineStatus {
   artists: {
     total: number;
-    withoutImages: number; // Need scraping
+    withoutImages: number; // Need scraping (excludes blacklisted)
+    blacklisted: number; // Blacklisted from scraping
     withImages: number; // Have portfolio images
     pendingEmbeddings: number; // Images but no embeddings
     complete: number; // Have embeddings
@@ -69,6 +70,7 @@ export async function GET() {
         const [
       _artistsWithImagesResult,
       artistsWithoutImagesResult,
+      blacklistedArtistsResult,
       totalArtistsResult,
       imagesResult,
       imagesWithEmbeddingsResult,
@@ -87,8 +89,11 @@ export async function GET() {
         .not('instagram_handle', 'is', null)
         .filter('id', 'in', `(SELECT DISTINCT artist_id FROM portfolio_images)`),
 
-      // Artists without portfolio images (uses RPC from Phase 1 migration)
+      // Artists without portfolio images (excludes blacklisted)
       adminClient.rpc('count_artists_without_images'),
+
+      // Blacklisted artists count
+      adminClient.rpc('count_blacklisted_artists'),
 
       // Total artists
       adminClient
@@ -183,6 +188,16 @@ export async function GET() {
     artistsWithoutImages = Math.min(artistsWithoutImages, totalArtists);
     const artistsWithImages = totalArtists - artistsWithoutImages;
 
+    // Get blacklisted artists count
+    let blacklistedArtists = 0;
+    if (
+      blacklistedArtistsResult.data !== null &&
+      typeof blacklistedArtistsResult.data === 'number' &&
+      blacklistedArtistsResult.data >= 0
+    ) {
+      blacklistedArtists = blacklistedArtistsResult.data;
+    }
+
     // Format recent runs with heartbeat status
     const now = Date.now();
     const recentRuns = (recentRunsResult.data || []).map((run) => {
@@ -224,6 +239,7 @@ export async function GET() {
           artists: {
             total: totalArtists,
             withoutImages: artistsWithoutImages,
+            blacklisted: blacklistedArtists,
             withImages: artistsWithImages,
             pendingEmbeddings: imagesWithoutEmbeddings > 0 ? artistsWithImages : 0,
             complete: imagesWithEmbeddings > 0 ? artistsWithImages : 0,

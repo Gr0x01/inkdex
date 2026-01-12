@@ -16,6 +16,7 @@ export type AuditAction =
   | 'artist.bulk_unfeature'
   | 'artist.blacklist'
   | 'artist.unblacklist'
+  | 'artist.bulk_blacklist'
   | 'artist.rescrape'
   | 'admin.login'
   | 'admin.logout'
