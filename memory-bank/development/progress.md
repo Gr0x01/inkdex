@@ -72,6 +72,19 @@ All 15 implementation phases complete:
 ## Development Timeline
 
 ### Week 2 (Jan 12, 2026)
+- **Pipeline Retry Tracking System** ✅
+  - Added `retry_count`, `last_error`, `permanent_failure` columns to `artist_pipeline_state`
+  - Scraping script now categorizes failures:
+    - Permanent (private/deleted/blocked) → `failed` with `permanent_failure=true`
+    - Transient (network/rate limits) → stays in `pending_scrape`, auto-retries up to 3x
+  - Retry API endpoint only resets transient failures, excludes permanent ones
+  - GET endpoint returns `retryable` vs `permanent` failure counts
+  - Key files: `scrapingdog-scraper.ts`, `app/api/admin/pipeline/retry/route.ts`
+- **Pipeline Admin Utilities** ✅
+  - `check-jobs.ts` - view active/stuck pipeline jobs
+  - `check-status.ts` - view pipeline status distribution
+  - `cancel-job.ts` - manually cancel stuck jobs
+  - `reset-failed.ts` - reset artists without images to pending_scrape
 - **Search API Refactor** ✅
   - Split monolithic 772-line `route.ts` into modular handler architecture
   - Route.ts reduced to 147 lines (81% reduction)
