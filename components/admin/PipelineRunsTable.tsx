@@ -183,6 +183,9 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
               Progress
             </th>
             <th className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500">
+              Failed
+            </th>
+            <th className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500">
               Duration
             </th>
             <th className="px-2 py-2 text-right font-mono text-[10px] uppercase tracking-wider text-gray-500">
@@ -214,6 +217,9 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
                     ? `${run.processedItems}/${run.totalItems}`
                     : '—'}
                 </td>
+                <td className={`px-2 py-1.5 text-right font-mono tabular-nums ${run.failedItems > 0 ? 'text-status-error' : 'text-gray-400'}`}>
+                  {run.failedItems > 0 ? run.failedItems : '—'}
+                </td>
                 <td className="px-2 py-1.5 text-right font-mono text-gray-500">
                   {formatDuration(run.startedAt, run.completedAt)}
                 </td>
@@ -234,51 +240,57 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
               {/* Expanded details */}
               {expandedId === run.id && (
                 <tr className="bg-gray-50/30">
-                  <td colSpan={6} className="px-2 py-3">
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
-                      <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
-                      <DetailItem label="Total Items" value={run.totalItems} />
-                      <DetailItem label="Processed" value={run.processedItems} />
-                      <DetailItem label="Failed" value={run.failedItems} />
-
-                      {/* Heartbeat indicator for running jobs */}
-                      {run.status === 'running' && (
-                        <div>
-                          <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                            <Heart className={`w-2 h-2 ${run.isStale ? 'text-status-error' : 'text-status-success animate-pulse'}`} />
-                            Heartbeat
-                          </p>
-                          <p className={`text-[13px] font-heading font-semibold tabular-nums ${run.isStale ? 'text-status-error' : 'text-ink'}`}>
-                            {run.lastHeartbeatAt
-                              ? formatDate(run.lastHeartbeatAt)
-                              : 'No heartbeat yet'}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Cancel button */}
-                      <div className="flex justify-end">
-                        {(run.status === 'pending' || run.status === 'running') && (
-                          <button
-                            onClick={(e) => handleCancel(run.id, e)}
-                            disabled={cancelling === run.id}
-                            className="flex items-center gap-1.5 px-2 py-1 bg-status-error/10 text-status-error text-[11px] font-body
-                                     hover:bg-status-error/20 disabled:opacity-50 transition-colors"
-                          >
-                            {cancelling === run.id ? (
-                              <>
-                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                Cancelling...
-                              </>
-                            ) : (
-                              <>
-                                <X className="w-2.5 h-2.5" />
-                                Cancel Job
-                              </>
-                            )}
-                          </button>
+                  <td colSpan={7} className="px-2 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
+                        <DetailItem
+                          label="Success"
+                          value={run.processedItems - run.failedItems}
+                        />
+                        {run.processedItems > 0 && (
+                          <DetailItem
+                            label="Success Rate"
+                            value={`${Math.round(((run.processedItems - run.failedItems) / run.processedItems) * 100)}%`}
+                          />
+                        )}
+                        {/* Heartbeat indicator for running jobs */}
+                        {run.status === 'running' && (
+                          <div>
+                            <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                              <Heart className={`w-2 h-2 ${run.isStale ? 'text-status-error' : 'text-status-success animate-pulse'}`} />
+                              Heartbeat
+                            </p>
+                            <p className={`text-[13px] font-heading font-semibold tabular-nums ${run.isStale ? 'text-status-error' : 'text-ink'}`}>
+                              {run.lastHeartbeatAt
+                                ? formatDate(run.lastHeartbeatAt)
+                                : 'No heartbeat yet'}
+                            </p>
+                          </div>
                         )}
                       </div>
+
+                      {/* Cancel button */}
+                      {(run.status === 'pending' || run.status === 'running') && (
+                        <button
+                          onClick={(e) => handleCancel(run.id, e)}
+                          disabled={cancelling === run.id}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-status-error/10 text-status-error text-[11px] font-body
+                                   hover:bg-status-error/20 disabled:opacity-50 transition-colors"
+                        >
+                          {cancelling === run.id ? (
+                            <>
+                              <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              Cancelling...
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-2.5 h-2.5" />
+                              Cancel Job
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
 
                     {run.errorMessage && (

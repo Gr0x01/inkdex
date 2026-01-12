@@ -105,12 +105,9 @@ async function getPendingArtists(limit?: number): Promise<PendingArtist[]> {
         AND a.instagram_handle IS NOT NULL
         AND (
           ps.pipeline_status IS NULL
-          OR ps.pipeline_status = 'pending'
-          OR ps.pipeline_status = 'retry_requested'
+          OR ps.pipeline_status = 'pending_scrape'
         )
-      ORDER BY
-        CASE WHEN ps.pipeline_status = 'retry_requested' THEN 0 ELSE 1 END,
-        a.created_at
+      ORDER BY a.created_at
       ${limit ? sql`LIMIT ${limit}` : sql``}
     `;
 
@@ -534,7 +531,7 @@ async function main(): Promise<void> {
       if (pipelineRunId) {
         const updateFrequency = artists.length <= 20 ? 1 : 10;
         if (completed % updateFrequency === 0) {
-          await updatePipelineProgress(pipelineRunId, artists.length, successful, failed);
+          await updatePipelineProgress(pipelineRunId, artists.length, completed, failed);
         }
       }
 
@@ -556,7 +553,7 @@ async function main(): Promise<void> {
 
   // Final progress update
   if (pipelineRunId) {
-    await updatePipelineProgress(pipelineRunId, artists.length, successful, failed);
+    await updatePipelineProgress(pipelineRunId, artists.length, completed, failed);
   }
 
   // Summary
