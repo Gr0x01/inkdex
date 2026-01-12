@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { Trash2, Pin, EyeOff, Sparkles } from 'lucide-react';
+import { Trash2, Pin, EyeOff, Sparkles, Download } from 'lucide-react';
 import { getImageUrl } from '@/lib/utils/images';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
@@ -38,7 +38,9 @@ export default function ArtistImageGrid({
 }: ArtistImageGridProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -84,11 +86,61 @@ export default function ArtistImageGrid({
       // Notify parent to update state
       onImagesDeleted(Array.from(selectedIds));
       setSelectedIds(new Set());
-    } catch (error) {
-      console.error('Failed to delete images:', error);
-      alert(error instanceof Error ? error.message : 'Failed to delete images');
+    } catch (err) {
+      console.error('Failed to delete images:', err);
+      const message = err instanceof Error ? err.message : 'Failed to delete images';
+      setError(message);
+      setTimeout(() => setError(null), 5000);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (selectedIds.size === 0) return;
+
+    setDownloading(true);
+
+    try {
+      const selectedImages = images.filter((img) => selectedIds.has(img.id));
+
+      for (let i = 0; i < selectedImages.length; i++) {
+        const img = selectedImages[i];
+        const originalPath = img.storage_original_path;
+
+        if (!originalPath) {
+          console.warn(`No original path for image ${img.id}`);
+          continue;
+        }
+
+        const url = getImageUrl(originalPath);
+
+        try {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+
+          const blob = await response.blob();
+          const filename = originalPath.split('/').pop() || `${img.instagram_post_id}.jpg`;
+
+          const downloadUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = downloadUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(downloadUrl);
+
+          // Small delay between downloads to avoid browser blocking
+          if (i < selectedImages.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        } catch (err) {
+          console.error(`Failed to download image ${img.id}:`, err);
+        }
+      }
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -102,6 +154,19 @@ export default function ArtistImageGrid({
 
   return (
     <div className="space-y-3">
+      {/* Error Display */}
+      {error && (
+        <div className="flex items-center justify-between bg-red-50 border border-red-200 px-3 py-2 text-[12px]">
+          <span className="text-red-700 font-body">{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700 font-mono text-[10px] uppercase"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Actions Bar */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -129,21 +194,38 @@ export default function ArtistImageGrid({
         </div>
 
         {selectedIds.size > 0 && (
-          <button
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={deleting}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[12px] font-body
-                       hover:bg-red-700 disabled:opacity-50 transition-colors"
-          >
-            {deleting ? (
-              <div className="w-3.5 h-3.5 border border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Trash2 className="w-3.5 h-3.5" />
-            )}
-            {deleting
-              ? 'Deleting...'
-              : `Delete ${selectedIds.size} ${selectedIds.size === 1 ? 'Image' : 'Images'}`}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDownload}
+              disabled={downloading || deleting}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-[12px] font-body
+                         hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            >
+              {downloading ? (
+                <div className="w-3.5 h-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              {downloading
+                ? 'Downloading...'
+                : `Download ${selectedIds.size}`}
+            </button>
+            <button
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={deleting || downloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-[12px] font-body
+                         hover:bg-red-700 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? (
+                <div className="w-3.5 h-3.5 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5" />
+              )}
+              {deleting
+                ? 'Deleting...'
+                : `Delete ${selectedIds.size}`}
+            </button>
+          </div>
         )}
       </div>
 

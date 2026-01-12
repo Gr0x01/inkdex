@@ -59,23 +59,28 @@ export default function ScrapingStatusCard({
     setSuccess(null);
 
     try {
-      const res = await fetch('/api/admin/pipeline/retry', {
+      const res = await fetch('/api/admin/pipeline/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          target: 'scraping',
+          jobType: 'scraping',
+          scope: 'specific',
           artistIds: [artistId],
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to request rescrape');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to trigger rescrape');
+      }
 
       setPipelineState((prev) => ({
         ...prev!,
-        pipeline_status: 'retry_requested',
+        pipeline_status: 'scraping',
         scraping_blacklisted: false,
       }));
-      setSuccess('Marked for rescrape');
+      setSuccess('Scraping started');
       onStatusChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to rescrape');
@@ -191,7 +196,7 @@ export default function ScrapingStatusCard({
 
       {/* Actions */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {!pipelineState?.scraping_blacklisted && status !== 'retry_requested' && (
+        {!pipelineState?.scraping_blacklisted && status !== 'scraping' && (
           <button
             onClick={handleRescrape}
             disabled={loading !== null}
