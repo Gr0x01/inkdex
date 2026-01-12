@@ -312,6 +312,8 @@ export const getArtistBySlug = cache(async (slug: string) => {
         post_caption,
         post_timestamp,
         likes_count,
+        is_pinned,
+        pinned_position,
         featured
       ),
       locations:artist_locations (
@@ -330,6 +332,9 @@ export const getArtistBySlug = cache(async (slug: string) => {
       )
     `)
     .eq('slug', slug)
+    .order('is_pinned', { referencedTable: 'portfolio_images', ascending: false, nullsFirst: false })
+    .order('pinned_position', { referencedTable: 'portfolio_images', ascending: true, nullsFirst: true })
+    .order('likes_count', { referencedTable: 'portfolio_images', ascending: false, nullsFirst: true })
     .order('is_primary', { referencedTable: 'artist_locations', ascending: false })
     .order('display_order', { referencedTable: 'artist_locations', ascending: true })
     .order('percentage', { referencedTable: 'artist_style_profiles', ascending: false })
