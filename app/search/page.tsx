@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LocationFilter from '@/components/search/LocationFilter'
+import ClearFiltersButton from '@/components/search/ClearFiltersButton'
 import { StickyFilterBar } from '@/components/search/StickyFilterBar'
 import SearchResultsGrid from '@/components/search/SearchResultsGrid'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
@@ -310,7 +311,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="flex-1 sm:hidden" />
 
             {/* Location Filter - Right aligned */}
-            <div className="overflow-visible flex-shrink-0">
+            <div className="overflow-visible flex-shrink-0 flex items-center gap-2">
+              <ClearFiltersButton />
               <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
                 <LocationFilter searchId={id} />
               </ErrorBoundary>

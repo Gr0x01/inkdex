@@ -10,7 +10,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 
 interface SelectOption {
   value: string;
@@ -29,6 +29,8 @@ interface SelectProps {
   disabled?: boolean;
   /** Called when dropdown opens - use for lazy loading */
   onOpen?: () => void;
+  /** Show clear button when value is selected */
+  clearable?: boolean;
 }
 
 export default function Select({
@@ -42,6 +44,7 @@ export default function Select({
   size = 'default',
   disabled = false,
   onOpen,
+  clearable = false,
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,11 +243,34 @@ export default function Select({
         <span className={selectedOption ? 'truncate' : 'text-[var(--text-tertiary)] italic truncate'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown
-          className={`w-3 h-3 text-[var(--gray-500)] flex-shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
-        />
+        <span className="flex items-center gap-1 flex-shrink-0">
+          {/* Clear button - only show when clearable and has value */}
+          {clearable && selectedOption && selectedOption.value && (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  onChange(null);
+                }
+              }}
+              className="p-0.5 rounded hover:bg-[var(--gray-200)] transition-colors duration-100"
+              aria-label="Clear selection"
+            >
+              <X className="w-3 h-3 text-[var(--gray-500)] hover:text-[var(--ink-black)]" />
+            </span>
+          )}
+          <ChevronDown
+            className={`w-3 h-3 text-[var(--gray-500)] transition-transform duration-200 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          />
+        </span>
       </button>
 
       {/* Dropdown Menu - Positioned absolutely relative to container */}

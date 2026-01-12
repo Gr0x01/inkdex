@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Select from '@/components/ui/Select'
 import { US_STATES } from '@/lib/constants/states'
@@ -161,6 +161,13 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
     }
   }, [searchId, hasFetched, loading])
 
+  // Fetch locations on mount if a filter is already applied (so we can display the selected value)
+  useEffect(() => {
+    if ((currentCountry || currentRegion || currentCity) && !hasFetched) {
+      fetchLocations()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Update URL with debouncing
   const updateFilters = useCallback((updates: {
     country?: string
@@ -251,7 +258,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
       value={getCurrentValue()}
       onChange={handleSelection}
       options={options}
-      placeholder={loading ? 'Loading...' : 'Select location'}
+      placeholder={loading ? 'Loading...' : 'All locations'}
       className="w-[140px] md:w-[200px]"
       searchable
       searchPlaceholder="Search locations..."

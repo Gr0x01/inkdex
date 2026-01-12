@@ -3,7 +3,8 @@ import StyleExplorer from '@/components/home/StyleExplorer'
 import VisualSearchPromo from '@/components/home/VisualSearchPromo'
 import FreeClaimShowcase from '@/components/home/FreeClaimShowcase'
 import ProShowcase from '@/components/home/ProShowcase'
-import { getStyleSeeds, getHomepageStats } from '@/lib/supabase/queries'
+import QuickSearchLinks from '@/components/home/QuickSearchLinks'
+import { getStyleSeeds } from '@/lib/supabase/queries'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
 import { PageLoadTracker } from '@/components/analytics/PageLoadTracker'
@@ -12,17 +13,11 @@ import { PageLoadTracker } from '@/components/analytics/PageLoadTracker'
 export const revalidate = 3600 // 1 hour
 
 export default async function Home() {
-  // Fetch style seeds and stats in parallel
-  const [styleSeeds, stats] = await Promise.all([
-    getStyleSeeds().catch((error) => {
-      console.error('Failed to fetch style seeds:', error)
-      return []
-    }),
-    getHomepageStats().catch((error) => {
-      console.error('Failed to fetch homepage stats:', error)
-      return { artistCount: 15000, imageCount: 65000, cityCount: 100, countryCount: 1 }
-    }),
-  ])
+  // Fetch style seeds for StyleExplorer
+  const styleSeeds = await getStyleSeeds().catch((error) => {
+    console.error('Failed to fetch style seeds:', error)
+    return []
+  })
 
   // Organization schema for homepage
   const organizationSchema = {
@@ -120,42 +115,12 @@ export default async function Home() {
             <UnifiedSearchBar />
           </div>
 
-          {/* Trust Strip */}
+          {/* Quick Search Examples */}
           <div
-            className="mt-6 md:mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 animate-fade-up px-4"
+            className="mt-4 md:mt-6 animate-fade-up px-4"
             style={{ animationDelay: '300ms' }}
           >
-            <span
-              className="font-mono text-sm uppercase tracking-[0.15em]"
-              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-            >
-              {stats.artistCount.toLocaleString()}+ Artists
-            </span>
-            <span className="text-white/20 hidden sm:inline">•</span>
-            <span
-              className="font-mono text-sm uppercase tracking-[0.15em]"
-              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-            >
-              {stats.imageCount.toLocaleString()}+ Portfolio Pieces
-            </span>
-            <span className="text-white/20 hidden sm:inline">•</span>
-            <span
-              className="font-mono text-sm uppercase tracking-[0.15em]"
-              style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-            >
-              {stats.cityCount} Cities
-            </span>
-            {stats.countryCount > 1 && (
-              <>
-                <span className="text-white/20 hidden sm:inline">•</span>
-                <span
-                  className="font-mono text-sm uppercase tracking-[0.15em]"
-                  style={{ color: 'rgba(255, 255, 255, 0.6)' }}
-                >
-                  {stats.countryCount} Countries
-                </span>
-              </>
-            )}
+            <QuickSearchLinks />
           </div>
         </div>
 
