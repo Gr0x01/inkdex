@@ -124,7 +124,7 @@ export function PostHogAnalytics() {
       api_host: '${POSTHOG_HOST}',
       capture_pageview: true,
       capture_pageleave: true,
-      persistence: 'localStorage+cookie',
+      persistence: 'memory',  // Cookieless mode - server uses hash for unique users
       autocapture: true,
       // Session Replay Configuration
       disable_session_recording: false,
