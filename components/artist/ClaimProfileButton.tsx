@@ -1,9 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { capturePostHog } from '@/lib/analytics/posthog'
+import { EVENTS } from '@/lib/analytics/events'
 
 interface ClaimProfileButtonProps {
   artistId: string
+  artistSlug: string
   artistName: string
   instagramHandle: string
   verificationStatus: string
@@ -11,6 +14,7 @@ interface ClaimProfileButtonProps {
 
 export default function ClaimProfileButton({
   artistId,
+  artistSlug,
   artistName: _artistName,
   instagramHandle,
   verificationStatus,
@@ -24,6 +28,13 @@ export default function ClaimProfileButton({
 
   const handleClaim = () => {
     setIsLoading(true)
+
+    // Track claim started event
+    capturePostHog(EVENTS.CLAIM_STARTED, {
+      artist_id: artistId,
+      artist_slug: artistSlug,
+      source_page: typeof window !== 'undefined' ? window.location.pathname : '/artist',
+    })
 
     // Redirect to OAuth with claim context
     const redirectPath = `/claim/verify?artist_id=${artistId}`

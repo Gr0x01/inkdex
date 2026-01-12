@@ -7,6 +7,8 @@ import { SearchResult } from '@/types/search'
 import { getImageUrl } from '@/lib/utils/images'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { FeaturedBadge } from '@/components/badges/FeaturedBadge'
+import { capturePostHog } from '@/lib/analytics/posthog'
+import { EVENTS } from '@/lib/analytics/events'
 
 /**
  * Format follower count for display
@@ -38,9 +40,18 @@ function formatFollowerCount(count: number): string {
 interface ArtistCardProps {
   artist: SearchResult
   displayMode?: 'search' | 'browse'
+  /** Position in search results (1-indexed) for analytics */
+  resultPosition?: number
+  /** Search ID for linking click to search */
+  searchId?: string
 }
 
-export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCardProps) {
+export default function ArtistCard({
+  artist,
+  displayMode = 'search',
+  resultPosition,
+  searchId,
+}: ArtistCardProps) {
   const {
     artist_id,
     artist_slug,
@@ -54,6 +65,18 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     is_featured = false,
     is_searched_artist = false,
   } = artist
+
+  // Track click on artist card
+  const handleCardClick = () => {
+    if (displayMode === 'search' && resultPosition !== undefined) {
+      capturePostHog(EVENTS.SEARCH_RESULT_CLICKED, {
+        artist_id,
+        artist_slug,
+        result_position: resultPosition,
+        search_id: searchId,
+      })
+    }
+  }
 
   // Check if this is a pending artist (not yet fully in DB)
   const isPending = artist_id.startsWith('pending-')
@@ -145,6 +168,7 @@ export default function ArtistCard({ artist, displayMode = 'search' }: ArtistCar
     <LinkComponent
       href={href}
       {...linkProps}
+      onClick={handleCardClick}
       className={`group block w-full min-w-0 bg-paper border-2 overflow-hidden hover:border-ink hover:-translate-y-[3px] hover:shadow-md transition-all duration-fast min-h-[280px] sm:min-h-[320px] lg:min-h-[360px] ${
         isWideLayout ? 'lg:col-span-2' : ''
       } ${is_searched_artist ? 'border-orange-400 ring-2 ring-orange-400/20' : 'border-ink/20'}`}

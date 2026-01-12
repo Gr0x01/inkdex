@@ -343,6 +343,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           }}
           excludeArtistId={excludeArtistId}
           searchedArtistId={searchedArtistData?.id || null}
+          searchMetadata={{
+            searchType: searchType as 'image' | 'text' | 'instagram_post' | 'instagram_profile' | 'similar_artist',
+            queryLength: queryText?.length,
+          }}
         />
       </div>
     </main>

@@ -6,6 +6,7 @@ import ProShowcase from '@/components/home/ProShowcase'
 import { getStyleSeeds, getHomepageStats } from '@/lib/supabase/queries'
 import { serializeJsonLd } from '@/lib/utils/seo'
 import { ModalWarmup } from '@/components/warmup/ModalWarmup'
+import { PageLoadTracker } from '@/components/analytics/PageLoadTracker'
 
 // ISR: Revalidate homepage every hour (featured artists are stable)
 export const revalidate = 3600 // 1 hour
@@ -51,6 +52,9 @@ export default async function Home() {
 
       {/* Pre-warm Modal container for fast first search */}
       <ModalWarmup />
+
+      {/* Track page load time for time-to-first-search analytics */}
+      <PageLoadTracker />
 
       <main className="bg-ink overflow-x-hidden">
       {/* ═══════════════════════════════════════════════════════════════

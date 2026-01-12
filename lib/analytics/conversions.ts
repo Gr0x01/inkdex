@@ -1,8 +1,8 @@
 /**
- * Google Ads Conversion Tracking
+ * Conversion Tracking
  *
- * Fire conversion events for Google Ads campaigns.
- * Requires gtag to be loaded (via GoogleAnalytics component).
+ * Fire conversion events for PostHog and Google Ads campaigns.
+ * Requires gtag to be loaded (via GoogleAnalytics component) for Google Ads.
  *
  * Usage:
  *   import { trackClaimConversion, trackSearchConversion } from '@/lib/analytics/conversions'
@@ -11,10 +11,11 @@
  *   trackClaimConversion()
  *
  *   // After search results display
- *   trackSearchConversion()
+ *   trackSearchConversion({ search_type: 'text', result_count: 10 })
  */
 
-import { capturePostHog } from './posthog'
+import { capturePostHog, setUserPropertiesOnce, incrementUserProperty } from './posthog'
+import { EVENTS, type SearchCompletedProperties } from './events'
 
 declare global {
   interface Window {
@@ -42,7 +43,7 @@ function isGtagReady(): boolean {
  */
 export function trackClaimConversion(value: number = 1.0): void {
   // PostHog event (always try, regardless of Google Ads)
-  capturePostHog('Artist Claimed', { value, currency: 'USD' })
+  capturePostHog(EVENTS.CLAIM_COMPLETED, { value, currency: 'USD' })
 
   if (!isGtagReady()) {
     console.debug('[Conversions] gtag not ready, skipping claim conversion')
@@ -67,11 +68,36 @@ export function trackClaimConversion(value: number = 1.0): void {
  * Track search completion conversion
  * Call this after search results are displayed to the user
  *
+ * @param properties - Search metadata for analytics
  * @param value - Optional conversion value (default: 0.1)
  */
-export function trackSearchConversion(value: number = 0.1): void {
-  // PostHog event (always try, regardless of Google Ads)
-  capturePostHog('Search Completed', { value, currency: 'USD' })
+export function trackSearchConversion(
+  properties?: Partial<SearchCompletedProperties>,
+  value: number = 0.1
+): void {
+  const eventProps = {
+    ...properties,
+    value,
+    currency: 'USD',
+  }
+
+  // PostHog event with enhanced properties
+  capturePostHog(EVENTS.SEARCH_COMPLETED, eventProps)
+
+  // Track first search if this is the user's first
+  if (properties?.is_first_search) {
+    capturePostHog(EVENTS.FIRST_SEARCH, {
+      search_type: properties.search_type,
+      referrer: typeof document !== 'undefined' ? document.referrer : undefined,
+      landing_page: typeof window !== 'undefined' ? window.location.pathname : undefined,
+    })
+    setUserPropertiesOnce({
+      first_search_at: new Date().toISOString(),
+    })
+  }
+
+  // Increment search count
+  incrementUserProperty('search_count', 1)
 
   if (!isGtagReady()) {
     console.debug('[Conversions] gtag not ready, skipping search conversion')

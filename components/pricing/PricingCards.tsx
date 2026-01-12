@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Crown, Check, Loader2, Sparkles } from 'lucide-react'
 import { PRICING, FREE_FEATURES, PRO_FEATURES } from '@/lib/pricing/config'
+import { capturePostHog } from '@/lib/analytics/posthog'
+import { EVENTS } from '@/lib/analytics/events'
 
 type UserState = 'loading' | 'logged-out' | 'no-artist' | 'free' | 'pro'
 
@@ -45,6 +47,12 @@ export default function PricingCards() {
   const handleUpgrade = async () => {
     setCheckoutLoading(true)
     setError(null)
+
+    // Track checkout started event
+    capturePostHog(EVENTS.CHECKOUT_STARTED, {
+      plan_type: selectedPlan,
+      price: selectedPlan === 'monthly' ? PRICING.monthly.amount : PRICING.yearly.amount,
+    })
 
     try {
       const res = await fetch('/api/stripe/create-checkout', {

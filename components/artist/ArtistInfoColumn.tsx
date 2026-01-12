@@ -360,6 +360,7 @@ export default function ArtistInfoColumn({
         <div className="pt-3">
           <ClaimProfileButton
             artistId={artist.id}
+            artistSlug={artist.slug}
             artistName={artist.name}
             instagramHandle={artist.instagram_handle || ''}
             verificationStatus={artist.verification_status}

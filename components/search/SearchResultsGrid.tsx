@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import ArtistCard from '@/components/search/ArtistCard'
 import { SearchResult } from '@/types/search'
 import { trackSearchConversion } from '@/lib/analytics/conversions'
+import type { SearchType } from '@/lib/analytics/events'
 
 interface SearchResultsGridProps {
   searchId: string
@@ -18,6 +19,11 @@ interface SearchResultsGridProps {
   excludeArtistId?: string | null
   /** The searched artist ID (for instagram_profile searches) - exclude from pagination */
   searchedArtistId?: string | null
+  /** Search metadata for analytics tracking */
+  searchMetadata?: {
+    searchType: SearchType
+    queryLength?: number
+  }
 }
 
 const BATCH_SIZE = 20
@@ -29,6 +35,7 @@ export default function SearchResultsGrid({
   filters,
   excludeArtistId,
   searchedArtistId,
+  searchMetadata,
 }: SearchResultsGridProps) {
   const [results, setResults] = useState<SearchResult[]>(initialResults)
   const [loading, setLoading] = useState(false)
@@ -147,12 +154,39 @@ export default function SearchResultsGrid({
     }
   }, [])
 
-  // Track search conversion for Google Ads (once per search)
+  // Track search conversion for PostHog + Google Ads (once per search)
   const hasTrackedRef = useRef(false)
   useEffect(() => {
     if (!hasTrackedRef.current && initialResults.length > 0) {
       hasTrackedRef.current = true
-      trackSearchConversion()
+
+      // Check if this is the user's first search (stored in sessionStorage)
+      const hasSearchedBefore = typeof window !== 'undefined' &&
+        sessionStorage.getItem('inkdex_has_searched') === 'true'
+
+      // Calculate time to first search if we have a page load timestamp
+      let timeToSearchMs: number | undefined
+      if (typeof window !== 'undefined') {
+        const pageLoadTime = sessionStorage.getItem('inkdex_page_load_time')
+        if (pageLoadTime) {
+          timeToSearchMs = Date.now() - parseInt(pageLoadTime, 10)
+        }
+      }
+
+      trackSearchConversion({
+        search_type: searchMetadata?.searchType,
+        query_length: searchMetadata?.queryLength,
+        result_count: totalCount,
+        city_filter: filters.city || undefined,
+        is_first_search: !hasSearchedBefore,
+        time_to_search_ms: timeToSearchMs,
+        search_id: searchId,
+      })
+
+      // Mark that user has searched
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('inkdex_has_searched', 'true')
+      }
     }
   }, []) // Intentionally run once on mount - empty deps array is correct here
 
@@ -161,10 +195,12 @@ export default function SearchResultsGrid({
       {/* Artist Grid */}
       {results.length > 0 ? (
         <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
-          {results.map((artist) => (
+          {results.map((artist, index) => (
             <ArtistCard
               key={artist.artist_id}
               artist={artist}
+              resultPosition={index + 1}
+              searchId={searchId}
             />
           ))}
         </div>

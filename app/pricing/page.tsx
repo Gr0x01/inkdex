@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import PricingCards from '@/components/pricing/PricingCards'
 import FAQSection from '@/components/seo/FAQSection'
+import { PricingPageTracker } from '@/components/analytics/PricingPageTracker'
 import type { FAQ } from '@/lib/content/types'
 
 export const metadata: Metadata = {
@@ -48,6 +49,9 @@ const FAQ_ITEMS: FAQ[] = [
 export default function PricingPage() {
   return (
     <main className="min-h-screen bg-paper">
+      {/* Track pricing page view */}
+      <PricingPageTracker />
+
       {/* Hero Section */}
       <section className="pt-16 pb-8 md:pt-24 md:pb-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
