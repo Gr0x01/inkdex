@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useMemo } from 'react'
 import { CITIES } from '@/lib/constants/cities'
 import { US_STATES } from '@/lib/constants/states'
+import { getCountryName } from '@/lib/constants/countries'
 import { buildCityUrl } from '@/lib/utils/city-helpers'
 import { CookieSettingsLink } from '@/components/consent/CookieSettingsLink'
 
@@ -20,13 +21,20 @@ interface StateWithArtists {
   artist_count: number
 }
 
-interface FooterProps {
-  statesWithArtists?: StateWithArtists[]
+interface CountryWithArtists {
+  country_code: string
+  country_name: string
+  artist_count: number
 }
 
-export default function Footer({ statesWithArtists = [] }: FooterProps) {
-  // Get featured cities (only those in states with artists)
-  const { featuredCities, statesForFooter } = useMemo(() => {
+interface FooterProps {
+  statesWithArtists?: StateWithArtists[]
+  countriesWithArtists?: CountryWithArtists[]
+}
+
+export default function Footer({ statesWithArtists = [], countriesWithArtists = [] }: FooterProps) {
+  // Get featured cities and process location data
+  const { featuredCities, statesForFooter, countriesForFooter } = useMemo(() => {
     // Create a set of states that have artists with images
     const statesWithData = new Set(statesWithArtists.map(s => s.region))
 
@@ -44,8 +52,17 @@ export default function Footer({ statesWithArtists = [] }: FooterProps) {
       }))
       .sort((a, b) => b.count - a.count) // Sort by artist count descending
 
-    return { featuredCities: featured, statesForFooter: states }
-  }, [statesWithArtists])
+    // Map country data to display format, sorted by artist count
+    const countries = countriesWithArtists
+      .map(c => ({
+        code: c.country_code,
+        name: getCountryName(c.country_code) || c.country_name,
+        count: c.artist_count
+      }))
+      .sort((a, b) => b.count - a.count) // Sort by artist count descending
+
+    return { featuredCities: featured, statesForFooter: states, countriesForFooter: countries }
+  }, [statesWithArtists, countriesWithArtists])
 
   return (
     <footer className="border-t border-stone-800 bg-black">
@@ -102,15 +119,14 @@ export default function Footer({ statesWithArtists = [] }: FooterProps) {
             <h4 className="font-jetbrains-mono text-sm font-medium uppercase tracking-wider text-stone-400">
               Browse by State
             </h4>
-            <ul className="mt-4 space-y-1.5">
+            <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5">
               {statesForFooter.slice(0, 8).map((state) => (
                 <li key={state.code}>
                   <Link
                     href={`/us/${state.code.toLowerCase()}`}
-                    className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent inline-flex items-baseline gap-1"
+                    className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
                   >
-                    <span>{state.name}</span>
-                    <span className="text-xs text-stone-500">({state.count.toLocaleString()})</span>
+                    {state.name}
                   </Link>
                 </li>
               ))}
@@ -125,65 +141,51 @@ export default function Footer({ statesWithArtists = [] }: FooterProps) {
             )}
           </div>
 
-          {/* Company */}
-          <div>
-            <h4 className="font-jetbrains-mono text-sm font-medium uppercase tracking-wider text-stone-400">
-              Company
-            </h4>
-            <ul className="mt-4 space-y-3">
-              <li>
+          {/* Browse by Country */}
+          {countriesForFooter.length > 0 && (
+            <div>
+              <h4 className="font-jetbrains-mono text-sm font-medium uppercase tracking-wider text-stone-400">
+                Browse by Country
+              </h4>
+              <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {countriesForFooter.slice(0, 8).map((country) => (
+                  <li key={country.code}>
+                    <Link
+                      href={`/${country.code.toLowerCase()}`}
+                      className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                    >
+                      {country.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {countriesForFooter.length > 8 && (
                 <Link
-                  href="/guides"
-                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
+                  href="/countries"
+                  className="mt-3 inline-block font-jetbrains-mono text-xs text-stone-400 hover:text-accent transition-colors"
                 >
-                  City Guides
+                  View all countries →
                 </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about"
-                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
-                >
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
-                >
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/terms"
-                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
-                >
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/legal/privacy"
-                  className="font-jetbrains-mono text-sm text-stone-300 transition-colors hover:text-accent"
-                >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <CookieSettingsLink />
-              </li>
-            </ul>
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Bottom bar */}
+        {/* Bottom bar with Company links */}
         <div className="mt-12 border-t border-stone-800 pt-8">
-          <div className="flex flex-col items-center">
-            <p className="font-jetbrains-mono text-center text-xs text-stone-500">
-              © {new Date().getFullYear()} Inkdex. Visual search platform for
-              finding tattoo artists.
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Company links - horizontal on larger screens */}
+            <nav className="flex flex-wrap gap-x-6 gap-y-2 font-jetbrains-mono text-xs text-stone-400">
+              <Link href="/guides" className="hover:text-accent transition-colors">Guides</Link>
+              <Link href="/about" className="hover:text-accent transition-colors">About</Link>
+              <Link href="/contact" className="hover:text-accent transition-colors">Contact</Link>
+              <Link href="/legal/terms" className="hover:text-accent transition-colors">Terms</Link>
+              <Link href="/legal/privacy" className="hover:text-accent transition-colors">Privacy</Link>
+              <CookieSettingsLink />
+            </nav>
+            {/* Copyright */}
+            <p className="font-jetbrains-mono text-xs text-stone-500">
+              © {new Date().getFullYear()} Inkdex
             </p>
           </div>
         </div>

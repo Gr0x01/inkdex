@@ -1398,7 +1398,7 @@ export async function getRegionsWithCounts(
  * Get countries with artist counts (for country dropdown)
  * @returns Countries with artist counts
  */
-export async function getCountriesWithCounts(): Promise<Array<{ country_code: string; artist_count: number }>> {
+export async function getCountriesWithCounts(): Promise<Array<{ country_code: string; display_name: string; artist_count: number }>> {
   const supabase = await createClient()
 
   const { data, error } = await supabase.rpc('get_location_counts', {
@@ -1411,8 +1411,9 @@ export async function getCountriesWithCounts(): Promise<Array<{ country_code: st
   }
 
   // Map consolidated function output to expected format
-  return (data || []).map((row: { location_code: string; artist_count: number }) => ({
+  return (data || []).map((row: { location_code: string; display_name: string; artist_count: number }) => ({
     country_code: row.location_code,
+    display_name: row.display_name,
     artist_count: row.artist_count,
   }))
 }

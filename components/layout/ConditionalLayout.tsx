@@ -43,6 +43,19 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
     artist_count: s.artist_count
   }));
 
+  // Fetch countries data (excluding US since it has its own states section)
+  const { data: countriesData } = await supabase.rpc('get_location_counts', {
+    p_grouping: 'countries'
+  });
+
+  const countriesForFooter = (countriesData || [])
+    .filter((c: { location_code: string }) => c.location_code !== 'US')
+    .map((c: { location_code: string; display_name: string; artist_count: number }) => ({
+      country_code: c.location_code,
+      country_name: c.display_name,
+      artist_count: c.artist_count
+    }));
+
   // All other pages get the full site layout
   return (
     <SearchProvider>
@@ -50,7 +63,7 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
         <NavbarWithAuth />
         <GlobalSearchModal />
         {children}
-        <Footer statesWithArtists={statesForFooter} />
+        <Footer statesWithArtists={statesForFooter} countriesWithArtists={countriesForFooter} />
         <CookieBanner />
       </NavbarVisibilityProvider>
     </SearchProvider>
