@@ -48,11 +48,13 @@ export async function POST(request: Request) {
     const { target, artistIds } = validatedData;
 
     if (target === 'scraping') {
-      // Get artist IDs with failed pipeline status
+      // Get artist IDs with failed pipeline status that are NOT permanent failures
+      // Permanent failures (private accounts, deleted, etc.) should not be auto-retried
       let failedQuery = adminClient
         .from('artist_pipeline_state')
         .select('artist_id')
-        .eq('pipeline_status', 'failed');
+        .eq('pipeline_status', 'failed')
+        .or('permanent_failure.is.null,permanent_failure.eq.false');
 
       if (artistIds && artistIds.length > 0) {
         failedQuery = failedQuery.in('artist_id', artistIds);
@@ -66,22 +68,28 @@ export async function POST(request: Request) {
       if (artistIdsToRetry.length === 0) {
         return NextResponse.json({
           success: true,
-          message: 'No failed artists to retry',
+          message: 'No retryable failed artists found (permanent failures are excluded)',
           count: 0,
         });
       }
 
-      // Update artist_pipeline_state to 'retry_requested'
-      // This is what the scraper now checks for
-      // Only update if still failed (defensive against race conditions)
-      const { error: updateError } = await adminClient
+      // Update artist_pipeline_state to 'pending_scrape' and reset retry_count
+      // Only update transient failures (permanent_failure = false or null)
+      let updateQuery = adminClient
         .from('artist_pipeline_state')
         .update({
-          pipeline_status: 'retry_requested',
+          pipeline_status: 'pending_scrape',
+          retry_count: 0,
           updated_at: new Date().toISOString(),
         })
-        .in('artist_id', artistIdsToRetry)
-        .eq('pipeline_status', 'failed');
+        .eq('pipeline_status', 'failed')
+        .or('permanent_failure.is.null,permanent_failure.eq.false');
+
+      if (artistIds && artistIds.length > 0) {
+        updateQuery = updateQuery.in('artist_id', artistIds);
+      }
+
+      const { error: updateError } = await updateQuery;
 
       if (updateError) throw updateError;
 
@@ -159,7 +167,7 @@ export async function GET(request: Request) {
 
   try {
     if (target === 'scraping') {
-      // Get artists with failed pipeline status, joined with their most recent scraping job for error info
+      // Get artists with failed pipeline status, including retry tracking info
       const { data, error, count } = await adminClient
         .from('artist_pipeline_state')
         .select(
@@ -168,6 +176,9 @@ export async function GET(request: Request) {
           pipeline_status,
           last_scraped_at,
           updated_at,
+          retry_count,
+          last_error,
+          permanent_failure,
           artists!inner(id, name, instagram_handle)
         `,
           { count: 'exact' }
@@ -178,48 +189,37 @@ export async function GET(request: Request) {
 
       if (error) throw error;
 
-      // Get the most recent error message for each failed artist from pipeline_jobs
-      const artistIds = (data || []).map((d) => d.artist_id);
-      const errorMessages: Record<string, string> = {};
-
-      if (artistIds.length > 0) {
-        const { data: jobs } = await adminClient
-          .from('pipeline_jobs')
-          .select('artist_id, error_message, created_at')
-          .eq('job_type', 'scrape_single')
-          .in('artist_id', artistIds)
-          .eq('status', 'failed')
-          .order('created_at', { ascending: false });
-
-        // Get the most recent error for each artist
-        for (const job of jobs || []) {
-          if (job.artist_id && !errorMessages[job.artist_id] && job.error_message) {
-            errorMessages[job.artist_id] = job.error_message;
-          }
-        }
-      }
-
       interface ArtistData {
         id: string;
         name: string;
         instagram_handle: string;
       }
 
+      // Separate permanent vs transient failures for the response
+      const allArtists = (data || []).map((item) => {
+        const artist = item.artists as unknown as ArtistData;
+        return {
+          id: artist?.id,
+          artistId: item.artist_id,
+          name: artist?.name,
+          handle: artist?.instagram_handle,
+          errorMessage: item.last_error || 'Unknown error',
+          failedAt: item.updated_at,
+          lastScrapedAt: item.last_scraped_at,
+          retryCount: item.retry_count || 0,
+          permanentFailure: item.permanent_failure || false,
+        };
+      });
+
+      const permanentFailures = allArtists.filter((a) => a.permanentFailure);
+      const transientFailures = allArtists.filter((a) => !a.permanentFailure);
+
       return NextResponse.json({
         target: 'scraping',
         total: count || 0,
-        artists: (data || []).map((item) => {
-          const artist = item.artists as unknown as ArtistData;
-          return {
-            id: artist?.id,
-            artistId: item.artist_id,
-            name: artist?.name,
-            handle: artist?.instagram_handle,
-            errorMessage: errorMessages[item.artist_id] || 'Unknown error',
-            failedAt: item.updated_at,
-            lastScrapedAt: item.last_scraped_at,
-          };
-        }),
+        retryable: transientFailures.length,
+        permanent: permanentFailures.length,
+        artists: allArtists,
       });
     } else {
       // For embeddings, count images without embeddings

@@ -241,8 +241,37 @@ async function createScrapingJob(artistId: string): Promise<string | null> {
   return data.id;
 }
 
+// Max retry attempts for transient failures
+const MAX_RETRY_ATTEMPTS = 3;
+
+// Permanent error codes that should not be retried
+const PERMANENT_ERROR_CODES = [
+  'PRIVATE_ACCOUNT',
+  'ACCOUNT_NOT_FOUND',
+  'POST_NOT_FOUND',
+  'INVALID_URL',
+];
+
 /**
- * Update scraping job status
+ * Check if an error is permanent (should not be retried)
+ */
+function isPermanentError(errorMessage: string): boolean {
+  const permanentPatterns = [
+    'private',
+    'does not exist',
+    'deleted',
+    'not found',
+    'invalid',
+    'blocked',
+    'no posts',
+    'zero posts',
+  ];
+  const lowerError = errorMessage.toLowerCase();
+  return permanentPatterns.some((pattern) => lowerError.includes(pattern));
+}
+
+/**
+ * Update scraping job status with retry logic
  */
 async function updateScrapingJob(
   jobId: string,
@@ -256,21 +285,61 @@ async function updateScrapingJob(
     .update({
       status,
       error_message: errorMessage || null,
-      completed_at: status === 'completed' ? new Date().toISOString() : null,
+      completed_at: new Date().toISOString(),
       result_data: { images_scraped: imagesScraped },
     })
     .eq('id', jobId);
 
-  // Update pipeline state
+  // Update pipeline state with retry logic
   if (artistId) {
-    const pipelineStatus = status === 'completed' ? 'pending_embeddings' : 'failed';
-    await supabase
-      .from('artist_pipeline_state')
-      .upsert({
-        artist_id: artistId,
-        pipeline_status: pipelineStatus,
-        updated_at: new Date().toISOString(),
-      });
+    if (status === 'completed') {
+      // Success - reset retry count and move to next stage
+      await supabase
+        .from('artist_pipeline_state')
+        .upsert({
+          artist_id: artistId,
+          pipeline_status: 'pending_embeddings',
+          retry_count: 0,
+          last_error: null,
+          permanent_failure: false,
+          updated_at: new Date().toISOString(),
+        });
+    } else {
+      // Failure - check if permanent or retryable
+      const isPermanent = errorMessage ? isPermanentError(errorMessage) : false;
+
+      // Get current retry count
+      const { data: currentState } = await supabase
+        .from('artist_pipeline_state')
+        .select('retry_count')
+        .eq('artist_id', artistId)
+        .single();
+
+      const currentRetryCount = currentState?.retry_count || 0;
+      const newRetryCount = currentRetryCount + 1;
+
+      // Determine if we should keep retrying or mark as failed
+      const shouldMarkFailed = isPermanent || newRetryCount >= MAX_RETRY_ATTEMPTS;
+
+      await supabase
+        .from('artist_pipeline_state')
+        .upsert({
+          artist_id: artistId,
+          pipeline_status: shouldMarkFailed ? 'failed' : 'pending_scrape',
+          retry_count: newRetryCount,
+          last_error: errorMessage || 'Unknown error',
+          permanent_failure: isPermanent,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (!shouldMarkFailed) {
+        console.log(`    Will retry (attempt ${newRetryCount}/${MAX_RETRY_ATTEMPTS})`);
+      } else if (isPermanent) {
+        console.log(`    Permanent failure - will not retry`);
+      } else {
+        console.log(`    Max retries reached (${MAX_RETRY_ATTEMPTS})`);
+      }
+    }
   }
 }
 

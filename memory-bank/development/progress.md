@@ -72,6 +72,24 @@ All 15 implementation phases complete:
 ## Development Timeline
 
 ### Week 2 (Jan 12, 2026)
+- **Search API Refactor** ✅
+  - Split monolithic 772-line `route.ts` into modular handler architecture
+  - Route.ts reduced to 147 lines (81% reduction)
+  - Created 5 handler modules in `app/api/search/handlers/`:
+    - `image.ts` (~60 lines) - image upload search
+    - `text.ts` (~40 lines) - text query search
+    - `instagram-post.ts` (~130 lines) - Instagram post search
+    - `instagram-profile.ts` (~400 lines) - Instagram profile search (most complex)
+    - `similar-artist.ts` (~130 lines) - similar artist search
+  - Extracted 3 shared utilities to `lib/search/`:
+    - `search-storage.ts` - store search with validation
+    - `color-profile.ts` - calculate color profile from stats
+    - `parse-embeddings.ts` - parse pgvector string embeddings
+  - Created `app/api/search/schemas.ts` for Zod validation schemas
+  - Added 15 new unit tests (150 total, up from 135)
+  - Fixed pre-existing TypeScript errors in test mocks
+  - Code review findings addressed: error handling for malformed JSON, guard clauses for null safety
+  - Key files: 13 files changed, +1,276/-726 lines
 - **Test Coverage Expansion** ✅
   - Added 88 new unit tests (47 → 135 total)
   - Added 6 new E2E tests (17 → 23 total)
@@ -90,10 +108,16 @@ All 15 implementation phases complete:
   - Consolidated 2 job tables → `pipeline_jobs`
   - Merged 6 increment functions → `increment_analytics()`
   - Merged 5 location functions → `get_location_counts()`
-  - Fixed RPC parameter bug (`query_techniques` → `query_styles`)
+  - Fixed RPC parameter bug (`query_techniques` → `query_styles`) - broke production search
   - Removed unused functions and legacy CSS
   - All 25 E2E tests pass on production
   - Key files: 6 new migrations, updated `lib/supabase/queries.ts`, `lib/admin/audit-log.ts`
+- **Migration Squash Attempt** ⚠️ (Abandoned)
+  - Attempted to squash 16 migrations into single baseline
+  - Problem: `pg_dump` outputs functions before tables, causing trigger failures
+  - Created Python reorder script but local seed still failed
+  - **Resolution:** Restored all 16 migrations, tracking fully in sync
+  - Lesson: pg_dump ordering issues make squashing unreliable without manual intervention
 
 ### Week 2 (Jan 11, 2026)
 - **Testing Infrastructure** ✅
