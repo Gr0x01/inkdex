@@ -4,6 +4,7 @@ import './globals.css'
 import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { PostHogAnalytics } from '@/components/analytics/PostHogAnalytics'
 
 // Font configurations for "Inkdex" design system
 const playfairDisplay = Playfair_Display({
@@ -84,6 +85,7 @@ export default function RootLayout({
         </ConditionalLayout>
         <Analytics />
         <GoogleAnalytics />
+        <PostHogAnalytics />
       </body>
     </html>
   )

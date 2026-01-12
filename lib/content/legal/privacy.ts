@@ -10,7 +10,7 @@ interface LegalContent {
 export const privacyContent: LegalContent = {
   title: 'Privacy Policy',
   description: 'How we collect, use, and protect your data.',
-  lastUpdated: 'January 5, 2026',
+  lastUpdated: 'January 12, 2026',
   sections: [
     {
       heading: '1. Introduction',
@@ -28,7 +28,7 @@ export const privacyContent: LegalContent = {
         '**Usage and Analytics (Pro Artists Only):** We collect analytics data for Pro accounts including: profile views, Instagram link clicks, booking link clicks, search appearances, and image view counts. This data is aggregated daily and used solely to provide analytics features to Pro subscribers.',
         '**Payment Information:** We do not store your credit card or payment details. All payment information is processed and stored by Stripe, our PCI-DSS compliant payment processor. We store the following subscription-related data: (a) Stripe customer ID (anonymized identifier); (b) subscription status (active, past_due, canceled, etc.); (c) billing period (monthly or yearly); and (d) subscription start and renewal dates. This data is necessary to manage your subscription, send payment notifications, and process account changes.',
         '**Technical Data:** We automatically collect certain information including: IP address (for rate limiting and fraud prevention), browser type, device type, operating system, referring URLs, and access times. This data is used for security, fraud prevention, and service improvement.',
-        '**Analytics and Advertising Data:** We use Google Analytics and Google Ads to understand user behavior and serve relevant advertisements. This includes: pages visited, time on site, search queries, click behavior, demographic information (age range, gender, interests inferred by Google), and geographic location. This data is collected via cookies and may be used for personalized advertising and remarketing.',
+        '**Analytics and Advertising Data:** We use Google Analytics, PostHog, and Google Ads to understand user behavior and serve relevant advertisements. This includes: pages visited, time on site, search queries, click behavior, session recordings (PostHog), demographic information (age range, gender, interests inferred by Google), and geographic location. This data is collected via cookies and may be used for personalized advertising and remarketing.',
       ],
     },
     {
@@ -48,6 +48,7 @@ export const privacyContent: LegalContent = {
         '**Instagram Graph API:** When you connect your Instagram account via OAuth, we access Instagram\'s API to fetch your profile and media data. We only access data you explicitly authorize. Instagram\'s Data Policy is available at instagram.com/legal/privacy.',
         '**Vercel (Hosting):** Our web application is hosted on Vercel\'s global edge network. Vercel may collect technical data (IP addresses, request logs) for service delivery. Vercel\'s privacy policy is available at vercel.com/legal/privacy-policy.',
         '**Google Analytics and Google Ads:** We use Google Analytics to analyze user behavior and Google Ads to serve advertisements. Google collects data via cookies including: IP address, device information, browsing behavior, and inferred demographics. Google may use this data for personalized advertising across Google\'s ad network. You can opt out using Google\'s Ad Settings (adssettings.google.com) or the NAI opt-out tool. Google\'s privacy policy is available at policies.google.com/privacy.',
+        '**PostHog (Product Analytics):** We use PostHog for product analytics including: pageview tracking, session recordings, feature usage analytics, and funnel analysis. PostHog collects: pages visited, user interactions, device information, IP address (anonymized), and session data. PostHog is EU-GDPR compliant and data is stored on PostHog\'s US cloud infrastructure. PostHog\'s privacy policy is available at posthog.com/privacy.',
         'We share data with these third parties to the extent necessary to provide our Service, improve user experience, and serve relevant advertisements. We do not sell your personal information to third parties for their independent marketing purposes.',
       ],
     },
@@ -78,6 +79,7 @@ export const privacyContent: LegalContent = {
       paragraphs: [
         '**Essential Cookies:** We use session cookies to: (a) maintain your login state; (b) remember your preferences; and (c) enable core functionality. These cookies are necessary for the Service to function and cannot be disabled.',
         '**Analytics Cookies:** We use Google Analytics to understand how users interact with our Service. These cookies track: page views, session duration, bounce rate, traffic sources, and user demographics. Analytics cookies are set automatically but you can opt out using browser settings or Google\'s opt-out tool (tools.google.com/dlpage/gaoptout).',
+        '**Product Analytics Cookies (PostHog):** We use PostHog for product analytics to understand how users interact with our Service. PostHog cookies track: pageviews, user sessions, feature interactions, and funnel completion. These cookies are classified as analytics cookies and follow the same consent rules as Google Analytics (GDPR opt-in required for EU users, auto-consent for non-EU). You can opt out via our cookie banner or by disabling cookies in browser settings.',
         '**Advertising Cookies:** We use Google Ads and remarketing cookies to serve personalized advertisements based on your browsing behavior. These cookies may track you across websites in Google\'s ad network. Advertising cookies require consent under GDPR. You can manage advertising preferences at adssettings.google.com or opt out via the NAI opt-out tool (optout.networkadvertising.org).',
         '**Cookie Consent (GDPR):** For users in the European Economic Area (EEA), United Kingdom, or Switzerland, we obtain explicit consent before setting non-essential cookies (analytics and advertising). You can withdraw consent at any time via our cookie banner or browser settings.',
         '**Global Privacy Control (GPC):** We respect the Global Privacy Control (GPC) standard, a browser-level privacy preference signal. If your browser sends a GPC signal, we will automatically disable analytics tracking without showing a cookie banner. This provides a seamless way to opt out of non-essential cookies. GPC is supported by browsers including Firefox, Brave, and via browser extensions for Chrome and Edge.',

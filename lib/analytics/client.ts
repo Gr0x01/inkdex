@@ -5,6 +5,8 @@
 
 'use client'
 
+import { capturePostHog } from './posthog'
+
 /**
  * Get persistent session ID from sessionStorage
  * Creates a new ID if one doesn't exist
@@ -40,6 +42,11 @@ export function trackClick(
     // Silently fail - don't break UX
     console.warn('[Analytics] Click tracking failed:', err)
   })
+
+  // PostHog event
+  capturePostHog(type === 'instagram_click' ? 'Instagram Click' : 'Booking Click', {
+    artist_id: artistId,
+  })
 }
 
 /**
@@ -61,5 +68,11 @@ export function trackImageView(imageId: string, artistId: string): void {
     }),
   }).catch((err) => {
     console.warn('[Analytics] Image view tracking failed:', err)
+  })
+
+  // PostHog event
+  capturePostHog('Image View', {
+    image_id: imageId,
+    artist_id: artistId,
   })
 }

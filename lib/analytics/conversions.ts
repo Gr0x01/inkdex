@@ -14,6 +14,8 @@
  *   trackSearchConversion()
  */
 
+import { capturePostHog } from './posthog'
+
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void
@@ -39,6 +41,9 @@ function isGtagReady(): boolean {
  * @param value - Optional conversion value (default: 1.0)
  */
 export function trackClaimConversion(value: number = 1.0): void {
+  // PostHog event (always try, regardless of Google Ads)
+  capturePostHog('Artist Claimed', { value, currency: 'USD' })
+
   if (!isGtagReady()) {
     console.debug('[Conversions] gtag not ready, skipping claim conversion')
     return
@@ -65,6 +70,9 @@ export function trackClaimConversion(value: number = 1.0): void {
  * @param value - Optional conversion value (default: 0.1)
  */
 export function trackSearchConversion(value: number = 0.1): void {
+  // PostHog event (always try, regardless of Google Ads)
+  capturePostHog('Search Completed', { value, currency: 'USD' })
+
   if (!isGtagReady()) {
     console.debug('[Conversions] gtag not ready, skipping search conversion')
     return
