@@ -30,6 +30,9 @@ const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY
 const POSTHOG_HOST = '/ingest'
 const POSTHOG_UI_HOST = 'https://us.posthog.com'
 
+// Skip PostHog in development
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+
 /**
  * Subscribe to consent changes for session replay toggle
  */
@@ -72,6 +75,11 @@ function isValidPostHogKey(key: string | undefined): key is string {
 export function PostHogAnalytics() {
   // Track consent for session replay only
   const hasReplayConsent = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+  // Skip in development - no localhost tracking
+  if (!IS_PRODUCTION) {
+    return null
+  }
 
   // Validate PostHog key format
   if (!isValidPostHogKey(POSTHOG_KEY)) {
