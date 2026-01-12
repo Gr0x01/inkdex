@@ -25,9 +25,10 @@ Status: Launched - Production
 - `first_search_at` (set once on first search)
 - `search_count` (incremented on each search)
 
-**Cookieless Tracking:**
-- `persistence: 'memory'` - no cookies, no localStorage
-- All users tracked without consent requirement
+**Cookie-Free Tracking (localStorage):**
+- `persistence: 'localStorage'` - no cookies, localStorage for session continuity
+- Enables proper UTM attribution across page views for ad conversion tracking
+- All users tracked without consent banner (no cookies)
 - Session replay remains consent-gated (records sensitive behavior)
 - Reverse proxy at `/ingest` to avoid ad blockers
 

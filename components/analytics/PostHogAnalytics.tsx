@@ -3,13 +3,14 @@
 /**
  * PostHog Analytics Component
  *
- * Cookieless analytics - tracks all users without persistent identifiers.
- * - Always loads (no consent required for cookieless analytics)
+ * Cookie-free analytics with localStorage for session continuity.
+ * - Always loads (no cookies = no consent banner required)
  * - Session replay requires consent (records sensitive user behavior)
  *
  * Privacy approach:
- * - persistence: 'memory' = no cookies, no localStorage
- * - PostHog uses IP+UA hash for session ID (resets each visit)
+ * - persistence: 'localStorage' = no cookies, localStorage for session continuity
+ * - Enables proper UTM attribution across page views
+ * - No cross-site tracking, user can clear localStorage anytime
  * - No PII stored client-side
  *
  * Session Replay (consent-gated):
@@ -99,7 +100,7 @@ export function PostHogAnalytics() {
       ui_host: '${POSTHOG_UI_HOST}',
       capture_pageview: true,
       capture_pageleave: true,
-      persistence: 'memory',
+      persistence: 'localStorage',
       autocapture: true,
       disable_session_recording: ${!hasReplayConsent},
       session_recording: {
