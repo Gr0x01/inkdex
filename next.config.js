@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Required for PostHog reverse proxy (API paths use trailing slashes)
+  skipTrailingSlashRedirect: true,
   images: {
     remotePatterns: [
       {
@@ -62,6 +64,21 @@ const nextConfig = {
             value: 'max-age=31536000; includeSubDomains',
           },
         ],
+      },
+    ]
+  },
+  async rewrites() {
+    return [
+      // PostHog reverse proxy - routes through our domain to avoid ad blockers
+      // Static assets (JS SDK, etc.)
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      // Event capture and API requests
+      {
+        source: '/ingest/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
       },
     ]
   },

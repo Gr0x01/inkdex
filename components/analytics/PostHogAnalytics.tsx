@@ -33,7 +33,9 @@ import {
 } from '@/lib/consent/consent-manager'
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY
-const POSTHOG_HOST = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com'
+// Use reverse proxy path to avoid ad blockers (rewrites in next.config.js)
+const POSTHOG_HOST = '/ingest'
+const POSTHOG_UI_HOST = 'https://us.posthog.com'
 
 /**
  * Subscribe to consent changes for useSyncExternalStore
@@ -76,21 +78,6 @@ function isValidPostHogKey(key: string | undefined): key is string {
   return /^phc_[a-zA-Z0-9]{32,}$/.test(key)
 }
 
-/**
- * Validate PostHog host URL format
- * Defense-in-depth: Only allow known PostHog domains
- */
-function isValidPostHogHost(host: string): boolean {
-  try {
-    const url = new URL(host)
-    return (
-      url.protocol === 'https:' &&
-      (url.hostname.endsWith('.posthog.com') || url.hostname === 'posthog.com')
-    )
-  } catch {
-    return false
-  }
-}
 
 export function PostHogAnalytics() {
   // Use useSyncExternalStore to prevent hydration mismatches
@@ -107,12 +94,6 @@ export function PostHogAnalytics() {
     return null
   }
 
-  // Validate host URL
-  if (!isValidPostHogHost(POSTHOG_HOST)) {
-    console.error('[PostHog] Invalid host URL - must be https://*.posthog.com')
-    return null
-  }
-
   // Don't load if user hasn't consented
   if (!hasConsent) return null
 
@@ -122,6 +103,7 @@ export function PostHogAnalytics() {
     !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId startSessionRecording stopSessionRecording".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
     posthog.init('${POSTHOG_KEY}', {
       api_host: '${POSTHOG_HOST}',
+      ui_host: '${POSTHOG_UI_HOST}',
       capture_pageview: true,
       capture_pageleave: true,
       persistence: 'memory',  // Cookieless mode - server uses hash for unique users
