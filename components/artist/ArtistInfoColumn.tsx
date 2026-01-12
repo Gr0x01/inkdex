@@ -269,6 +269,7 @@ export default function ArtistInfoColumn({
                     href={artist.instagram_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackClick('instagram_click', artist.id, artist.slug)}
                     className="block w-full py-2.5 text-paper text-center
                              font-mono text-xs tracking-widest uppercase font-semibold
                              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
@@ -285,7 +286,7 @@ export default function ArtistInfoColumn({
                 href={artist.booking_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackClick('booking_click', artist.id)}
+                onClick={() => trackClick('booking_click', artist.id, artist.slug)}
                 className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border-2 border-ink hover:border-ink"
               >
                 Book
@@ -307,6 +308,7 @@ export default function ArtistInfoColumn({
                       href={artist.instagram_url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => trackClick('instagram_click', artist.id, artist.slug)}
                       className="block w-full py-2.5 text-paper text-center
                                font-mono text-xs tracking-widest uppercase font-semibold
                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
@@ -325,7 +327,7 @@ export default function ArtistInfoColumn({
                   href={artist.booking_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => trackClick('booking_click', artist.id)}
+                  onClick={() => trackClick('booking_click', artist.id, artist.slug)}
                   className="block py-2.5 bg-transparent text-ink text-center font-mono text-xs font-semibold tracking-wider uppercase transition-all duration-200 hover:bg-gray-100 border-2 border-ink hover:border-ink"
                 >
                   Book

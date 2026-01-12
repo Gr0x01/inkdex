@@ -26,10 +26,12 @@ function getSessionId(): string {
  * Track a link click event (Instagram, booking, website)
  * @param type - Type of click event
  * @param artistId - Artist UUID
+ * @param artistSlug - Artist slug for identification
  */
 export function trackClick(
   type: 'instagram_click' | 'booking_click',
-  artistId: string
+  artistId: string,
+  artistSlug?: string
 ): void {
   const sessionId = getSessionId()
 
@@ -46,6 +48,7 @@ export function trackClick(
   // PostHog event
   capturePostHog(type === 'instagram_click' ? 'Instagram Click' : 'Booking Click', {
     artist_id: artistId,
+    artist_slug: artistSlug,
   })
 }
 

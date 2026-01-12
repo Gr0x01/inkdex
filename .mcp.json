@@ -3,6 +3,13 @@
     "supabase": {
       "type": "http",
       "url": "https://mcp.supabase.com/mcp"
+    },
+    "posthog": {
+      "type": "http",
+      "url": "https://mcp.posthog.com/mcp",
+      "headers": {
+        "Authorization": "Bearer phx_KG4oVcW4juUU23AD3kgruPVqfB9UYrvVKMUpzU4XKKCh0Qd"
+      }
     }
   }
 }

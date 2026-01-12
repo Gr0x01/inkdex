@@ -6,6 +6,47 @@ Status: Launched - Production
 
 # Active Context: Inkdex
 
+## PostHog Product Metrics (Jan 12, 2026) ✅
+
+**Goal:** Comprehensive product analytics for user behavior insights, conversion funnels, and segmentation.
+
+**Events Implemented:**
+
+| Event | Trigger | Properties |
+|-------|---------|------------|
+| `Search Completed` | Results displayed | `search_type`, `result_count`, `city_filter`, `style_filter`, `is_first_search`, `time_to_search_ms` |
+| `First Search` | User's first ever search | `search_type`, `referrer`, `landing_page` |
+| `Search Result Clicked` | Click on artist card | `artist_id`, `result_position`, `search_id` |
+| `Claim Started` | Click "Claim This Page" | `artist_slug`, `source_page` |
+| `Pricing Page Viewed` | Visit /pricing | `source`, `referrer` |
+| `Checkout Started` | Click upgrade button | `plan_type`, `price` |
+
+**User Properties:**
+- `first_search_at` (set once on first search)
+- `search_count` (incremented on each search)
+
+**Cookieless Tracking:**
+- `persistence: 'memory'` - no cookies, no localStorage
+- All users tracked without consent requirement
+- Session replay remains consent-gated (records sensitive behavior)
+- Reverse proxy at `/ingest` to avoid ad blockers
+
+**PostHog Dashboards Created:**
+1. User Activation - Landing → Search → Profile view funnel
+2. Search Behavior - Search type breakdown, volume trends
+3. Conversion Funnel - Search → Claim → Checkout flows
+4. Artist Claiming - Claim rates and drop-off analysis
+
+**Key Files:**
+- `lib/analytics/events.ts` - Centralized event constants + TypeScript types
+- `lib/analytics/posthog.ts` - PostHog utilities (capture, identify, setUserProperties)
+- `lib/analytics/conversions.ts` - Enhanced trackSearchConversion
+- `components/analytics/PageLoadTracker.tsx` - Time-to-first-search measurement
+- `components/analytics/PricingPageTracker.tsx` - Pricing page view tracking
+- `components/analytics/PostHogAnalytics.tsx` - PostHog initialization (cookieless)
+
+---
+
 ## Current State
 
 **Platform:** Production - 116 cities, 16,324 artists, 99,258 images with embeddings

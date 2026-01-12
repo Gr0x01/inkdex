@@ -6,10 +6,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { capturePostHog } from '@/lib/analytics/posthog'
+import { EVENTS } from '@/lib/analytics/events'
 
 interface AnalyticsTrackerProps {
   type: 'profile_view' | 'image_view'
   artistId: string
+  artistSlug?: string
   imageId?: string
 }
 
@@ -28,6 +31,7 @@ function getSessionId(): string {
 export default function AnalyticsTracker({
   type,
   artistId,
+  artistSlug,
   imageId,
 }: AnalyticsTrackerProps) {
   const tracked = useRef(false)
@@ -40,6 +44,7 @@ export default function AnalyticsTracker({
 
     // Delay tracking slightly to avoid blocking page render
     const timeout = setTimeout(() => {
+      // Track to internal DB
       fetch('/api/analytics/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,10 +53,19 @@ export default function AnalyticsTracker({
         console.warn('[Analytics] Tracking failed:', err)
         // Silently fail - don't break UX
       })
+
+      // Track to PostHog
+      if (type === 'profile_view') {
+        capturePostHog(EVENTS.PROFILE_VIEWED, {
+          artist_id: artistId,
+          artist_slug: artistSlug,
+          source: document.referrer.includes('/search') ? 'search' : 'direct',
+        })
+      }
     }, 500)
 
     return () => clearTimeout(timeout)
-  }, [type, artistId, imageId])
+  }, [type, artistId, artistSlug, imageId])
 
   return null // Invisible component
 }

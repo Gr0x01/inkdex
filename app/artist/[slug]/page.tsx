@@ -256,7 +256,7 @@ export default async function ArtistPage({
   return (
     <>
       {/* Analytics Tracking */}
-      <AnalyticsTracker type="profile_view" artistId={artist.id} />
+      <AnalyticsTracker type="profile_view" artistId={artist.id} artistSlug={artist.slug} />
 
       {/* JSON-LD Structured Data */}
       <script
