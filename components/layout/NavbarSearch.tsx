@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import SearchError from '@/components/search/SearchError'
 import styles from '@/components/home/ShimmerSearch.module.css'
+import { trackSearchStarted } from '@/lib/analytics/posthog'
+import type { SearchType } from '@/lib/analytics/events'
 
 interface NavbarSearchProps {
   /** Force loading state - for Storybook only */
@@ -83,8 +85,14 @@ export default function NavbarSearch({
     setImagePreview(preview)
     setError(null)
 
-    // Auto-submit immediately when image is selected
+    // Auto-submit immediately when image is selected (bypasses handleSubmit)
     setIsSubmitting(true)
+
+    // Track search started (only fires here for image auto-submit, handleSubmit handles other types)
+    trackSearchStarted({
+      search_type: 'image',
+      source: 'navbar',
+    })
 
     try {
       const formData = new FormData()
@@ -159,6 +167,18 @@ export default function NavbarSearch({
       setError('Please enter at least 3 characters or upload an image')
       return
     }
+
+    // Determine search type for tracking
+    const searchType: SearchType = hasImage ? 'image' :
+      hasInstagramPost ? 'instagram_post' :
+      hasInstagramProfile ? 'instagram_profile' : 'text'
+
+    // Track search started
+    trackSearchStarted({
+      search_type: searchType,
+      source: 'navbar',
+      query_preview: hasText ? textQuery.trim().slice(0, 50) : undefined,
+    })
 
     setIsSubmitting(true)
 

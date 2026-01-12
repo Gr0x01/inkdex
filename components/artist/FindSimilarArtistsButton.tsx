@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { trackSearchStarted } from '@/lib/analytics/posthog'
 
 interface FindSimilarArtistsButtonProps {
   artistId: string
@@ -22,6 +23,13 @@ export default function FindSimilarArtistsButton({
   const handleSearch = async () => {
     setLoading(true)
     setError(null)
+
+    // Track search started
+    trackSearchStarted({
+      search_type: 'similar_artist',
+      source: 'similar_artist',
+      city_filter: useCityFilter && city ? city.toLowerCase().replace(/\s+/g, '-') : undefined,
+    })
 
     try {
       const response = await fetch('/api/search', {

@@ -7,7 +7,8 @@
 
 'use client'
 
-import type { UserProperties, UserPropertiesSetOnce } from './events'
+import type { UserProperties, UserPropertiesSetOnce, SearchStartedProperties } from './events'
+import { EVENTS } from './events'
 
 // PostHog type declaration (shared across analytics modules)
 declare global {
@@ -106,4 +107,25 @@ export function getDistinctId(): string | null {
 export function resetUser(): void {
   if (!isPostHogReady()) return
   window.posthog!.reset()
+}
+
+/**
+ * Track when a user starts a search
+ * Call this when search is submitted (before results load)
+ *
+ * @param properties - Search metadata including type and source
+ * @example
+ * trackSearchStarted({
+ *   search_type: 'text',
+ *   source: 'hero',
+ *   query_preview: 'black and gray tattoo',
+ * })
+ */
+export function trackSearchStarted(properties: SearchStartedProperties): void {
+  try {
+    capturePostHog(EVENTS.SEARCH_STARTED, properties as unknown as Record<string, unknown>)
+  } catch (error) {
+    // Analytics should never break the user experience
+    console.warn('Analytics tracking failed:', error)
+  }
 }

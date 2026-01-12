@@ -5,8 +5,12 @@ import { useRouter } from 'next/navigation'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import SearchError from '@/components/search/SearchError'
 import styles from './ShimmerSearch.module.css'
+import { trackSearchStarted } from '@/lib/analytics/posthog'
+import type { SearchSource, SearchType } from '@/lib/analytics/events'
 
 interface UnifiedSearchBarProps {
+  /** Search source for analytics tracking */
+  source?: SearchSource
   /** Force loading state - for Storybook only */
   forceLoading?: boolean
   /** Force Instagram detection state - for Storybook only */
@@ -20,6 +24,7 @@ interface UnifiedSearchBarProps {
 }
 
 export default function UnifiedSearchBar({
+  source = 'hero',
   forceLoading = false,
   forceInstagramDetection = null,
   forceImagePreview = null,
@@ -134,8 +139,14 @@ export default function UnifiedSearchBar({
     setImagePreview(preview)
     setError(null)
 
-    // Auto-submit immediately when image is selected
+    // Auto-submit immediately when image is selected (bypasses handleSubmit)
     setIsSubmitting(true)
+
+    // Track search started (only fires here for image auto-submit, handleSubmit handles other types)
+    trackSearchStarted({
+      search_type: 'image',
+      source,
+    })
 
     try {
       const formData = new FormData()
@@ -218,6 +229,18 @@ export default function UnifiedSearchBar({
       setError('Please upload an image or describe what you\'re looking for')
       return
     }
+
+    // Determine search type for tracking
+    const searchType: SearchType = hasImage ? 'image' :
+      hasInstagramPost ? 'instagram_post' :
+      hasInstagramProfile ? 'instagram_profile' : 'text'
+
+    // Track search started
+    trackSearchStarted({
+      search_type: searchType,
+      source,
+      query_preview: hasText ? textQuery.trim().slice(0, 50) : undefined,
+    })
 
     setIsSubmitting(true)
 

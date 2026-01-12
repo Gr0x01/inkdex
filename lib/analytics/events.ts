@@ -40,9 +40,13 @@ export type EventName = (typeof EVENTS)[keyof typeof EVENTS]
 // Search types
 export type SearchType = 'image' | 'text' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
 
+// Search source - where the search was initiated from
+export type SearchSource = 'hero' | 'navbar' | 'quick_pill' | 'style_card' | 'similar_artist' | 'direct'
+
 // Event property types
 export interface SearchStartedProperties {
   search_type: SearchType
+  source: SearchSource
   query_preview?: string // First 50 chars of text query
   city_filter?: string
   style_filter?: string
@@ -50,6 +54,7 @@ export interface SearchStartedProperties {
 
 export interface SearchCompletedProperties {
   search_type: SearchType
+  source?: SearchSource
   query_length?: number
   result_count: number
   city_filter?: string

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { trackSearchStarted } from '@/lib/analytics/posthog'
 
 interface StyleCardProps {
   styleName: string
@@ -19,6 +20,14 @@ export default function StyleCard({ styleName: _styleName, displayName, imageUrl
 
     if (isLoading) return
     setIsLoading(true)
+
+    // Track search started
+    trackSearchStarted({
+      search_type: 'text',
+      source: 'style_card',
+      query_preview: `${displayName.toLowerCase()} tattoo`,
+      style_filter: displayName.toLowerCase(),
+    })
 
     try {
       const response = await fetch('/api/search', {

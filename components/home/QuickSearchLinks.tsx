@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CITIES } from '@/lib/constants/cities'
+import { trackSearchStarted } from '@/lib/analytics/posthog'
 
 // Style options to rotate through
 const STYLE_OPTIONS = [
@@ -69,6 +70,14 @@ export default function QuickSearchLinks() {
   const handleClick = async (index: number) => {
     const { query, city } = quickSearches[index]
     setLoadingIndex(index)
+
+    // Track search started
+    trackSearchStarted({
+      search_type: 'text',
+      source: 'quick_pill',
+      query_preview: query.slice(0, 50),
+      city_filter: city,
+    })
 
     try {
       const response = await fetch('/api/search', {
