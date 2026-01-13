@@ -259,12 +259,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         .order('percentage', { ascending: false })
         .limit(3)
 
+      // Extract handle from instagram_url, stripping protocol, domain, and trailing slashes/dots
+      const rawHandle = row.instagram_url
+        ?.replace(/^https?:\/\/(www\.)?instagram\.com\//, '')
+        .replace(/[/.]+$/, '') || ''
+
       matches.push({
         id: row.artist_id,
         name: row.artist_name,
         slug: row.artist_slug,
-        instagram_handle:
-          row.instagram_url?.replace('https://instagram.com/', '').replace('https://www.instagram.com/', '') || '',
+        instagram_handle: rawHandle,
         follower_count: followers,
         city: row.city || '',
         state: row.region || '',
