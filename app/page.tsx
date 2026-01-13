@@ -62,6 +62,8 @@ export default async function Home() {
           loop
           muted
           playsInline
+          poster="/images/hero-poster.webp"
+          preload="none"
           className="absolute inset-0 w-full h-full object-cover opacity-20"
           aria-hidden="true"
         >

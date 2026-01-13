@@ -20,7 +20,7 @@ export default function QuickSearchLinks() {
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null)
   const [userCity, setUserCity] = useState<{ name: string; slug: string } | null>(null)
 
-  // Detect user's city on mount
+  // Detect user's city after initial paint (deferred to avoid blocking LCP)
   useEffect(() => {
     const detectCity = async () => {
       try {
@@ -45,7 +45,9 @@ export default function QuickSearchLinks() {
       }
     }
 
-    detectCity()
+    // Defer geolocation to avoid blocking initial paint
+    const timeoutId = setTimeout(detectCity, 2000)
+    return () => clearTimeout(timeoutId)
   }, [])
 
   // Build the quick searches based on detected city

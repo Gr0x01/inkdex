@@ -194,6 +194,7 @@ export default function ArtistCard({
               src={getImageUrl(currentImage.url)}
               alt={`${artist_name} portfolio`}
               fill
+              loading="lazy"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
             />
@@ -226,6 +227,7 @@ export default function ArtistCard({
                   alt=""
                   width={32}
                   height={32}
+                  loading="lazy"
                   className="rounded-full object-cover flex-shrink-0"
                   onError={() => setProfileImageError(true)}
                 />
@@ -311,6 +313,7 @@ export default function ArtistCard({
                         alt=""
                         width={32}
                         height={32}
+                        loading="lazy"
                         className="rounded-full object-cover flex-shrink-0"
                         onError={() => setProfileImageError(true)}
                       />
@@ -372,6 +375,7 @@ export default function ArtistCard({
                       alt=""
                       width={32}
                       height={32}
+                      loading="lazy"
                       className="rounded-full object-cover flex-shrink-0"
                       onError={() => setProfileImageError(true)}
                     />
