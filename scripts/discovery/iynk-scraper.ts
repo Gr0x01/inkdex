@@ -142,10 +142,11 @@ async function extractArtistsFromPage(page: Page): Promise<ScrapedArtist[]> {
       if (href) {
         const match = href.match(/instagram\.com\/([a-zA-Z0-9._]+)/);
         if (match && match[1]) {
-          const handle = match[1].toLowerCase();
+          // Strip leading/trailing dots and underscores (invalid in Instagram handles)
+          const handle = match[1].toLowerCase().replace(/^[._]+|[._]+$/g, '');
           // Filter out reserved paths
           const reserved = ['explore', 'p', 'reel', 'reels', 'stories', 'tv', 'accounts', 'direct'];
-          if (!reserved.includes(handle) && !seenHandles.has(handle)) {
+          if (handle && !reserved.includes(handle) && !seenHandles.has(handle)) {
             seenHandles.add(handle);
 
             // Try to find artist name nearby
@@ -242,7 +243,8 @@ async function getInstagramFromProfile(page: Page, profileUrl: string): Promise<
         if (href) {
           const match = href.match(/instagram\.com\/([a-zA-Z0-9._]+)/);
           if (match && match[1]) {
-            return match[1].toLowerCase();
+            // Strip leading/trailing dots and underscores (invalid in Instagram handles)
+            return match[1].toLowerCase().replace(/^[._]+|[._]+$/g, '') || null;
           }
         }
       }

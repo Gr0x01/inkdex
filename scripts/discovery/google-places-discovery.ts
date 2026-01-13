@@ -161,8 +161,9 @@ function extractInstagramFromWebsite(website: string | undefined): string | null
   // Check if website IS an Instagram profile
   const instagramMatch = website.match(/instagram\.com\/([a-zA-Z0-9._]+)/);
   if (instagramMatch && instagramMatch[1]) {
-    const handle = instagramMatch[1].toLowerCase();
-    if (!['explore', 'p', 'reel', 'reels'].includes(handle)) {
+    // Strip leading/trailing dots and underscores (invalid in Instagram handles)
+    const handle = instagramMatch[1].toLowerCase().replace(/^[._]+|[._]+$/g, '');
+    if (handle && !['explore', 'p', 'reel', 'reels'].includes(handle)) {
       return handle;
     }
   }

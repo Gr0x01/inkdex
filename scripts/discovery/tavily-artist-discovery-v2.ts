@@ -175,6 +175,12 @@ async function searchTavily(query: string): Promise<TavilyResponse> {
 // ============================================================================
 
 function extractInstagramHandle(url: string, content: string): string | null {
+  // Instagram handles: letters, numbers, periods, underscores
+  // Cannot start or end with period/underscore
+  const sanitizeHandle = (raw: string): string => {
+    return raw.toLowerCase().replace(/^[._]+|[._]+$/g, '');
+  };
+
   // Priority 1: Extract from URL
   const urlPatterns = [
     /instagram\.com\/([a-zA-Z0-9._]+)/,
@@ -184,9 +190,9 @@ function extractInstagramHandle(url: string, content: string): string | null {
   for (const pattern of urlPatterns) {
     const match = url.match(pattern);
     if (match && match[1]) {
-      const handle = match[1].toLowerCase();
+      const handle = sanitizeHandle(match[1]);
       // Filter out common non-artist pages
-      if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+      if (handle && !['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
         return handle;
       }
     }
@@ -204,8 +210,8 @@ function extractInstagramHandle(url: string, content: string): string | null {
     const matches = content.matchAll(pattern);
     for (const match of matches) {
       if (match[1] && match[1].length > 2) {
-        const handle = match[1].toLowerCase();
-        if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+        const handle = sanitizeHandle(match[1]);
+        if (handle && !['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
           handles.add(handle);
         }
       }

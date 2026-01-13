@@ -257,14 +257,17 @@ async function scrapeShopWebsite(shop: ShopWebsite): Promise<ScrapedArtist[]> {
 function extractInstagramHandles(html: string, $: cheerio.CheerioAPI): string[] {
   const handles = new Set<string>();
 
+  // Strip leading/trailing dots and underscores (invalid in Instagram handles)
+  const sanitize = (raw: string): string => raw.toLowerCase().replace(/^[._]+|[._]+$/g, '');
+
   // Method 1: Find Instagram links in HTML
   $('a[href*="instagram.com"]').each((_, el) => {
     const href = $(el).attr('href');
     if (href) {
       const match = href.match(/instagram\.com\/([a-zA-Z0-9._]+)/);
       if (match && match[1]) {
-        const handle = match[1].toLowerCase();
-        if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+        const handle = sanitize(match[1]);
+        if (handle && !['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
           handles.add(handle);
         }
       }
@@ -275,7 +278,8 @@ function extractInstagramHandles(html: string, $: cheerio.CheerioAPI): string[] 
   const textMatches = html.matchAll(/@([a-zA-Z0-9._]{3,30})/g);
   for (const match of textMatches) {
     if (match[1]) {
-      handles.add(match[1].toLowerCase());
+      const handle = sanitize(match[1]);
+      if (handle) handles.add(handle);
     }
   }
 
@@ -283,8 +287,8 @@ function extractInstagramHandles(html: string, $: cheerio.CheerioAPI): string[] 
   const urlMatches = html.matchAll(/instagram\.com\/([a-zA-Z0-9._]+)/g);
   for (const match of urlMatches) {
     if (match[1]) {
-      const handle = match[1].toLowerCase();
-      if (!['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
+      const handle = sanitize(match[1]);
+      if (handle && !['explore', 'p', 'reel', 'reels', 'stories', 'tv'].includes(handle)) {
         handles.add(handle);
       }
     }

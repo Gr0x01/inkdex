@@ -218,7 +218,8 @@ async function getArtistFromProfile(page: Page, uuid: string): Promise<ScrapedAr
         if (href) {
           const match = href.match(/instagram\.com\/([a-zA-Z0-9._]+)/);
           if (match && match[1]) {
-            instagramHandle = match[1].toLowerCase();
+            // Strip leading/trailing dots and underscores (invalid in Instagram handles)
+            instagramHandle = match[1].toLowerCase().replace(/^[._]+|[._]+$/g, '');
           }
         }
       }
