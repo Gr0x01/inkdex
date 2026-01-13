@@ -88,7 +88,12 @@ export default async function StylePage({
     notFound()
   }
 
-  const styleSeed = await getStyleSeedBySlug(styleSlug)
+  // Fetch style seed and all style seeds in parallel (allStyleSeeds used for "Other Styles" section)
+  // getStyleSeeds is wrapped in cache() so the JSX call will hit the cache
+  const [styleSeed, _allStyleSeeds] = await Promise.all([
+    getStyleSeedBySlug(styleSlug),
+    getStyleSeeds()  // Prefetch for "Other Styles" section below
+  ])
   if (!styleSeed) notFound()
 
   const countryCode = countrySlug.toUpperCase()

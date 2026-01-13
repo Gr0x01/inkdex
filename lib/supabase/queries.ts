@@ -393,7 +393,8 @@ export async function getArtistsByCity(city: string) {
  * Note: Not using unstable_cache() here because createClient() uses cookies()
  * Page-level ISR (revalidate: 86400) handles caching instead
  */
-export async function getStyleSeeds() {
+// Wrapped with cache() to deduplicate calls within a single request
+export const getStyleSeeds = cache(async () => {
   const supabase = await createClient()
 
   const { data, error } = await supabase
@@ -407,7 +408,7 @@ export async function getStyleSeeds() {
   }
 
   return data
-}
+})
 
 /**
  * Get featured portfolio images for homepage teaser strip
@@ -1452,7 +1453,7 @@ export async function getCountriesWithCounts(): Promise<Array<{ country_code: st
  * @param minArtistCount - Minimum number of artists per city (default 3)
  * @returns Cities with at least minArtistCount artists
  */
-export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Promise<Array<{ city: string; region: string; artist_count: number }>> {
+export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Promise<Array<{ city: string; region: string; country_code: string; artist_count: number }>> {
   // Validate input
   validateInteger(minArtistCount, 'minArtistCount', 1, 100)
 
@@ -1478,9 +1479,10 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
   }
 
   // Map consolidated function output to expected format
-  return (data || []).map((row: { display_name: string; region_code: string; artist_count: number }) => ({
+  return (data || []).map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
     city: row.display_name.split(', ')[0], // "City, State" -> "City"
     region: row.region_code,
+    country_code: row.country_code,
     artist_count: row.artist_count,
   }))
 }

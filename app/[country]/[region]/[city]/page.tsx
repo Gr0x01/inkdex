@@ -108,8 +108,11 @@ export default async function CityPage({
   const limit = 20
   const offset = (currentPage - 1) * limit
 
-  // Fetch artists for this city
-  const { artists, total } = await getLocationArtists(countryCode, regionCode, cityName, limit, offset)
+  // Fetch artists and style seeds in parallel for faster page load
+  const [{ artists, total }, styleSeeds] = await Promise.all([
+    getLocationArtists(countryCode, regionCode, cityName, limit, offset),
+    getStyleSeeds()
+  ])
 
   // If no artists found for this city, return 404
   if (total === 0) notFound()
@@ -119,8 +122,6 @@ export default async function CityPage({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- transformToSearchResult accepts flexible artist type
     transformToSearchResult(artist as any, cityName)
   )
-
-  const styleSeeds = await getStyleSeeds()
   const totalPages = Math.ceil(total / limit)
   const cityFAQs = getCityFAQs(citySlug)
   const cityGuide = getCityGuide(citySlug)

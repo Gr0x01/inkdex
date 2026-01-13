@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro, Space_Grotesk } from 'next/font/google'
+import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import { Analytics } from '@vercel/analytics/next'
@@ -7,6 +7,7 @@ import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { PostHogAnalytics } from '@/components/analytics/PostHogAnalytics'
 
 // Font configurations for "Inkdex" design system
+// Optimized: reduced weights to minimize font file downloads
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
   weight: ['900'],
@@ -23,24 +24,15 @@ const libreBaskerville = Libre_Baskerville({
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600'],
+  weight: ['200', '400', '500'],  // Reduced from 6 weights to 3 (200 used by .font-mono)
   variable: '--font-jetbrains-mono',
   display: 'swap',
 })
 
 const crimsonPro = Crimson_Pro({
   subsets: ['latin'],
-  weight: ['300', '400', '600'],
-  style: ['normal', 'italic'],
+  weight: ['300', '400', '600'],  // Keep 300 (used by body text)
   variable: '--font-crimson-pro',
-  display: 'swap',
-})
-
-// Admin-specific font
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
   display: 'swap',
 })
 
@@ -77,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable} ${spaceGrotesk.variable}`}
+      className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <body className="">
         <ConditionalLayout>
