@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-12
+Last-Updated: 2026-01-13
 Maintainer: RB
 Status: Launched - Production
 ---
@@ -371,6 +371,69 @@ while true; do npx tsx scripts/colors/analyze-image-colors.ts --limit 10000 --co
 - User-editable: status, featured, feature_days, post_date, dm_date, response_notes
 
 **Env vars:** `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, `AIRTABLE_OUTREACH_TABLE_ID`
+
+---
+
+## Style Matches Marketing Tool (Jan 13, 2026) ✅
+
+**Goal:** Find groups of 4+ visually similar artists for Instagram story marketing content.
+
+**Use Case:** Create marketing stories showcasing Inkdex's unique ability to find visually similar artists - something no competitor can do.
+
+**Features:**
+- **By Style mode:** Pick a style (Traditional, Realism, etc.) and find a random seed artist plus 4+ visual matches
+- **By Artist mode:** Enter a specific artist slug and find similar matches
+- **Separate follower controls:** Match a famous 100K+ artist with 10K-25K rising artists (or vice versa)
+- **Ready-to-copy Instagram story text** with handles, cities, and style info
+
+**Admin UI:** `/admin/marketing` → Style Matches panel at bottom
+
+**API Endpoint:** `POST /api/admin/marketing/style-matches`
+
+**Request Body:**
+```json
+{
+  "style": "realism",           // or artist_slug for By Artist mode
+  "seed_min_followers": 100000, // for By Style mode
+  "seed_max_followers": null,
+  "min_followers": 10000,       // for matches
+  "max_followers": 25000,
+  "match_count": 4
+}
+```
+
+**Response:**
+```json
+{
+  "seed": { "name", "slug", "instagram_handle", "follower_count", "city", "state", "top_styles", ... },
+  "matches": [{ ... similar structure with similarity score ... }],
+  "story_copy": "These 5 artists all do realism work\n\n@handle1 @handle2..."
+}
+```
+
+**How it works:**
+1. Find seed artist (random by style or specified by slug)
+2. Get seed's portfolio embeddings and average them
+3. Use `search_artists` RPC to find visually similar artists
+4. Filter by follower range and minimum portfolio size (4+ images)
+5. Generate Instagram story copy with handles and cities
+
+**Key Files:**
+- `components/admin/StyleMatchesPanel.tsx` - Admin UI panel
+- `app/api/admin/marketing/style-matches/route.ts` - API endpoint
+- `scripts/marketing/find-style-matches.ts` - CLI script (alternative)
+
+**CLI Usage:**
+```bash
+# Find by style (random seed)
+npx tsx scripts/marketing/find-style-matches.ts --style realism --min-followers 10000 --max-followers 50000
+
+# Find by specific artist
+npx tsx scripts/marketing/find-style-matches.ts --artist bang-bang --matches 5
+
+# Browse random styles
+npx tsx scripts/marketing/find-style-matches.ts --browse
+```
 
 ---
 

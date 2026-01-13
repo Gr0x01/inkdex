@@ -5,6 +5,7 @@ import { RefreshCw, Upload, Download, ExternalLink } from 'lucide-react';
 import StatsCard from './StatsCard';
 import OutreachFunnel from './OutreachFunnel';
 import AdminSelect from './AdminSelect';
+import StyleMatchesPanel from './StyleMatchesPanel';
 
 interface OutreachStats {
   funnel: {
@@ -319,6 +320,9 @@ export default function MarketingDashboard() {
               )}
             </div>
           </div>
+
+          {/* Style Matches Section */}
+          <StyleMatchesPanel />
         </>
       )}
     </div>
