@@ -111,7 +111,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/recharts": "^1.8.29",
     "@typescript-eslint/eslint-plugin": "^8.51.0",
-    "@typescript-eslint/parser": "^8.51.0",
+    "@typescript-eslint/parser": "^8.53.0",
     "@vitest/browser-playwright": "^4.0.16",
     "@vitest/coverage-v8": "^4.0.16",
     "autoprefixer": "^10.4.16",
