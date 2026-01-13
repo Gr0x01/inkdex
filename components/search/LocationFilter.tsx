@@ -166,7 +166,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
     if ((currentCountry || currentRegion || currentCity) && !hasFetched) {
       fetchLocations()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   // Update URL with debouncing
   const updateFilters = useCallback((updates: {
