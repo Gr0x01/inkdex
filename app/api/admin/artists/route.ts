@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
     const maxFollowers = searchParams.get('max_followers');
     const minImages = searchParams.get('min_images');
     const maxImages = searchParams.get('max_images');
+    const showBlacklisted = searchParams.get('show_blacklisted');
 
     const offset = (page - 1) * limit;
 
@@ -93,8 +94,11 @@ export async function GET(request: NextRequest) {
     const minImagesNum = minImages ? parseInt(minImages, 10) : null;
     const maxImagesNum = maxImages ? parseInt(maxImages, 10) : null;
 
+    // Convert show_blacklisted param to boolean (defaults to false - hide blacklisted)
+    const showBlacklistedFilter = showBlacklisted === 'true';
+
     // Generate cache key based on filters
-    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}:images:${hasImages || 'none'}:sort:${safeSortBy}:${safeSortOrder}:minF:${minFollowersNum || 'none'}:maxF:${maxFollowersNum || 'none'}:minI:${minImagesNum || 'none'}:maxI:${maxImagesNum || 'none'}`;
+    const cacheKey = `admin:artists:page:${page}:limit:${limit}:search:${sanitizedSearch || 'none'}:location:${location || 'none'}:tier:${tier || 'none'}:featured:${isFeatured || 'none'}:images:${hasImages || 'none'}:sort:${safeSortBy}:${safeSortOrder}:minF:${minFollowersNum || 'none'}:maxF:${maxFollowersNum || 'none'}:minI:${minImagesNum || 'none'}:maxI:${maxImagesNum || 'none'}:blacklisted:${showBlacklistedFilter}`;
 
     // Use Redis cache with 5-minute TTL
     const result = await getCached(
@@ -121,6 +125,7 @@ export async function GET(request: NextRequest) {
           p_max_followers: maxFollowersNum,
           p_min_images: minImagesNum,
           p_max_images: maxImagesNum,
+          p_show_blacklisted: showBlacklistedFilter,
         });
 
         if (error) {
@@ -145,6 +150,7 @@ export async function GET(request: NextRequest) {
           deleted_at: string | null
           image_count: number
           total_count?: number
+          is_blacklisted: boolean
         }
 
         // Map RPC results to expected format (remove total_count field)
@@ -161,6 +167,7 @@ export async function GET(request: NextRequest) {
           slug: row.slug,
           deleted_at: row.deleted_at,
           image_count: row.image_count,
+          is_blacklisted: row.is_blacklisted,
         }));
 
         return {

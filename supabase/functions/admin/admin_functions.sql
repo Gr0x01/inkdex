@@ -149,6 +149,8 @@ COMMENT ON FUNCTION get_admin_location_counts IS
 -- ============================================
 DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, boolean, boolean, text, text);
 DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, boolean, boolean, text, text, integer, integer, integer, integer);
+DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, text, boolean, boolean, text, text, integer, integer, integer, integer);
+DROP FUNCTION IF EXISTS get_artists_with_image_counts(integer, integer, text, text, text, text, text, boolean, boolean, text, text, integer, integer, integer, integer, boolean);
 
 CREATE OR REPLACE FUNCTION get_artists_with_image_counts(
   p_offset integer DEFAULT 0,
@@ -165,7 +167,8 @@ CREATE OR REPLACE FUNCTION get_artists_with_image_counts(
   p_min_followers integer DEFAULT NULL,
   p_max_followers integer DEFAULT NULL,
   p_min_images integer DEFAULT NULL,
-  p_max_images integer DEFAULT NULL
+  p_max_images integer DEFAULT NULL,
+  p_show_blacklisted boolean DEFAULT FALSE
 )
 RETURNS TABLE (
   id uuid,
@@ -180,7 +183,8 @@ RETURNS TABLE (
   slug text,
   deleted_at timestamp with time zone,
   image_count bigint,
-  total_count bigint
+  total_count bigint,
+  is_blacklisted boolean
 )
 LANGUAGE plpgsql STABLE
 AS $$
@@ -199,11 +203,17 @@ BEGIN
       a.follower_count AS ai_follower_count,
       a.slug AS ai_slug,
       a.deleted_at AS ai_deleted_at,
-      COUNT(pi.id) FILTER (WHERE pi.hidden = false) AS ai_image_count
+      COUNT(pi.id) FILTER (WHERE pi.hidden = false) AS ai_image_count,
+      COALESCE(aps.scraping_blacklisted, FALSE) AS ai_is_blacklisted
     FROM artists a
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     LEFT JOIN portfolio_images pi ON a.id = pi.artist_id
+    LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.deleted_at IS NULL
+      AND (
+        p_show_blacklisted = TRUE
+        OR COALESCE(aps.scraping_blacklisted, FALSE) = FALSE
+      )
       AND (
         p_search IS NULL
         OR a.name ILIKE '%' || p_search || '%'
@@ -221,7 +231,7 @@ BEGIN
       AND (p_is_featured IS NULL OR a.is_featured = p_is_featured)
       AND (p_min_followers IS NULL OR a.follower_count >= p_min_followers)
       AND (p_max_followers IS NULL OR a.follower_count <= p_max_followers)
-    GROUP BY a.id, al.city, al.region
+    GROUP BY a.id, al.city, al.region, aps.scraping_blacklisted
   )
   SELECT
     ai.ai_id,
@@ -236,7 +246,8 @@ BEGIN
     ai.ai_slug,
     ai.ai_deleted_at,
     ai.ai_image_count,
-    COUNT(*) OVER() AS total_count
+    COUNT(*) OVER() AS total_count,
+    ai.ai_is_blacklisted
   FROM artist_images ai
   WHERE
     (p_has_images IS NULL

@@ -11,6 +11,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Ban,
 } from 'lucide-react';
 import Link from 'next/link';
 import AdminSelect from './AdminSelect';
@@ -28,6 +29,7 @@ interface Artist {
   follower_count: number | null;
   image_count: number;
   slug: string;
+  is_blacklisted: boolean;
 }
 
 interface Pagination {
@@ -56,6 +58,7 @@ export default function ArtistTable() {
   const [maxFollowers, setMaxFollowers] = useState<string>('');
   const [minImages, setMinImages] = useState<string>('');
   const [maxImages, setMaxImages] = useState<string>('');
+  const [showBlacklisted, setShowBlacklisted] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>('instagram_handle');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -78,6 +81,7 @@ export default function ArtistTable() {
     if (maxFollowers) params.set('max_followers', maxFollowers);
     if (minImages) params.set('min_images', minImages);
     if (maxImages) params.set('max_images', maxImages);
+    if (showBlacklisted) params.set('show_blacklisted', 'true');
     if (sortBy) params.set('sort_by', sortBy);
     if (sortOrder) params.set('sort_order', sortOrder);
 
@@ -93,7 +97,7 @@ export default function ArtistTable() {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter, hasImagesFilter, minFollowers, maxFollowers, minImages, maxImages, sortBy, sortOrder]);
+  }, [pagination.page, pagination.limit, search, locationFilter, tierFilter, isFeaturedFilter, hasImagesFilter, minFollowers, maxFollowers, minImages, maxImages, showBlacklisted, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchArtists();
@@ -253,6 +257,23 @@ export default function ArtistTable() {
           ]}
           className="w-28"
         />
+
+        <div className="w-px h-4 bg-ink/10" />
+
+        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showBlacklisted}
+            onChange={(e) => {
+              setShowBlacklisted(e.target.checked);
+              setPagination((p) => ({ ...p, page: 1 }));
+            }}
+            className="w-3.5 h-3.5 border border-ink/30 bg-paper
+                       text-ink focus:ring-0 focus:ring-offset-0
+                       checked:bg-ink checked:border-ink"
+          />
+          <span className="text-[11px] text-gray-500 font-body">Show Blacklisted</span>
+        </label>
       </div>
 
       {/* Range Filters */}
@@ -454,6 +475,11 @@ export default function ArtistTable() {
                   </td>
                   <td className="px-2 py-1.5">
                     <div className="flex items-center gap-1">
+                      {artist.is_blacklisted && (
+                        <span title="Blacklisted">
+                          <Ban className="w-3 h-3 text-status-error flex-shrink-0" />
+                        </span>
+                      )}
                       <Link
                         href={`/admin/artists/${artist.id}`}
                         className="text-ink text-[13px] font-medium truncate hover:underline"

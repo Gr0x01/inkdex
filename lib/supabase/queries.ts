@@ -61,6 +61,7 @@ interface ArtistRow {
   follower_count?: number | null
   is_pro?: boolean
   portfolio_images?: PortfolioImageRow[]
+  pipeline_state?: { scraping_blacklisted?: boolean }[] | { scraping_blacklisted?: boolean } | null
 }
 
 interface PortfolioImageRow {
@@ -329,6 +330,9 @@ export const getArtistBySlug = cache(async (slug: string) => {
         style_name,
         percentage,
         image_count
+      ),
+      pipeline_state:artist_pipeline_state (
+        scraping_blacklisted
       )
     `)
     .eq('slug', slug)
@@ -342,6 +346,12 @@ export const getArtistBySlug = cache(async (slug: string) => {
 
   if (error) {
     console.error('Error fetching artist:', error)
+    return null
+  }
+
+  // Return 404 for blacklisted artists (pipeline_state is an array due to Supabase join)
+  const pipelineState = Array.isArray(data?.pipeline_state) ? data.pipeline_state[0] : data?.pipeline_state
+  if (pipelineState?.scraping_blacklisted === true) {
     return null
   }
 
@@ -366,7 +376,10 @@ export async function getArtistsByCity(city: string) {
     .from('artist_locations')
     .select(`
       artist_id,
-      artists!inner (*)
+      artists!inner (
+        *,
+        pipeline_state:artist_pipeline_state (scraping_blacklisted)
+      )
     `)
     .ilike('city', escapeLikePattern(city))
 
@@ -375,10 +388,15 @@ export async function getArtistsByCity(city: string) {
     return []
   }
 
-  // Extract unique artists from results
+  // Extract unique artists from results, excluding blacklisted
   const artistsMap = new Map<string, ArtistRow>()
   ;(data as ArtistLocationRow[]).forEach((row) => {
     if (row.artists && !artistsMap.has(row.artist_id)) {
+      // Skip blacklisted artists (pipeline_state is an array due to Supabase join)
+      const pipelineState = Array.isArray(row.artists.pipeline_state)
+        ? row.artists.pipeline_state[0]
+        : row.artists.pipeline_state
+      if (pipelineState?.scraping_blacklisted === true) return
       artistsMap.set(row.artist_id, row.artists)
     }
   })
@@ -982,6 +1000,7 @@ export async function getLocationArtists(
         profile_image_url,
         instagram_handle,
         follower_count,
+        pipeline_state:artist_pipeline_state (scraping_blacklisted),
         portfolio_images!inner (
           id,
           storage_thumb_640,
@@ -1009,6 +1028,10 @@ export async function getLocationArtists(
     ;(locationData as ArtistLocationRow[]).forEach((row) => {
       const artist = row.artists
       if (!artist) return
+
+      // Skip blacklisted artists (pipeline_state is an array due to Supabase join)
+      const pipelineState = Array.isArray(artist.pipeline_state) ? artist.pipeline_state[0] : artist.pipeline_state
+      if (pipelineState?.scraping_blacklisted === true) return
 
       if (!artistsMap.has(artist.id)) {
         artistsMap.set(artist.id, {

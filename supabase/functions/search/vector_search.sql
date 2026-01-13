@@ -116,7 +116,7 @@ BEGIN
   candidate_artists AS (
     SELECT DISTINCT ri_artist_id FROM threshold_images
   ),
-  -- Step 4: Filter artists (GDPR, location, deleted)
+  -- Step 4: Filter artists (GDPR, location, deleted, blacklisted)
   filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id,
@@ -136,7 +136,9 @@ BEGIN
     FROM artists a
     INNER JOIN candidate_artists ca ON a.id = ca.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.deleted_at IS NULL
+      AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
       AND (
         COALESCE(a.is_gdpr_blocked, FALSE) = FALSE  -- is_gdpr_blocked=FALSE means whitelisted
         OR a.claimed_by_user_id IS NOT NULL  -- Claimed = implicit consent
@@ -332,8 +334,10 @@ BEGIN
            (a.verification_status = 'verified' OR a.verification_status = 'claimed') as fa_is_verified
     FROM artists a
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
+      AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
       AND (
         COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
         OR a.claimed_by_user_id IS NOT NULL
@@ -460,7 +464,9 @@ BEGIN
     FROM artists a
     INNER JOIN threshold_images ti ON a.id = ti.ri_artist_id
     LEFT JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
+    LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.deleted_at IS NULL
+      AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
       AND (
         COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
         OR a.claimed_by_user_id IS NOT NULL

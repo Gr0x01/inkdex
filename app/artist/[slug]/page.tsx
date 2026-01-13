@@ -23,15 +23,16 @@ export async function generateStaticParams() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Fetch all artists using pagination (no limit)
+  // Fetch all non-blacklisted artists using pagination (no limit)
   let allArtists: { slug: string }[] = []
   let page = 0
   const pageSize = 1000
 
   while (true) {
+    // Join with artist_pipeline_state to exclude blacklisted artists
     const { data: artists, error } = await supabase
       .from('artists')
-      .select('slug')
+      .select('slug, pipeline_state:artist_pipeline_state(scraping_blacklisted)')
       .range(page * pageSize, (page + 1) * pageSize - 1)
 
     if (error) {
@@ -41,7 +42,11 @@ export async function generateStaticParams() {
 
     if (!artists || artists.length === 0) break
 
-    allArtists = allArtists.concat(artists)
+    // Filter out blacklisted artists (pipeline_state is an array due to Supabase join)
+    const nonBlacklisted = artists.filter(
+      (a) => a.pipeline_state?.[0]?.scraping_blacklisted !== true
+    )
+    allArtists = allArtists.concat(nonBlacklisted.map((a) => ({ slug: a.slug })))
 
     // If we got fewer than pageSize, we've reached the end
     if (artists.length < pageSize) break
