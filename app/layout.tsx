@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { Playfair_Display, Libre_Baskerville, JetBrains_Mono, Crimson_Pro } from 'next/font/google'
 import './globals.css'
 import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { PostHogAnalytics } from '@/components/analytics/PostHogAnalytics'
+import { GeoHydrator } from '@/components/analytics/GeoHydrator'
 
 // Font configurations for "Inkdex" design system
 // Optimized: reduced weights to minimize font file downloads
@@ -61,17 +63,22 @@ export const viewport = {
   maximumScale: 5,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Read geo header from Vercel edge (available on every request)
+  const headersList = await headers()
+  const country = headersList.get('x-vercel-ip-country') || ''
+
   return (
     <html
       lang="en"
       className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <body className="">
+        <GeoHydrator country={country} />
         <ConditionalLayout>
           {children}
         </ConditionalLayout>
