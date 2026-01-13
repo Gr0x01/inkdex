@@ -112,6 +112,38 @@ COMMENT ON FUNCTION get_top_artists_by_style IS
 
 
 -- ============================================
+-- get_admin_location_counts
+-- Aggregated location counts for admin filter dropdown
+-- ============================================
+DROP FUNCTION IF EXISTS get_admin_location_counts();
+
+CREATE OR REPLACE FUNCTION get_admin_location_counts()
+RETURNS TABLE (
+  city text,
+  region text,
+  country_code text,
+  count bigint
+)
+LANGUAGE sql STABLE
+AS $$
+  SELECT
+    al.city,
+    al.region,
+    COALESCE(al.country_code, 'US') as country_code,
+    COUNT(*) as count
+  FROM artist_locations al
+  WHERE al.is_primary = true
+    AND al.city IS NOT NULL
+    AND al.region IS NOT NULL
+  GROUP BY al.city, al.region, al.country_code
+  ORDER BY count DESC;
+$$;
+
+COMMENT ON FUNCTION get_admin_location_counts IS
+  'Returns aggregated city/region/country counts for admin location filter dropdown.';
+
+
+-- ============================================
 -- get_artists_with_image_counts
 -- Paginated artist list for admin dashboard
 -- ============================================
@@ -124,6 +156,7 @@ CREATE OR REPLACE FUNCTION get_artists_with_image_counts(
   p_search text DEFAULT NULL,
   p_location_city text DEFAULT NULL,
   p_location_state text DEFAULT NULL,
+  p_location_country text DEFAULT NULL,
   p_tier text DEFAULT NULL,
   p_is_featured boolean DEFAULT NULL,
   p_has_images boolean DEFAULT NULL,
@@ -178,6 +211,7 @@ BEGIN
       )
       AND (p_location_city IS NULL OR al.city = p_location_city)
       AND (p_location_state IS NULL OR al.region = p_location_state)
+      AND (p_location_country IS NULL OR al.country_code = p_location_country)
       AND (
         p_tier IS NULL
         OR (p_tier = 'unclaimed' AND a.verification_status = 'unclaimed')

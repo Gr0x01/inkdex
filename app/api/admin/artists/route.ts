@@ -44,13 +44,18 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Parse location filter (expects "City, State" format)
-    let locationCity = null;
-    let locationState = null;
+    // Parse location filter (expects "City, State, CountryCode" or legacy "City, State" format)
+    let locationCity: string | null = null;
+    let locationState: string | null = null;
+    let locationCountry: string | null = null;
     if (location) {
       const parts = location.split(', ');
-      if (parts.length === 2) {
+      if (parts.length === 3) {
+        [locationCity, locationState, locationCountry] = parts;
+      } else if (parts.length === 2) {
+        // Legacy format - assume US
         [locationCity, locationState] = parts;
+        locationCountry = 'US';
       }
     }
 
@@ -106,6 +111,7 @@ export async function GET(request: NextRequest) {
           p_search: sanitizedSearch,
           p_location_city: locationCity,
           p_location_state: locationState,
+          p_location_country: locationCountry,
           p_tier: tier,
           p_is_featured: featuredFilter,
           p_has_images: hasImagesFilter,

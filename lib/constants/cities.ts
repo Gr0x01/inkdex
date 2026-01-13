@@ -1478,3 +1478,47 @@ export type City = typeof CITIES[number]
 export type CitySlug = City['slug']
 export type State = typeof STATES[number]
 export type StateSlug = State['slug']
+
+// ============================================================================
+// International Cities - India
+// ============================================================================
+
+export const INDIA_CITIES = [
+  { name: 'Mumbai', slug: 'mumbai', state: 'MH', fullName: 'Mumbai, Maharashtra' },
+  { name: 'Delhi', slug: 'delhi', state: 'DL', fullName: 'Delhi, Delhi' },
+  { name: 'Bangalore', slug: 'bangalore', state: 'KA', fullName: 'Bangalore, Karnataka' },
+  { name: 'Kolkata', slug: 'kolkata', state: 'WB', fullName: 'Kolkata, West Bengal' },
+  { name: 'Hyderabad', slug: 'hyderabad', state: 'TG', fullName: 'Hyderabad, Telangana' },
+  { name: 'Chennai', slug: 'chennai', state: 'TN', fullName: 'Chennai, Tamil Nadu' },
+] as const
+
+export const INDIA_STATES = [
+  { name: 'Maharashtra', code: 'MH', slug: 'maharashtra', cities: ['mumbai'] },
+  { name: 'Delhi', code: 'DL', slug: 'delhi', cities: ['delhi'] },
+  { name: 'Karnataka', code: 'KA', slug: 'karnataka', cities: ['bangalore'] },
+  { name: 'West Bengal', code: 'WB', slug: 'west-bengal', cities: ['kolkata'] },
+  { name: 'Telangana', code: 'TG', slug: 'telangana', cities: ['hyderabad'] },
+  { name: 'Tamil Nadu', code: 'TN', slug: 'tamil-nadu', cities: ['chennai'] },
+] as const
+
+// ============================================================================
+// International Cities - Pakistan
+// ============================================================================
+
+export const PAKISTAN_CITIES = [
+  { name: 'Karachi', slug: 'karachi', state: 'SD', fullName: 'Karachi, Sindh' },
+  { name: 'Lahore', slug: 'lahore', state: 'PB', fullName: 'Lahore, Punjab' },
+  { name: 'Islamabad', slug: 'islamabad', state: 'IS', fullName: 'Islamabad, Islamabad Capital' },
+  { name: 'Rawalpindi', slug: 'rawalpindi', state: 'PB', fullName: 'Rawalpindi, Punjab' },
+] as const
+
+export const PAKISTAN_PROVINCES = [
+  { name: 'Sindh', code: 'SD', slug: 'sindh', cities: ['karachi'] },
+  { name: 'Punjab', code: 'PB', slug: 'punjab', cities: ['lahore', 'rawalpindi'] },
+  { name: 'Islamabad Capital', code: 'IS', slug: 'islamabad-capital', cities: ['islamabad'] },
+] as const
+
+export type IndiaCity = typeof INDIA_CITIES[number]
+export type IndiaState = typeof INDIA_STATES[number]
+export type PakistanCity = typeof PAKISTAN_CITIES[number]
+export type PakistanProvince = typeof PAKISTAN_PROVINCES[number]

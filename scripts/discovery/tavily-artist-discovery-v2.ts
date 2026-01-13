@@ -60,6 +60,7 @@ interface CityConfig {
   name: string;
   state: string;
   slug: string;
+  country_code: string;
 }
 
 // ============================================================================
@@ -67,46 +68,23 @@ interface CityConfig {
 // ============================================================================
 
 const CITIES: CityConfig[] = [
-  // Batch 5 Expansion - Final 9 States (Jan 2026)
-  // All cities scored 82-84/100 in DataForSEO analysis
+  // ============================================================================
+  // India - Tier 1 Metros (Jan 2026)
+  // ============================================================================
+  { name: 'Mumbai', state: 'MH', slug: 'mumbai', country_code: 'IN' },
+  { name: 'Delhi', state: 'DL', slug: 'delhi', country_code: 'IN' },
+  { name: 'Bangalore', state: 'KA', slug: 'bangalore', country_code: 'IN' },
+  { name: 'Kolkata', state: 'WB', slug: 'kolkata', country_code: 'IN' },
+  { name: 'Hyderabad', state: 'TG', slug: 'hyderabad', country_code: 'IN' },
+  { name: 'Chennai', state: 'TN', slug: 'chennai', country_code: 'IN' },
 
-  // Delaware (DE) - 82/100
-  { name: 'Wilmington', state: 'DE', slug: 'wilmington-de' },
-
-  // Mississippi (MS) - 84/100
-  { name: 'Jackson', state: 'MS', slug: 'jackson-ms' },
-  { name: 'Biloxi', state: 'MS', slug: 'biloxi' },
-
-  // Montana (MT) - 83-84/100
-  { name: 'Missoula', state: 'MT', slug: 'missoula' },
-  { name: 'Bozeman', state: 'MT', slug: 'bozeman' },
-  { name: 'Billings', state: 'MT', slug: 'billings' },
-
-  // New Hampshire (NH) - 82-84/100
-  { name: 'Portsmouth', state: 'NH', slug: 'portsmouth' },
-  { name: 'Manchester', state: 'NH', slug: 'manchester' },
-
-  // New Jersey (NJ) - 83-84/100
-  { name: 'Jersey City', state: 'NJ', slug: 'jersey-city' },
-  { name: 'Hoboken', state: 'NJ', slug: 'hoboken' },
-  { name: 'Asbury Park', state: 'NJ', slug: 'asbury-park' },
-  { name: 'Atlantic City', state: 'NJ', slug: 'atlantic-city' },
-
-  // North Dakota (ND) - 84/100
-  { name: 'Fargo', state: 'ND', slug: 'fargo' },
-  { name: 'Bismarck', state: 'ND', slug: 'bismarck' },
-
-  // South Dakota (SD) - 84/100
-  { name: 'Sioux Falls', state: 'SD', slug: 'sioux-falls' },
-  { name: 'Rapid City', state: 'SD', slug: 'rapid-city' },
-
-  // West Virginia (WV) - 84/100
-  { name: 'Charleston', state: 'WV', slug: 'charleston-wv' },
-  { name: 'Morgantown', state: 'WV', slug: 'morgantown' },
-
-  // Wyoming (WY) - 83-84/100
-  { name: 'Jackson', state: 'WY', slug: 'jackson-wy' },
-  { name: 'Cheyenne', state: 'WY', slug: 'cheyenne' },
+  // ============================================================================
+  // Pakistan - Major Cities (Jan 2026)
+  // ============================================================================
+  { name: 'Karachi', state: 'SD', slug: 'karachi', country_code: 'PK' },
+  { name: 'Lahore', state: 'PB', slug: 'lahore', country_code: 'PK' },
+  { name: 'Islamabad', state: 'IS', slug: 'islamabad', country_code: 'PK' },
+  { name: 'Rawalpindi', state: 'PB', slug: 'rawalpindi', country_code: 'PK' },
 ];
 
 // ============================================================================
@@ -389,7 +367,7 @@ async function saveArtistsToDatabase(
           artist_id: artistData.id,
           city: artist.city,
           region: cityConfig.state,
-          country_code: 'US',
+          country_code: cityConfig.country_code,
           location_type: 'city',
           is_primary: true,
           display_order: 0,

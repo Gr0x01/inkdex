@@ -1,10 +1,57 @@
 ---
-Last-Updated: 2026-01-13
+Last-Updated: 2026-01-14
 Maintainer: RB
 Status: Launched - Production
 ---
 
 # Active Context: Inkdex
+
+## India + Pakistan Expansion (Jan 14, 2026) ✅
+
+**Goal:** Add tattoo artists from India and Pakistan to capture traffic from those regions.
+
+**Results:**
+| Country | Cities | Artists |
+|---------|--------|---------|
+| India (IN) | 6 | 694 |
+| Pakistan (PK) | 4 | 232 |
+| **Total** | 10 | 926 new |
+
+**Cities Added:**
+- **India:** Mumbai (134), Chennai (129), Bangalore (114), Delhi (112), Kolkata (111), Hyderabad (94)
+- **Pakistan:** Karachi (65), Rawalpindi (61), Lahore (55), Islamabad (51)
+
+**URL Structure:**
+- India: `/in/{state-code}/{city}` (e.g., `/in/mh/mumbai`)
+- Pakistan: `/pk/{province-code}/{city}` (e.g., `/pk/sd/karachi`)
+
+**Files Changed:**
+- `scripts/discovery/tavily-artist-discovery-v2.ts` - Added `country_code` to CityConfig, updated India/Pakistan cities
+- `lib/constants/cities.ts` - Added `INDIA_CITIES`, `INDIA_STATES`, `PAKISTAN_CITIES`, `PAKISTAN_PROVINCES`
+- `lib/supabase/queries.ts` - Added `country_code` to `getAllCitiesWithMinArtists` return type
+- `app/sitemap.ts` - Added India/Pakistan state URLs, fixed city URLs to use country_code from DB
+
+**Admin Location Filter Fix:**
+- **Problem:** Admin location dropdown had Supabase 1000-row default limit, missing international cities
+- **Solution:** Created `get_admin_location_counts()` SQL function to aggregate in DB
+- Added 42 countries to `COUNTRY_NAMES` map for searchable country names
+- Now supports searching by country name (e.g., "india", "canada", "australia")
+
+**Key Files:**
+- `app/api/admin/locations/route.ts` - Uses new RPC function
+- `components/admin/AdminLocationSelect.tsx` - Country name search + display
+- `app/api/admin/artists/route.ts` - Parses new `City, State, CountryCode` format
+- `supabase/functions/admin/admin_functions.sql` - New `get_admin_location_counts()` + updated `get_artists_with_image_counts()`
+
+**Next Steps:**
+1. Run Instagram scraper: `npm run scrape-instagram`
+2. Generate embeddings: `python3 scripts/embeddings/dual_gpu_embeddings.py`
+3. Tag styles: `npx tsx scripts/styles/tag-images-ml.ts --concurrency 200`
+4. Compute artist profiles: `npx tsx scripts/styles/compute-artist-profiles.ts`
+
+**Cost:** ~$29.50 (Tavily discovery)
+
+---
 
 ## PostHog Product Metrics (Jan 12, 2026) ✅
 

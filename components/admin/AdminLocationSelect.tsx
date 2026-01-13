@@ -17,8 +17,56 @@ interface AdminLocationSelectProps {
 interface LocationOption {
   city: string;
   state: string;
+  countryCode: string;
   count: number;
 }
+
+// Map country codes to searchable names
+const COUNTRY_NAMES: Record<string, string> = {
+  US: 'United States',
+  CA: 'Canada',
+  IN: 'India',
+  AU: 'Australia',
+  MX: 'Mexico',
+  PK: 'Pakistan',
+  BR: 'Brazil',
+  AR: 'Argentina',
+  CO: 'Colombia',
+  JP: 'Japan',
+  PE: 'Peru',
+  KR: 'South Korea',
+  NZ: 'New Zealand',
+  PH: 'Philippines',
+  TH: 'Thailand',
+  CL: 'Chile',
+  ID: 'Indonesia',
+  SG: 'Singapore',
+  MY: 'Malaysia',
+  VN: 'Vietnam',
+  TR: 'Turkey',
+  TW: 'Taiwan',
+  ZA: 'South Africa',
+  IL: 'Israel',
+  UA: 'Ukraine',
+  CR: 'Costa Rica',
+  RU: 'Russia',
+  UK: 'United Kingdom',
+  GB: 'United Kingdom',
+  AE: 'United Arab Emirates',
+  CN: 'China',
+  EC: 'Ecuador',
+  HK: 'Hong Kong',
+  CH: 'Switzerland',
+  EG: 'Egypt',
+  IR: 'Iran',
+  JM: 'Jamaica',
+  KH: 'Cambodia',
+  LK: 'Sri Lanka',
+  MO: 'Macau',
+  RE: 'Reunion',
+  UY: 'Uruguay',
+  VE: 'Venezuela',
+};
 
 export default function AdminLocationSelect({
   value,
@@ -52,13 +100,18 @@ export default function AdminLocationSelect({
     fetchLocations();
   }, []);
 
-  // Filter locations based on search
+  // Filter locations based on search (city, state, or country name)
   const filteredLocations = searchQuery
-    ? locations.filter(
-        (loc) =>
-          loc.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          loc.state.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? locations.filter((loc) => {
+        const query = searchQuery.toLowerCase();
+        const countryName = COUNTRY_NAMES[loc.countryCode] || loc.countryCode;
+        return (
+          loc.city.toLowerCase().includes(query) ||
+          loc.state.toLowerCase().includes(query) ||
+          countryName.toLowerCase().includes(query) ||
+          loc.countryCode.toLowerCase().includes(query)
+        );
+      })
     : locations;
 
   const closeDropdown = useCallback(() => {
@@ -116,7 +169,7 @@ export default function AdminLocationSelect({
         event.preventDefault();
         if (highlightedIndex >= 0 && filteredLocations[highlightedIndex]) {
           const loc = filteredLocations[highlightedIndex];
-          onChange(`${loc.city}, ${loc.state}`);
+          onChange(`${loc.city}, ${loc.state}, ${loc.countryCode}`);
           closeDropdown();
         }
         break;
@@ -216,7 +269,11 @@ export default function AdminLocationSelect({
               </div>
             ) : (
               filteredLocations.map((loc, index) => {
-                const locValue = `${loc.city}, ${loc.state}`;
+                const locValue = `${loc.city}, ${loc.state}, ${loc.countryCode}`;
+                const countryName = COUNTRY_NAMES[loc.countryCode] || loc.countryCode;
+                const displayLabel = loc.countryCode === 'US'
+                  ? `${loc.city}, ${loc.state}`
+                  : `${loc.city}, ${loc.state}, ${countryName}`;
                 return (
                   <button
                     key={locValue}
@@ -237,7 +294,7 @@ export default function AdminLocationSelect({
                     role="option"
                     aria-selected={value === locValue}
                   >
-                    <span className="truncate">{locValue}</span>
+                    <span className="truncate">{displayLabel}</span>
                     <span className={`font-mono text-[10px] flex-shrink-0 ${
                       value === locValue ? 'opacity-60' : 'text-gray-400'
                     }`}>

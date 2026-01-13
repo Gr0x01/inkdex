@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-12
+Last-Updated: 2026-01-14
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + ML Style Classifier
+Status: Launched - All 15 Phases Complete + ML Style Classifier + International
 ---
 
 # Progress Log: Inkdex
@@ -10,9 +10,10 @@ Status: Launched - All 15 Phases Complete + ML Style Classifier
 
 | Metric | Value |
 |--------|-------|
-| Cities | 116 |
-| States | 51 (50 states + DC) |
-| Artists | 16,324 |
+| Countries | 42 |
+| Cities | 126 (116 US + 6 India + 4 Pakistan) |
+| States/Regions | 51 US + 6 India + 3 Pakistan |
+| Artists | 17,250 |
 | Images | 99,258 (with embeddings) |
 | Color Profiles | 10,704 artists |
 | Display Styles | 11 (added japanese + anime) |
@@ -70,6 +71,21 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 3 (Jan 14, 2026)
+- **India + Pakistan Expansion** ✅
+  - Added 926 new artists from 10 cities (6 India + 4 Pakistan)
+  - India: Mumbai (134), Chennai (129), Bangalore (114), Delhi (112), Kolkata (111), Hyderabad (94)
+  - Pakistan: Karachi (65), Rawalpindi (61), Lahore (55), Islamabad (51)
+  - URL structure: `/in/{state}/{city}`, `/pk/{province}/{city}`
+  - Updated sitemap with India/Pakistan state pages
+  - Discovery cost: ~$29.50 (Tavily)
+- **Admin Location Filter Enhancement** ✅
+  - Fixed 1000-row Supabase limit bug (international cities missing from dropdown)
+  - Created `get_admin_location_counts()` SQL function for DB-side aggregation
+  - Added country-based search (42 countries with searchable names)
+  - Location format now includes country: "Mumbai, MH, India"
+  - Key files: `AdminLocationSelect.tsx`, `admin/locations/route.ts`, `admin_functions.sql`
 
 ### Week 2 (Jan 12, 2026)
 - **PostHog Product Metrics** ✅

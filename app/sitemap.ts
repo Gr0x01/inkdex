@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Supabase response types vary */
 import { MetadataRoute } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { STATES, CITIES } from '@/lib/constants/cities'
+import { STATES, CITIES, INDIA_STATES, PAKISTAN_PROVINCES } from '@/lib/constants/cities'
 import { styleSeedsData } from '@/scripts/style-seeds/style-seeds-data'
 import { getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 import { getAllCityGuides } from '@/lib/content/editorial/guides'
@@ -36,6 +36,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }))
 
+  // India state pages - URL format: /in/{state-code} (e.g., /in/mh)
+  const indiaStateUrls: MetadataRoute.Sitemap = INDIA_STATES.map((state) => ({
+    url: `${baseUrl}/in/${state.code.toLowerCase()}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
+
+  // Pakistan province pages - URL format: /pk/{province-code} (e.g., /pk/sd)
+  const pakistanProvinceUrls: MetadataRoute.Sitemap = PAKISTAN_PROVINCES.map((province) => ({
+    url: `${baseUrl}/pk/${province.code.toLowerCase()}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }))
+
   // Fetch all cities with 3+ artists for dynamic sitemap generation
   const allCities = await getAllCitiesWithMinArtists(3)
   const featuredCitySlugs: Set<string> = new Set(CITIES.map(c => c.slug as string))
@@ -50,37 +66,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         artist_count: 0
       }))
 
-  // City pages - URL format: /us/{state-code}/{city-slug} (e.g., /us/tx/austin)
+  // City pages - URL format: /{country}/{region-code}/{city-slug} (e.g., /us/tx/austin, /in/mh/mumbai)
   const cityUrls: MetadataRoute.Sitemap = citiesToUse.map((cityData: any) => {
-    const state = STATES.find((s) => s.code === cityData.region)
-    if (!state) return null
-
+    const countryCode = (cityData.country_code || 'US').toLowerCase()
+    const regionCode = (cityData.region as string).toLowerCase()
     const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
     const isFeatured = featuredCitySlugs.has(citySlug)
-    const regionCode = state.code.toLowerCase()
 
     return {
-      url: `${baseUrl}/us/${regionCode}/${citySlug}`,
+      url: `${baseUrl}/${countryCode}/${regionCode}/${citySlug}`,
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: isFeatured ? 0.9 : 0.7, // Featured cities get higher priority
     }
   }).filter(Boolean) as MetadataRoute.Sitemap
 
-  // Style landing pages - URL format: /us/{state-code}/{city-slug}/{style} (e.g., /us/tx/austin/blackwork)
+  // Style landing pages - URL format: /{country}/{region-code}/{city-slug}/{style} (e.g., /us/tx/austin/blackwork, /in/mh/mumbai/blackwork)
   const styleUrls: MetadataRoute.Sitemap = []
 
   for (const cityData of citiesToUse) {
-    const state = STATES.find((s) => s.code === cityData.region)
-    if (!state) continue
-
+    const countryCode = (cityData.country_code || 'US').toLowerCase()
+    const regionCode = (cityData.region as string).toLowerCase()
     const citySlug = (cityData.city as string).toLowerCase().replace(/\s+/g, '-')
     const isFeatured = featuredCitySlugs.has(citySlug)
-    const regionCode = state.code.toLowerCase()
 
     for (const style of styleSeedsData) {
       styleUrls.push({
-        url: `${baseUrl}/us/${regionCode}/${citySlug}/${style.styleName}`,
+        url: `${baseUrl}/${countryCode}/${regionCode}/${citySlug}/${style.styleName}`,
         lastModified: new Date(),
         changeFrequency: 'daily' as const,
         priority: isFeatured ? 0.85 : 0.65, // Featured cities get higher priority
@@ -252,6 +264,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...learnGuideUrls,
     ...alternativesUrls,
     ...stateUrls,
+    ...indiaStateUrls,
+    ...pakistanProvinceUrls,
     ...cityUrls,
     ...styleUrls,
     ...artistUrls,

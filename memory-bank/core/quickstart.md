@@ -1,16 +1,17 @@
 ---
-Last-Updated: 2026-01-11
+Last-Updated: 2026-01-14
 Maintainer: RB
-Status: Launched - Full US Coverage
+Status: Launched - International Expansion
 ---
 
 # Quickstart: Inkdex
 
 ## Current Status
-- **Phase**: Launched - All 15 phases complete
-- **Version**: 1.0.0 (Full Launch)
+- **Phase**: Launched - All 15 phases complete + International
+- **Version**: 1.1.0 (International Launch)
 - **Environment**: Production
-- **Scale**: 116 cities, 15,626 artists, 68,440 images with embeddings
+- **Scale**: 126 cities (116 US + 10 International), 17,250 artists, 99,258 images with embeddings
+- **Countries**: 42 (US, Canada, India, Pakistan, Australia, Mexico, Brazil, Argentina, Japan, + 33 more)
 
 ## Project Summary
 Inkdex - tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions). Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
@@ -34,12 +35,18 @@ Inkdex - tattoo artist discovery platform where users search in *their language*
 - Discovery: 1,319 artists via Tavily API
 - All cities scored 82-84/100 opportunity score
 
+**International Expansion (Jan 14, 2026):**
+- **India (IN):** Mumbai, Delhi, Bangalore, Kolkata, Hyderabad, Chennai (694 artists)
+- **Pakistan (PK):** Karachi, Lahore, Islamabad, Rawalpindi (232 artists)
+- URL format: `/in/mh/mumbai`, `/pk/sd/karachi`
+
 **Total Platform Scale:**
-- **Cities**: 116 (full US coverage)
-- **Artists**: 15,626
-- **States**: 51 (all 50 states + DC)
-- **SEO Content**: 116 cities with full editorial content
-- **Discovery Cost**: ~$298 (Tavily API)
+- **Cities**: 126 (116 US + 6 India + 4 Pakistan)
+- **Artists**: 17,250
+- **Countries**: 42
+- **States/Regions**: 51 US + 6 India + 3 Pakistan
+- **SEO Content**: 116 US cities with full editorial content
+- **Discovery Cost**: ~$328 (Tavily API)
 - **SEO Generation Cost**: ~$2.14 (GPT-4.1)
 
 ## Key Commands

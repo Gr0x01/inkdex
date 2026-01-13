@@ -18,34 +18,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get unique city/state combinations with counts from artist_locations
-    const { data, error } = await supabase
-      .from('artist_locations')
-      .select('city, region, artist_id')
-      .eq('is_primary', true)
-      .not('city', 'is', null)
-      .not('region', 'is', null);
+    // Get aggregated city/state/country counts directly from SQL (avoids row limit issues)
+    const { data, error } = await supabase.rpc('get_admin_location_counts');
 
     if (error) {
       console.error('[Admin Locations] Query error:', error);
       return NextResponse.json({ error: 'Failed to fetch locations' }, { status: 500 });
     }
 
-    // Aggregate counts
-    const locationCounts: Record<string, { city: string; state: string; count: number }> = {};
-
-    for (const row of data || []) {
-      if (row.city && row.region) {
-        const key = `${row.city}|${row.region}`;
-        if (!locationCounts[key]) {
-          locationCounts[key] = { city: row.city, state: row.region, count: 0 };
-        }
-        locationCounts[key].count++;
-      }
-    }
-
-    // Sort by count descending
-    const locations = Object.values(locationCounts).sort((a, b) => b.count - a.count);
+    // Map to expected format
+    const locations = (data || []).map((row: { city: string; region: string; country_code: string; count: number }) => ({
+      city: row.city,
+      state: row.region,
+      countryCode: row.country_code || 'US',
+      count: Number(row.count),
+    }));
 
     return NextResponse.json({ locations });
   } catch (error) {
