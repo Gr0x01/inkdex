@@ -7,6 +7,7 @@ import { getAllCitiesWithMinArtists } from '@/lib/supabase/queries'
 import { getAllCityGuides } from '@/lib/content/editorial/guides'
 import { getAllStyleGuides } from '@/lib/content/editorial/style-guides'
 import { getAllTopicalGuides } from '@/lib/content/editorial/topical-guides'
+import { getAllCompetitorSlugs } from '@/lib/content/alternatives'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.inkdex.io'
@@ -218,6 +219,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ]
 
+  // Competitor comparison pages (SEO landing pages)
+  const competitorSlugs = getAllCompetitorSlugs()
+  const alternativesUrls: MetadataRoute.Sitemap = [
+    // Alternatives index page
+    {
+      url: `${baseUrl}/alternatives`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    },
+    // Individual competitor comparison pages
+    ...competitorSlugs.map((slug) => ({
+      url: `${baseUrl}/alternatives/${slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    })),
+  ]
+
   return [
     {
       url: baseUrl,
@@ -230,6 +250,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...guideUrls,
     ...styleGuideUrls,
     ...learnGuideUrls,
+    ...alternativesUrls,
     ...stateUrls,
     ...cityUrls,
     ...styleUrls,
