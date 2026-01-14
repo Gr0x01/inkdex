@@ -88,7 +88,7 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-dropzone": "^14.3.8",
-    "react-email": "^5.1.1",
+    "react-email": "^5.2.3",
     "recharts": "^3.6.0",
     "resend": "^6.6.0",
     "sharp": "^0.33.1",
