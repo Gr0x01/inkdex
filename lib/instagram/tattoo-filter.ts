@@ -1,7 +1,7 @@
 /**
  * Tattoo Image Filter
  *
- * Uses gpt-4o-mini to classify tattoo images from scraped portfolios.
+ * Uses GPT-5-mini to classify tattoo images from scraped portfolios.
  * Cost: ~$0.001 per image (using detail: 'low')
  */
 
@@ -93,7 +93,7 @@ async function classifySingleImage(
 
   try {
     const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'user',
@@ -158,7 +158,7 @@ async function classifySingleImageLegacy(
 
   try {
     const response = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: 'gpt-5-mini',
       messages: [
         {
           role: 'user',
@@ -206,7 +206,7 @@ async function classifySingleImageLegacy(
  * Convert file buffer to base64 data URL (converts WebP to JPEG for GPT compatibility)
  */
 export async function bufferToBase64(buffer: Buffer): Promise<string> {
-  // Check if WebP (gpt-4o-mini doesn't handle WebP well)
+  // Check if WebP (GPT-5-mini doesn't handle WebP well)
   const isWebp = buffer.subarray(0, 4).toString() === 'RIFF' && buffer.subarray(8, 12).toString() === 'WEBP';
 
   if (isWebp) {
