@@ -67,6 +67,23 @@ const nextConfig = {
       },
     ]
   },
+  async redirects() {
+    return [
+      // www to non-www redirect (308 permanent)
+      // Fixes "Alternate page with proper canonical tag" issue in GSC
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.inkdex.io',
+          },
+        ],
+        destination: 'https://inkdex.io/:path*',
+        permanent: true,
+      },
+    ]
+  },
   async rewrites() {
     return [
       // PostHog reverse proxy - routes through our domain to avoid ad blockers

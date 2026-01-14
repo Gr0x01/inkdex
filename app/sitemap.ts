@@ -10,7 +10,7 @@ import { getAllTopicalGuides } from '@/lib/content/editorial/topical-guides'
 import { getAllCompetitorSlugs } from '@/lib/content/alternatives'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.inkdex.io'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
   const supabase = await createClient()
 
   // Fetch all artist slugs
