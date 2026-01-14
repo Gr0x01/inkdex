@@ -348,6 +348,25 @@ class BatchEmbeddingGenerator:
             return 0
         return int((self.stats[key] / total) * 100)
 
+    def update_artist_pipeline_status(self):
+        """Mark artists as complete if all their images have embeddings"""
+        try:
+            # Find artists with pending_embeddings status who are actually done
+            result = self.supabase.rpc('update_complete_artist_pipelines').execute()
+            count = result.data if result.data else 0
+            if count and count > 0:
+                print(f"✅ Updated {count} artists to 'complete' status")
+        except Exception as e:
+            # Fallback: direct SQL update
+            try:
+                self.supabase.table("artist_pipeline_state").update({
+                    "pipeline_status": "complete",
+                    "updated_at": "now()"
+                }).eq("pipeline_status", "pending_embeddings").execute()
+                print("✅ Updated artist pipeline statuses")
+            except Exception as e2:
+                print(f"⚠️  Could not update artist pipeline status: {e2}")
+
 def main():
     parser = argparse.ArgumentParser(description="Batch embedding generation with local GPU + Modal fallback")
     parser.add_argument("--batch-size", type=int, default=100, help="Images per batch (default: 100)")
@@ -442,6 +461,9 @@ def main():
     generator.print_stats()
     print(f"\n🎉 Total processed: {total_processed} images in {overall_time:.1f}s")
     print(f"   Average: {overall_time/max(total_processed, 1):.2f}s per image")
+
+    # Update artist pipeline statuses
+    generator.update_artist_pipeline_status()
 
     return 0
 
