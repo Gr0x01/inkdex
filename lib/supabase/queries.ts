@@ -315,7 +315,8 @@ export const getArtistBySlug = cache(async (slug: string) => {
         likes_count,
         is_pinned,
         pinned_position,
-        featured
+        featured,
+        is_tattoo
       ),
       locations:artist_locations (
         id,
@@ -353,6 +354,13 @@ export const getArtistBySlug = cache(async (slug: string) => {
   const pipelineState = Array.isArray(data?.pipeline_state) ? data.pipeline_state[0] : data?.pipeline_state
   if (pipelineState?.scraping_blacklisted === true) {
     return null
+  }
+
+  // Filter out non-tattoo images (keep tattoos and unclassified/null for backwards compatibility)
+  if (data?.portfolio_images && Array.isArray(data.portfolio_images)) {
+    data.portfolio_images = data.portfolio_images.filter(
+      (img: { is_tattoo?: boolean | null }) => img.is_tattoo !== false
+    )
   }
 
   return data
@@ -457,6 +465,7 @@ export async function getFeaturedImages(limit: number = 30) {
     .eq('featured', true)
     .eq('status', 'active')
     .not('storage_thumb_640', 'is', null)
+    .or('is_tattoo.eq.true,is_tattoo.is.null')
     .order('created_at', { ascending: false })
     .limit(limit)
 
@@ -528,6 +537,7 @@ export async function getFeaturedArtists(city: string, limit: number = 12) {
     .eq('artists.is_featured', true)
     .eq('artists.portfolio_images.status', 'active')
     .not('artists.portfolio_images.storage_thumb_640', 'is', null)
+    .or('is_tattoo.eq.true,is_tattoo.is.null', { referencedTable: 'artists.portfolio_images' })
 
   if (error) {
     console.error('Error fetching featured artists:', error)
@@ -631,6 +641,7 @@ export async function getFeaturedArtistsByStates(limitPerState: number = 4) {
     .eq('artist_locations.is_primary', true)
     .eq('portfolio_images.status', 'active')
     .not('portfolio_images.storage_thumb_640', 'is', null)
+    .or('is_tattoo.eq.true,is_tattoo.is.null', { referencedTable: 'portfolio_images' })
 
   if (error) {
     console.error('Error fetching featured artists by states:', error)
@@ -874,6 +885,7 @@ export async function getCityArtists(
     .eq('region', state)
     .eq('artists.portfolio_images.status', 'active')
     .not('artists.portfolio_images.storage_thumb_640', 'is', null)
+    .or('is_tattoo.eq.true,is_tattoo.is.null', { referencedTable: 'artists.portfolio_images' })
 
   if (error) {
     console.error('Error fetching city artists:', error)
@@ -1018,6 +1030,7 @@ export async function getLocationArtists(
     .ilike('city', escapeLikePattern(city))
     .eq('artists.portfolio_images.status', 'active')
     .not('artists.portfolio_images.storage_thumb_640', 'is', null)
+    .or('is_tattoo.eq.true,is_tattoo.is.null', { referencedTable: 'artists.portfolio_images' })
 
   if (locationError) {
     console.error('Error fetching location artists:', locationError)

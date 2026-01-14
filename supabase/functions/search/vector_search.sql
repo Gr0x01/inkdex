@@ -104,6 +104,7 @@ BEGIN
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
     ORDER BY pi.embedding <=> query_embedding
     LIMIT 2000
   ),
@@ -313,7 +314,8 @@ BEGIN
   FROM portfolio_images
   WHERE portfolio_images.artist_id = source_artist_id
     AND status = 'active'
-    AND embedding IS NOT NULL;
+    AND embedding IS NOT NULL
+    AND COALESCE(is_tattoo, TRUE) = TRUE;
 
   IF source_avg_embedding IS NULL THEN
     RETURN;
@@ -352,6 +354,7 @@ BEGIN
     INNER JOIN portfolio_images pi ON pi.artist_id = fa.fa_id
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
     GROUP BY fa.fa_id
   )
   SELECT
@@ -446,6 +449,7 @@ BEGIN
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
     ORDER BY pi.embedding <=> query_embedding
     LIMIT 2000
   ),

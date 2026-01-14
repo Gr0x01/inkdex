@@ -40,6 +40,7 @@ BEGIN
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
   )
   SELECT
     al.region as region,
@@ -143,6 +144,7 @@ BEGIN
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
   )
   SELECT
     al.city as city,
@@ -191,6 +193,7 @@ BEGIN
     FROM portfolio_images pi
     WHERE pi.status = 'active'
       AND pi.storage_thumb_640 IS NOT NULL
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
   )
   SELECT
     al.city as city,

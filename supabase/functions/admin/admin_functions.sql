@@ -63,6 +63,7 @@ BEGIN
     WHERE pi.status = 'active'
       AND pi.embedding IS NOT NULL
       AND COALESCE(pi.hidden, FALSE) = FALSE
+      AND COALESCE(pi.is_tattoo, TRUE) = TRUE
     ORDER BY pi.embedding <=> style_embedding
     LIMIT 500
   ),
@@ -333,7 +334,7 @@ BEGIN
   RETURN QUERY
   SELECT
     (SELECT COUNT(*) FROM artists WHERE deleted_at IS NULL)::bigint AS artist_count,
-    (SELECT COUNT(*) FROM portfolio_images WHERE status = 'active')::bigint AS image_count,
+    (SELECT COUNT(*) FROM portfolio_images WHERE status = 'active' AND COALESCE(is_tattoo, TRUE) = TRUE)::bigint AS image_count,
     (SELECT COUNT(DISTINCT city) FROM artist_locations WHERE country_code = 'US')::bigint AS city_count,
     (SELECT COUNT(DISTINCT al.country_code)
      FROM artist_locations al
