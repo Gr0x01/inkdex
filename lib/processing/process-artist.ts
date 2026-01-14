@@ -13,7 +13,7 @@ import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImage
 import { analyzeImageColor } from '../search/color-analyzer';
 import { generateImageEmbedding } from '../embeddings/hybrid-client';
 import { predictStyles } from '../styles/predictor';
-import { classifyImage } from '../instagram/tattoo-filter';
+import { filterTattooImages } from '../instagram/tattoo-filter';
 
 const TEMP_DIR = '/tmp/instagram';
 
@@ -225,9 +225,9 @@ export async function processArtistImages(
 
     console.log(`[ProcessArtist] Processing ${metadata.length} images for ${artistId}`);
 
-    // Pre-classify all images in parallel (GPT calls are the slowest part)
+    // Pre-classify all images with concurrency control (GPT calls are the slowest part)
     const classificationMap = new Map<string, { isTattoo: boolean; confidence: number }>();
-    const imagesToClassify: Array<{ postId: string; buffer: Buffer }> = [];
+    const imagesToClassify: Array<{ id: string; buffer: Buffer }> = [];
 
     for (const meta of metadata) {
       const postId = meta.post_id;
@@ -238,35 +238,24 @@ export async function processArtistImages(
         const imagePath = join(artistDir, imageFiles[0]);
         try {
           const buffer = readFileSync(imagePath);
-          imagesToClassify.push({ postId, buffer });
-        } catch {
-          // Will handle in main loop
+          imagesToClassify.push({ id: postId, buffer });
+        } catch (err) {
+          console.warn(`[ProcessArtist] Failed to read ${postId} for classification:`, err);
         }
       }
     }
 
     if (imagesToClassify.length > 0) {
-      console.log(`[ProcessArtist] Classifying ${imagesToClassify.length} images in parallel...`);
-      const classificationResults = await Promise.all(
-        imagesToClassify.map(async ({ postId, buffer }) => {
-          try {
-            const result = await classifyImage(buffer);
-            return { postId, ...result };
-          } catch {
-            return { postId, isTattoo: null as boolean | null, confidence: null as number | null };
-          }
-        })
-      );
+      console.log(`[ProcessArtist] Classifying ${imagesToClassify.length} images...`);
+      const filterResult = await filterTattooImages(imagesToClassify, 6); // 6 concurrent GPT calls
 
-      for (const result of classificationResults) {
-        if (result.isTattoo !== null) {
-          classificationMap.set(result.postId, {
-            isTattoo: result.isTattoo,
-            confidence: result.confidence!,
-          });
-        }
+      for (const result of filterResult.results) {
+        classificationMap.set(result.id, {
+          isTattoo: result.isTattoo,
+          confidence: result.confidence,
+        });
       }
-      console.log(`[ProcessArtist] Classification complete`);
+      console.log(`[ProcessArtist] Classification complete: ${filterResult.kept} tattoos, ${filterResult.dropped} non-tattoos`);
     }
 
     // Process each image
