@@ -259,7 +259,7 @@ Answer only 'yes' or 'no'.`,
             ],
           },
         ],
-        max_completion_tokens: 10,
+        max_completion_tokens: 256,
       });
 
       const result = response.choices[0]?.message?.content?.trim().toLowerCase();

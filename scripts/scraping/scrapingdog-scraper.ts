@@ -4,12 +4,14 @@
  * High-performance Instagram scraper using ScrapingDog API
  * - 50 concurrent requests (Standard plan)
  * - Downloads profile + 12 posts per artist
+ * - GPT-powered tattoo filter (drops non-tattoo images)
  * - Incremental processing with process-batch.ts
  *
  * Usage:
  *   npx tsx scripts/scraping/scrapingdog-scraper.ts
  *   npx tsx scripts/scraping/scrapingdog-scraper.ts --limit 100
  *   npx tsx scripts/scraping/scrapingdog-scraper.ts --profile-only
+ *   npx tsx scripts/scraping/scrapingdog-scraper.ts --no-filter  # Skip GPT tattoo filter
  */
 
 import * as dotenv from 'dotenv';
@@ -23,10 +25,12 @@ import { spawn } from 'child_process';
 import pLimit from 'p-limit';
 import { fetchProfileWithScrapingDog } from '../../lib/instagram/scrapingdog-client';
 import { InstagramError } from '../../lib/instagram/post-fetcher';
+import { filterTattooImages } from '../../lib/instagram/tattoo-filter';
 
 // Configuration
 const TEMP_DIR = '/tmp/instagram';
-const CONCURRENCY = 50; // ScrapingDog Standard plan limit
+const CONCURRENCY_DEFAULT = 50; // ScrapingDog Standard plan limit
+const CONCURRENCY_WITH_FILTER = 15; // Lower when GPT filter enabled (memory + rate limits)
 const PROCESS_BATCH_INTERVAL = 20; // Run process-batch every N artists
 const MAX_POSTS = 12; // ScrapingDog returns up to 12 posts per request
 
@@ -163,9 +167,9 @@ async function getArtistsNeedingProfileImages(limit?: number): Promise<PendingAr
 }
 
 /**
- * Download image from URL to local file
+ * Download image from URL to buffer (for filtering before save)
  */
-async function downloadImage(url: string, destPath: string): Promise<boolean> {
+async function downloadImageToBuffer(url: string): Promise<Buffer | null> {
   try {
     const response = await fetch(url, {
       headers: {
@@ -174,38 +178,42 @@ async function downloadImage(url: string, destPath: string): Promise<boolean> {
     });
 
     if (!response.ok) {
-      console.error(`    Failed to download: HTTP ${response.status}`);
-      return false;
+      return null;
     }
 
     const contentType = response.headers.get('content-type') || '';
     if (!contentType.startsWith('image/')) {
-      console.error(`    Invalid content type: ${contentType}`);
-      return false;
+      return null;
     }
 
     const buffer = Buffer.from(await response.arrayBuffer());
 
     // Validate size (max 10MB)
     if (buffer.length > 10 * 1024 * 1024) {
-      console.error('    Image too large');
-      return false;
+      return null;
     }
 
     // Validate magic bytes
     const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
     const isPng = buffer.toString('hex', 0, 8) === '89504e470d0a1a0a';
     if (!isJpeg && !isPng) {
-      console.error('    Invalid image format');
-      return false;
+      return null;
     }
 
-    await writeFile(destPath, buffer);
-    return true;
-  } catch (error) {
-    console.error(`    Download error: ${error}`);
-    return false;
+    return buffer;
+  } catch {
+    return null;
   }
+}
+
+/**
+ * Download image from URL to local file
+ */
+async function downloadImage(url: string, destPath: string): Promise<boolean> {
+  const buffer = await downloadImageToBuffer(url);
+  if (!buffer) return false;
+  await writeFile(destPath, buffer);
+  return true;
 }
 
 /**
@@ -372,7 +380,7 @@ async function updateArtistMetadata(
 /**
  * Scrape a single artist
  */
-async function scrapeArtist(artist: PendingArtist, profileOnly: boolean): Promise<ScrapeResult> {
+async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFilter: boolean): Promise<ScrapeResult> {
   const artistDir = join(TEMP_DIR, artist.id);
 
   try {
@@ -381,8 +389,6 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean): Promis
 
     // Create artist directory
     await mkdir(artistDir, { recursive: true });
-
-    let imagesDownloaded = 0;
 
     // Download profile image
     if (profile.profileImageUrl) {
@@ -402,7 +408,40 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean): Promis
       return { artistId: artist.id, success: true, imagesDownloaded: 0 };
     }
 
-    // Download portfolio images
+    // Download all images to memory first
+    const downloadedImages: Array<{
+      id: string;
+      buffer: Buffer;
+      post: (typeof profile.posts)[0];
+    }> = [];
+
+    for (const post of profile.posts) {
+      if (shutdownRequested) break;
+
+      const buffer = await downloadImageToBuffer(post.displayUrl);
+      if (buffer) {
+        downloadedImages.push({ id: post.shortcode, buffer, post });
+      }
+    }
+
+    console.log(`    Downloaded ${downloadedImages.length}/${profile.posts.length} images`);
+
+    // Filter images with GPT (unless --no-filter flag)
+    let imagesToSave = downloadedImages;
+    if (!skipFilter && downloadedImages.length > 0) {
+      const filterResult = await filterTattooImages(
+        downloadedImages.map((img) => ({ id: img.id, buffer: img.buffer })),
+        6 // concurrency for GPT calls
+      );
+
+      // Keep only tattoo images
+      const tattooIds = new Set(
+        filterResult.results.filter((r) => r.isTattoo).map((r) => r.id)
+      );
+      imagesToSave = downloadedImages.filter((img) => tattooIds.has(img.id));
+    }
+
+    // Save filtered images to disk
     const metadata: Array<{
       post_id: string;
       post_url: string;
@@ -411,22 +450,16 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean): Promis
       likes: number;
     }> = [];
 
-    for (const post of profile.posts) {
-      if (shutdownRequested) break;
-
-      const imagePath = join(artistDir, `${post.shortcode}.jpg`);
-      const success = await downloadImage(post.displayUrl, imagePath);
-
-      if (success) {
-        imagesDownloaded++;
-        metadata.push({
-          post_id: post.shortcode,
-          post_url: post.url,
-          caption: post.caption || '',
-          timestamp: post.timestamp || new Date().toISOString(),
-          likes: post.likesCount || 0,
-        });
-      }
+    for (const img of imagesToSave) {
+      const imagePath = join(artistDir, `${img.id}.jpg`);
+      await writeFile(imagePath, img.buffer);
+      metadata.push({
+        post_id: img.post.shortcode,
+        post_url: img.post.url,
+        caption: img.post.caption || '',
+        timestamp: img.post.timestamp || new Date().toISOString(),
+        likes: img.post.likesCount || 0,
+      });
     }
 
     // Save metadata
@@ -437,7 +470,12 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean): Promis
     // Create .complete marker
     await writeFile(join(artistDir, '.complete'), '');
 
-    return { artistId: artist.id, success: true, imagesDownloaded };
+    const dropped = downloadedImages.length - imagesToSave.length;
+    if (dropped > 0) {
+      console.log(`    Saved ${imagesToSave.length} tattoos (dropped ${dropped} non-tattoo)`);
+    }
+
+    return { artistId: artist.id, success: true, imagesDownloaded: imagesToSave.length };
   } catch (error) {
     // Clean up on failure
     if (existsSync(artistDir)) {
@@ -509,14 +547,19 @@ async function main(): Promise<void> {
   // Parse arguments
   const args = process.argv.slice(2);
   const profileOnly = args.includes('--profile-only');
+  const skipFilter = args.includes('--no-filter');
   const limitArg = args.find((a) => a.startsWith('--limit'));
   const limit = limitArg ? parseInt(limitArg.split('=')[1] || args[args.indexOf('--limit') + 1]) : undefined;
+
+  // Use lower concurrency when filter enabled (memory + GPT rate limits)
+  const concurrency = skipFilter ? CONCURRENCY_DEFAULT : CONCURRENCY_WITH_FILTER;
 
   console.log('='.repeat(60));
   console.log('ScrapingDog Batch Scraper');
   console.log('='.repeat(60));
-  console.log(`Concurrency: ${CONCURRENCY}`);
+  console.log(`Concurrency: ${concurrency}${skipFilter ? '' : ' (reduced for GPT filter)'}`);
   console.log(`Mode: ${profileOnly ? 'Profile images only' : 'Full portfolio'}`);
+  console.log(`Tattoo filter: ${skipFilter ? 'DISABLED' : 'ENABLED (GPT)'}`);
   if (limit) console.log(`Limit: ${limit} artists`);
   console.log('');
 
@@ -544,7 +587,7 @@ async function main(): Promise<void> {
   }
 
   // Set up concurrency limiter
-  const limiter = pLimit(CONCURRENCY);
+  const limiter = pLimit(concurrency);
 
   // Stats
   let completed = 0;
@@ -566,7 +609,7 @@ async function main(): Promise<void> {
       const jobId = await createScrapingJob(artist.id);
 
       // Scrape
-      const result = await scrapeArtist(artist, profileOnly);
+      const result = await scrapeArtist(artist, profileOnly, skipFilter);
 
       // Update job status
       if (jobId) {
