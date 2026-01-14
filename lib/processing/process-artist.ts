@@ -225,6 +225,50 @@ export async function processArtistImages(
 
     console.log(`[ProcessArtist] Processing ${metadata.length} images for ${artistId}`);
 
+    // Pre-classify all images in parallel (GPT calls are the slowest part)
+    const classificationMap = new Map<string, { isTattoo: boolean; confidence: number }>();
+    const imagesToClassify: Array<{ postId: string; buffer: Buffer }> = [];
+
+    for (const meta of metadata) {
+      const postId = meta.post_id;
+      const imageFiles = readdirSync(artistDir).filter(f =>
+        f.startsWith(postId) && f.endsWith('.jpg')
+      );
+      if (imageFiles.length > 0) {
+        const imagePath = join(artistDir, imageFiles[0]);
+        try {
+          const buffer = readFileSync(imagePath);
+          imagesToClassify.push({ postId, buffer });
+        } catch {
+          // Will handle in main loop
+        }
+      }
+    }
+
+    if (imagesToClassify.length > 0) {
+      console.log(`[ProcessArtist] Classifying ${imagesToClassify.length} images in parallel...`);
+      const classificationResults = await Promise.all(
+        imagesToClassify.map(async ({ postId, buffer }) => {
+          try {
+            const result = await classifyImage(buffer);
+            return { postId, ...result };
+          } catch {
+            return { postId, isTattoo: null as boolean | null, confidence: null as number | null };
+          }
+        })
+      );
+
+      for (const result of classificationResults) {
+        if (result.isTattoo !== null) {
+          classificationMap.set(result.postId, {
+            isTattoo: result.isTattoo,
+            confidence: result.confidence!,
+          });
+        }
+      }
+      console.log(`[ProcessArtist] Classification complete`);
+    }
+
     // Process each image
     for (const meta of metadata) {
       const postId = meta.post_id;
@@ -285,18 +329,10 @@ export async function processArtistImages(
           // Non-fatal
         }
 
-        // Classify as tattoo (async, non-blocking for insert)
-        let isTattoo: boolean | null = null;
-        let tattooConfidence: number | null = null;
-        try {
-          const tattooResult = await classifyImage(buffers.thumb320);
-          isTattoo = tattooResult.isTattoo;
-          tattooConfidence = tattooResult.confidence;
-          console.log(`[ProcessArtist] Tattoo classification for ${postId}: ${isTattoo ? '✓' : '✗'} (${Math.round(tattooConfidence * 100)}%)`);
-        } catch (err) {
-          console.warn(`[ProcessArtist] Tattoo classification failed for ${postId} (non-fatal):`, err);
-          // Non-fatal - image will be tagged later or manually reviewed
-        }
+        // Get pre-classified tattoo result
+        const tattooClassification = classificationMap.get(postId);
+        const isTattoo = tattooClassification?.isTattoo ?? null;
+        const tattooConfidence = tattooClassification?.confidence ?? null;
 
         // Generate CLIP embedding inline (required - skip image if fails)
         let embedding: number[];
