@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-11 (Mining removal, ScrapingDog migration)
+Last-Updated: 2026-01-14 (Tailwind v4 migration)
 Maintainer: RB
 Status: Launched
 ---
@@ -12,7 +12,7 @@ Status: Launched
 |-------|------------|-------|
 | Framework | Next.js 16+ (App Router) | Turbopack, React 19, ISR |
 | Language | TypeScript (strict) | Path alias: `@/*` → `./` |
-| Styling | Tailwind CSS v3 | |
+| Styling | Tailwind CSS v4 | See [Tailwind v4 section](#tailwind-css-v4) |
 | Database | Supabase PostgreSQL | pgvector for embeddings |
 | Vector Index | IVFFlat | `lists=300` (see note below) |
 | Caching | Redis (Railway) | Rate limiting, analytics |
@@ -77,6 +77,62 @@ npm run type-check    # TypeScript check
 npm run db:push       # Apply migrations (runs sqlfluff first)
 npm run storybook     # Component dev (localhost:6006)
 ```
+
+---
+
+## Tailwind CSS v4
+
+**Migrated:** Jan 14, 2026 (from v3.4.1)
+
+### Key Differences from v3
+
+| v3 | v4 |
+|----|-----|
+| `@tailwind base/components/utilities` | `@import "tailwindcss"` |
+| `tailwindcss` PostCSS plugin | `@tailwindcss/postcss` |
+| `content: [...]` in config | Auto-detected (removed) |
+| `flex-shrink-0` | `shrink-0` |
+| `flex-grow-0` | `grow-0` |
+
+### Critical: CSS Layer Ordering
+
+**v4 requires custom base styles to be wrapped in `@layer base`**, or Tailwind's preflight will override them.
+
+```css
+/* globals.css structure */
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/* CSS variables in :root - outside layers */
+:root { ... }
+
+@layer base {
+  /* MUST wrap base styles here or preflight overrides them */
+  body { font-family: var(--font-crimson-pro); line-height: 1.8; }
+  h1, h2, h3 { font-family: var(--font-libre-baskerville); }
+}
+
+@layer utilities { /* Custom utilities */ }
+@layer components { /* Custom components */ }
+```
+
+### Files Changed in Migration
+
+- `postcss.config.js` - Use `@tailwindcss/postcss`
+- `app/globals.css` - New import syntax, `@layer base` wrapper
+- `tailwind.config.ts` - Removed `content` and `future` options
+- 90+ component files - Class name updates (`shrink-0`, etc.)
+
+### Troubleshooting
+
+**Typography looks wrong after changes:**
+1. Clear `.next` cache: `rm -rf .next`
+2. Restart dev server
+3. Check that custom base styles are inside `@layer base { }`
+
+**Custom utilities not applying:**
+- v4 still supports `@layer utilities` but ordering matters
+- Ensure globals.css is imported before component CSS
 
 ---
 
