@@ -226,8 +226,8 @@ BEGIN
       AND (
         p_tier IS NULL
         OR (p_tier = 'unclaimed' AND a.verification_status = 'unclaimed')
-        OR (p_tier = 'free' AND a.verification_status = 'claimed' AND a.is_pro = false)
-        OR (p_tier = 'pro' AND a.verification_status = 'claimed' AND a.is_pro = true)
+        OR (p_tier = 'free' AND a.verification_status = 'claimed' AND COALESCE(a.is_pro, false) = false)
+        OR (p_tier = 'pro' AND COALESCE(a.is_pro, false) = true)
       )
       AND (p_is_featured IS NULL OR a.is_featured = p_is_featured)
       AND (p_min_followers IS NULL OR a.follower_count >= p_min_followers)
@@ -305,8 +305,8 @@ BEGIN
     SELECT json_build_object(
       'total', COUNT(*),
       'unclaimed', COUNT(*) FILTER (WHERE verification_status = 'unclaimed'),
-      'free', COUNT(*) FILTER (WHERE verification_status = 'claimed' AND is_pro = false),
-      'pro', COUNT(*) FILTER (WHERE verification_status = 'claimed' AND is_pro = true)
+      'free', COUNT(*) FILTER (WHERE verification_status = 'claimed' AND COALESCE(is_pro, false) = false),
+      'pro', COUNT(*) FILTER (WHERE COALESCE(is_pro, false) = true)
     )
     FROM artists
     WHERE deleted_at IS NULL
