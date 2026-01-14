@@ -6,6 +6,43 @@ Status: Launched - Production
 
 # Active Context: Inkdex
 
+## Google Search Console - India/Pakistan Indexing (Jan 14, 2026) 🔄
+
+**Goal:** Manually request indexing for 21 new India/Pakistan pages in GSC (limit: 10/day)
+
+**Day 1 - DONE ✅** (All 10 city pages - highest search volume):
+```
+https://inkdex.io/in/mh/mumbai
+https://inkdex.io/in/dl/delhi
+https://inkdex.io/in/ka/bangalore
+https://inkdex.io/pk/sd/karachi
+https://inkdex.io/pk/pb/lahore
+https://inkdex.io/in/wb/kolkata
+https://inkdex.io/in/tn/chennai
+https://inkdex.io/in/tg/hyderabad
+https://inkdex.io/pk/is/islamabad
+https://inkdex.io/pk/pb/rawalpindi
+```
+
+**Day 2 - TODO** (Country + state/province pages):
+```
+https://inkdex.io/in
+https://inkdex.io/pk
+https://inkdex.io/in/mh
+https://inkdex.io/in/dl
+https://inkdex.io/in/ka
+https://inkdex.io/in/wb
+https://inkdex.io/in/tg
+https://inkdex.io/in/tn
+https://inkdex.io/pk/sd
+https://inkdex.io/pk/pb
+https://inkdex.io/pk/is
+```
+
+**Note:** City pages prioritized because they have direct search intent ("tattoo artist mumbai"). State pages exist mainly for internal linking.
+
+---
+
 ## India + Pakistan Expansion (Jan 14, 2026) ✅
 
 **Goal:** Add tattoo artists from India and Pakistan to capture traffic from those regions.
