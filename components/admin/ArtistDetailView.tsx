@@ -25,7 +25,6 @@ import {
   Search,
   Palette,
   Send,
-  Users,
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ArtistImageGrid from './ArtistImageGrid';
