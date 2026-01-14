@@ -1,24 +1,25 @@
 /**
  * Bio Location Extractor
  *
- * Parses Instagram bios to extract city and state information
- * for tattoo artist discovery. Uses known cities from the platform
- * and common bio patterns.
- *
- * Also detects EU/GDPR countries to enable filtering of artists
- * from regions with strict data protection laws.
+ * Extracts location information from Instagram bios using GPT-4.1-nano.
+ * Also provides fast regex-based GDPR detection for filtering.
  */
 
-import { CITIES, STATES } from '@/lib/constants/cities';
-import { isGDPRCountry, getCountryCode as _getCountryCode } from '@/lib/constants/countries';
+import OpenAI from 'openai';
+import { isGDPRCountry } from '@/lib/constants/countries';
 
-// Enable debug logging via environment variable
-const DEBUG = process.env.DEBUG_LOCATION_EXTRACTOR === 'true';
+// Lazy-load OpenAI client
+let openaiClient: OpenAI | null = null;
 
-function debugLog(message: string, data?: unknown): void {
-  if (DEBUG) {
-    console.log(`[LocationExtractor] ${message}`, data !== undefined ? data : '');
+function getOpenAI(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY is required for bio location extraction');
+    }
+    openaiClient = new OpenAI({ apiKey });
   }
+  return openaiClient;
 }
 
 export interface ExtractedLocation {
@@ -27,614 +28,226 @@ export interface ExtractedLocation {
   citySlug: string | null;
   stateCode: string | null;
   countryCode: string | null;  // ISO 3166-1 alpha-2 (e.g., 'US', 'GB', 'DE')
-  isGDPR: boolean;             // true if country falls under GDPR/UK GDPR/Swiss DPA
+  isGDPR: boolean;
   confidence: 'high' | 'medium' | 'low';
   rawMatch: string;
 }
 
-// Common location patterns in Instagram bios
-const LOCATION_PATTERNS = [
-  // "📍 Austin" or "📍Austin, TX"
-  /📍\s*([A-Za-z\s]+)(?:,?\s*([A-Z]{2}))?/i,
-  // "Based in Austin" or "Based in Austin, TX"
-  /based\s+in\s+([A-Za-z\s]+)(?:,?\s*([A-Z]{2}))?/i,
-  // "Austin-based" or "NYC-based"
-  /([A-Za-z\s]+)-based/i,
-  // "Austin, TX" or "Los Angeles, CA"
-  /([A-Za-z\s]+),\s*([A-Z]{2})\b/,
-  // "@ Austin" (sometimes used for location)
-  /@\s+([A-Za-z\s]+)(?:,?\s*([A-Z]{2}))?/i,
-  // "Located in Austin"
-  /located\s+in\s+([A-Za-z\s]+)(?:,?\s*([A-Z]{2}))?/i,
-  // "Austin tattoo artist" or "NYC tattooer"
-  /([A-Za-z\s]+)\s+(?:tattoo\s*(?:artist|er)?|tattooist|ink)/i,
-];
-
-// City name variations and aliases (US)
-const CITY_ALIASES: Record<string, string> = {
-  'nyc': 'new-york',
-  'new york city': 'new-york',
-  'ny': 'new-york',
-  'la': 'los-angeles',
-  'los angeles': 'los-angeles',
-  'atl': 'atlanta',
-  'chi': 'chicago',
-  'pdx': 'portland',
-  'sea': 'seattle',
-  'mia': 'miami',
-  'sf': 'san-francisco', // Future city
-  'san fran': 'san-francisco',
-};
-
-// ============================================================================
-// GDPR/EU Location Detection
-// ============================================================================
-
-/**
- * Major cities in GDPR countries, mapped to their country code.
- * Used to detect EU artists even when only a city is mentioned.
- */
-const GDPR_CITY_TO_COUNTRY: Record<string, string> = {
-  // United Kingdom
-  'london': 'GB',
-  'manchester': 'GB',
-  'birmingham': 'GB',
-  'leeds': 'GB',
-  'glasgow': 'GB',
-  'liverpool': 'GB',
-  'bristol': 'GB',
-  'edinburgh': 'GB',
-  'brighton': 'GB',
-  'nottingham': 'GB',
-  'sheffield': 'GB',
-  'newcastle': 'GB',
-  'cardiff': 'GB',
-  'belfast': 'GB',
-  // Germany
-  'berlin': 'DE',
-  'munich': 'DE',
-  'münchen': 'DE',
-  'hamburg': 'DE',
-  'frankfurt': 'DE',
-  'cologne': 'DE',
-  'köln': 'DE',
-  'düsseldorf': 'DE',
-  'dusseldorf': 'DE',
-  'stuttgart': 'DE',
-  'leipzig': 'DE',
-  'dortmund': 'DE',
-  'essen': 'DE',
-  'bremen': 'DE',
-  'dresden': 'DE',
-  'hanover': 'DE',
-  'hannover': 'DE',
-  'nuremberg': 'DE',
-  'nürnberg': 'DE',
-  // France
-  'paris': 'FR',
-  'marseille': 'FR',
-  'lyon': 'FR',
-  'toulouse': 'FR',
-  'nice': 'FR',
-  'nantes': 'FR',
-  'strasbourg': 'FR',
-  'montpellier': 'FR',
-  'bordeaux': 'FR',
-  'lille': 'FR',
-  'rennes': 'FR',
-  // Netherlands
-  'amsterdam': 'NL',
-  'rotterdam': 'NL',
-  'the hague': 'NL',
-  'den haag': 'NL',
-  'utrecht': 'NL',
-  'eindhoven': 'NL',
-  // Spain
-  'madrid': 'ES',
-  'barcelona': 'ES',
-  'valencia': 'ES',
-  'seville': 'ES',
-  'sevilla': 'ES',
-  'bilbao': 'ES',
-  'malaga': 'ES',
-  'málaga': 'ES',
-  // Italy
-  'rome': 'IT',
-  'roma': 'IT',
-  'milan': 'IT',
-  'milano': 'IT',
-  'naples': 'IT',
-  'napoli': 'IT',
-  'turin': 'IT',
-  'torino': 'IT',
-  'florence': 'IT',
-  'firenze': 'IT',
-  'bologna': 'IT',
-  'venice': 'IT',
-  'venezia': 'IT',
-  // Portugal
-  'lisbon': 'PT',
-  'lisboa': 'PT',
-  'porto': 'PT',
-  // Belgium
-  'brussels': 'BE',
-  'bruxelles': 'BE',
-  'antwerp': 'BE',
-  'antwerpen': 'BE',
-  'ghent': 'BE',
-  'gent': 'BE',
-  // Austria
-  'vienna': 'AT',
-  'wien': 'AT',
-  'salzburg': 'AT',
-  'graz': 'AT',
-  // Switzerland
-  'zurich': 'CH',
-  'zürich': 'CH',
-  'geneva': 'CH',
-  'genève': 'CH',
-  'basel': 'CH',
-  'bern': 'CH',
-  // Poland
-  'warsaw': 'PL',
-  'warszawa': 'PL',
-  'krakow': 'PL',
-  'kraków': 'PL',
-  'wroclaw': 'PL',
-  'wrocław': 'PL',
-  'poznan': 'PL',
-  'poznań': 'PL',
-  'gdansk': 'PL',
-  'gdańsk': 'PL',
-  // Ireland
-  'dublin': 'IE',
-  'cork': 'IE',
-  'galway': 'IE',
-  // Czech Republic
-  'prague': 'CZ',
-  'praha': 'CZ',
-  'brno': 'CZ',
-  // Hungary
-  'budapest': 'HU',
-  // Greece
-  'athens': 'GR',
-  'athina': 'GR',
-  'thessaloniki': 'GR',
-  // Sweden
-  'stockholm': 'SE',
-  'gothenburg': 'SE',
-  'göteborg': 'SE',
-  'malmo': 'SE',
-  'malmö': 'SE',
-  // Denmark
-  'copenhagen': 'DK',
-  'københavn': 'DK',
-  // Norway
-  'oslo': 'NO',
-  'bergen': 'NO',
-  // Finland
-  'helsinki': 'FI',
-  // Romania
-  'bucharest': 'RO',
-  'bucurești': 'RO',
-  // Bulgaria
-  'sofia': 'BG',
-  // Croatia
-  'zagreb': 'HR',
-  // Slovakia
-  'bratislava': 'SK',
-  // Slovenia
-  'ljubljana': 'SI',
-  // Lithuania
-  'vilnius': 'LT',
-  // Latvia
-  'riga': 'LV',
-  // Estonia
-  'tallinn': 'EE',
-  // Iceland
-  'reykjavik': 'IS',
-  'reykjavík': 'IS',
-  // Luxembourg
-  'luxembourg': 'LU',
-  // Malta
-  'valletta': 'MT',
-  // Cyprus
-  'nicosia': 'CY',
-};
-
-/**
- * Country name variations mapped to ISO country code.
- * Includes common abbreviations and alternative names.
- */
-const COUNTRY_NAME_TO_CODE: Record<string, string> = {
-  // Full names
-  'united kingdom': 'GB',
-  'england': 'GB',
-  'scotland': 'GB',
-  'wales': 'GB',
-  'northern ireland': 'GB',
-  'great britain': 'GB',
-  'britain': 'GB',
-  'germany': 'DE',
-  'deutschland': 'DE',
-  'france': 'FR',
-  'netherlands': 'NL',
-  'holland': 'NL',
-  'spain': 'ES',
-  'españa': 'ES',
-  'italy': 'IT',
-  'italia': 'IT',
-  'portugal': 'PT',
-  'belgium': 'BE',
-  'belgique': 'BE',
-  'austria': 'AT',
-  'österreich': 'AT',
-  'switzerland': 'CH',
-  'suisse': 'CH',
-  'schweiz': 'CH',
-  'poland': 'PL',
-  'polska': 'PL',
-  'ireland': 'IE',
-  'czech republic': 'CZ',
-  'czechia': 'CZ',
-  'hungary': 'HU',
-  'magyarország': 'HU',
-  'greece': 'GR',
-  'hellas': 'GR',
-  'sweden': 'SE',
-  'sverige': 'SE',
-  'denmark': 'DK',
-  'danmark': 'DK',
-  'norway': 'NO',
-  'norge': 'NO',
-  'finland': 'FI',
-  'suomi': 'FI',
-  'romania': 'RO',
-  'românia': 'RO',
-  'bulgaria': 'BG',
-  'croatia': 'HR',
-  'hrvatska': 'HR',
-  'slovakia': 'SK',
-  'slovensko': 'SK',
-  'slovenia': 'SI',
-  'slovenija': 'SI',
-  'lithuania': 'LT',
-  'lietuva': 'LT',
-  'latvia': 'LV',
-  'latvija': 'LV',
-  'estonia': 'EE',
-  'eesti': 'EE',
-  'iceland': 'IS',
-  'ísland': 'IS',
-  'luxembourg': 'LU',
-  'malta': 'MT',
-  'cyprus': 'CY',
-  'liechtenstein': 'LI',
-  // Common abbreviations
-  'uk': 'GB',
-  'u.k.': 'GB',
-  'u.k': 'GB',
-};
-
-// State name to code mapping
-const STATE_NAME_TO_CODE: Record<string, string> = {};
-STATES.forEach(state => {
-  STATE_NAME_TO_CODE[state.name.toLowerCase()] = state.code;
-});
-
-// Build city lookup from CITIES constant
-const CITY_LOOKUP: Map<string, typeof CITIES[number]> = new Map();
-CITIES.forEach(city => {
-  // Add by slug
-  CITY_LOOKUP.set(city.slug, city);
-  // Add by name (lowercase)
-  CITY_LOOKUP.set(city.name.toLowerCase(), city);
-});
-
-// Add aliases
-Object.entries(CITY_ALIASES).forEach(([alias, slug]) => {
-  const city = CITY_LOOKUP.get(slug);
-  if (city) {
-    CITY_LOOKUP.set(alias, city);
-  }
-});
-
-/**
- * Normalize a city name for matching
- */
-function normalizeCityName(name: string): string {
-  return name.toLowerCase().trim().replace(/\s+/g, ' ');
+interface GPTLocationResponse {
+  city: string | null;
+  region: string | null;
+  country_code: string | null;
+  confidence: 'high' | 'medium' | 'low' | null;
 }
 
-/**
- * Try to match a city name against known cities
- */
-function matchCity(cityName: string): typeof CITIES[number] | null {
-  const normalized = normalizeCityName(cityName);
+const SYSTEM_PROMPT = `Extract location from tattoo artist Instagram bio. Return JSON only.
 
-  // Direct match
-  if (CITY_LOOKUP.has(normalized)) {
-    return CITY_LOOKUP.get(normalized) || null;
-  }
+Rules:
+1. US locations: city + 2-letter state code (e.g., "Austin, TX" -> city: "Austin", region: "TX", country_code: "US")
+2. International: city + region/province + ISO 3166-1 alpha-2 country code
+3. Recognize patterns: "📍Austin", "Based in NYC", "ATX tattoos", "Brooklyn NY", "LA based", "Seattle WA"
+4. Common US abbreviations: NYC=New York, LA=Los Angeles, ATX=Austin, PHX=Phoenix, PDX=Portland, SEA=Seattle, CHI=Chicago, SF=San Francisco, NOLA=New Orleans, BK/BKN=Brooklyn
+5. If only state/country mentioned, set city: null
+6. If location unclear or not mentioned, return all null fields
+7. Confidence: high (explicit "📍" or "based in"), medium (city/state detected), low (uncertain)
 
-  // Try removing common suffixes
-  const withoutSuffix = normalized
-    .replace(/\s*(city|metro|area|downtown)$/i, '')
-    .trim();
+JSON format: {"city":"Austin","region":"TX","country_code":"US","confidence":"high"}`;
 
-  if (CITY_LOOKUP.has(withoutSuffix)) {
-    return CITY_LOOKUP.get(withoutSuffix) || null;
-  }
-
-  return null;
-}
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
 
 /**
- * Validate state code against known states
+ * Extract location from bio using GPT-4.1-nano
  */
-function validateStateCode(code: string | undefined): string | null {
-  if (!code) return null;
-  const upperCode = code.toUpperCase();
-  const state = STATES.find(s => s.code === upperCode);
-  return state ? state.code : null;
-}
+async function extractWithGPT(bio: string, retryCount = 0): Promise<GPTLocationResponse | null> {
+  try {
+    const openai = getOpenAI();
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4.1-nano',
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: bio.substring(0, 500) },
+      ],
+      max_tokens: 100,
+      temperature: 0.1,
+      response_format: { type: 'json_object' },
+    });
 
-/**
- * Detect GDPR country from a location string.
- * Checks for:
- * 1. Known GDPR city names (e.g., "London", "Berlin", "Paris")
- * 2. Country names or abbreviations (e.g., "Germany", "UK", "France")
- *
- * @param locationStr - Text that may contain a city or country
- * @returns Country code if GDPR country detected, null otherwise
- */
-function detectGDPRCountry(locationStr: string): string | null {
-  if (!locationStr) return null;
+    const content = response.choices[0]?.message?.content?.trim();
+    if (!content) return null;
 
-  const normalized = locationStr.toLowerCase().trim();
+    const parsed = JSON.parse(content);
+    return {
+      city: parsed.city || null,
+      region: parsed.region || null,
+      country_code: parsed.country_code || null,
+      confidence: parsed.confidence || null,
+    };
+  } catch (error: unknown) {
+    const err = error as { status?: number; message?: string };
 
-  // Check for known GDPR cities using word boundary matching
-  // This prevents false positives like "berling" matching "berlin"
-  for (const [city, countryCode] of Object.entries(GDPR_CITY_TO_COUNTRY)) {
-    // Escape special regex characters in city names (e.g., for cities with dots)
-    const escapedCity = city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\b${escapedCity}\\b`, 'i');
-    if (regex.test(normalized)) {
-      debugLog(`GDPR city detected: "${city}" -> ${countryCode}`);
-      return countryCode;
+    // Retry on rate limit
+    if (err?.status === 429 && retryCount < MAX_RETRIES) {
+      const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return extractWithGPT(bio, retryCount + 1);
     }
-  }
 
-  // Check for country names
-  for (const [name, countryCode] of Object.entries(COUNTRY_NAME_TO_CODE)) {
-    // Use word boundary matching to avoid false positives
-    // e.g., "Poland" should match but "Polandish" should not
-    const regex = new RegExp(`\\b${name}\\b`, 'i');
-    if (regex.test(normalized)) {
-      debugLog(`GDPR country name detected: "${name}" -> ${countryCode}`);
-      return countryCode;
-    }
+    // Log error but don't throw - return null to indicate no extraction
+    console.error(`[BioExtractor] GPT extraction failed: ${err?.message || 'Unknown error'}`);
+    return null;
   }
-
-  return null;
 }
 
 /**
- * Check if a bio contains GDPR location indicators.
- * Quick check for filtering before full extraction.
+ * Extract location information from an Instagram bio using GPT-4.1-nano
  *
  * @param bio - Instagram bio text
- * @returns Object with isGDPR flag and detected country code
+ * @returns Extracted location or null if no location found
+ */
+export async function extractLocationFromBio(bio: string | undefined): Promise<ExtractedLocation | null> {
+  if (!bio || bio.trim().length === 0) {
+    return null;
+  }
+
+  const gptResult = await extractWithGPT(bio);
+
+  // If GPT failed or returned no location data, return null
+  if (!gptResult || (!gptResult.city && !gptResult.region && !gptResult.country_code)) {
+    return null;
+  }
+
+  const countryCode = gptResult.country_code?.toUpperCase() || null;
+  const isGDPR = countryCode ? isGDPRCountry(countryCode) : false;
+
+  return {
+    city: gptResult.city,
+    state: gptResult.region,  // Map 'region' to 'state' for backward compatibility
+    citySlug: gptResult.city ? gptResult.city.toLowerCase().replace(/\s+/g, '-') : null,
+    stateCode: gptResult.region?.toUpperCase() || null,
+    countryCode,
+    isGDPR,
+    confidence: gptResult.confidence || 'medium',
+    rawMatch: bio.substring(0, 100),
+  };
+}
+
+/**
+ * Synchronous version for backward compatibility - uses regex only
+ * @deprecated Use extractLocationFromBio (async) instead
+ */
+export function extractLocationFromBioSync(bio: string | undefined): ExtractedLocation | null {
+  console.warn('[BioExtractor] extractLocationFromBioSync is deprecated. Use async extractLocationFromBio instead.');
+  // Return null - sync extraction no longer supported
+  return null;
+}
+
+// ============================================================================
+// GDPR Detection (Fast regex-based check for filtering)
+// ============================================================================
+
+/**
+ * Major cities in GDPR countries for fast regex-based detection
+ */
+const GDPR_CITIES = new Set([
+  // UK
+  'london', 'manchester', 'birmingham', 'leeds', 'glasgow', 'liverpool', 'bristol', 'edinburgh',
+  // Germany
+  'berlin', 'munich', 'münchen', 'hamburg', 'frankfurt', 'cologne', 'köln', 'düsseldorf', 'stuttgart',
+  // France
+  'paris', 'marseille', 'lyon', 'toulouse', 'bordeaux', 'lille',
+  // Netherlands
+  'amsterdam', 'rotterdam', 'utrecht',
+  // Spain
+  'madrid', 'barcelona', 'valencia', 'seville',
+  // Italy
+  'rome', 'roma', 'milan', 'milano', 'naples', 'florence', 'venice',
+  // Others
+  'brussels', 'vienna', 'wien', 'zurich', 'zürich', 'geneva', 'warsaw', 'krakow', 'dublin',
+  'prague', 'praha', 'budapest', 'athens', 'stockholm', 'copenhagen', 'oslo', 'helsinki',
+  'lisbon', 'lisboa', 'porto',
+]);
+
+const GDPR_COUNTRY_NAMES = new Set([
+  'uk', 'u.k.', 'united kingdom', 'england', 'scotland', 'wales', 'britain',
+  'germany', 'deutschland', 'france', 'netherlands', 'holland', 'spain', 'españa',
+  'italy', 'italia', 'portugal', 'belgium', 'austria', 'österreich',
+  'switzerland', 'suisse', 'schweiz', 'poland', 'polska', 'ireland',
+  'czech republic', 'czechia', 'hungary', 'greece', 'sweden', 'sverige',
+  'denmark', 'danmark', 'norway', 'norge', 'finland', 'suomi',
+]);
+
+/**
+ * Fast regex-based check for GDPR location indicators.
+ * Use this for quick filtering before full GPT extraction.
+ *
+ * @param bio - Instagram bio text
+ * @returns Object with isGDPR flag
  */
 export function checkBioForGDPR(bio: string | undefined): { isGDPR: boolean; countryCode: string | null } {
   if (!bio) {
     return { isGDPR: false, countryCode: null };
   }
 
-  const countryCode = detectGDPRCountry(bio);
-  return {
-    isGDPR: countryCode !== null && isGDPRCountry(countryCode),
-    countryCode,
-  };
-}
+  const normalized = bio.toLowerCase();
 
-/**
- * Extract location information from an Instagram bio
- *
- * @param bio - Instagram bio text
- * @returns Extracted location or null if no location found
- */
-export function extractLocationFromBio(bio: string | undefined): ExtractedLocation | null {
-  if (!bio) {
-    debugLog('Empty bio provided');
-    return null;
-  }
-
-  debugLog('Processing bio:', bio.substring(0, 100));
-
-  // First, check for GDPR country indicators in the full bio
-  // This catches cases like "Berlin, Germany" or "UK tattoo artist"
-  const gdprCheck = checkBioForGDPR(bio);
-
-  // Try each pattern
-  for (const pattern of LOCATION_PATTERNS) {
-    const match = bio.match(pattern);
-    if (match) {
-      const potentialCity = match[1]?.trim();
-      const potentialState = match[2]?.trim();
-
-      debugLog(`Pattern matched: "${match[0]}" -> city="${potentialCity}", state="${potentialState}"`);
-
-      if (!potentialCity) continue;
-
-      // Check if this matched city is a GDPR city
-      const gdprCountryFromCity = detectGDPRCountry(potentialCity);
-      if (gdprCountryFromCity) {
-        debugLog(`GDPR location detected in pattern: ${potentialCity} -> ${gdprCountryFromCity}`);
-        return {
-          city: potentialCity,
-          state: null,
-          citySlug: null,
-          stateCode: null,
-          countryCode: gdprCountryFromCity,
-          isGDPR: true,
-          confidence: 'high',
-          rawMatch: match[0],
-        };
-      }
-
-      const city = matchCity(potentialCity);
-
-      if (city) {
-        // Validate state if provided
-        const validatedState = validateStateCode(potentialState);
-        const stateMatches = !potentialState || validatedState === city.state;
-
-        debugLog(`City matched: ${city.name}, ${city.state} (confidence: ${stateMatches ? 'high' : 'medium'})`);
-
-        return {
-          city: city.name,
-          state: city.state,
-          citySlug: city.slug,
-          stateCode: city.state,
-          countryCode: 'US',  // US city matched
-          isGDPR: false,
-          confidence: stateMatches ? 'high' : 'medium',
-          rawMatch: match[0],
-        };
-      }
-
-      debugLog(`City not in database: "${potentialCity}"`);
-
-      // City not in our database, but we found a pattern
-      // Store with state only if we can validate it
-      if (potentialState) {
-        const validatedState = validateStateCode(potentialState);
-        if (validatedState) {
-          debugLog(`Unknown city but valid state: ${validatedState}`);
-          return {
-            city: null, // City not in our supported list
-            state: null,
-            citySlug: null,
-            stateCode: validatedState,
-            countryCode: 'US',  // Valid US state code
-            isGDPR: false,
-            confidence: 'low',
-            rawMatch: match[0],
-          };
-        }
-      }
+  // Check for GDPR city names
+  for (const city of GDPR_CITIES) {
+    const regex = new RegExp(`\\b${city}\\b`, 'i');
+    if (regex.test(normalized)) {
+      return { isGDPR: true, countryCode: null }; // Don't bother mapping city->country for quick check
     }
   }
 
-  // Try direct city name search in bio (less reliable)
-  const bioLower = bio.toLowerCase();
-  for (const city of CITIES) {
-    if (bioLower.includes(city.name.toLowerCase())) {
-      return {
-        city: city.name,
-        state: city.state,
-        citySlug: city.slug,
-        stateCode: city.state,
-        countryCode: 'US',
-        isGDPR: false,
-        confidence: 'low', // Lower confidence for substring match
-        rawMatch: city.name,
-      };
+  // Check for GDPR country names
+  for (const country of GDPR_COUNTRY_NAMES) {
+    const regex = new RegExp(`\\b${country.replace(/\./g, '\\.')}\\b`, 'i');
+    if (regex.test(normalized)) {
+      return { isGDPR: true, countryCode: null };
     }
   }
 
-  // Check for city aliases in bio
-  for (const [alias, slug] of Object.entries(CITY_ALIASES)) {
-    if (bioLower.includes(alias)) {
-      const city = CITY_LOOKUP.get(slug);
-      if (city) {
-        return {
-          city: city.name,
-          state: city.state,
-          citySlug: city.slug,
-          stateCode: city.state,
-          countryCode: 'US',
-          isGDPR: false,
-          confidence: 'low',
-          rawMatch: alias,
-        };
-      }
+  // Check for EU flag emojis
+  const euFlags = ['🇬🇧', '🇩🇪', '🇫🇷', '🇳🇱', '🇪🇸', '🇮🇹', '🇵🇹', '🇧🇪', '🇦🇹', '🇨🇭', '🇵🇱', '🇮🇪', '🇸🇪', '🇩🇰', '🇳🇴', '🇫🇮'];
+  for (const flag of euFlags) {
+    if (bio.includes(flag)) {
+      return { isGDPR: true, countryCode: null };
     }
   }
 
-  // If no US location found but we detected a GDPR country earlier, return that
-  if (gdprCheck.isGDPR && gdprCheck.countryCode) {
-    debugLog(`No US location, but GDPR country detected: ${gdprCheck.countryCode}`);
-    return {
-      city: null,
-      state: null,
-      citySlug: null,
-      stateCode: null,
-      countryCode: gdprCheck.countryCode,
-      isGDPR: true,
-      confidence: 'medium',
-      rawMatch: bio.substring(0, 50), // Use part of bio as raw match
-    };
-  }
-
-  debugLog('No location pattern matched');
-  return null;
+  return { isGDPR: false, countryCode: null };
 }
 
 /**
  * Batch extract locations from multiple bios
  *
  * @param bios - Array of Instagram bios
+ * @param concurrency - Number of concurrent extractions (default: 10)
  * @returns Map of bio index to extracted location
  */
-export function extractLocationsFromBios(
-  bios: (string | undefined)[]
-): Map<number, ExtractedLocation> {
+export async function extractLocationsFromBios(
+  bios: (string | undefined)[],
+  concurrency = 10
+): Promise<Map<number, ExtractedLocation>> {
   const results = new Map<number, ExtractedLocation>();
 
-  bios.forEach((bio, index) => {
-    const location = extractLocationFromBio(bio);
-    if (location) {
-      results.set(index, location);
+  // Process in batches for concurrency control
+  for (let i = 0; i < bios.length; i += concurrency) {
+    const batch = bios.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map(async (bio, batchIndex) => {
+        const index = i + batchIndex;
+        const location = await extractLocationFromBio(bio);
+        return { index, location };
+      })
+    );
+
+    for (const { index, location } of batchResults) {
+      if (location) {
+        results.set(index, location);
+      }
     }
-  });
+  }
 
   return results;
-}
-
-/**
- * Get extraction statistics for a batch of bios
- */
-export function getLocationExtractionStats(
-  bios: (string | undefined)[]
-): {
-  total: number;
-  extracted: number;
-  highConfidence: number;
-  mediumConfidence: number;
-  lowConfidence: number;
-  extractionRate: number;
-} {
-  const locations = extractLocationsFromBios(bios);
-  const total = bios.filter(Boolean).length;
-
-  let highConfidence = 0;
-  let mediumConfidence = 0;
-  let lowConfidence = 0;
-
-  locations.forEach(loc => {
-    if (loc.confidence === 'high') highConfidence++;
-    else if (loc.confidence === 'medium') mediumConfidence++;
-    else lowConfidence++;
-  });
-
-  return {
-    total,
-    extracted: locations.size,
-    highConfidence,
-    mediumConfidence,
-    lowConfidence,
-    extractionRate: total > 0 ? locations.size / total : 0,
-  };
 }

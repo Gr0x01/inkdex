@@ -20,6 +20,7 @@ export const instagramProfileSchema = z.object({
   type: z.literal('instagram_profile'),
   instagram_url: z.string().min(1),
   city: z.string().optional(),
+  bypass_gdpr_check: z.boolean().optional(),
 })
 
 export const similarArtistSchema = z.object({

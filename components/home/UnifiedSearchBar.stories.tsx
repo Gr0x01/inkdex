@@ -137,6 +137,25 @@ export const WithError: Story = {
 };
 
 /**
+ * GDPR location error - shows warning with bypass button
+ * Appears when an artist's bio indicates they're in a GDPR-protected country
+ */
+export const WithGDPRError: Story = {
+  args: {
+    forceTextQuery: 'https://instagram.com/londontattooartist',
+    forceInstagramDetection: {
+      type: 'profile',
+      id: 'londontattooartist',
+      originalUrl: 'https://instagram.com/londontattooartist',
+    },
+    forceGdprError: {
+      message: 'This artist appears to be located in United Kingdom which requires consent.',
+      detectedCountry: 'United Kingdom',
+    },
+  },
+};
+
+/**
  * Interactive demo - shows all states
  * Try typing text, uploading images, or pasting Instagram URLs
  */
@@ -301,6 +320,22 @@ export const AllSearchPatterns: Story = {
         <div>
           <p className="text-white/60 text-sm mb-2 font-mono">Error State</p>
           <UnifiedSearchBar forceError="Rate limit exceeded. Please try again in a few minutes." />
+        </div>
+
+        <div>
+          <p className="text-white/60 text-sm mb-2 font-mono">GDPR Location Error</p>
+          <UnifiedSearchBar
+            forceTextQuery="https://instagram.com/berlintattoo"
+            forceInstagramDetection={{
+              type: 'profile',
+              id: 'berlintattoo',
+              originalUrl: 'https://instagram.com/berlintattoo',
+            }}
+            forceGdprError={{
+              message: 'This artist appears to be located in Germany which requires consent.',
+              detectedCountry: 'Germany',
+            }}
+          />
         </div>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { createServiceClient } from '@/lib/supabase/service'
 import { generateImageEmbedding } from '@/lib/embeddings/hybrid-client'
 import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
+import { extractLocationFromBio } from '@/lib/instagram/bio-location-extractor'
+import { getCountryName } from '@/lib/constants/countries'
 import { classifyQueryStyles } from '@/lib/search/style-classifier'
 import { analyzeImageColor } from '@/lib/search/color-analyzer'
 import { parseDbEmbeddings } from '@/lib/search/parse-embeddings'
@@ -34,6 +36,26 @@ export class InstagramProfileValidationError extends Error {
     super(message)
     this.name = 'InstagramProfileValidationError'
     this.status = status
+  }
+}
+
+/**
+ * Error for GDPR country detection - allows user to bypass
+ */
+export class GDPRLocationError extends Error {
+  status: number
+  code: string
+  detectedCountry: string
+
+  constructor(countryCode: string) {
+    const countryName = getCountryName(countryCode) || countryCode
+    super(
+      `This artist appears to be located in ${countryName} which requires consent.`
+    )
+    this.name = 'GDPRLocationError'
+    this.status = 451 // HTTP 451: Unavailable For Legal Reasons
+    this.code = 'GDPR_LOCATION_DETECTED'
+    this.detectedCountry = countryName
   }
 }
 
@@ -102,7 +124,8 @@ export async function handleInstagramProfileSearch(
   }
 
   // === SCRAPE PATH: Fetch from Instagram ===
-  return handleScrapePath(username, artistRecord, supabaseService)
+  const bypassGdprCheck = parsed.data.bypass_gdpr_check ?? false
+  return handleScrapePath(username, artistRecord, supabaseService, bypassGdprCheck)
 }
 
 /**
@@ -219,7 +242,8 @@ async function handleDbPath(
 async function handleScrapePath(
   username: string,
   artistRecord: { id: string; name: string; slug: string } | null,
-  supabaseService: ReturnType<typeof createServiceClient>
+  supabaseService: ReturnType<typeof createServiceClient>,
+  bypassGdprCheck: boolean = false
 ): Promise<SearchInput> {
   // Artist may exist but have no images, or may not exist at all
   if (artistRecord) {
@@ -230,10 +254,34 @@ async function handleScrapePath(
     console.log(`[Profile Search] Artist not in DB - scraping via Apify...`)
   }
 
-  const profileData = await fetchInstagramProfileImages(username, 6)
+  const profileData = await fetchInstagramProfileImages(username, 12)
 
   if (profileData.posts.length < 1) {
     throw new InstagramProfileValidationError(PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS)
+  }
+
+  // Extract location from bio using GPT-4.1-nano
+  const extractedLocation = await extractLocationFromBio(profileData.bio)
+
+  // Check for GDPR country (only for new artists, not existing ones)
+  if (!artistRecord && extractedLocation?.isGDPR) {
+    if (!bypassGdprCheck) {
+      console.log(
+        `[Profile Search] GDPR country detected for @${username}: ${extractedLocation.countryCode}`
+      )
+      throw new GDPRLocationError(extractedLocation.countryCode || 'EU')
+    } else {
+      // Audit log: User bypassed GDPR check (claiming location is incorrect)
+      console.log(
+        `[Profile Search] GDPR BYPASS: User proceeded with @${username} despite ${extractedLocation.countryCode} detection`
+      )
+    }
+  }
+
+  if (extractedLocation) {
+    console.log(
+      `[Profile Search] Location extracted: ${extractedLocation.city || 'Unknown'}, ${extractedLocation.stateCode || extractedLocation.countryCode} (${extractedLocation.confidence})`
+    )
   }
 
   console.log(
@@ -323,6 +371,32 @@ async function handleScrapePath(
       if (newArtist) {
         artistId = newArtist.id
         console.log(`[Profile Search] Created artist ${artistId}`)
+
+        // Insert location if we extracted a US city (skip GDPR locations - if bypassed, user said location was wrong)
+        if (extractedLocation && extractedLocation.city && !extractedLocation.isGDPR) {
+          try {
+            const { error: locationError } = await supabaseService
+              .from('artist_locations')
+              .insert({
+                artist_id: artistId,
+                city: extractedLocation.city,
+                region: extractedLocation.stateCode,
+                country_code: extractedLocation.countryCode || 'US',
+                is_primary: true,
+                location_type: 'studio',
+              })
+
+            if (locationError) {
+              console.error(`[Profile Search] Failed to insert location:`, locationError.message)
+            } else {
+              console.log(
+                `[Profile Search] Location saved: ${extractedLocation.city}, ${extractedLocation.stateCode}`
+              )
+            }
+          } catch (locError) {
+            console.error(`[Profile Search] Error inserting location:`, locError)
+          }
+        }
       } else if (artistError) {
         console.error(`[Profile Search] Failed to create artist:`, artistError.message)
       }
@@ -339,7 +413,7 @@ async function handleScrapePath(
     profile_image_url: profileData.profileImageUrl || null,
     bio: profileData.bio || null,
     follower_count: profileData.followerCount || null,
-    city: null,
+    city: extractedLocation?.city || null,
     images: profileData.posts.slice(0, 3).map((p) => p.displayUrl),
   }
 

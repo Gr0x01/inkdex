@@ -21,6 +21,8 @@ interface UnifiedSearchBarProps {
   forceError?: string | null
   /** Force text query value - for Storybook only */
   forceTextQuery?: string | null
+  /** Force GDPR error state - for Storybook only */
+  forceGdprError?: { message: string; detectedCountry: string } | null
 }
 
 export default function UnifiedSearchBar({
@@ -30,6 +32,7 @@ export default function UnifiedSearchBar({
   forceImagePreview = null,
   forceError = null,
   forceTextQuery = null,
+  forceGdprError = null,
 }: UnifiedSearchBarProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -49,12 +52,17 @@ export default function UnifiedSearchBar({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [gdprError, setGdprError] = useState<{
+    message: string
+    detectedCountry: string
+  } | null>(null)
 
   // Storybook overrides - combine forced state with internal state
   const displayImagePreview = forceImagePreview ?? imagePreview
   const displayError = forceError ?? error
   const displayTextQuery = forceTextQuery ?? textQuery
   const displayInstagramDetection = forceInstagramDetection ?? detectedInstagramUrl
+  const displayGdprError = forceGdprError ?? gdprError
   const [loadingMessage, setLoadingMessage] = useState('')
   const [messageIndex, setMessageIndex] = useState(0)
 
@@ -216,10 +224,7 @@ export default function UnifiedSearchBar({
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-
+  const performSearch = async (bypassGdprCheck = false) => {
     const hasImage = imageFile !== null
     const hasText = textQuery.trim().length >= 3
     const hasInstagramPost = detectedInstagramUrl?.type === 'post'
@@ -272,6 +277,7 @@ export default function UnifiedSearchBar({
           body: JSON.stringify({
             type: 'instagram_profile',
             instagram_url: detectedInstagramUrl!.originalUrl,
+            bypass_gdpr_check: bypassGdprCheck,
           }),
         })
       } else {
@@ -287,6 +293,17 @@ export default function UnifiedSearchBar({
 
       if (!response.ok) {
         const errorData = await response.json()
+
+        // Handle GDPR location detection error
+        if (errorData.code === 'GDPR_LOCATION_DETECTED') {
+          setGdprError({
+            message: errorData.error,
+            detectedCountry: errorData.detectedCountry,
+          })
+          setIsSubmitting(false)
+          return
+        }
+
         throw new Error(errorData.error || 'Search failed')
       }
 
@@ -306,6 +323,18 @@ export default function UnifiedSearchBar({
     }
   }
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setGdprError(null)
+    await performSearch(false)
+  }
+
+  const handleGdprBypass = async () => {
+    setGdprError(null)
+    await performSearch(true)
+  }
+
   const canSubmit = (
     imageFile !== null ||
     displayImagePreview !== '' ||
@@ -321,15 +350,17 @@ export default function UnifiedSearchBar({
     <div className="w-full" id="search">
       <form onSubmit={handleSubmit} className="relative">
         <div className="flex flex-col sm:flex-row gap-3">
-          {/* Input Field Container */}
-          <div
-            className={`
-              relative flex-1 flex items-center gap-4 px-2 sm:px-4 bg-white/95 min-h-[44px] sm:min-h-[64px]
-              transition-all duration-150
-              ${isLoading ? '' : 'border-2'}
-              ${isLoading ? '' : displayError ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
-              ${isLoading ? '' : 'focus-within:border-white/60'}
-            `}
+          {/* Input Column - contains input field and any errors below it */}
+          <div className="flex-1 flex flex-col">
+            {/* Input Field Container */}
+            <div
+              className={`
+                relative flex items-center gap-4 px-2 sm:px-4 bg-white/95 min-h-[44px] sm:min-h-[64px]
+                transition-all duration-150
+                ${isLoading ? '' : 'border-2'}
+                ${isLoading ? '' : displayError ? 'border-red-500/60' : isDragging ? 'border-ink' : 'border-white/20'}
+                ${isLoading ? '' : 'focus-within:border-white/60'}
+              `}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -448,6 +479,26 @@ export default function UnifiedSearchBar({
                 />
               </>
             )}
+            </div>
+
+            {/* GDPR Location Error - with bypass option */}
+            {displayGdprError && !isLoading && (
+              <div
+                className="mt-2 bg-white/10 px-4 py-2.5 animate-fade-in flex items-center justify-between gap-4 flex-wrap"
+                role="alert"
+              >
+                <p className="font-body text-sm text-paper/90">
+                  This artist appears to be in <strong>{displayGdprError.detectedCountry}</strong> and requires their consent to be listed. If this is you, <a href="/add-artist" className="underline hover:text-white">claim your profile</a>.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleGdprBypass}
+                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-ink text-sm font-medium transition-colors shrink-0"
+                >
+                  Proceed
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Search Button - Same height as input */}
@@ -470,7 +521,7 @@ export default function UnifiedSearchBar({
         </div>
 
         {/* Error Message */}
-        {displayError && !isLoading && (
+        {displayError && !isLoading && !displayGdprError && (
           <SearchError message={displayError} variant="banner" />
         )}
 
