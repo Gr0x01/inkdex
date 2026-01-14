@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md">
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <h1 className="font-display text-4xl font-[900] text-ink tracking-tight mb-2">
+          <h1 className="font-display text-4xl font-black text-ink tracking-tight mb-2">
             INKDEX
           </h1>
           <div className="flex items-center justify-center gap-2 mb-1">
@@ -158,7 +158,7 @@ export default function AdminLoginPage() {
                   setEmail('');
                   setDevLink(null);
                 }}
-                className="mt-6 text-xs text-gray-500 hover:text-ink font-mono uppercase tracking-[0.1em] transition-colors"
+                className="mt-6 text-xs text-gray-500 hover:text-ink font-mono uppercase tracking-widest transition-colors"
               >
                 Use different email
               </button>

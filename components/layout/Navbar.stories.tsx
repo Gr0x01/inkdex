@@ -70,7 +70,7 @@ export const WithPageContent: Story = {
             <li>Add Artist link</li>
             <li>Mobile hamburger menu (on small screens)</li>
           </ul>
-          <div className="h-[100vh] bg-gray-100 rounded-lg p-8">
+          <div className="h-screen bg-gray-100 rounded-lg p-8">
             <p className="font-body text-gray-600">Scroll to see more content...</p>
           </div>
         </div>

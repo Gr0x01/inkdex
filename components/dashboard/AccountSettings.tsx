@@ -93,7 +93,7 @@ export default function AccountSettings({
 
         <div className="space-y-6">
           <div className="flex items-start gap-4">
-            <Instagram className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+            <Instagram className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
             <div className="flex-1">
               <p className="font-mono text-[10px] tracking-widest uppercase text-gray-500 mb-1">
                 Instagram
@@ -105,7 +105,7 @@ export default function AccountSettings({
           </div>
 
           <div className="flex items-start gap-4">
-            <Mail className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+            <Mail className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
             <div className="flex-1">
               <p className="font-mono text-[10px] tracking-widest uppercase text-gray-500 mb-1">
                 Email
@@ -115,7 +115,7 @@ export default function AccountSettings({
           </div>
 
           <div className="flex items-start gap-4">
-            <Shield className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+            <Shield className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
             <div className="flex-1">
               <p className="font-mono text-[10px] tracking-widest uppercase text-gray-500 mb-1">
                 Account Type
@@ -125,7 +125,7 @@ export default function AccountSettings({
           </div>
 
           <div className="flex items-start gap-4">
-            <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-1" />
+            <Calendar className="w-5 h-5 text-gray-400 shrink-0 mt-1" />
             <div className="flex-1">
               <p className="font-mono text-[10px] tracking-widest uppercase text-gray-500 mb-1">
                 Member Since
@@ -139,15 +139,15 @@ export default function AccountSettings({
       {/* Danger Zone - Delete Profile */}
       {artistId && (
         <section className="border-2 border-red-200 bg-red-50/50 p-5 lg:p-6">
-          <h3 className="font-heading text-lg text-[var(--error)] mb-2">
+          <h3 className="font-heading text-lg text-(--error) mb-2">
             Danger Zone
           </h3>
-          <p className="font-body text-sm text-[var(--gray-700)] mb-4">
+          <p className="font-body text-sm text-(--gray-700) mb-4">
             Permanently delete your artist profile. This action cannot be undone and will remove all your portfolio images and analytics data.
           </p>
           <button
             onClick={handleDeleteClick}
-            className="font-mono text-xs tracking-[0.1em] uppercase px-4 py-2 bg-[var(--error)] text-white hover:bg-red-700 transition-colors"
+            className="font-mono text-xs tracking-widest uppercase px-4 py-2 bg-(--error) text-white hover:bg-red-700 transition-colors"
           >
             Delete Profile
           </button>
@@ -156,40 +156,40 @@ export default function AccountSettings({
 
       {/* Delete Warning Modal */}
       {showDeleteWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink-black)]/80 p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white border-2 border-[var(--ink-black)] p-8 animate-scale-in">
-            <h3 className="font-heading text-2xl text-[var(--error)] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--ink-black)/80 p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-white border-2 border-(--ink-black) p-8 animate-scale-in">
+            <h3 className="font-heading text-2xl text-(--error) mb-4">
               Warning
             </h3>
-            <p className="font-body text-[var(--ink-black)] mb-4">
+            <p className="font-body text-(--ink-black) mb-4">
               Deleting your profile is <strong>permanent and cannot be undone</strong>. All of your:
             </p>
-            <ul className="font-body text-[var(--gray-700)] mb-6 space-y-1 ml-4">
+            <ul className="font-body text-(--gray-700) mb-6 space-y-1 ml-4">
               <li className="flex items-center gap-2">
-                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                <span className="w-1 h-1 bg-(--gray-500) rounded-full" />
                 Portfolio images
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                <span className="w-1 h-1 bg-(--gray-500) rounded-full" />
                 Profile information
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                <span className="w-1 h-1 bg-(--gray-500) rounded-full" />
                 Analytics data
               </li>
               <li className="flex items-center gap-2">
-                <span className="w-1 h-1 bg-[var(--gray-500)] rounded-full" />
+                <span className="w-1 h-1 bg-(--gray-500) rounded-full" />
                 Subscription (if applicable)
               </li>
             </ul>
-            <p className="font-body text-[var(--ink-black)] mb-6">
+            <p className="font-body text-(--ink-black) mb-6">
               will be permanently deleted.
             </p>
 
             <div className="flex gap-3">
               <button
                 onClick={handleDeleteProceed}
-                className="flex-1 font-mono text-xs tracking-[0.1em] uppercase px-4 py-3 bg-[var(--error)] text-white hover:bg-red-700 transition-colors"
+                className="flex-1 font-mono text-xs tracking-widest uppercase px-4 py-3 bg-(--error) text-white hover:bg-red-700 transition-colors"
               >
                 I Understand
               </button>
@@ -206,27 +206,27 @@ export default function AccountSettings({
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--ink-black)]/80 p-4 animate-fade-in">
-          <div className="w-full max-w-md bg-white border-2 border-[var(--ink-black)] p-8 animate-scale-in">
-            <h3 className="font-heading text-2xl text-[var(--error)] mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-(--ink-black)/80 p-4 animate-fade-in">
+          <div className="w-full max-w-md bg-white border-2 border-(--ink-black) p-8 animate-scale-in">
+            <h3 className="font-heading text-2xl text-(--error) mb-4">
               Final Confirmation
             </h3>
-            <p className="font-body text-[var(--ink-black)] mb-4">
-              Type <span className="font-mono font-bold bg-[var(--gray-100)] px-2 py-0.5">DELETE</span> to confirm permanent deletion:
+            <p className="font-body text-(--ink-black) mb-4">
+              Type <span className="font-mono font-bold bg-(--gray-100) px-2 py-0.5">DELETE</span> to confirm permanent deletion:
             </p>
 
             <input
               type="text"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-[var(--gray-300)] font-mono text-lg tracking-wider focus:outline-none focus:border-[var(--error)] mb-4"
+              className="w-full px-4 py-3 border-2 border-(--gray-300) font-mono text-lg tracking-wider focus:outline-none focus:border-(--error) mb-4"
               placeholder="Type DELETE"
               autoFocus
             />
 
             {deleteError && (
-              <div className="border-2 border-[var(--error)] bg-red-50 p-3 mb-4">
-                <p className="font-body text-sm text-[var(--error)]">{deleteError}</p>
+              <div className="border-2 border-(--error) bg-red-50 p-3 mb-4">
+                <p className="font-body text-sm text-(--error)">{deleteError}</p>
               </div>
             )}
 
@@ -234,7 +234,7 @@ export default function AccountSettings({
               <button
                 onClick={handleDeleteExecute}
                 disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                className="flex-1 font-mono text-xs tracking-[0.1em] uppercase px-4 py-3 bg-[var(--error)] text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex-1 font-mono text-xs tracking-widest uppercase px-4 py-3 bg-(--error) text-white hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isDeleting ? 'Deleting...' : 'Delete Forever'}
               </button>

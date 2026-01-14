@@ -69,7 +69,7 @@ export default function ProShowcase() {
               {PRO_BENEFITS.map((benefit, index) => (
                 <div key={index} className="flex items-start gap-2">
                   {/* Checkmark */}
-                  <div className="flex-shrink-0 w-4 h-4 rounded-full bg-purple-100 flex items-center justify-center mt-0.5">
+                  <div className="shrink-0 w-4 h-4 rounded-full bg-purple-100 flex items-center justify-center mt-0.5">
                     <svg
                       className="w-2.5 h-2.5 text-purple-600"
                       fill="none"

@@ -297,7 +297,7 @@ function ArtistCard({ artist, isSeed = false }: { artist: ArtistMatch; isSeed?: 
           </a>
         </div>
         {isSeed && (
-          <span className="text-[9px] font-mono bg-ink text-paper px-1.5 py-0.5 uppercase flex-shrink-0">
+          <span className="text-[9px] font-mono bg-ink text-paper px-1.5 py-0.5 uppercase shrink-0">
             Seed
           </span>
         )}

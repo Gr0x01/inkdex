@@ -219,7 +219,7 @@ function UpgradeContent() {
                 <ul className="space-y-2">
                   {FREE_FEATURES.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                      <Check className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                       <span className="font-body text-sm text-gray-700">{feature}</span>
                     </li>
                   ))}
@@ -251,7 +251,7 @@ function UpgradeContent() {
                 <ul className="space-y-2">
                   {PRO_FEATURES.map((feature) => (
                     <li key={feature} className="flex items-start gap-2">
-                      <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                       <span className="font-body text-sm text-gray-700">{feature}</span>
                     </li>
                   ))}

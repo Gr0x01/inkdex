@@ -62,13 +62,13 @@ export default function DashboardToolbar() {
         isNavbarHidden
           ? 'top-0'
           : isCompact
-            ? 'top-[var(--navbar-height-compact)] md:top-[var(--navbar-height-desktop)]'
-            : 'top-[var(--navbar-height)] md:top-[var(--navbar-height-desktop)]'
+            ? 'top-(--navbar-height-compact) md:top-(--navbar-height-desktop)'
+            : 'top-(--navbar-height) md:top-(--navbar-height-desktop)'
       }`}
     >
       {/* Top decorative line - editorial accent */}
       <div
-        className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-ink/15 to-transparent"
+        className="absolute top-0 left-0 right-0 h-[2px] bg-linear-to-r from-transparent via-ink/15 to-transparent"
         aria-hidden="true"
       />
 
@@ -116,7 +116,7 @@ export default function DashboardToolbar() {
 
       {/* Bottom decorative line - subtle accent */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-ink/5 to-transparent"
+        className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-ink/5 to-transparent"
         aria-hidden="true"
       />
     </div>

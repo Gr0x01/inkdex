@@ -10,7 +10,7 @@ export default function ProUpgradeCTA() {
   return (
     <section className="border border-gray-200 bg-white p-8">
       <div className="flex items-start gap-3 mb-6">
-        <Crown className="w-6 h-6 text-amber-500 flex-shrink-0 mt-1" />
+        <Crown className="w-6 h-6 text-amber-500 shrink-0 mt-1" />
         <div>
           <h2 className="font-heading text-2xl mb-2">Unlock Analytics with Pro</h2>
           <p className="font-body text-gray-600">
@@ -21,7 +21,7 @@ export default function ProUpgradeCTA() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         <div className="flex items-start gap-3">
-          <TrendingUp className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <TrendingUp className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-heading text-sm mb-1">Performance Tracking</p>
             <p className="font-body text-xs text-gray-600">
@@ -31,7 +31,7 @@ export default function ProUpgradeCTA() {
         </div>
 
         <div className="flex items-start gap-3">
-          <Image className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+          <Image className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-heading text-sm mb-1">Top-Performing Images</p>
             <p className="font-body text-xs text-gray-600">
@@ -41,7 +41,7 @@ export default function ProUpgradeCTA() {
         </div>
 
         <div className="flex items-start gap-3">
-          <RefreshCw className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <RefreshCw className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-heading text-sm mb-1">Daily Auto-Sync</p>
             <p className="font-body text-xs text-gray-600">
@@ -51,7 +51,7 @@ export default function ProUpgradeCTA() {
         </div>
 
         <div className="flex items-start gap-3">
-          <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+          <MapPin className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-heading text-sm mb-1">Multiple Locations</p>
             <p className="font-body text-xs text-gray-600">

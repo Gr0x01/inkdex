@@ -286,7 +286,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
                   >
                     OFF
                   </span>
-                  <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+                  <div className="absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] bg-ink z-10" />
                   <span
                     className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                       status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
@@ -324,7 +324,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
                   >
                     OFF
                   </span>
-                  <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+                  <div className="absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] bg-ink z-10" />
                   <span
                     className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                       status?.filterNonTattoo ? 'text-paper' : 'text-ink'
@@ -347,14 +347,14 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
                   onClick={handleManualSync}
                   disabled={syncing}
                   className="relative inline-flex items-center justify-center w-full px-3 py-1.5 gap-1.5
-                             bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
+                             bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
                              group-hover:bg-paper
                              text-white font-mono text-[10px] uppercase tracking-wider
                              transition-all duration-200
                              disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
-                  <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                  <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
                     {syncing ? 'Syncing...' : 'Sync Now'}
                   </span>
                 </button>
@@ -393,7 +393,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             >
               OFF
             </span>
-            <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+            <div className="absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] bg-ink z-10" />
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 status?.autoSyncEnabled ? 'text-paper' : 'text-ink'
@@ -431,7 +431,7 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             >
               OFF
             </span>
-            <div className="absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] bg-ink z-10" />
+            <div className="absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] bg-ink z-10" />
             <span
               className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                 status?.filterNonTattoo ? 'text-paper' : 'text-ink'
@@ -454,14 +454,14 @@ export function SyncSettingsCard({ initialStatus, onFetch }: SyncSettingsCardPro
             onClick={handleManualSync}
             disabled={syncing}
             className="relative inline-flex items-center justify-center px-3 py-1.5 gap-1.5
-                       bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
+                       bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]
                        group-hover:bg-paper
                        text-white font-mono text-[10px] uppercase tracking-wider
                        transition-all duration-200
                        disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <RefreshCw className={`w-2.5 h-2.5 ${syncing ? 'animate-spin' : ''} group-hover:text-[#dc2743] transition-colors duration-200`} />
-            <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+            <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
               {syncing ? 'Syncing...' : 'Sync Now'}
             </span>
           </button>

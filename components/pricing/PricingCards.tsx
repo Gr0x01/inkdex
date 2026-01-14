@@ -128,10 +128,10 @@ export default function PricingCards() {
             </div>
           </div>
 
-          <ul className="space-y-3 mb-8 flex-grow">
+          <ul className="space-y-3 mb-8 grow">
             {FREE_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-3">
-                <Check className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
                 <span className="font-body text-sm text-gray-700">{feature}</span>
               </li>
             ))}
@@ -196,10 +196,10 @@ export default function PricingCards() {
             )}
           </div>
 
-          <ul className="space-y-3 mb-8 flex-grow">
+          <ul className="space-y-3 mb-8 grow">
             {PRO_FEATURES.map((feature) => (
               <li key={feature} className="flex items-start gap-3">
-                <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
                 <span className="font-body text-sm text-gray-700">{feature}</span>
               </li>
             ))}

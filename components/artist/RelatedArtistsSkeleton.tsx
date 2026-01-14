@@ -14,10 +14,10 @@ export default function RelatedArtistsSkeleton() {
           {[...Array(4)].map((_, index) => (
             <div
               key={index}
-              className="flex-shrink-0 w-[280px] md:w-auto bg-paper border border-gray-300 overflow-hidden"
+              className="shrink-0 w-[280px] md:w-auto bg-paper border border-gray-300 overflow-hidden"
             >
               {/* Image placeholder */}
-              <div className="aspect-[3/4] bg-gray-200" />
+              <div className="aspect-3/4 bg-gray-200" />
 
               {/* Info section */}
               <div className="p-4 bg-paper">

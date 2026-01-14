@@ -13,7 +13,7 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--paper-white)] relative">
+    <div className="min-h-screen bg-(--paper-white) relative">
       {/* Grain texture overlay */}
       <div className="grain-overlay absolute inset-0 pointer-events-none" />
 

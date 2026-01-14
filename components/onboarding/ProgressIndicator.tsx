@@ -24,7 +24,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
       <div className="relative flex">
         {/* Background line - connects the dots */}
         <div
-          className="absolute top-1/2 h-[1px] -translate-y-1/2 bg-[var(--gray-300)]"
+          className="absolute top-1/2 h-px -translate-y-1/2 bg-(--gray-300)"
           style={{
             left: `${(1 / (STEPS.length * 2)) * 100}%`,
             right: `${(1 / (STEPS.length * 2)) * 100}%`,
@@ -33,7 +33,7 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
 
         {/* Progress fill */}
         <div
-          className="absolute top-1/2 h-[1px] -translate-y-1/2 bg-[var(--ink-black)] transition-all duration-500"
+          className="absolute top-1/2 h-px -translate-y-1/2 bg-(--ink-black) transition-all duration-500"
           style={{
             left: `${(1 / (STEPS.length * 2)) * 100}%`,
             width: `${((currentStep - 1) / (STEPS.length - 1)) * ((STEPS.length - 1) / STEPS.length) * 100}%`,
@@ -55,16 +55,16 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
                 <div
                   className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
                     isCurrent
-                      ? 'bg-[var(--ink-black)] border-[var(--ink-black)] scale-110'
+                      ? 'bg-(--ink-black) border-(--ink-black) scale-110'
                       : isCompleted
-                        ? 'bg-[var(--ink-black)] border-[var(--ink-black)]'
-                        : 'bg-[var(--paper-white)] border-[var(--gray-300)]'
+                        ? 'bg-(--ink-black) border-(--ink-black)'
+                        : 'bg-(--paper-white) border-(--gray-300)'
                   }`}
                 >
                   {/* Completed checkmark */}
                   {isCompleted && (
                     <svg
-                      className="w-2 h-2 sm:w-3 sm:h-3 text-[var(--paper-white)]"
+                      className="w-2 h-2 sm:w-3 sm:h-3 text-(--paper-white)"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -79,12 +79,12 @@ export function ProgressIndicator({ currentStep }: ProgressIndicatorProps) {
 
                 {/* Step label (mobile/tablet only - hidden on desktop) */}
                 <span
-                  className={`block lg:hidden mt-1.5 sm:mt-2 font-mono text-[9px] sm:text-[10px] tracking-[0.1em] uppercase transition-colors ${
+                  className={`block lg:hidden mt-1.5 sm:mt-2 font-mono text-[9px] sm:text-[10px] tracking-widest uppercase transition-colors ${
                     isCurrent
-                      ? 'text-[var(--ink-black)] font-medium'
+                      ? 'text-(--ink-black) font-medium'
                       : isCompleted
-                        ? 'text-[var(--gray-500)]'
-                        : 'text-[var(--gray-400)]'
+                        ? 'text-(--gray-500)'
+                        : 'text-(--gray-400)'
                   }`}
                 >
                   {step.short}

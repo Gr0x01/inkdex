@@ -313,7 +313,7 @@ export default function AirtableSyncPanel() {
     return (
       <div className="bg-paper border border-ink/10 p-4">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-body text-ink">Airtable not configured</p>
             <p className="text-xs text-gray-500 font-body mt-0.5">
@@ -415,7 +415,7 @@ export default function AirtableSyncPanel() {
             <button
               onClick={handleGenerate}
               disabled={generateLoading || pendingCount === 0}
-              className="h-[30px] flex items-center gap-1.5 px-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white text-[13px] font-body
+              className="h-[30px] flex items-center gap-1.5 px-3 bg-linear-to-r from-violet-600 to-purple-600 text-white text-[13px] font-body
                        hover:from-violet-700 hover:to-purple-700 transition-colors disabled:opacity-50"
             >
               {generateLoading ? (
@@ -472,9 +472,9 @@ export default function AirtableSyncPanel() {
           >
             <div className="flex items-start gap-2">
               {lastResult.data.success ? (
-                <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-status-success shrink-0" />
               ) : (
-                <XCircle className="w-4 h-4 text-status-error flex-shrink-0" />
+                <XCircle className="w-4 h-4 text-status-error shrink-0" />
               )}
               <div className="text-xs font-body">
                 {lastResult.type === 'push' && (

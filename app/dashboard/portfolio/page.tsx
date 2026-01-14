@@ -33,7 +33,7 @@ export default async function PortfolioPage() {
 
   if (artistError || !artist) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex flex-col items-center justify-center space-y-6">
             <h1 className="text-2xl font-bold text-red-400">No Claimed Artist Found</h1>

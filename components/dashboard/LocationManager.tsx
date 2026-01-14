@@ -132,8 +132,8 @@ export default function LocationManager({
   if (!isPro) {
     return (
       <div className="space-y-3">
-        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
-          Location <span className="text-[var(--error)]">*</span>
+        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700)">
+          Location <span className="text-(--error)">*</span>
         </label>
 
         <FreeTierLocationEditor
@@ -142,18 +142,18 @@ export default function LocationManager({
         />
 
         {/* Upgrade CTA */}
-        <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[var(--gray-200)] bg-[var(--gray-50)]">
+        <div className="flex items-center gap-2 p-3 border-2 border-dashed border-(--gray-200) bg-(--gray-50)">
           <Crown className="w-3.5 h-3.5 text-amber-500" />
-          <span className="font-body text-sm text-[var(--gray-600)]">
+          <span className="font-body text-sm text-(--gray-600)">
             Want to list multiple locations?{' '}
-            <Link href="/dashboard/upgrade" className="text-[var(--ink-black)] underline hover:no-underline">
+            <Link href="/dashboard/upgrade" className="text-(--ink-black) underline hover:no-underline">
               Upgrade to Pro
             </Link>
           </span>
         </div>
 
         {error && (
-          <p className="text-[var(--error)] text-sm font-body">{error}</p>
+          <p className="text-(--error) text-sm font-body">{error}</p>
         )}
       </div>
     );
@@ -163,7 +163,7 @@ export default function LocationManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
+        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700)">
           Locations ({locations.length}/{maxLocations})
         </label>
         <ProBadge variant="icon-only" size="sm" />
@@ -176,17 +176,17 @@ export default function LocationManager({
             key={loc.id || index}
             className={`flex items-center justify-between p-3 border-2 ${
               loc.isPrimary
-                ? 'border-[var(--ink-black)] bg-[var(--gray-50)]'
-                : 'border-[var(--border-subtle)]'
+                ? 'border-(--ink-black) bg-(--gray-50)'
+                : 'border-(--border-subtle)'
             }`}
           >
             <div className="flex items-center gap-3">
-              <MapPin className={`w-3.5 h-3.5 ${loc.isPrimary ? 'text-[var(--ink-black)]' : 'text-[var(--gray-400)]'}`} />
-              <span className="font-body text-[var(--text-primary)]">
+              <MapPin className={`w-3.5 h-3.5 ${loc.isPrimary ? 'text-(--ink-black)' : 'text-(--gray-400)'}`} />
+              <span className="font-body text-(--text-primary)">
                 {formatLocation(loc)}
               </span>
               {loc.isPrimary && (
-                <span className="font-mono text-[9px] uppercase tracking-wider bg-[var(--ink-black)] text-[var(--paper-white)] px-2 py-0.5">
+                <span className="font-mono text-[9px] uppercase tracking-wider bg-(--ink-black) text-(--paper-white) px-2 py-0.5">
                   Primary
                 </span>
               )}
@@ -196,7 +196,7 @@ export default function LocationManager({
                 <button
                   type="button"
                   onClick={() => handleSetPrimary(index)}
-                  className="font-mono text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink-black)] transition-colors"
+                  className="font-mono text-[9px] uppercase tracking-wider text-(--gray-500) hover:text-(--ink-black) transition-colors"
                 >
                   Set primary
                 </button>
@@ -205,7 +205,7 @@ export default function LocationManager({
                 <button
                   type="button"
                   onClick={() => handleRemoveLocation(index)}
-                  className="p-1 text-[var(--gray-400)] hover:text-[var(--error)] transition-colors"
+                  className="p-1 text-(--gray-400) hover:text-(--error) transition-colors"
                   aria-label="Remove location"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -230,22 +230,22 @@ export default function LocationManager({
 
       {/* Add location form */}
       {isAdding && (
-        <div className="border-2 border-[var(--gray-200)] p-6 space-y-5">
+        <div className="border-2 border-(--gray-200) p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--gray-600)]">
+            <span className="font-mono text-[11px] uppercase tracking-wider text-(--gray-600)">
               Add new location
             </span>
             <button
               type="button"
               onClick={() => setIsAdding(false)}
-              className="text-[var(--gray-400)] hover:text-[var(--gray-600)]"
+              className="text-(--gray-400) hover:text-(--gray-600)"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div>
-            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+            <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
               Country
             </label>
             <Select
@@ -291,7 +291,7 @@ export default function LocationManager({
             <div className="grid grid-cols-2 gap-4">
               {newLocationType === 'city' && (
                 <div>
-                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
                     City
                   </label>
                   <CitySelect
@@ -304,7 +304,7 @@ export default function LocationManager({
                 </div>
               )}
               <div className={newLocationType === 'city' ? '' : 'col-span-2'}>
-                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
                   State
                 </label>
                 <Select
@@ -342,7 +342,7 @@ export default function LocationManager({
       )}
 
       {error && (
-        <p className="text-[var(--error)] text-sm font-body">{error}</p>
+        <p className="text-(--error) text-sm font-body">{error}</p>
       )}
     </div>
   );
@@ -391,7 +391,7 @@ function FreeTierLocationEditor({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+        <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
           Country
         </label>
         <Select
@@ -442,7 +442,7 @@ function FreeTierLocationEditor({
           {locationType === 'city' ? (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
                   City
                 </label>
                 <CitySelect
@@ -460,7 +460,7 @@ function FreeTierLocationEditor({
                 />
               </div>
               <div>
-                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+                <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
                   State
                 </label>
                 <Select
@@ -479,7 +479,7 @@ function FreeTierLocationEditor({
             </div>
           ) : (
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-1">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-1">
                 State
               </label>
               <Select

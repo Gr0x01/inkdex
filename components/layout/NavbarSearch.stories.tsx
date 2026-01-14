@@ -148,8 +148,8 @@ export const InNavbarContext: Story = {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-6 h-24">
           {/* Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="font-display text-4xl font-[900] text-ink tracking-tight">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="font-display text-4xl font-black text-ink tracking-tight">
               INKDEX
             </div>
           </div>
@@ -160,7 +160,7 @@ export const InNavbarContext: Story = {
           </div>
 
           {/* Nav links */}
-          <nav className="flex items-center gap-8 flex-shrink-0">
+          <nav className="flex items-center gap-8 shrink-0">
             <a href="#" className="font-mono text-sm text-ink hover:text-gray-700">
               Browse
             </a>
@@ -275,7 +275,7 @@ export const WithSurroundingUI: Story = {
       <header className="bg-paper border-b-2 border-ink/10 sticky top-0">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between gap-6 h-24">
-            <div className="font-display text-4xl font-[900] text-ink">INKDEX</div>
+            <div className="font-display text-4xl font-black text-ink">INKDEX</div>
             <div className="flex-1 max-w-2xl">
               <NavbarSearch />
             </div>

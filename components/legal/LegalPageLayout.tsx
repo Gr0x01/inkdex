@@ -28,7 +28,7 @@ const LegalPageLayout = memo(function LegalPageLayout({
     <div className="min-h-screen bg-paper-white">
       {/* Page header */}
       <div className="max-w-3xl mx-auto px-4 pt-12 md:pt-24 pb-8">
-        <h1 className="font-display text-h1 font-[900] text-text-primary mb-4">
+        <h1 className="font-display text-h1 font-black text-text-primary mb-4">
           {title}
         </h1>
 

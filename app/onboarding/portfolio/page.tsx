@@ -275,7 +275,7 @@ function PortfolioContent() {
                   type="button"
                   onClick={() => isPro && setAutoSyncEnabled(!autoSyncEnabled)}
                   disabled={!isPro}
-                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
+                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 shrink-0 ${
                     isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
                   }`}
                   role="switch"
@@ -296,7 +296,7 @@ function PortfolioContent() {
                   >
                     OFF
                   </span>
-                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
+                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
                   <span
                     className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                       autoSyncEnabled ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')
@@ -326,7 +326,7 @@ function PortfolioContent() {
                   type="button"
                   onClick={() => isPro && setFilterNonTattoo(!filterNonTattoo)}
                   disabled={!isPro}
-                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 flex-shrink-0 ${
+                  className={`relative inline-flex border-2 overflow-hidden h-7 w-20 shrink-0 ${
                     isPro ? 'border-ink' : 'border-gray-300 opacity-50 cursor-not-allowed'
                   }`}
                   role="switch"
@@ -347,7 +347,7 @@ function PortfolioContent() {
                   >
                     OFF
                   </span>
-                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-[1px] w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
+                  <div className={`absolute top-0 bottom-0 left-1/2 -ml-px w-[2px] z-10 ${isPro ? 'bg-ink' : 'bg-gray-300'}`} />
                   <span
                     className={`relative z-10 w-1/2 font-mono text-[9px] uppercase tracking-wider transition-colors duration-300 text-center flex items-center justify-center ${
                       filterNonTattoo ? (isPro ? 'text-paper' : 'text-white') : (isPro ? 'text-ink' : 'text-gray-400')

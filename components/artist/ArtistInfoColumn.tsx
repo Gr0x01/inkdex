@@ -118,7 +118,7 @@ export default function ArtistInfoColumn({
 
         {/* Profile Image - Portrait 3:4, More Compact */}
         <div className="relative w-full max-w-[200px] mx-auto">
-          <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
+          <div className="relative w-full aspect-3/4 border-2 border-ink overflow-hidden">
             <ProfileImage
               src={getProfileImageUrl(artist)}
               alt={`${artist.name} profile`}
@@ -129,7 +129,7 @@ export default function ArtistInfoColumn({
 
           {/* Pro Badge - Hanging Tag (0.5rem above Featured when both exist) */}
           {artist.is_pro && (
-            <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-[3.25rem]' : 'bottom-2'}`}>
+            <div className={`absolute -right-1 z-10 ${isFeatured ? 'bottom-13' : 'bottom-2'}`}>
               <ProBadge variant="badge" size="md" className="py-3" />
             </div>
           )}
@@ -158,7 +158,7 @@ export default function ArtistInfoColumn({
             </p>
 
             {/* Handle */}
-            <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink !mt-0 mb-2">
+            <h1 className="font-heading text-xl sm:text-2xl font-black tracking-tight leading-none text-ink mt-0! mb-2">
               @{artist.instagram_handle}
             </h1>
 
@@ -264,7 +264,7 @@ export default function ArtistInfoColumn({
                   padding: '2px'
                 }}
               >
-                <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
                   <a
                     href={artist.instagram_url}
                     target="_blank"
@@ -274,7 +274,7 @@ export default function ArtistInfoColumn({
                              font-mono text-xs tracking-widest uppercase font-semibold
                              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                   >
-                    <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                    <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
                       Instagram →
                     </span>
                   </a>
@@ -303,7 +303,7 @@ export default function ArtistInfoColumn({
                     padding: '2px'
                   }}
                 >
-                  <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                  <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
                     <a
                       href={artist.instagram_url}
                       target="_blank"
@@ -313,7 +313,7 @@ export default function ArtistInfoColumn({
                                font-mono text-xs tracking-widest uppercase font-semibold
                                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                     >
-                      <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                      <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
                         Instagram →
                       </span>
                     </a>

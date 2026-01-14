@@ -223,14 +223,14 @@ export default function PortfolioManager({
         {/* Error Alert */}
         {error && (
           <div className="mb-6 flex items-start gap-3 border-l-4 border-error bg-error/5 p-4 rounded">
-            <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+            <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
             <p className="font-body text-sm text-error">{error}</p>
           </div>
         )}
 
         {/* Upgrade Banner - Free Tier at Limit */}
         {!isPro && isAtLimit && (
-          <div className="mb-8 bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-400 p-6 text-center">
+          <div className="mb-8 bg-linear-to-br from-amber-50 to-orange-50 rounded-lg border-2 border-amber-400 p-6 text-center">
             <Crown className="w-10 h-10 text-amber-600 mx-auto mb-3" />
             <h3 className="font-heading text-xl mb-2 text-ink">Portfolio Limit Reached</h3>
             <p className="font-body text-sm text-gray-700 mb-4 max-w-md mx-auto">
@@ -276,7 +276,7 @@ export default function PortfolioManager({
                   </div>
 
                   {/* Right: Edit button + Sync Controls */}
-                  <div className="flex items-start gap-2 flex-shrink-0">
+                  <div className="flex items-start gap-2 shrink-0">
                     {/* Edit Mode Toggle - mobile/tablet only (hover works on desktop) */}
                     <button
                       onClick={() => setEditMode(!editMode)}

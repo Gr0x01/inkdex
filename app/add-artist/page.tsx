@@ -59,19 +59,19 @@ export default function AddArtistPage() {
                   {/* Benefits List - Compact */}
                   <ul className="space-y-1 pt-0.5 mt-1 md:mt-2">
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
+                      <div className="w-1 h-1 bg-ink mt-[0.5em] shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
                         <strong className="text-ink">Visual search discovery</strong> — Clients find you by uploading reference&nbsp;images
                       </div>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
+                      <div className="w-1 h-1 bg-ink mt-[0.5em] shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
                         <strong className="text-ink">Instagram integration</strong> — Curate your portfolio from your&nbsp;posts
                       </div>
                     </li>
                     <li className="flex items-start gap-2">
-                      <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
+                      <div className="w-1 h-1 bg-ink mt-[0.5em] shrink-0"></div>
                       <div className="font-body text-gray-700 text-base leading-snug">
                         <strong className="text-ink">Free forever</strong> — Basic features are 100% free, upgrade for pro&nbsp;tools
                       </div>
@@ -87,7 +87,7 @@ export default function AddArtistPage() {
                         padding: '2px'
                       }}
                     >
-                      <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                      <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
                         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API route requires full page redirect for OAuth */}
                         <a
                           href="/api/add-artist/self-add"
@@ -95,7 +95,7 @@ export default function AddArtistPage() {
                                    font-mono text-xs tracking-[0.15em] uppercase font-semibold
                                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                         >
-                          <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                          <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
                             Connect with Instagram →
                           </span>
                         </a>

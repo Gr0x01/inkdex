@@ -22,7 +22,7 @@ const EditorialContent = memo(function EditorialContent({
       {sections.map((section, sectionIdx) => (
         <section key={section.heading || `section-${sectionIdx}`} className="space-y-3">
           {section.heading && (
-            <h3 className="font-display text-h3 font-[700] text-text-primary mb-3">
+            <h3 className="font-display text-h3 font-bold text-text-primary mb-3">
               {section.heading}
             </h3>
           )}

@@ -213,7 +213,7 @@ export default function ImageUpload({
           role="alert"
         >
           <svg
-            className="w-4 h-4 flex-shrink-0"
+            className="w-4 h-4 shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"

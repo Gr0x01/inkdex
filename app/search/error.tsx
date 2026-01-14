@@ -36,7 +36,7 @@ export default function SearchError({ error, reset }: ErrorPageProps) {
         </div>
 
         {/* Error Message */}
-        <h1 className="font-display text-3xl md:text-4xl font-[800] text-text-primary mb-4">
+        <h1 className="font-display text-3xl md:text-4xl font-extrabold text-text-primary mb-4">
           Something Went Wrong
         </h1>
         <p className="font-body text-base text-text-secondary mb-8 leading-relaxed">

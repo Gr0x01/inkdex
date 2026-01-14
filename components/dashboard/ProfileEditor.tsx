@@ -178,7 +178,7 @@ export default function ProfileEditor({
         {hasUnsavedChanges && (
           <>
             <div
-              className={`hidden md:block fixed left-0 right-0 z-30 px-4 sm:px-6 py-3 bg-white border-b-2 border-[var(--ink-black)] animate-fade-up transition-[top] duration-300 ${
+              className={`hidden md:block fixed left-0 right-0 z-30 px-4 sm:px-6 py-3 bg-white border-b-2 border-(--ink-black) animate-fade-up transition-[top] duration-300 ${
                 isNavbarHidden
                   ? 'top-[46px]'
                   : isCompact
@@ -195,8 +195,8 @@ export default function ProfileEditor({
 
         {/* Status Messages */}
         {saveError && (
-          <div className="mb-6 border-2 border-[var(--error)] bg-red-50 p-4 animate-fade-up">
-            <p className="font-body text-[var(--error)]">{saveError}</p>
+          <div className="mb-6 border-2 border-(--error) bg-red-50 p-4 animate-fade-up">
+            <p className="font-body text-(--error)">{saveError}</p>
           </div>
         )}
 
@@ -206,17 +206,17 @@ export default function ProfileEditor({
           {/* Left Column - Basic Information */}
           <div className="lg:col-span-7 space-y-6">
             {/* Basic Information Card */}
-            <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
+            <section className="border-2 border-(--ink-black) bg-white p-5 lg:p-6">
 
-              <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)] mb-4">
+              <h2 className="font-heading text-xl lg:text-2xl text-(--ink-black) mb-4">
                 Basic Information
               </h2>
 
               <div className="space-y-4">
                 {/* Name Field */}
                 <div>
-                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
-                    Name <span className="text-[var(--error)]">*</span>
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700) mb-2">
+                    Name <span className="text-(--error)">*</span>
                   </label>
                   <input
                     type="text"
@@ -239,9 +239,9 @@ export default function ProfileEditor({
 
                 {/* Bio Field */}
                 <div>
-                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700) mb-2">
                     Custom Bio
-                    <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                    <span className="ml-2 font-normal text-(--gray-500) normal-case tracking-normal">(Optional)</span>
                   </label>
                   <textarea
                     value={bioOverride}
@@ -251,16 +251,16 @@ export default function ProfileEditor({
                     placeholder="Tell potential clients about your style, approach, and what makes your work unique..."
                     maxLength={500}
                   />
-                  <p className="mt-2 font-mono text-[10px] text-[var(--gray-500)] tracking-wide">
+                  <p className="mt-2 font-mono text-[10px] text-(--gray-500) tracking-wide">
                     {bioOverride.length}/500 characters
                   </p>
                 </div>
 
                 {/* Booking Link Field */}
                 <div>
-                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                  <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700) mb-2">
                     Booking Link
-                    <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                    <span className="ml-2 font-normal text-(--gray-500) normal-case tracking-normal">(Optional)</span>
                   </label>
                   <input
                     type="url"
@@ -269,7 +269,7 @@ export default function ProfileEditor({
                     className="input"
                     placeholder="https://calendly.com/yourname"
                   />
-                  <p className="mt-2 font-body text-sm text-[var(--gray-500)] italic">
+                  <p className="mt-2 font-body text-sm text-(--gray-500) italic">
                     Where clients can book consultations or appointments
                   </p>
                 </div>
@@ -282,10 +282,10 @@ export default function ProfileEditor({
             <div className="lg:sticky lg:top-[calc(var(--navbar-height-desktop)+56px)] space-y-6">
               {/* Pro Features Card */}
               {isPro && (
-                <section className="border-2 border-[var(--ink-black)] bg-white p-5 lg:p-6">
+                <section className="border-2 border-(--ink-black) bg-white p-5 lg:p-6">
 
                   <div className="flex items-center gap-3 mb-4">
-                    <h2 className="font-heading text-xl lg:text-2xl text-[var(--ink-black)]">
+                    <h2 className="font-heading text-xl lg:text-2xl text-(--ink-black)">
                       Pro Features
                     </h2>
                     <ProBadge variant="badge" size="sm" />
@@ -294,9 +294,9 @@ export default function ProfileEditor({
                   <div className="space-y-4">
                     {/* Pricing Info */}
                     <div>
-                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700) mb-2">
                         Pricing Information
-                        <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                        <span className="ml-2 font-normal text-(--gray-500) normal-case tracking-normal">(Optional)</span>
                       </label>
                       <input
                         type="text"
@@ -310,9 +310,9 @@ export default function ProfileEditor({
 
                     {/* Availability Status */}
                     <div>
-                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)] mb-2">
+                      <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700) mb-2">
                         Availability Status
-                        <span className="ml-2 font-normal text-[var(--gray-500)] normal-case tracking-normal">(Optional)</span>
+                        <span className="ml-2 font-normal text-(--gray-500) normal-case tracking-normal">(Optional)</span>
                       </label>
                       <Select
                         value={availabilityStatus}
@@ -336,7 +336,7 @@ export default function ProfileEditor({
 
         {/* Save Bar - Mobile: fixed at bottom */}
         {hasUnsavedChanges && (
-          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white border-t-2 border-[var(--ink-black)] shadow-lg animate-fade-up">
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 py-3 bg-white border-t-2 border-(--ink-black) shadow-lg animate-fade-up">
             {saveBarContent}
           </div>
         )}

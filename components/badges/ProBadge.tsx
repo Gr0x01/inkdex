@@ -23,9 +23,9 @@ export function ProBadge({
   className = ''
 }: ProBadgeProps) {
   const sizeMap = {
-    sm: 'w-[0.75rem] h-[0.75rem]', // 12px (0.75rem)
-    md: 'w-[1rem] h-[1rem]',       // 16px (1rem) - dashboard and overlays
-    lg: 'w-[1.5rem] h-[1.5rem]',   // 24px (1.5rem) - large headers
+    sm: 'w-3 h-3', // 12px (0.75rem)
+    md: 'w-4 h-4',       // 16px (1rem) - dashboard and overlays
+    lg: 'w-6 h-6',   // 24px (1.5rem) - large headers
   }
 
   const textSizeMap = {
@@ -38,7 +38,7 @@ export function ProBadge({
   if (variant === 'icon-only') {
     return (
       <Crown
-        className={`${sizeMap[size]} text-purple-500 flex-shrink-0 ${className}`}
+        className={`${sizeMap[size]} text-purple-500 shrink-0 ${className}`}
         aria-label="Pro artist"
       />
     )
@@ -47,7 +47,7 @@ export function ProBadge({
   // Badge variant - overlay on images/cards
   if (variant === 'badge') {
     return (
-      <div className={`px-2.5 py-1.5 bg-purple-500 inline-flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ${className}`}>
+      <div className={`px-2.5 py-1.5 bg-purple-500 inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 ${className}`}>
         <Crown
           className={`${sizeMap[size]} text-white`}
           aria-hidden="true"
@@ -61,7 +61,7 @@ export function ProBadge({
 
   // Inline variant - subtle background for headers/sections
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500 whitespace-nowrap flex-shrink-0 ${className}`}>
+    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-500/10 border border-purple-500 whitespace-nowrap shrink-0 ${className}`}>
       <Crown
         className={`${sizeMap[size]} text-purple-500`}
         aria-hidden="true"

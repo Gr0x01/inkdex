@@ -17,7 +17,7 @@ import type { Meta, StoryObj } from '@storybook/nextjs-vite';
 // Placeholder component that matches the page's loading state
 function InfoPagePlaceholder() {
   return (
-    <div className="min-h-screen bg-[var(--paper-white)] relative">
+    <div className="min-h-screen bg-(--paper-white) relative">
       <div className="grain-overlay absolute inset-0 pointer-events-none" />
       <div className="relative">
         <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">
@@ -41,7 +41,7 @@ function InfoPagePlaceholder() {
 // Error state placeholder
 function InfoPageError() {
   return (
-    <div className="min-h-screen bg-[var(--paper-white)] relative">
+    <div className="min-h-screen bg-(--paper-white) relative">
       <div className="grain-overlay absolute inset-0 pointer-events-none" />
       <div className="relative">
         <main className="container mx-auto px-3 sm:px-4 lg:px-6 py-6 sm:py-8 lg:py-12 max-w-2xl">

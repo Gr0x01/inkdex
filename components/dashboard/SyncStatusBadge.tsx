@@ -66,16 +66,16 @@ export function SyncStatusBadge({ status, lastSyncAt, className = '' }: SyncStat
 
     case 'disabled':
       return (
-        <span className={`${baseClasses} text-[var(--gray-500)] ${className}`}>
-          <span className="inline-block w-1.5 h-1.5 bg-[var(--gray-400)] rounded-full" />
+        <span className={`${baseClasses} text-(--gray-500) ${className}`}>
+          <span className="inline-block w-1.5 h-1.5 bg-(--gray-400) rounded-full" />
           <span className="hidden sm:inline">Auto-sync off</span>
         </span>
       );
 
     case 'never':
       return (
-        <span className={`${baseClasses} text-[var(--gray-500)] ${className}`}>
-          <span className="inline-block w-1.5 h-1.5 bg-[var(--gray-400)] rounded-full" />
+        <span className={`${baseClasses} text-(--gray-500) ${className}`}>
+          <span className="inline-block w-1.5 h-1.5 bg-(--gray-400) rounded-full" />
           <span className="hidden sm:inline">Never synced</span>
         </span>
       );

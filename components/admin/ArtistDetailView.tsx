@@ -350,10 +350,10 @@ export default function ArtistDetailView({
                 {artist.name}
               </h1>
               {artist.is_pro && (
-                <Crown className="w-5 h-5 text-status-warning flex-shrink-0" />
+                <Crown className="w-5 h-5 text-status-warning shrink-0" />
               )}
               {artist.is_featured && (
-                <Star className="w-5 h-5 text-status-warning fill-current flex-shrink-0" />
+                <Star className="w-5 h-5 text-status-warning fill-current shrink-0" />
               )}
               {/* External Links */}
               <div className="flex items-center gap-1 ml-2">

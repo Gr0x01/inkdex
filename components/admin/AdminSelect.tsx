@@ -105,7 +105,7 @@ export default function AdminSelect({
           {selectedOption ? selectedOption.label : 'Select...'}
         </span>
         <ChevronDown
-          className={`w-3 h-3 text-gray-400 transition-transform duration-150 flex-shrink-0 ${
+          className={`w-3 h-3 text-gray-400 transition-transform duration-150 shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -137,7 +137,7 @@ export default function AdminSelect({
               >
                 <span>{option.label}</span>
                 {value === option.value && option.value !== '' && (
-                  <Check className="w-2.5 h-2.5 flex-shrink-0" />
+                  <Check className="w-2.5 h-2.5 shrink-0" />
                 )}
               </button>
             ))}

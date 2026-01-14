@@ -198,7 +198,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {/* Back Link - Mobile Friendly */}
             <Link
               href="/"
-              className="inline-flex items-center gap-1 md:gap-1.5 font-mono text-[10px] md:text-xs font-medium text-ink/60 hover:text-ink transition-colors duration-fast group flex-shrink-0 uppercase tracking-[0.15em]"
+              className="inline-flex items-center gap-1 md:gap-1.5 font-mono text-[10px] md:text-xs font-medium text-ink/60 hover:text-ink transition-colors duration-fast group shrink-0 uppercase tracking-[0.15em]"
             >
               <svg
                 className="w-3.5 h-3.5 md:w-3.5 md:h-3.5 group-hover:-translate-x-0.5 transition-transform duration-fast"
@@ -212,14 +212,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </Link>
 
             {/* Separator */}
-            <div className="w-px h-4 md:h-5 bg-ink/10 flex-shrink-0" />
+            <div className="w-px h-4 md:h-5 bg-ink/10 shrink-0" />
 
             {/* Query Info - Desktop Only */}
             {searchType === 'text' && queryText && (
               <>
                 <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
                   <svg
-                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
+                    className="w-3.5 h-3.5 text-ink/30 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -244,7 +244,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               <>
                 <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 flex-1">
                   <svg
-                    className="w-3.5 h-3.5 text-ink/30 flex-shrink-0"
+                    className="w-3.5 h-3.5 text-ink/30 shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -259,14 +259,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                   </svg>
                   <span>Image search</span>
                 </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+                <div className="hidden sm:block h-4 w-px bg-ink/10 shrink-0" aria-hidden="true" />
               </>
             )}
 
             {searchType === 'instagram_post' && instagramUsername && (
               <>
                 <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
-                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <div className="shrink-0 w-3.5 h-3.5 bg-linear-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
                   <span className="truncate">
                     Post by{' '}
                     {instagramPostId ? (
@@ -283,14 +283,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     )}
                   </span>
                 </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+                <div className="hidden sm:block h-4 w-px bg-ink/10 shrink-0" aria-hidden="true" />
               </>
             )}
 
             {searchType === 'instagram_profile' && instagramUsername && (
               <>
                 <div className="hidden sm:flex items-center gap-2 font-body text-sm text-ink/60 min-w-0 flex-1">
-                  <div className="flex-shrink-0 w-3.5 h-3.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
+                  <div className="shrink-0 w-3.5 h-3.5 bg-linear-to-r from-purple-500 to-pink-500 rounded-sm" aria-hidden="true" />
                   <span className="truncate">
                     Similar to{' '}
                     <a
@@ -303,7 +303,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     </a>
                   </span>
                 </div>
-                <div className="hidden sm:block h-4 w-px bg-ink/10 flex-shrink-0" aria-hidden="true" />
+                <div className="hidden sm:block h-4 w-px bg-ink/10 shrink-0" aria-hidden="true" />
               </>
             )}
 
@@ -311,7 +311,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="flex-1 sm:hidden" />
 
             {/* Location Filter - Right aligned */}
-            <div className="overflow-visible flex-shrink-0 flex items-center gap-2">
+            <div className="overflow-visible shrink-0 flex items-center gap-2">
               <ClearFiltersButton />
               <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
                 <LocationFilter searchId={id} />

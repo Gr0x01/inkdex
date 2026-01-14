@@ -20,7 +20,7 @@ export default function BioInterstitial({
       />
 
       <div className="relative max-w-3xl mx-auto text-center space-y-4">
-        <h3 className="font-display text-h3 font-[700] text-text-primary">
+        <h3 className="font-display text-h3 font-bold text-text-primary">
           About {artistName}
         </h3>
 

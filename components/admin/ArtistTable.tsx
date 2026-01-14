@@ -477,7 +477,7 @@ export default function ArtistTable() {
                     <div className="flex items-center gap-1">
                       {artist.is_blacklisted && (
                         <span title="Blacklisted">
-                          <Ban className="w-3 h-3 text-status-error flex-shrink-0" />
+                          <Ban className="w-3 h-3 text-status-error shrink-0" />
                         </span>
                       )}
                       <Link
@@ -487,7 +487,7 @@ export default function ArtistTable() {
                         @{artist.instagram_handle}
                       </Link>
                       {artist.is_pro && (
-                        <Crown className="w-2.5 h-2.5 text-status-warning flex-shrink-0" />
+                        <Crown className="w-2.5 h-2.5 text-status-warning shrink-0" />
                       )}
                     </div>
                   </td>

@@ -33,7 +33,7 @@ export default function PortfolioGrid({
 }: PortfolioGridProps) {
   return (
     <section className="container mx-auto px-4 py-12 md:py-16">
-      <h2 className="font-display text-h2 font-[700] text-text-primary mb-8">
+      <h2 className="font-display text-h2 font-bold text-text-primary mb-8">
         Portfolio
       </h2>
 

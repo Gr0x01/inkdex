@@ -13,7 +13,7 @@ function MockArtistCard({ className = '' }: { className?: string }) {
       <div className="relative px-6 pt-5 pb-6 space-y-3">
         {/* Profile Image - Portrait 3:4 */}
         <div className="relative w-full max-w-[200px] mx-auto">
-          <div className="relative w-full aspect-[3/4] border-2 border-ink overflow-hidden">
+          <div className="relative w-full aspect-3/4 border-2 border-ink overflow-hidden">
             <Image
               src="/images/example-artist.png"
               alt="Example artist profile"
@@ -67,7 +67,7 @@ function MockArtistCard({ className = '' }: { className?: string }) {
               padding: '2px'
             }}
           >
-            <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]">
+            <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888]">
               <div className="block w-full py-2.5 text-paper text-center font-mono text-xs tracking-widest uppercase font-semibold">
                 Instagram →
               </div>
@@ -149,7 +149,7 @@ export default function FreeClaimShowcase() {
               {FREE_BENEFITS.map((benefit, index) => (
                 <li key={index} className="flex items-start gap-3">
                   {/* Checkmark */}
-                  <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center mt-0.5">
+                  <div className="shrink-0 w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center mt-0.5">
                     <svg
                       className="w-3 h-3 text-blue-600"
                       fill="none"

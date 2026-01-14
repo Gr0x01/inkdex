@@ -32,7 +32,7 @@ export function FeaturedBadge({
   if (variant === 'icon-only') {
     return (
       <Star
-        className={`${sizeMap[size]} text-accent flex-shrink-0 fill-accent ${className}`}
+        className={`${sizeMap[size]} text-accent shrink-0 fill-accent ${className}`}
         aria-label="Featured artist"
       />
     )

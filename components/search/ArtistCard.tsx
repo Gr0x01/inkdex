@@ -209,7 +209,7 @@ export default function ArtistCard({
             {/* Image counter - Top-right (search mode only) */}
             {displayMode === 'search' && allImages.length > 1 && (
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 px-1.5 py-1 sm:px-2.5 sm:py-1.5 bg-ink/80 backdrop-blur-sm">
-                <span className="font-mono text-[10px] sm:text-xs font-medium text-paper tracking-[0.1em] uppercase">
+                <span className="font-mono text-[10px] sm:text-xs font-medium text-paper tracking-widest uppercase">
                   {currentIndex + 1}/{allImages.length}
                 </span>
               </div>
@@ -228,7 +228,7 @@ export default function ArtistCard({
                   width={32}
                   height={32}
                   loading="lazy"
-                  className="rounded-full object-cover flex-shrink-0"
+                  className="rounded-full object-cover shrink-0"
                   onError={() => setProfileImageError(true)}
                 />
               )}
@@ -245,7 +245,7 @@ export default function ArtistCard({
                 </p>
                 {hasMultipleLocations && (
                   <span
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 flex-shrink-0"
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 shrink-0"
                     title={`Works in ${locationCount} locations`}
                   >
                     +{locationCount - 1}
@@ -253,7 +253,7 @@ export default function ArtistCard({
                 )}
               </div>
               {displayMode === 'search' && (
-                <span className="font-mono text-xs font-semibold text-ink flex-shrink-0">
+                <span className="font-mono text-xs font-semibold text-ink shrink-0">
                   {matchPercentage}%
                 </span>
               )}
@@ -269,7 +269,7 @@ export default function ArtistCard({
               <div className="flex flex-col space-y-3 sm:space-y-5">
                 {/* Pro or Featured badge and percentage row */}
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     {is_pro ? (
                       <ProBadge variant="badge" size="md" />
                     ) : is_featured ? (
@@ -280,7 +280,7 @@ export default function ArtistCard({
                   {/* Match percentage - top right */}
                   {displayMode === 'search' && (
                     <div
-                      className="relative flex-shrink-0 pr-4"
+                      className="relative shrink-0 pr-4"
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
                     >
@@ -314,7 +314,7 @@ export default function ArtistCard({
                         width={32}
                         height={32}
                         loading="lazy"
-                        className="rounded-full object-cover flex-shrink-0"
+                        className="rounded-full object-cover shrink-0"
                         onError={() => setProfileImageError(true)}
                       />
                     )}
@@ -376,7 +376,7 @@ export default function ArtistCard({
                       width={32}
                       height={32}
                       loading="lazy"
-                      className="rounded-full object-cover flex-shrink-0"
+                      className="rounded-full object-cover shrink-0"
                       onError={() => setProfileImageError(true)}
                     />
                   )}

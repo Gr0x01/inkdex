@@ -285,7 +285,7 @@ export default function StyleLeaderboard() {
                   </div>
 
                   {/* Badges */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     {artist.is_pro && (
                       <Crown className="w-4 h-4 text-amber-500" />
                     )}

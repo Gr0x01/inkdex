@@ -7,7 +7,7 @@ export default function StylesPage() {
   return (
     <div className="space-y-8">
       {/* ML Training: Style Labeling */}
-      <div className="bg-gradient-to-r from-ink/5 to-transparent p-4 rounded-lg border border-ink/10">
+      <div className="bg-linear-to-r from-ink/5 to-transparent p-4 rounded-lg border border-ink/10">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-heading text-sm font-bold text-ink flex items-center gap-2">

@@ -70,7 +70,7 @@ export default function FindSimilarArtistsButton({
       <button
         onClick={handleSearch}
         disabled={loading}
-        className="block w-full py-3 px-5 bg-transparent text-ink text-center font-mono text-[0.6875rem] font-[600] tracking-[0.15em] uppercase transition-all duration-medium hover:bg-gray-100 border-2 border-ink disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+        className="block w-full py-3 px-5 bg-transparent text-ink text-center font-mono text-[0.6875rem] font-semibold tracking-[0.15em] uppercase transition-all duration-medium hover:bg-gray-100 border-2 border-ink disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
         {loading ? (
           <span className="inline-flex items-center gap-2">

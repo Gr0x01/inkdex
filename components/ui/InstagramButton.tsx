@@ -26,7 +26,7 @@ export default function InstagramButton({
   asAnchor = false,
 }: InstagramButtonProps) {
   const innerContent = (
-    <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+    <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
       {children}
     </span>
   )
@@ -46,7 +46,7 @@ export default function InstagramButton({
         padding: '2px',
       }}
     >
-      <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+      <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
         {href ? (
           asAnchor ? (
             <a href={href} className={innerClasses}>

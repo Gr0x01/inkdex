@@ -161,11 +161,11 @@ export default function Select({
   const dropdownContent = isOpen && (
     <div
       ref={dropdownRef}
-      className="absolute left-0 right-0 top-full mt-1 z-[100] bg-[var(--paper-white)] border-2 border-[var(--ink-black)] shadow-lg"
+      className="absolute left-0 right-0 top-full mt-1 z-100 bg-(--paper-white) border-2 border-(--ink-black) shadow-lg"
     >
           {/* Search Input */}
           {searchable && (
-            <div className="p-1.5 border-b border-[var(--gray-200)]">
+            <div className="p-1.5 border-b border-(--gray-200)">
               <input
                 ref={searchInputRef}
                 type="text"
@@ -175,7 +175,7 @@ export default function Select({
                   setHighlightedIndex(0);
                 }}
                 placeholder={searchPlaceholder}
-                className="w-full h-7 px-2 py-1 font-body text-[13px] leading-tight bg-white border border-[var(--gray-200)] focus:outline-none focus:border-[var(--gray-400)] placeholder:text-gray-400 placeholder:italic"
+                className="w-full h-7 px-2 py-1 font-body text-[13px] leading-tight bg-white border border-(--gray-200) focus:outline-none focus:border-(--gray-400) placeholder:text-gray-400 placeholder:italic"
               />
             </div>
           )}
@@ -183,7 +183,7 @@ export default function Select({
           {/* Options List */}
           <div ref={listRef} className="max-h-60 overflow-auto" role="listbox">
             {filteredOptions.length === 0 ? (
-              <div className="px-4 py-3 text-[var(--gray-500)] italic font-body text-sm">
+              <div className="px-4 py-3 text-(--gray-500) italic font-body text-sm">
                 No matches found
               </div>
             ) : (
@@ -199,10 +199,10 @@ export default function Select({
                   onMouseEnter={() => setHighlightedIndex(index)}
                   className={`w-full text-left font-body transition-colors duration-100 overflow-hidden text-ellipsis whitespace-nowrap ${optionClasses} ${
                     value === option.value
-                      ? 'bg-[var(--ink-black)] text-[var(--paper-white)]'
+                      ? 'bg-(--ink-black) text-(--paper-white)'
                       : highlightedIndex === index
-                      ? 'bg-[var(--gray-100)] text-[var(--text-primary)]'
-                      : 'text-[var(--text-primary)] hover:bg-[var(--gray-100)]'
+                      ? 'bg-(--gray-100) text-(--text-primary)'
+                      : 'text-(--text-primary) hover:bg-(--gray-100)'
                   }`}
                   role="option"
                   aria-selected={value === option.value}
@@ -233,17 +233,17 @@ export default function Select({
         }}
         className={`w-full border-2 text-left font-body transition-all duration-150 flex items-center justify-between gap-2 ${triggerClasses} ${
           disabled
-            ? 'bg-[var(--gray-100)] border-[var(--gray-300)] text-[var(--gray-500)] cursor-not-allowed'
-            : 'bg-[var(--paper-white)] border-[var(--border-subtle)] text-[var(--text-primary)] hover:border-[var(--gray-500)] focus:outline-none focus:border-[var(--ink-black)] focus:shadow-sm'
+            ? 'bg-(--gray-100) border-(--gray-300) text-(--gray-500) cursor-not-allowed'
+            : 'bg-(--paper-white) border-(--border-subtle) text-(--text-primary) hover:border-(--gray-500) focus:outline-none focus:border-(--ink-black) focus:shadow-sm'
         }`}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-disabled={disabled}
       >
-        <span className={selectedOption ? 'truncate' : 'text-[var(--text-tertiary)] italic truncate'}>
+        <span className={selectedOption ? 'truncate' : 'text-(--text-tertiary) italic truncate'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <span className="flex items-center gap-1 flex-shrink-0">
+        <span className="flex items-center gap-1 shrink-0">
           {/* Clear button - only show when clearable and has value */}
           {clearable && selectedOption && selectedOption.value && (
             <span
@@ -259,14 +259,14 @@ export default function Select({
                   onChange(null);
                 }
               }}
-              className="p-0.5 rounded hover:bg-[var(--gray-200)] transition-colors duration-100"
+              className="p-0.5 rounded hover:bg-(--gray-200) transition-colors duration-100"
               aria-label="Clear selection"
             >
-              <X className="w-3 h-3 text-[var(--gray-500)] hover:text-[var(--ink-black)]" />
+              <X className="w-3 h-3 text-(--gray-500) hover:text-(--ink-black)" />
             </span>
           )}
           <ChevronDown
-            className={`w-3 h-3 text-[var(--gray-500)] transition-transform duration-200 ${
+            className={`w-3 h-3 text-(--gray-500) transition-transform duration-200 ${
               isOpen ? 'rotate-180' : ''
             }`}
           />

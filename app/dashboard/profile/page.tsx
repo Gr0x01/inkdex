@@ -66,29 +66,29 @@ export default async function ProfilePage() {
 
   if (artistError || !artist) {
     return (
-      <div className="min-h-screen bg-[var(--paper-white)] relative">
+      <div className="min-h-screen bg-(--paper-white) relative">
         {/* Grain texture overlay */}
         <div className="grain-overlay absolute inset-0 pointer-events-none" />
 
         <div className="relative max-w-2xl mx-auto px-6 py-16 lg:py-24">
           <div className="text-center space-y-6">
             {/* Section Label */}
-            <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-[var(--gray-500)]">
+            <p className="font-mono text-[11px] font-medium tracking-[0.2em] uppercase text-(--gray-500)">
               Profile Error
             </p>
 
             {/* Error Title */}
-            <h1 className="font-display text-3xl sm:text-4xl text-[var(--error)]">
+            <h1 className="font-display text-3xl sm:text-4xl text-(--error)">
               No Claimed Profile Found
             </h1>
 
             {/* Error Message */}
-            <p className="font-body text-lg text-[var(--gray-700)] max-w-md mx-auto">
+            <p className="font-body text-lg text-(--gray-700) max-w-md mx-auto">
               You need to claim an artist profile before you can edit your profile settings.
             </p>
 
             {/* Decorative line */}
-            <div className="w-16 h-px bg-[var(--gray-300)] mx-auto" />
+            <div className="w-16 h-px bg-(--gray-300) mx-auto" />
 
             {/* Action Button */}
             <Link

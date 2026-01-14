@@ -44,7 +44,7 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
               {/* Note: Using img - images already optimized in storage */}
 
               {/* Dark Overlay with Artist Badge */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-3">
                   <div className="flex items-center gap-1.5">
                     <p className="font-mono text-xs font-medium text-white uppercase tracking-wider truncate flex-1">
@@ -52,7 +52,7 @@ export default function VisualTeaserStrip({ images }: VisualTeaserStripProps) {
                     </p>
                     {image.verified && (
                       <svg
-                        className="w-3 h-3 text-white flex-shrink-0"
+                        className="w-3 h-3 text-white shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                         aria-hidden="true"

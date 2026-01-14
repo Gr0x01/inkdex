@@ -44,7 +44,7 @@ export default function FeaturedArtistsByState({
         {/* View All Link */}
         <Link
           href={stateUrl}
-          className="font-mono text-xs text-gray-700 hover:text-ink transition-colors duration-300 uppercase tracking-[0.2em] group flex items-center gap-1.5 flex-shrink-0"
+          className="font-mono text-xs text-gray-700 hover:text-ink transition-colors duration-300 uppercase tracking-[0.2em] group flex items-center gap-1.5 shrink-0"
         >
           <span>View All</span>
           <svg

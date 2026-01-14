@@ -39,7 +39,7 @@ export default function CompetitorCard({
           </p>
         </div>
         <span
-          className="flex-shrink-0 mt-1 text-text-tertiary group-hover:text-ink-black group-hover:translate-x-1 transition-all"
+          className="shrink-0 mt-1 text-text-tertiary group-hover:text-ink-black group-hover:translate-x-1 transition-all"
           aria-hidden="true"
         >
           <svg

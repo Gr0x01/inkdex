@@ -67,7 +67,7 @@ export default function PainPointCard({
         {/* Solution section */}
         <div className="relative p-4 md:p-5 bg-ink-black text-paper-white">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-green-500 text-white">
+            <div className="shrink-0 w-8 h-8 flex items-center justify-center bg-green-500 text-white">
               <svg
                 className="w-4 h-4"
                 fill="none"

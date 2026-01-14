@@ -61,7 +61,7 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
           <div className="max-w-xl mx-auto w-full space-y-6">
             {/* Name */}
             <div>
-              <h1 className="font-display text-h1 md:text-display font-[700] text-text-primary mb-2">
+              <h1 className="font-display text-h1 md:text-display font-bold text-text-primary mb-2">
                 {artist.name}
               </h1>
 

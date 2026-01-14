@@ -340,7 +340,7 @@ export default async function TopicalGuidePage({
                         key={i}
                         className="flex items-start gap-3 font-body text-text-secondary"
                       >
-                        <span className="flex-shrink-0 w-1.5 h-1.5 mt-2 bg-ink-black" />
+                        <span className="shrink-0 w-1.5 h-1.5 mt-2 bg-ink-black" />
                         {takeaway}
                       </li>
                     ))}

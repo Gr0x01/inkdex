@@ -113,7 +113,7 @@ export default function TextSearch({ value, onChange, rows = 4, compact = false 
       {error && (
         <div className="flex items-center gap-2 font-body text-small text-status-error animate-fade-in" role="alert">
           <svg
-            className="w-4 h-4 flex-shrink-0"
+            className="w-4 h-4 shrink-0"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"
@@ -166,7 +166,7 @@ export default function TextSearch({ value, onChange, rows = 4, compact = false 
           role="status"
         >
           <svg
-            className="w-5 h-5 text-status-success flex-shrink-0 mt-0.5"
+            className="w-5 h-5 text-status-success shrink-0 mt-0.5"
             fill="currentColor"
             viewBox="0 0 20 20"
             aria-hidden="true"

@@ -19,8 +19,8 @@ export function StickyFilterBar({ children }: StickyFilterBarProps) {
   const getTopClass = () => {
     if (isNavbarHidden) return 'top-0';
     // On mobile, use compact height when scrolled
-    if (isCompact) return 'top-[var(--navbar-height-compact)] md:top-[var(--navbar-height-desktop)]';
-    return 'top-[var(--navbar-height)] md:top-[var(--navbar-height-desktop)]';
+    if (isCompact) return 'top-(--navbar-height-compact) md:top-(--navbar-height-desktop)';
+    return 'top-(--navbar-height) md:top-(--navbar-height-desktop)';
   };
 
   return (

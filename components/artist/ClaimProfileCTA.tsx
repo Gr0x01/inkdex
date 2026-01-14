@@ -10,7 +10,7 @@ export default function ClaimProfileCTA({
   return (
     <div className="relative bg-surface-low border border-border-subtle rounded-xl p-8 md:p-12 my-8 text-center">
       <div className="max-w-2xl mx-auto space-y-4">
-        <h3 className="font-display text-h3 font-[700] text-text-primary">
+        <h3 className="font-display text-h3 font-bold text-text-primary">
           Are you {artistName}?
         </h3>
 

@@ -216,7 +216,7 @@ function NavbarWithSearch() {
     <header className="bg-paper border-b-2 border-ink/10 sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-6 h-24">
-          <div className="font-display text-4xl font-[900] text-ink">INKDEX</div>
+          <div className="font-display text-4xl font-black text-ink">INKDEX</div>
 
           {/* Search trigger */}
           <button

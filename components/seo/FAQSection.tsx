@@ -117,7 +117,7 @@ const FAQItem = memo(function FAQItem({
           {question}
         </span>
         <span
-          className={`flex-shrink-0 mt-1 w-4 h-4 text-text-tertiary transition-transform duration-300 ease-[var(--ease-smooth)] ${
+          className={`shrink-0 mt-1 w-4 h-4 text-text-tertiary transition-transform duration-300 ease-(--ease-smooth) ${
             isOpen ? 'rotate-45' : ''
           }`}
           aria-hidden="true"
@@ -138,7 +138,7 @@ const FAQItem = memo(function FAQItem({
         id={contentId}
         role="region"
         aria-labelledby={headingId}
-        className={`grid transition-all duration-300 ease-[var(--ease-smooth)] ${
+        className={`grid transition-all duration-300 ease-(--ease-smooth) ${
           isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}
       >

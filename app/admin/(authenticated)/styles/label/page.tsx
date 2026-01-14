@@ -327,7 +327,7 @@ export default function StyleLabelingPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-[1fr,320px] gap-6">
+        <div className="grid grid-cols-[1fr_320px] gap-6">
           {/* Image */}
           <div className="space-y-3">
             <div className="relative aspect-square bg-gray-100 rounded overflow-hidden max-w-xl">

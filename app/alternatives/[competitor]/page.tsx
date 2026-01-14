@@ -292,7 +292,7 @@ export default async function CompetitorPage({
                 <ol className="space-y-6">
                   {content.howItWorks.steps.map((step) => (
                     <li key={step.number} className="flex gap-4">
-                      <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-ink-black text-paper-white font-mono text-sm font-bold">
+                      <span className="shrink-0 w-8 h-8 flex items-center justify-center bg-ink-black text-paper-white font-mono text-sm font-bold">
                         {step.number}
                       </span>
                       <div>

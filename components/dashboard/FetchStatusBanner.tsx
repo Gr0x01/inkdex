@@ -64,7 +64,7 @@ export function FetchStatusBanner() {
     return (
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
         <div className="flex items-center gap-3">
-          <Loader2 className="w-5 h-5 animate-spin text-blue-600 flex-shrink-0" />
+          <Loader2 className="w-5 h-5 animate-spin text-blue-600 shrink-0" />
           <div className="flex-1">
             <p className="font-medium text-blue-900">Instagram sync in progress</p>
             <p className="text-sm text-blue-700">
@@ -80,7 +80,7 @@ export function FetchStatusBanner() {
     return (
       <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
         <div className="flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
           <div className="flex-1">
             <p className="font-medium text-green-900">
               Instagram sync complete! Added {imageCount} {imageCount === 1 ? 'image' : 'images'} to your portfolio.
@@ -88,7 +88,7 @@ export function FetchStatusBanner() {
           </div>
           <button
             onClick={() => setDismissed(true)}
-            className="text-green-700 hover:text-green-900 flex-shrink-0"
+            className="text-green-700 hover:text-green-900 shrink-0"
             aria-label="Dismiss"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export function FetchStatusBanner() {
     return (
       <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded">
         <div className="flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
           <div className="flex-1">
             <p className="font-medium text-yellow-900">Instagram sync incomplete</p>
             <p className="text-sm text-yellow-700">
@@ -113,7 +113,7 @@ export function FetchStatusBanner() {
           </div>
           <button
             onClick={() => setDismissed(true)}
-            className="text-yellow-700 hover:text-yellow-900 flex-shrink-0"
+            className="text-yellow-700 hover:text-yellow-900 shrink-0"
             aria-label="Dismiss"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -26,7 +26,7 @@ export default function PortfolioStatusCard({
   return (
     <section className="border border-gray-200 bg-white p-6">
       <div className="flex items-start gap-3 mb-4">
-        <Image className="w-5 h-5 text-gray-700 flex-shrink-0 mt-0.5" />
+        <Image className="w-5 h-5 text-gray-700 shrink-0 mt-0.5" />
         <div className="flex-1">
           <h2 className="font-heading text-xl mb-1">Portfolio Status</h2>
           <p className="font-body text-sm text-gray-600">

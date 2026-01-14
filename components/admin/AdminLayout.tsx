@@ -32,7 +32,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
         {/* Logo */}
         <div className="px-3 py-2.5 border-b border-ink/10">
           <Link href="/admin" className="block">
-            <span className="font-display text-sm font-[900] text-ink tracking-tight">
+            <span className="font-display text-sm font-black text-ink tracking-tight">
               INKDEX
             </span>
             <span className="font-mono text-[9px] text-gray-400 uppercase tracking-wider block">
@@ -74,7 +74,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
         {/* User section */}
         <div className="px-2 py-2 border-t border-ink/10">
           <div className="flex items-center gap-1.5">
-            <div className="w-5 h-5 bg-ink text-paper flex items-center justify-center font-mono text-[10px] font-medium flex-shrink-0">
+            <div className="w-5 h-5 bg-ink text-paper flex items-center justify-center font-mono text-[10px] font-medium shrink-0">
               {userEmail.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">

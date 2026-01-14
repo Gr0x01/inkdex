@@ -205,7 +205,7 @@ export default async function CityPage({
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="font-display text-display font-[700] text-text-primary mb-3">
+            <h1 className="font-display text-display font-bold text-text-primary mb-3">
               {cityName}, {regionCode} Tattoo Artists
             </h1>
             <p className="font-body text-body-large text-text-secondary">
@@ -271,7 +271,7 @@ export default async function CityPage({
           {styleSeeds.length > 0 && (
             <div className="mt-16 pt-12 border-t border-neutral-800">
               <div className="mb-8">
-                <h2 className="font-display text-heading-2 font-[700] text-text-primary mb-3">
+                <h2 className="font-display text-heading-2 font-bold text-text-primary mb-3">
                   Browse by Style in {cityName}
                 </h2>
                 <p className="font-body text-body text-text-secondary">
@@ -286,7 +286,7 @@ export default async function CityPage({
                     className="group block relative"
                   >
                     {/* Image Container */}
-                    <div className="aspect-[3/4] relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 mb-3 group-hover:border-accent-primary transition-all duration-300">
+                    <div className="aspect-3/4 relative overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900 mb-3 group-hover:border-accent-primary transition-all duration-300">
                       <Image
                         src={style.seed_image_url}
                         alt={`Browse ${style.display_name} tattoo artists in ${cityName}, ${regionCode}`}
@@ -297,7 +297,7 @@ export default async function CityPage({
                         quality={90}
                       />
                       {/* Subtle vignette */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
 
                       {/* Hover state accent bar */}
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-accent-primary transform translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
@@ -305,7 +305,7 @@ export default async function CityPage({
 
                     {/* Text Content */}
                     <div className="space-y-1">
-                      <h3 className="font-display text-body-large font-[700] text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
+                      <h3 className="font-display text-body-large font-bold text-text-primary group-hover:text-accent-primary transition-colors leading-tight">
                         {style.display_name}
                       </h3>
                       <p className="font-body text-small text-text-secondary line-clamp-2 leading-relaxed">

@@ -1,11 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
-  content: [
-    './pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  // content is auto-detected in Tailwind v4
   theme: {
     extend: {
       // Color System - Inkdex
@@ -161,9 +157,7 @@ const config: Config = {
     },
   },
   plugins: [],
-  future: {
-    hoverOnlyWhenSupported: true,
-  },
+  // hoverOnlyWhenSupported is now default in Tailwind v4
 }
 
 export default config

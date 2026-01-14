@@ -66,7 +66,7 @@ export default function OutreachFunnel({ funnel }: OutreachFunnelProps) {
               </div>
 
               {index < steps.length - 1 && (
-                <ArrowRight className="w-3 h-3 text-gray-400 mx-0.5 flex-shrink-0" />
+                <ArrowRight className="w-3 h-3 text-gray-400 mx-0.5 shrink-0" />
               )}
             </div>
           );

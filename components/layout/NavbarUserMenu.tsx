@@ -147,7 +147,7 @@ export function NavbarUserMenu({ user, isPro = false, artistSlug = null }: Navba
             <span className="font-body text-sm text-ink/70 truncate" style={{ textTransform: 'none' }}>
               @{user.instagram_username || 'user'}
             </span>
-            {isPro && <ProBadge size="sm" variant="icon-only" className="flex-shrink-0" />}
+            {isPro && <ProBadge size="sm" variant="icon-only" className="shrink-0" />}
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export function NavbarUserMenu({ user, isPro = false, artistSlug = null }: Navba
         <div className="pb-2">
           <Link
             href="/dashboard"
-            className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
+            className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/4 transition-colors duration-150"
             role="menuitem"
             onClick={() => setIsOpen(false)}
           >
@@ -164,7 +164,7 @@ export function NavbarUserMenu({ user, isPro = false, artistSlug = null }: Navba
           {artistSlug && (
             <Link
               href={`/artist/${artistSlug}`}
-              className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/[0.04] transition-colors duration-150"
+              className="block px-4 py-2 font-body text-[15px] text-ink/80 hover:text-ink hover:bg-ink/4 transition-colors duration-150"
               role="menuitem"
               onClick={() => setIsOpen(false)}
             >

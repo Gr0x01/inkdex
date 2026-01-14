@@ -124,7 +124,7 @@ function PortfolioImportContent() {
   // Loading state
   if (step === 'fetching') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-700 border-t-white" />
@@ -138,7 +138,7 @@ function PortfolioImportContent() {
   // Error state
   if (step === 'error') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="rounded-lg border border-red-900/20 bg-red-950/10 p-6">
@@ -166,7 +166,7 @@ function PortfolioImportContent() {
   // Importing state
   if (step === 'importing') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+      <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
         <div className="mx-auto max-w-7xl px-6 py-16">
           <div className="flex flex-col items-center justify-center space-y-6">
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-700 border-t-white" />
@@ -181,7 +181,7 @@ function PortfolioImportContent() {
 
   // Selection state
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+    <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
       <div className="mx-auto max-w-7xl px-6 py-16">
         {/* Header */}
         <div className="mb-12">
@@ -308,7 +308,7 @@ function PortfolioImportContent() {
 
 function ImportLoadingFallback() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-900 to-black text-white">
+    <div className="min-h-screen bg-linear-to-b from-neutral-900 to-black text-white">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="flex flex-col items-center justify-center space-y-6">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-neutral-700 border-t-white" />

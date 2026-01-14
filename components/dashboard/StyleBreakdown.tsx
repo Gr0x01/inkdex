@@ -131,7 +131,7 @@ export default function StyleBreakdown({ artistId }: StyleBreakdownProps) {
       <div className="px-4 sm:px-6 pb-4 sm:pb-6">
         <div className="flex flex-col sm:flex-row items-center gap-6">
           {/* Donut Chart */}
-          <div className="w-40 h-40 flex-shrink-0">
+          <div className="w-40 h-40 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -173,7 +173,7 @@ export default function StyleBreakdown({ artistId }: StyleBreakdownProps) {
               {chartData.map((style, index) => (
                 <div key={style.name} className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-sm flex-shrink-0"
+                    className="w-3 h-3 rounded-sm shrink-0"
                     style={{ backgroundColor: COLORS[index % COLORS.length] }}
                   />
                   <span className="font-body text-sm truncate">

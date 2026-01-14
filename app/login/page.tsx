@@ -37,7 +37,7 @@ export default function LoginPage() {
                   padding: '2px'
                 }}
               >
-                <div className="relative bg-gradient-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
+                <div className="relative bg-linear-to-r from-[#f09433] via-[#dc2743] to-[#bc1888] group-hover:bg-none group-hover:bg-paper transition-all duration-200">
                   {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API route requires full page redirect for OAuth */}
                   <a
                     href="/api/auth/instagram?redirect=/dashboard"
@@ -45,7 +45,7 @@ export default function LoginPage() {
                              font-mono text-xs tracking-[0.15em] uppercase font-semibold
                              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500"
                   >
-                    <span className="group-hover:bg-gradient-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
+                    <span className="group-hover:bg-linear-to-r group-hover:from-[#f09433] group-hover:via-[#dc2743] group-hover:to-[#bc1888] group-hover:bg-clip-text group-hover:text-transparent transition-all duration-200">
                       Connect with Instagram →
                     </span>
                   </a>
@@ -59,13 +59,13 @@ export default function LoginPage() {
                 </p>
                 <ul className="space-y-2">
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
+                    <div className="w-1 h-1 bg-ink mt-[0.5em] shrink-0"></div>
                     <p className="font-body text-gray-600 text-sm leading-relaxed">
                       For <strong className="text-ink">tattoo artists</strong> only
                     </p>
                   </li>
                   <li className="flex items-start gap-2">
-                    <div className="w-1 h-1 bg-ink mt-[0.5em] flex-shrink-0"></div>
+                    <div className="w-1 h-1 bg-ink mt-[0.5em] shrink-0"></div>
                     <p className="font-body text-gray-600 text-sm leading-relaxed">
                       Instagram <strong className="text-ink">Business</strong> or <strong className="text-ink">Creator</strong> account
                     </p>

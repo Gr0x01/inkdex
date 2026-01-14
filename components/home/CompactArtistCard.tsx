@@ -23,7 +23,7 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
   return (
     <Link
       href={artistUrl}
-      className="group block relative flex-shrink-0 w-[180px] md:w-[200px] lg:w-[220px] snap-start"
+      className="group block relative shrink-0 w-[180px] md:w-[200px] lg:w-[220px] snap-start"
     >
       <div className="relative overflow-hidden rounded-lg bg-gray-900 border border-gray-300 hover:border-gray-500 transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/20">
         {/* Hero Image - Portrait Aspect Ratio */}
@@ -31,12 +31,12 @@ export default function CompactArtistCard({ artist }: CompactArtistCardProps) {
         <img
           src={heroImage.url}
           alt={`${artist.name}'s work`}
-          className="w-full aspect-[2/3] object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full aspect-2/3 object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
 
         {/* Dark Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
         {/* Artist Info Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3">

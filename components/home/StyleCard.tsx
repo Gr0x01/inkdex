@@ -55,7 +55,7 @@ export default function StyleCard({ styleName: _styleName, displayName, imageUrl
     <button
       onClick={handleClick}
       disabled={isLoading}
-      className="group relative block aspect-square sm:aspect-[4/5] md:aspect-[3/4] overflow-hidden bg-gray-900 w-full text-left"
+      className="group relative block aspect-square sm:aspect-4/5 md:aspect-3/4 overflow-hidden bg-gray-900 w-full text-left"
     >
       {/* Background Image */}
       <Image
@@ -68,7 +68,7 @@ export default function StyleCard({ styleName: _styleName, displayName, imageUrl
       />
 
       {/* Overlay gradient */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
 
       {/* Loading overlay */}
       {isLoading && (

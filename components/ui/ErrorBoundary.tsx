@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           role="alert"
         >
           <svg
-            className="w-3.5 h-3.5 flex-shrink-0"
+            className="w-3.5 h-3.5 shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

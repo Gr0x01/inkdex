@@ -196,7 +196,7 @@ export default function AdminLocationSelect({
         <span className={value ? 'truncate' : 'text-gray-400 truncate'}>
           {displayValue}
         </span>
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
           {value && (
             <button
               type="button"
@@ -295,7 +295,7 @@ export default function AdminLocationSelect({
                     aria-selected={value === locValue}
                   >
                     <span className="truncate">{displayLabel}</span>
-                    <span className={`font-mono text-[10px] flex-shrink-0 ${
+                    <span className={`font-mono text-[10px] shrink-0 ${
                       value === locValue ? 'opacity-60' : 'text-gray-400'
                     }`}>
                       {loc.count}

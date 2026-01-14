@@ -198,7 +198,7 @@ export default async function RegionPage({
                   </div>
 
                   <svg
-                    className="w-5 h-5 text-text-tertiary group-hover:text-ink-black group-hover:translate-x-1 transition-all flex-shrink-0"
+                    className="w-5 h-5 text-text-tertiary group-hover:text-ink-black group-hover:translate-x-1 transition-all shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

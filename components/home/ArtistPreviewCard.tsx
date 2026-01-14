@@ -46,7 +46,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
       </div>
 
       {/* Glass Morphism Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-gradient-to-t from-black/90 via-black/70 to-transparent border-t border-gray-800/50 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
+      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 bg-linear-to-t from-black/90 via-black/70 to-transparent border-t border-gray-800/50 translate-y-0 md:translate-y-full md:group-hover:translate-y-0 transition-transform duration-300">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             {/* Artist Name */}
@@ -64,7 +64,7 @@ export default function ArtistPreviewCard({ artist }: ArtistPreviewCardProps) {
 
           {/* Arrow Icon */}
           <svg
-            className="w-4 h-4 text-gray-400 group-hover:text-white flex-shrink-0 group-hover:translate-x-1 transition-all duration-300"
+            className="w-4 h-4 text-gray-400 group-hover:text-white shrink-0 group-hover:translate-x-1 transition-all duration-300"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

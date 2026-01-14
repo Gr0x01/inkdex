@@ -4,12 +4,12 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-bg-primary relative noise-overlay flex items-center justify-center px-4">
       <div className="max-w-md mx-auto text-center space-y-6">
-        <h1 className="font-display text-display font-[700] text-text-primary">
+        <h1 className="font-display text-display font-bold text-text-primary">
           404
         </h1>
 
         <div className="space-y-2">
-          <h2 className="font-display text-h2 font-[700] text-text-primary">
+          <h2 className="font-display text-h2 font-bold text-text-primary">
             Artist Not Found
           </h2>
           <p className="font-body text-body text-text-secondary">

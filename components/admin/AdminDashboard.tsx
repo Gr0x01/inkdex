@@ -282,7 +282,7 @@ export default function AdminDashboard() {
                   <span className="text-ink text-[13px] truncate block">{claim.name}</span>
                   <span className="text-gray-400 font-mono text-[11px]">@{claim.instagramHandle}</span>
                 </div>
-                <span className="text-gray-400 text-[11px] font-mono flex-shrink-0">
+                <span className="text-gray-400 text-[11px] font-mono shrink-0">
                   {new Date(claim.claimedAt).toLocaleDateString()}
                 </span>
               </div>

@@ -2,7 +2,7 @@ export default function SearchLoading() {
   return (
     <main className="min-h-screen bg-light">
       {/* Compact filter bar skeleton - positioned below sticky navbar */}
-      <div className="sticky top-[var(--navbar-height)] md:top-[var(--navbar-height-desktop)] z-40 bg-[#F8F7F5] border-b border-ink/10">
+      <div className="sticky top-(--navbar-height) md:top-(--navbar-height-desktop) z-40 bg-[#F8F7F5] border-b border-ink/10">
         <div className="w-full px-3 md:px-4 md:container md:mx-auto md:px-6">
           <div className="flex items-center gap-1.5 md:gap-4 h-12 md:h-14">
             <div className="h-4 w-12 bg-ink/10 rounded animate-pulse" />

@@ -43,7 +43,7 @@ export default function DashboardSidebar() {
   }
 
   return (
-    <nav className="w-full lg:w-64 flex-shrink-0">
+    <nav className="w-full lg:w-64 shrink-0">
       {/* Mobile: Horizontal tabs */}
       <div className="lg:hidden border-b border-gray-200 bg-white mb-6">
         <div className="flex overflow-x-auto">

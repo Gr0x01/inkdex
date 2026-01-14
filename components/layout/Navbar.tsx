@@ -111,13 +111,13 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
       data-navbar-hidden={isNavbarHidden}
     >
       {/* Top decorative line */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
+      <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
 
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between gap-3 md:gap-6 relative h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 group relative z-10 flex-shrink-0">
-            <div className="font-display font-[900] text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-300 text-2xl md:text-3xl">
+          <Link href="/" className="flex items-center gap-1.5 group relative z-10 shrink-0">
+            <div className="font-display font-black text-ink tracking-tight leading-none group-hover:tracking-wide transition-all duration-300 text-2xl md:text-3xl">
               INKDEX
             </div>
             <span className="font-mono font-bold text-ink uppercase tracking-[0.15em] border border-ink leading-none text-[0.4rem] px-1 py-0.5 md:text-[0.5rem] md:px-1.5">
@@ -131,7 +131,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
           </div>
 
           {/* Desktop Navigation - Editorial Style */}
-          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 flex-shrink-0" aria-label="Main navigation">
+          <nav className="hidden lg:flex items-center gap-4 xl:gap-6 shrink-0" aria-label="Main navigation">
             {/* Browse Dropdown - Editorial */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -165,7 +165,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
                 role="menu"
               >
                 {/* Decorative top border */}
-                <div className="absolute top-0 left-4 right-4 h-[2px] bg-gradient-to-r from-transparent via-ink/30 to-transparent" aria-hidden="true" />
+                <div className="absolute top-0 left-4 right-4 h-[2px] bg-linear-to-r from-transparent via-ink/30 to-transparent" aria-hidden="true" />
 
                 <div className="p-1">
                   {/* Flat Alphabetical City List */}
@@ -224,7 +224,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
       </div>
 
       {/* Bottom decorative line */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-ink/10 to-transparent" aria-hidden="true" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-ink/10 to-transparent" aria-hidden="true" />
 
       {/* Mobile Menu - Editorial */}
       <nav

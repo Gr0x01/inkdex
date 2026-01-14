@@ -124,7 +124,7 @@ export function CookieBanner() {
             </div>
 
             {/* Buttons */}
-            <div className="flex flex-col gap-3 sm:flex-row md:flex-shrink-0">
+            <div className="flex flex-col gap-3 sm:flex-row md:shrink-0">
               <button
                 type="button"
                 onClick={handleCustomize}

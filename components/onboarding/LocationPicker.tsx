@@ -142,12 +142,12 @@ export default function LocationPicker({
     return (
       <div className="space-y-3">
         <label className="block font-mono text-xs tracking-widest uppercase text-gray-700 mb-2">
-          Where are you based? <span className="text-[var(--error)]">*</span>
+          Where are you based? <span className="text-(--error)">*</span>
         </label>
 
         {/* Country Selector */}
         <div>
-          <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+          <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
             Country
           </label>
           <Select
@@ -175,9 +175,9 @@ export default function LocationPicker({
                   name="locationType"
                   checked={locationType === 'city'}
                   onChange={() => setLocationType('city')}
-                  className="w-3.5 h-3.5 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
+                  className="w-3.5 h-3.5 text-(--ink-black) border-2 border-(--gray-400) focus:ring-(--ink-black)"
                 />
-                <span className="font-body text-[var(--text-primary)]">Specific city</span>
+                <span className="font-body text-(--text-primary)">Specific city</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -185,16 +185,16 @@ export default function LocationPicker({
                   name="locationType"
                   checked={locationType === 'region'}
                   onChange={() => setLocationType('region')}
-                  className="w-3.5 h-3.5 text-[var(--ink-black)] border-2 border-[var(--gray-400)] focus:ring-[var(--ink-black)]"
+                  className="w-3.5 h-3.5 text-(--ink-black) border-2 border-(--gray-400) focus:ring-(--ink-black)"
                 />
-                <span className="font-body text-[var(--text-primary)]">State-wide</span>
+                <span className="font-body text-(--text-primary)">State-wide</span>
               </label>
             </div>
 
             {locationType === 'city' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                     City
                   </label>
                   <CitySelect
@@ -206,7 +206,7 @@ export default function LocationPicker({
                   />
                 </div>
                 <div>
-                  <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+                  <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                     State
                   </label>
                   <Select
@@ -222,7 +222,7 @@ export default function LocationPicker({
               </div>
             ) : (
               <div>
-                <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+                <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                   State
                 </label>
                 <Select
@@ -233,7 +233,7 @@ export default function LocationPicker({
                   searchable
                   searchPlaceholder="Search states..."
                 />
-                <p className="mt-1 font-body text-sm text-[var(--gray-500)] italic">
+                <p className="mt-1 font-body text-sm text-(--gray-500) italic">
                   You'll appear in searches for this entire state
                 </p>
               </div>
@@ -245,8 +245,8 @@ export default function LocationPicker({
         {selectedCountry !== 'US' && (
           <div className="space-y-3">
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
-                City <span className="text-[var(--error)]">*</span>
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
+                City <span className="text-(--error)">*</span>
               </label>
               <input
                 type="text"
@@ -257,9 +257,9 @@ export default function LocationPicker({
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                 Region / Province
-                <span className="ml-2 font-normal text-[var(--gray-400)] normal-case tracking-normal">(Optional)</span>
+                <span className="ml-2 font-normal text-(--gray-400) normal-case tracking-normal">(Optional)</span>
               </label>
               <input
                 type="text"
@@ -273,7 +273,7 @@ export default function LocationPicker({
         )}
 
         {error && (
-          <p className="text-[var(--error)] text-sm font-body">{error}</p>
+          <p className="text-(--error) text-sm font-body">{error}</p>
         )}
       </div>
     );
@@ -283,7 +283,7 @@ export default function LocationPicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-[var(--gray-700)]">
+        <label className="block font-mono text-[11px] font-medium tracking-[0.15em] uppercase text-(--gray-700)">
           <Globe className="inline w-4 h-4 mr-1 -mt-0.5" />
           Locations ({locations.length}/{maxLocations})
         </label>
@@ -291,7 +291,7 @@ export default function LocationPicker({
           <button
             type="button"
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[var(--ink-black)] hover:text-[var(--gray-700)] transition-colors"
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-(--ink-black) hover:text-(--gray-700) transition-colors"
           >
             <Plus className="w-3 h-3" /> Add location
           </button>
@@ -306,17 +306,17 @@ export default function LocationPicker({
               key={index}
               className={`flex items-center justify-between p-3 border-2 ${
                 loc.isPrimary
-                  ? 'border-[var(--ink-black)] bg-[var(--gray-50)]'
-                  : 'border-[var(--border-subtle)]'
+                  ? 'border-(--ink-black) bg-(--gray-50)'
+                  : 'border-(--border-subtle)'
               }`}
             >
               <div className="flex items-center gap-3">
-                <MapPin className={`w-4 h-4 ${loc.isPrimary ? 'text-[var(--ink-black)]' : 'text-[var(--gray-400)]'}`} />
-                <span className="font-body text-[var(--text-primary)]">
+                <MapPin className={`w-4 h-4 ${loc.isPrimary ? 'text-(--ink-black)' : 'text-(--gray-400)'}`} />
+                <span className="font-body text-(--text-primary)">
                   {formatLocation(loc)}
                 </span>
                 {loc.isPrimary && (
-                  <span className="font-mono text-[9px] uppercase tracking-wider bg-[var(--ink-black)] text-[var(--paper-white)] px-2 py-0.5">
+                  <span className="font-mono text-[9px] uppercase tracking-wider bg-(--ink-black) text-(--paper-white) px-2 py-0.5">
                     Primary
                   </span>
                 )}
@@ -326,7 +326,7 @@ export default function LocationPicker({
                   <button
                     type="button"
                     onClick={() => handleSetPrimary(index)}
-                    className="font-mono text-[9px] uppercase tracking-wider text-[var(--gray-500)] hover:text-[var(--ink-black)] transition-colors"
+                    className="font-mono text-[9px] uppercase tracking-wider text-(--gray-500) hover:text-(--ink-black) transition-colors"
                   >
                     Set primary
                   </button>
@@ -335,7 +335,7 @@ export default function LocationPicker({
                   <button
                     type="button"
                     onClick={() => handleRemoveLocation(index)}
-                    className="p-1 text-[var(--gray-400)] hover:text-[var(--error)] transition-colors"
+                    className="p-1 text-(--gray-400) hover:text-(--error) transition-colors"
                     aria-label="Remove location"
                   >
                     <X className="w-4 h-4" />
@@ -349,22 +349,22 @@ export default function LocationPicker({
 
       {/* Add new location form */}
       {isAdding && (
-        <div className="border-2 border-dashed border-[var(--gray-300)] p-4 space-y-3">
+        <div className="border-2 border-dashed border-(--gray-300) p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--gray-500)]">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-(--gray-500)">
               Add new location
             </span>
             <button
               type="button"
               onClick={() => setIsAdding(false)}
-              className="text-[var(--gray-400)] hover:text-[var(--gray-600)]"
+              className="text-(--gray-400) hover:text-(--gray-600)"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           <div>
-            <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+            <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
               Country
             </label>
             <Select
@@ -382,7 +382,7 @@ export default function LocationPicker({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                 City
               </label>
               <input
@@ -394,7 +394,7 @@ export default function LocationPicker({
               />
             </div>
             <div>
-              <label className="block font-mono text-[10px] tracking-wider uppercase text-[var(--gray-500)] mb-2">
+              <label className="block font-mono text-[10px] tracking-wider uppercase text-(--gray-500) mb-2">
                 {newCountry === 'US' ? 'State' : 'Region'}
               </label>
               {newCountry === 'US' ? (
@@ -422,7 +422,7 @@ export default function LocationPicker({
             type="button"
             onClick={handleAddLocation}
             disabled={!newCity.trim() && newCountry !== 'US'}
-            className="w-full py-2 sm:py-2.5 bg-[var(--ink-black)] text-[var(--paper-white)] font-mono text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-[var(--gray-800)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full py-2 sm:py-2.5 bg-(--ink-black) text-(--paper-white) font-mono text-[10px] sm:text-[11px] uppercase tracking-wider hover:bg-(--gray-800) disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             Add Location
           </button>
@@ -434,17 +434,17 @@ export default function LocationPicker({
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="w-full p-6 border-2 border-dashed border-[var(--gray-300)] text-center hover:border-[var(--gray-400)] transition-colors"
+          className="w-full p-6 border-2 border-dashed border-(--gray-300) text-center hover:border-(--gray-400) transition-colors"
         >
-          <MapPin className="w-6 h-6 mx-auto mb-2 text-[var(--gray-400)]" />
-          <span className="font-mono text-[11px] uppercase tracking-wider text-[var(--gray-500)]">
+          <MapPin className="w-6 h-6 mx-auto mb-2 text-(--gray-400)" />
+          <span className="font-mono text-[11px] uppercase tracking-wider text-(--gray-500)">
             Add your first location
           </span>
         </button>
       )}
 
       {error && (
-        <p className="text-[var(--error)] text-sm font-body">{error}</p>
+        <p className="text-(--error) text-sm font-body">{error}</p>
       )}
     </div>
   );
