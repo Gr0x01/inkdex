@@ -76,6 +76,8 @@ interface ImageMetadata {
   caption: string;
   timestamp: string;
   likes: number;
+  is_tattoo?: boolean | null;
+  tattoo_confidence?: number | null;
 }
 
 /**
@@ -306,6 +308,8 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
             likes_count: meta.likes,
             status: 'pending',  // Images start as pending until embeddings are generated
             is_color: isColor,  // Color classification
+            is_tattoo: meta.is_tattoo ?? null,  // Tattoo classification
+            tattoo_confidence: meta.tattoo_confidence ?? null,
           });
 
         if (dbError) {

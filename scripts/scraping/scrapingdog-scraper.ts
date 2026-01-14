@@ -426,39 +426,52 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFil
 
     console.log(`    Downloaded ${downloadedImages.length}/${profile.posts.length} images`);
 
-    // Filter images with GPT (unless --no-filter flag)
-    let imagesToSave = downloadedImages;
+    // Classify images with GPT (unless --no-filter flag)
+    // All images are saved, but tagged with is_tattoo + confidence for filtering in queries
+    const classificationMap = new Map<string, { isTattoo: boolean; confidence: number }>();
+
     if (!skipFilter && downloadedImages.length > 0) {
       const filterResult = await filterTattooImages(
         downloadedImages.map((img) => ({ id: img.id, buffer: img.buffer })),
         6 // concurrency for GPT calls
       );
 
-      // Keep only tattoo images
-      const tattooIds = new Set(
-        filterResult.results.filter((r) => r.isTattoo).map((r) => r.id)
-      );
-      imagesToSave = downloadedImages.filter((img) => tattooIds.has(img.id));
+      // Store classification results for all images
+      for (const result of filterResult.results) {
+        classificationMap.set(result.id, {
+          isTattoo: result.isTattoo,
+          confidence: result.confidence,
+        });
+      }
+
+      const tattooCount = filterResult.results.filter(r => r.isTattoo).length;
+      console.log(`    Classified: ${tattooCount} tattoos, ${filterResult.results.length - tattooCount} non-tattoos`);
     }
 
-    // Save filtered images to disk
+    // Save ALL images to disk (tagged, not filtered)
     const metadata: Array<{
       post_id: string;
       post_url: string;
       caption: string;
       timestamp: string;
       likes: number;
+      is_tattoo: boolean | null;
+      tattoo_confidence: number | null;
     }> = [];
 
-    for (const img of imagesToSave) {
+    for (const img of downloadedImages) {
       const imagePath = join(artistDir, `${img.id}.jpg`);
       await writeFile(imagePath, img.buffer);
+
+      const classification = classificationMap.get(img.id);
       metadata.push({
         post_id: img.post.shortcode,
         post_url: img.post.url,
         caption: img.post.caption || '',
         timestamp: img.post.timestamp || new Date().toISOString(),
         likes: img.post.likesCount || 0,
+        is_tattoo: classification?.isTattoo ?? null,
+        tattoo_confidence: classification?.confidence ?? null,
       });
     }
 
@@ -470,12 +483,7 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFil
     // Create .complete marker
     await writeFile(join(artistDir, '.complete'), '');
 
-    const dropped = downloadedImages.length - imagesToSave.length;
-    if (dropped > 0) {
-      console.log(`    Saved ${imagesToSave.length} tattoos (dropped ${dropped} non-tattoo)`);
-    }
-
-    return { artistId: artist.id, success: true, imagesDownloaded: imagesToSave.length };
+    return { artistId: artist.id, success: true, imagesDownloaded: downloadedImages.length };
   } catch (error) {
     // Clean up on failure
     if (existsSync(artistDir)) {

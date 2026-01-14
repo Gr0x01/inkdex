@@ -283,6 +283,19 @@ export async function filterTattooImages(
  * Filter images using legacy yes/no classification (for backwards compatibility)
  * Used by scraping pipeline when confidence scores not needed
  */
+/**
+ * Classify a single image buffer and return tattoo status + confidence
+ * Used by image processing pipeline to tag incoming images
+ */
+export async function classifyImage(buffer: Buffer): Promise<{ isTattoo: boolean; confidence: number }> {
+  const base64 = await bufferToBase64(buffer);
+  const confidence = await classifySingleImage(base64, 0, 1);
+  return {
+    isTattoo: confidence >= TATTOO_CONFIDENCE_THRESHOLD,
+    confidence,
+  };
+}
+
 export async function filterTattooImagesLegacy(
   images: Array<{ id: string; buffer: Buffer }>,
   concurrency = 6

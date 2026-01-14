@@ -13,6 +13,7 @@ import { uploadImage, generateImagePaths, generateProfileImagePaths, deleteImage
 import { analyzeImageColor } from '../search/color-analyzer';
 import { generateImageEmbedding } from '../embeddings/hybrid-client';
 import { predictStyles } from '../styles/predictor';
+import { classifyImage } from '../instagram/tattoo-filter';
 
 const TEMP_DIR = '/tmp/instagram';
 
@@ -284,6 +285,19 @@ export async function processArtistImages(
           // Non-fatal
         }
 
+        // Classify as tattoo (async, non-blocking for insert)
+        let isTattoo: boolean | null = null;
+        let tattooConfidence: number | null = null;
+        try {
+          const tattooResult = await classifyImage(buffers.thumb320);
+          isTattoo = tattooResult.isTattoo;
+          tattooConfidence = tattooResult.confidence;
+          console.log(`[ProcessArtist] Tattoo classification for ${postId}: ${isTattoo ? '✓' : '✗'} (${Math.round(tattooConfidence * 100)}%)`);
+        } catch (err) {
+          console.warn(`[ProcessArtist] Tattoo classification failed for ${postId} (non-fatal):`, err);
+          // Non-fatal - image will be tagged later or manually reviewed
+        }
+
         // Generate CLIP embedding inline (required - skip image if fails)
         let embedding: number[];
         try {
@@ -330,6 +344,8 @@ export async function processArtistImages(
             likes_count: meta.likes,
             status: 'active',
             is_color: isColor,
+            is_tattoo: isTattoo,
+            tattoo_confidence: tattooConfidence,
             embedding: `[${embedding.join(',')}]`,
           })
           .select('id')
