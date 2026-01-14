@@ -15,12 +15,13 @@
  *
  * Session Replay (consent-gated):
  * - Only enabled if user has analytics consent
+ * - Dynamically toggled via startSessionRecording/stopSessionRecording
  * - Masks all text inputs for privacy
  * - Records console logs for debugging
  */
 
 import Script from 'next/script'
-import { useSyncExternalStore } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import {
   hasAnalyticsConsent,
   CONSENT_CHANGE_EVENT,
@@ -74,8 +75,21 @@ function isValidPostHogKey(key: string | undefined): key is string {
 
 
 export function PostHogAnalytics() {
-  // Track consent for session replay only
+  // Track consent for session replay
   const hasReplayConsent = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+
+  // Dynamically toggle session recording when consent changes
+  // This runs AFTER PostHog is initialized, fixing the SSR race condition
+  useEffect(() => {
+    if (!IS_PRODUCTION) return
+    if (typeof window === 'undefined' || !window.posthog) return
+
+    if (hasReplayConsent) {
+      window.posthog.startSessionRecording()
+    } else {
+      window.posthog.stopSessionRecording()
+    }
+  }, [hasReplayConsent])
 
   // Skip in development - no localhost tracking
   if (!IS_PRODUCTION) {
@@ -92,7 +106,8 @@ export function PostHogAnalytics() {
     return null
   }
 
-  // Cookieless analytics - always load, session replay based on consent
+  // Cookieless analytics - always load
+  // Session replay starts disabled, then enabled dynamically via useEffect above
   const initScript = `
     !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId startSessionRecording stopSessionRecording".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
     posthog.init('${POSTHOG_KEY}', {
@@ -102,7 +117,7 @@ export function PostHogAnalytics() {
       capture_pageleave: true,
       persistence: 'localStorage',
       autocapture: true,
-      disable_session_recording: ${!hasReplayConsent},
+      disable_session_recording: true,
       session_recording: {
         maskAllInputs: true,
         maskTextSelector: '.ph-mask, [data-ph-mask]',
