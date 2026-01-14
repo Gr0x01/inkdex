@@ -232,6 +232,26 @@ export function generateProfileImagePaths(artistId: string) {
 }
 
 /**
+ * Download image from storage as buffer
+ */
+export async function downloadImage(path: string): Promise<{ success: boolean; buffer?: Buffer; error?: string }> {
+  try {
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .download(path);
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    const arrayBuffer = await data.arrayBuffer();
+    return { success: true, buffer: Buffer.from(arrayBuffer) };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Get storage stats (requires admin access)
  */
 export async function getStorageStats(): Promise<{

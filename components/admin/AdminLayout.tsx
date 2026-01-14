@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, LogOut, LayoutDashboard, Workflow, Palette, Megaphone } from 'lucide-react';
+import { Users, LogOut, LayoutDashboard, Workflow, Palette, Megaphone, ImageOff } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/pipeline', label: 'Pipeline', icon: Workflow },
   { href: '/admin/artists', label: 'Artists', icon: Users },
+  { href: '/admin/images/review', label: 'Images', icon: ImageOff },
   { href: '/admin/styles', label: 'Styles', icon: Palette },
   { href: '/admin/marketing', label: 'Marketing', icon: Megaphone },
 ];
