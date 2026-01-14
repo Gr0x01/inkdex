@@ -25,6 +25,7 @@ import {
   Search,
   Palette,
   Send,
+  Users,
 } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ArtistImageGrid from './ArtistImageGrid';
@@ -339,15 +340,14 @@ export default function ArtistDetailView({
         Back to Artists
       </Link>
 
-      {/* Artist Header + Actions Combined */}
-      <div className="bg-paper border border-ink/10 p-4">
-        <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-
-          {/* Left: Artist Info */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="font-heading text-2xl tracking-tight text-ink truncate">
-                {artist.name}
+      {/* Artist Header - Clean Admin Layout */}
+      <div className="bg-paper border border-ink/10">
+        {/* Main Heading Section */}
+        <div className="border-b border-ink/10 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <h1 className="font-mono text-xl tracking-tight text-ink">
+                @{artist.instagram_handle}
               </h1>
               {artist.is_pro && (
                 <Crown className="w-5 h-5 text-status-warning shrink-0" />
@@ -355,137 +355,191 @@ export default function ArtistDetailView({
               {artist.is_featured && (
                 <Star className="w-5 h-5 text-status-warning fill-current shrink-0" />
               )}
-              {/* External Links */}
-              <div className="flex items-center gap-1 ml-2">
-                {artist.instagram_url && (
-                  <a
-                    href={artist.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1 text-gray-400 hover:text-ink transition-colors"
-                    title="View on Instagram"
-                  >
-                    <Instagram className="w-4 h-4" />
-                  </a>
-                )}
-                <a
-                  href={`/artist/${artist.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 text-gray-400 hover:text-ink transition-colors"
-                  title="View public profile"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
             </div>
 
-            <div className="flex items-center gap-3 text-gray-500 font-body text-[12px]">
-              <span className="font-mono">@{artist.instagram_handle}</span>
-              {artist.city && artist.state && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
+            {/* External Links */}
+            <div className="flex items-center gap-2">
+              {artist.instagram_url && (
+                <a
+                  href={artist.instagram_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 text-gray-400 hover:text-ink hover:bg-gray-50 transition-colors"
+                  title="View on Instagram"
+                >
+                  <Instagram className="w-4 h-4" />
+                </a>
+              )}
+              <a
+                href={`/artist/${artist.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-400 hover:text-ink hover:bg-gray-50 transition-colors"
+                title="View public profile"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Artist Info Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 border-b border-ink/10">
+          {/* Name */}
+          <div className="px-6 py-3 border-r border-ink/10">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+              Name
+            </div>
+            <div className="text-sm text-ink font-medium">
+              {artist.name}
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="px-6 py-3 border-r border-ink/10">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+              Location
+            </div>
+            <div className="text-sm text-ink font-medium">
+              {artist.city && artist.state ? (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
                   {artist.city}, {artist.state}
                 </span>
+              ) : (
+                <span className="text-gray-400">—</span>
               )}
-              <span className="flex items-center gap-1">
-                <ImageIcon className="w-3 h-3" />
-                {imageCount} images
-              </span>
+            </div>
+          </div>
+
+          {/* Followers */}
+          <div className="px-6 py-3 border-r border-ink/10">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+              Followers
+            </div>
+            <div className="text-sm text-ink font-mono font-medium">
+              {artist.follower_count != null
+                ? artist.follower_count.toLocaleString()
+                : '—'}
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="px-6 py-3 border-r border-ink/10">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+              Images
+            </div>
+            <div className="text-sm text-ink font-mono font-medium">
+              {imageCount}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="px-6 py-3">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
+              Status
+            </div>
+            <div>
               <span
-                className={`px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wide ${
+                className={`inline-flex px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide ${
                   artist.verification_status === 'claimed'
-                    ? 'bg-status-success/10 text-status-success'
-                    : 'bg-gray-100 text-gray-400'
+                    ? 'bg-status-success/10 text-status-success border border-status-success/20'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200'
                 }`}
               >
                 {artist.verification_status}
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Right: Actions */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 lg:flex-nowrap">
+        {/* Action Controls */}
+        <div className="px-6 py-4 bg-gray-50/50">
+          <div className="flex flex-wrap items-center gap-3">
             {/* Tier Toggle */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-gray-400 font-mono uppercase">Tier</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-gray-500">
+                Tier:
+              </span>
               {artist.is_pro ? (
                 <button
                   onClick={() => setShowBasicDialog(true)}
                   disabled={updating}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
                              bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20"
                 >
-                  <Crown className="w-2.5 h-2.5" />
+                  <Crown className="w-3 h-3" />
                   Pro
                 </button>
               ) : (
                 <button
                   onClick={() => setShowProDialog(true)}
                   disabled={updating}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
-                             bg-gray-100 text-gray-500 border border-gray-200 hover:border-gray-300"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
+                             bg-paper text-gray-600 border border-gray-300 hover:border-gray-400"
                 >
-                  <Crown className="w-2.5 h-2.5" />
+                  <Crown className="w-3 h-3" />
                   Free
                 </button>
               )}
             </div>
 
-            <div className="w-px h-4 bg-ink/10 hidden lg:block" />
+            <div className="w-px h-5 bg-gray-300" />
 
             {/* Featured Toggle */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-gray-400 font-mono uppercase">Featured</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-gray-500">
+                Featured:
+              </span>
               {artist.is_featured ? (
-                <>
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowUnfeatureDialog(true)}
                     disabled={updating}
-                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
                                bg-status-warning/10 text-status-warning border border-status-warning/30 hover:bg-status-warning/20"
                   >
-                    <Star className="w-2.5 h-2.5 fill-current" />
-                    Yes
+                    <Star className="w-3 h-3 fill-current" />
+                    Active
                   </button>
                   {artist.featured_expires_at && (
-                    <span className="text-[9px] text-gray-400 font-mono">
-                      → {new Date(artist.featured_expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    <span className="text-[11px] text-gray-500 font-mono">
+                      until {new Date(artist.featured_expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   )}
-                </>
+                </div>
               ) : (
                 <button
                   onClick={() => setShowFeatureDialog(true)}
                   disabled={updating}
-                  className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
-                             bg-gray-100 text-gray-500 border border-gray-200 hover:border-gray-300"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
+                             bg-paper text-gray-600 border border-gray-300 hover:border-gray-400"
                 >
-                  <Star className="w-2.5 h-2.5" />
-                  No
+                  <Star className="w-3 h-3" />
+                  Off
                 </button>
               )}
             </div>
 
-            <div className="w-px h-4 bg-ink/10 hidden lg:block" />
+            <div className="w-px h-5 bg-gray-300" />
 
-            {/* Airtable */}
-            <div className="flex items-center gap-1.5">
+            {/* Airtable Push */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={handlePushToAirtable}
                 disabled={pushingToAirtable}
-                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
-                           bg-paper border border-ink/20 text-ink hover:border-ink/40"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
+                           bg-paper text-ink border border-ink/20 hover:border-ink/40"
               >
                 {pushingToAirtable ? (
-                  <div className="w-2.5 h-2.5 border border-current border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Send className="w-2.5 h-2.5" />
+                  <Send className="w-3 h-3" />
                 )}
-                Airtable
+                Push to Airtable
               </button>
               {airtablePushResult && (
-                <span className={`text-[9px] font-mono ${
+                <span className={`text-[11px] font-mono ${
                   airtablePushResult.includes('failed') || airtablePushResult.includes('Failed')
                     ? 'text-red-500'
                     : 'text-status-success'
@@ -495,34 +549,31 @@ export default function ArtistDetailView({
               )}
             </div>
 
-            <div className="w-px h-4 bg-red-200 hidden lg:block" />
+            <div className="ml-auto w-px h-5 bg-red-200" />
 
             {/* Delete */}
             <button
               onClick={() => setShowDeleteDialog(true)}
               disabled={deleting}
-              className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono uppercase transition-colors disabled:opacity-50
-                         bg-paper border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition-all disabled:opacity-50
+                         bg-paper border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
             >
-              <Trash2 className="w-2.5 h-2.5" />
-              Delete
+              <Trash2 className="w-3 h-3" />
+              Delete Artist
             </button>
           </div>
         </div>
       </div>
 
-      {/* Scraping Status & Analytics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Scraping Status, Analytics & Styles - 3 Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Scraping Status */}
         <ScrapingStatusCard
           artistId={artist.id}
           initialPipelineState={initialPipelineState}
           initialScrapingHistory={initialScrapingHistory}
         />
-      </div>
 
-      {/* Analytics & Styles Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Analytics (Last 30 Days) */}
         <div className="bg-paper border border-ink/10 p-4">
           <h2 className="font-mono text-[10px] uppercase tracking-wider text-gray-500 mb-3">
