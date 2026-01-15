@@ -26,6 +26,8 @@ import pLimit from 'p-limit';
 import { fetchProfileWithScrapingDog } from '../../lib/instagram/scrapingdog-client';
 import { InstagramError } from '../../lib/instagram/post-fetcher';
 import { filterTattooImages } from '../../lib/instagram/tattoo-filter';
+import { extractLocationFromBio } from '../../lib/instagram/bio-location-extractor';
+import { isGDPRCountry } from '../../lib/constants/countries';
 
 // Configuration
 const TEMP_DIR = '/tmp/instagram';
@@ -352,19 +354,68 @@ async function updateScrapingJob(
 }
 
 /**
- * Update artist profile metadata
+ * Update artist profile metadata including bio and extracted location
  */
 async function updateArtistMetadata(
   artistId: string,
   profileImageUrl?: string,
-  followerCount?: number
+  followerCount?: number,
+  bio?: string
 ): Promise<void> {
   const updates: Record<string, unknown> = {};
   if (profileImageUrl) updates.profile_image_url = profileImageUrl;
   if (followerCount !== undefined) updates.follower_count = followerCount;
+  if (bio !== undefined) updates.bio = bio;
 
   if (Object.keys(updates).length > 0) {
     await supabase.from('artists').update(updates).eq('id', artistId);
+  }
+
+  // Extract location from bio using GPT-4.1-nano
+  if (bio) {
+    try {
+      const location = await extractLocationFromBio(bio);
+      if (location?.city && location?.country_code) {
+        // Skip GDPR countries
+        if (!isGDPRCountry(location.country_code)) {
+          // Check if artist already has a primary location
+          const { data: existing } = await supabase
+            .from('artist_locations')
+            .select('id')
+            .eq('artist_id', artistId)
+            .eq('is_primary', true)
+            .single();
+
+          if (existing) {
+            // Update existing location
+            await supabase
+              .from('artist_locations')
+              .update({
+                city: location.city,
+                region: location.region,
+                country_code: location.country_code,
+              })
+              .eq('id', existing.id);
+          } else {
+            // Insert new location
+            await supabase
+              .from('artist_locations')
+              .insert({
+                artist_id: artistId,
+                city: location.city,
+                region: location.region,
+                country_code: location.country_code,
+                location_type: 'city',
+                is_primary: true,
+                display_order: 0,
+              });
+          }
+        }
+      }
+    } catch (error) {
+      // Non-fatal: continue without location extraction
+      console.log(`    ⚠️  Location extraction failed: ${error}`);
+    }
   }
 
   // Update last_scraped_at
@@ -399,8 +450,8 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFil
       }
     }
 
-    // Update artist metadata
-    await updateArtistMetadata(artist.id, profile.profileImageUrl, profile.followerCount);
+    // Update artist metadata (includes bio + location extraction via GPT)
+    await updateArtistMetadata(artist.id, profile.profileImageUrl, profile.followerCount, profile.bio);
 
     if (profileOnly) {
       // Create .complete marker
