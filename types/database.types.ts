@@ -7,33 +7,66 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
+      analytics_cache: {
+        Row: {
+          artist_id: string
+          booking_clicks: number
+          created_at: string
+          id: string
+          image_views: number
+          instagram_clicks: number
+          last_synced_at: string
+          period: string
+          profile_views: number
+          search_appearances: number
+          sync_source: string
+          updated_at: string
+        }
+        Insert: {
+          artist_id: string
+          booking_clicks?: number
+          created_at?: string
+          id?: string
+          image_views?: number
+          instagram_clicks?: number
+          last_synced_at?: string
+          period: string
+          profile_views?: number
+          search_appearances?: number
+          sync_source?: string
+          updated_at?: string
+        }
+        Update: {
+          artist_id?: string
+          booking_clicks?: number
+          created_at?: string
+          id?: string
+          image_views?: number
+          instagram_clicks?: number
+          last_synced_at?: string
+          period?: string
+          profile_views?: number
+          search_appearances?: number
+          sync_source?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_cache_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_analytics: {
         Row: {
           artist_id: string | null
@@ -128,8 +161,11 @@ export type Database = {
           blacklist_reason: string | null
           created_at: string | null
           exclude_from_scraping: boolean | null
+          last_error: string | null
           last_scraped_at: string | null
+          permanent_failure: boolean | null
           pipeline_status: string | null
+          retry_count: number | null
           scrape_priority: number | null
           scraping_blacklisted: boolean | null
           updated_at: string | null
@@ -139,8 +175,11 @@ export type Database = {
           blacklist_reason?: string | null
           created_at?: string | null
           exclude_from_scraping?: boolean | null
+          last_error?: string | null
           last_scraped_at?: string | null
+          permanent_failure?: boolean | null
           pipeline_status?: string | null
+          retry_count?: number | null
           scrape_priority?: number | null
           scraping_blacklisted?: boolean | null
           updated_at?: string | null
@@ -150,8 +189,11 @@ export type Database = {
           blacklist_reason?: string | null
           created_at?: string | null
           exclude_from_scraping?: boolean | null
+          last_error?: string | null
           last_scraped_at?: string | null
+          permanent_failure?: boolean | null
           pipeline_status?: string | null
+          retry_count?: number | null
           scrape_priority?: number | null
           scraping_blacklisted?: boolean | null
           updated_at?: string | null
@@ -223,6 +265,7 @@ export type Database = {
           image_count: number
           percentage: number
           style_name: string
+          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -231,6 +274,7 @@ export type Database = {
           image_count?: number
           percentage: number
           style_name: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -239,6 +283,7 @@ export type Database = {
           image_count?: number
           percentage?: number
           style_name?: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: [
@@ -746,6 +791,7 @@ export type Database = {
           id: string
           image_id: string
           style_name: string
+          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Insert: {
           confidence: number
@@ -753,6 +799,7 @@ export type Database = {
           id?: string
           image_id: string
           style_name: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Update: {
           confidence?: number
@@ -760,6 +807,7 @@ export type Database = {
           id?: string
           image_id?: string
           style_name?: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
         }
         Relationships: [
           {
@@ -1097,6 +1145,7 @@ export type Database = {
           instagram_url: string
           is_color: boolean | null
           is_pinned: boolean | null
+          is_tattoo: boolean | null
           likes_count: number | null
           manually_added: boolean | null
           pinned_position: number | null
@@ -1108,6 +1157,7 @@ export type Database = {
           storage_thumb_1280: string | null
           storage_thumb_320: string | null
           storage_thumb_640: string | null
+          tattoo_confidence: number | null
         }
         Insert: {
           artist_id: string
@@ -1123,6 +1173,7 @@ export type Database = {
           instagram_url: string
           is_color?: boolean | null
           is_pinned?: boolean | null
+          is_tattoo?: boolean | null
           likes_count?: number | null
           manually_added?: boolean | null
           pinned_position?: number | null
@@ -1134,6 +1185,7 @@ export type Database = {
           storage_thumb_1280?: string | null
           storage_thumb_320?: string | null
           storage_thumb_640?: string | null
+          tattoo_confidence?: number | null
         }
         Update: {
           artist_id?: string
@@ -1149,6 +1201,7 @@ export type Database = {
           instagram_url?: string
           is_color?: boolean | null
           is_pinned?: boolean | null
+          is_tattoo?: boolean | null
           likes_count?: number | null
           manually_added?: boolean | null
           pinned_position?: number | null
@@ -1160,6 +1213,7 @@ export type Database = {
           storage_thumb_1280?: string | null
           storage_thumb_320?: string | null
           storage_thumb_640?: string | null
+          tattoo_confidence?: number | null
         }
         Relationships: [
           {
@@ -1638,6 +1692,7 @@ export type Database = {
           id: string
           seed_image_url: string
           style_name: string
+          taxonomy: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at: string | null
         }
         Insert: {
@@ -1648,6 +1703,7 @@ export type Database = {
           id?: string
           seed_image_url: string
           style_name: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Update: {
@@ -1658,6 +1714,7 @@ export type Database = {
           id?: string
           seed_image_url?: string
           style_name?: string
+          taxonomy?: Database["public"]["Enums"]["style_taxonomy"] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1892,6 +1949,7 @@ export type Database = {
         Returns: undefined
       }
       count_artists_without_images: { Args: never; Returns: number }
+      count_blacklisted_artists: { Args: never; Returns: number }
       count_matching_artists: {
         Args: {
           city_filter?: string
@@ -1945,11 +2003,11 @@ export type Database = {
         Args: { p_city: string; p_country_code: string; p_region: string }
         Returns: string
       }
-      get_all_cities_with_min_artists: {
-        Args: { min_artist_count?: number }
+      get_admin_location_counts: {
+        Args: never
         Returns: {
-          artist_count: number
           city: string
+          count: number
           country_code: string
           region: string
         }[]
@@ -2024,6 +2082,7 @@ export type Database = {
           p_is_featured?: boolean
           p_limit?: number
           p_location_city?: string
+          p_location_country?: string
           p_location_state?: string
           p_max_followers?: number
           p_max_images?: number
@@ -2031,6 +2090,7 @@ export type Database = {
           p_min_images?: number
           p_offset?: number
           p_search?: string
+          p_show_blacklisted?: boolean
           p_sort_by?: string
           p_sort_order?: string
           p_tier?: string
@@ -2042,6 +2102,7 @@ export type Database = {
           id: string
           image_count: number
           instagram_handle: string
+          is_blacklisted: boolean
           is_featured: boolean
           is_pro: boolean
           name: string
@@ -2058,14 +2119,6 @@ export type Database = {
           city: string
           country_code: string
           region: string
-        }[]
-      }
-      get_countries_with_counts: {
-        Args: never
-        Returns: {
-          artist_count: number
-          country_code: string
-          country_name: string
         }[]
       }
       get_decrypted_token: {
@@ -2146,7 +2199,7 @@ export type Database = {
         }[]
       }
       get_regions_with_counts: {
-        Args: { p_country_code: string }
+        Args: { p_country_code?: string }
         Returns: {
           artist_count: number
           region: string
@@ -2184,12 +2237,8 @@ export type Database = {
           state: string
         }[]
       }
-      increment_analytics: {
-        Args: {
-          p_artist_id?: string
-          p_event_type: string
-          p_image_id?: string
-        }
+      increment_pipeline_progress: {
+        Args: { failed_delta: number; processed_delta: number; run_id: string }
         Returns: undefined
       }
       is_gdpr_country: { Args: { country_code: string }; Returns: boolean }
@@ -2273,7 +2322,6 @@ export type Database = {
           offset_param?: number
           query_embedding: string
           query_styles?: Json
-          query_themes?: Json
           region_filter?: string
         }
         Returns: {
@@ -2297,12 +2345,9 @@ export type Database = {
           shop_name: string
           similarity: number
           style_boost: number
-          theme_boost: number
           total_count: number
         }[]
       }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
       store_encrypted_token: {
         Args: {
           p_encryption_key: string
@@ -2327,6 +2372,7 @@ export type Database = {
         Args: { p_artist_id: string; p_locations: Json; p_user_id?: string }
         Returns: undefined
       }
+      update_complete_artist_pipelines: { Args: never; Returns: number }
       user_has_vault_tokens: {
         Args: { user_id_param: string }
         Returns: boolean
@@ -2368,6 +2414,7 @@ export type Database = {
     }
     Enums: {
       search_tier: "active" | "archive"
+      style_taxonomy: "technique" | "theme"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2493,13 +2540,10 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       search_tier: ["active", "archive"],
+      style_taxonomy: ["technique", "theme"],
     },
   },
 } as const
-

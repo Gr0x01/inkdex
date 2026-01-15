@@ -1,0 +1,54 @@
+'use client'
+
+/**
+ * PostHog Pageview Tracker
+ *
+ * Manually captures pageviews on client-side navigation.
+ * Required for Next.js App Router since automatic capture only works
+ * on initial page load, not subsequent client-side navigations.
+ *
+ * This component should be included in the root layout, wrapped by PostHogProvider.
+ */
+
+import { usePathname, useSearchParams } from 'next/navigation'
+import { useEffect, Suspense } from 'react'
+import { usePostHog } from 'posthog-js/react'
+
+function PostHogPageViewInner() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const posthog = usePostHog()
+
+  useEffect(() => {
+    // Skip if posthog not ready or no pathname
+    if (!posthog || !pathname) return
+
+    // Build full URL for accurate tracking
+    let url = window.origin + pathname
+    const search = searchParams.toString()
+    if (search) {
+      url += `?${search}`
+    }
+
+    // Capture the pageview with full URL
+    posthog.capture('$pageview', {
+      $current_url: url,
+    })
+  }, [pathname, searchParams, posthog])
+
+  return null
+}
+
+/**
+ * PostHogPageView wrapped in Suspense
+ *
+ * useSearchParams() requires Suspense boundary in Next.js App Router
+ * to avoid client-side rendering issues during static generation.
+ */
+export function PostHogPageView() {
+  return (
+    <Suspense fallback={null}>
+      <PostHogPageViewInner />
+    </Suspense>
+  )
+}

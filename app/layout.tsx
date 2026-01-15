@@ -5,7 +5,8 @@ import './globals.css'
 import ConditionalLayout from '@/components/layout/ConditionalLayout'
 import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
-import { PostHogAnalytics } from '@/components/analytics/PostHogAnalytics'
+import { PostHogProvider } from '@/components/analytics/PostHogProvider'
+import { PostHogPageView } from '@/components/analytics/PostHogPageView'
 import { GeoHydrator } from '@/components/analytics/GeoHydrator'
 
 // Font configurations for "Inkdex" design system
@@ -78,13 +79,15 @@ export default async function RootLayout({
       className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <body className="">
-        <GeoHydrator country={country} />
-        <ConditionalLayout>
-          {children}
-        </ConditionalLayout>
-        <Analytics />
-        <GoogleAnalytics />
-        <PostHogAnalytics />
+        <PostHogProvider>
+          <GeoHydrator country={country} />
+          <PostHogPageView />
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
+          <Analytics />
+          <GoogleAnalytics />
+        </PostHogProvider>
       </body>
     </html>
   )

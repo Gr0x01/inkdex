@@ -266,7 +266,8 @@ https://inkdex.io/pk/is
 - `lib/analytics/conversions.ts` - Enhanced trackSearchConversion
 - `components/analytics/PageLoadTracker.tsx` - Time-to-first-search measurement
 - `components/analytics/PricingPageTracker.tsx` - Pricing page view tracking
-- `components/analytics/PostHogAnalytics.tsx` - PostHog initialization (cookieless)
+- `components/analytics/PostHogProvider.tsx` - PostHog initialization (cookieless, posthog-js/react)
+- `components/analytics/PostHogPageView.tsx` - Manual pageview capture for SPA navigations
 
 ---
 
