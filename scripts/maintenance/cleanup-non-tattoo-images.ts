@@ -10,13 +10,17 @@
  *   - confidence 0.3-0.5: Flag is_tattoo=false (borderline, review in admin)
  *   - confidence >= 0.5: Mark is_tattoo=true (keep)
  *
- * Cost: ~$0.001 per image (~$100 for 99k images)
+ * Cost:
+ *   - Standard: ~$0.001 per image (~$100 for 99k images)
+ *   - Flex: ~$0.0005 per image (~$50 for 99k images, 24hr turnaround)
+ *
  * Time: ~3-4 hours at 50 concurrent requests
  *
  * Usage:
  *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts
+ *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts --flex          # 50% cost savings
+ *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts --flex --limit 100  # Test first
  *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts --dry-run
- *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts --limit 1000
  *   npx tsx scripts/maintenance/cleanup-non-tattoo-images.ts --blacklist-empty
  */
 
@@ -50,6 +54,8 @@ interface ParsedArgs {
   dryRun: boolean;
   limit: number;
   blacklistEmpty: boolean;
+  useFlexProcessing: boolean;
+  noDelete: boolean;
 }
 
 function parseArgs(): ParsedArgs {
@@ -57,6 +63,8 @@ function parseArgs(): ParsedArgs {
   let dryRun = false;
   let limit = Infinity;
   let blacklistEmpty = false;
+  let useFlexProcessing = false;
+  let noDelete = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--dry-run') {
@@ -66,10 +74,14 @@ function parseArgs(): ParsedArgs {
       i++;
     } else if (args[i] === '--blacklist-empty') {
       blacklistEmpty = true;
+    } else if (args[i] === '--flex') {
+      useFlexProcessing = true;
+    } else if (args[i] === '--no-delete') {
+      noDelete = true;
     }
   }
 
-  return { dryRun, limit, blacklistEmpty };
+  return { dryRun, limit, blacklistEmpty, useFlexProcessing, noDelete };
 }
 
 interface ImageRecord {
@@ -187,14 +199,15 @@ async function blacklistEmptyArtists(dryRun: boolean): Promise<number> {
 }
 
 async function main() {
-  const { dryRun, limit, blacklistEmpty } = parseArgs();
+  const { dryRun, limit, blacklistEmpty, useFlexProcessing, noDelete } = parseArgs();
 
   console.log('🧹 Cleanup Non-Tattoo Images');
   console.log('============================');
   console.log(`Mode: ${dryRun ? '🔍 DRY RUN (no changes)' : '⚡ LIVE'}`);
+  console.log(`Processing: ${useFlexProcessing ? '💰 FLEX (50% off, 24hr)' : 'Standard'}`);
+  console.log(`Delete: ${noDelete ? '❌ DISABLED (flag only)' : `<${AUTO_DELETE_THRESHOLD * 100}%`}`);
   console.log(`Batch size: ${BATCH_SIZE}, Concurrency: ${CONCURRENCY}`);
   console.log(`Limit: ${limit === Infinity ? 'unlimited' : limit}`);
-  console.log(`Auto-delete threshold: <${AUTO_DELETE_THRESHOLD * 100}%`);
   console.log(`Keep threshold: >=${TATTOO_CONFIDENCE_THRESHOLD * 100}%`);
   console.log('');
 
@@ -277,7 +290,8 @@ async function main() {
     // Run through GPT filter
     const filterResult = await filterTattooImages(
       imagesToFilter.map((img) => ({ id: img.id, buffer: img.buffer })),
-      CONCURRENCY
+      CONCURRENCY,
+      useFlexProcessing
     );
 
     // Process results
@@ -287,8 +301,8 @@ async function main() {
 
       processed++;
 
-      if (result.confidence < AUTO_DELETE_THRESHOLD) {
-        // Auto-delete obvious garbage
+      if (result.confidence < AUTO_DELETE_THRESHOLD && !noDelete) {
+        // Auto-delete obvious garbage (only if deletion enabled)
         deleted++;
 
         if (!dryRun) {
@@ -313,7 +327,7 @@ async function main() {
             }
           }
         }
-      } else if (result.confidence < TATTOO_CONFIDENCE_THRESHOLD) {
+      } else if (result.confidence < TATTOO_CONFIDENCE_THRESHOLD || (noDelete && result.confidence < AUTO_DELETE_THRESHOLD)) {
         // Flag borderline for review
         flagged++;
 

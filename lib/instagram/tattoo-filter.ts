@@ -81,19 +81,22 @@ function getOpenAIClient(): OpenAI {
 
 /**
  * Classify a single image and return confidence score (with retry logic)
+ * @param useFlexProcessing - Use flex processing for 50% cost savings (24hr turnaround)
  * @returns confidence score 0-1 (0.5 = 50% confident it's a tattoo)
  */
 async function classifySingleImage(
   imageBase64: string,
   index: number,
   total: number,
-  retryCount = 0
+  retryCount = 0,
+  useFlexProcessing = false
 ): Promise<number> {
   const client = getOpenAIClient();
 
   try {
     const response = await client.chat.completions.create({
       model: 'gpt-5-mini',
+      service_tier: useFlexProcessing ? 'flex' : undefined,
       messages: [
         {
           role: 'user',
@@ -109,11 +112,12 @@ async function classifySingleImage(
           ],
         },
       ],
-      max_completion_tokens: 16,
+      max_completion_tokens: 256,
     });
 
     const rawResult = response.choices[0]?.message?.content || '';
     const result = rawResult.trim();
+    const finishReason = response.choices[0]?.finish_reason;
 
     // Parse numeric confidence (0-100) and convert to 0-1
     // Handle responses like "85", "85%", "Yes, 85", etc.
@@ -121,10 +125,19 @@ async function classifySingleImage(
     const parsed = numberMatch ? parseInt(numberMatch[0], 10) : NaN;
     const confidence = !isNaN(parsed) ? Math.max(0, Math.min(100, parsed)) / 100 : 0.5;
 
+    // Debug: Log raw response for first few images
+    if (index < 5) {
+      console.log(`    [Filter DEBUG] Image ${index + 1}: "${result}" (finish: ${finishReason}) → ${confidence}`);
+    }
+
     const status =
       confidence >= 0.5 ? '✓ TATTOO' : confidence >= 0.3 ? '? BORDERLINE' : '✗ DROP';
+    // Log service tier on first image to verify flex pricing is applied
+    const tierInfo = useFlexProcessing && index === 0 && response.service_tier
+      ? ` [tier: ${response.service_tier}]`
+      : '';
     console.log(
-      `    [Filter] Image ${index + 1}/${total}: ${status} (${Math.round(confidence * 100)}%)`
+      `    [Filter] Image ${index + 1}/${total}: ${status} (${Math.round(confidence * 100)}%)${tierInfo}`
     );
 
     return confidence;
@@ -136,7 +149,7 @@ async function classifySingleImage(
       const waitTime = Math.min(5000 * Math.pow(2, retryCount), 60000);
       console.log(`    [Filter] Rate limited on image ${index + 1}, retrying in ${waitTime}ms...`);
       await new Promise((resolve) => setTimeout(resolve, waitTime));
-      return classifySingleImage(imageBase64, index, total, retryCount + 1);
+      return classifySingleImage(imageBase64, index, total, retryCount + 1, useFlexProcessing);
     }
 
     console.error(`    [Filter] Error classifying image ${index + 1}:`, error);
@@ -232,11 +245,13 @@ export const AUTO_DELETE_THRESHOLD = 0.3;
  *
  * @param images - Array of image buffers with their IDs
  * @param concurrency - Max parallel classifications (default 6)
+ * @param useFlexProcessing - Use flex processing for 50% cost savings (24hr turnaround)
  * @returns Filter summary with confidence scores for each image
  */
 export async function filterTattooImages(
   images: Array<{ id: string; buffer: Buffer }>,
-  concurrency = 6
+  concurrency = 6,
+  useFlexProcessing = false
 ): Promise<FilterSummary> {
   if (images.length === 0) {
     return { total: 0, kept: 0, dropped: 0, results: [] };
@@ -254,7 +269,7 @@ export async function filterTattooImages(
       batch.map(async (image, batchIndex) => {
         const globalIndex = i + batchIndex;
         const base64 = await bufferToBase64(image.buffer);
-        const confidence = await classifySingleImage(base64, globalIndex, images.length);
+        const confidence = await classifySingleImage(base64, globalIndex, images.length, 0, useFlexProcessing);
         return {
           id: image.id,
           isTattoo: confidence >= TATTOO_CONFIDENCE_THRESHOLD,
@@ -286,10 +301,14 @@ export async function filterTattooImages(
 /**
  * Classify a single image buffer and return tattoo status + confidence
  * Used by image processing pipeline to tag incoming images
+ * @param useFlexProcessing - Use flex processing for 50% cost savings (24hr turnaround)
  */
-export async function classifyImage(buffer: Buffer): Promise<{ isTattoo: boolean; confidence: number }> {
+export async function classifyImage(
+  buffer: Buffer,
+  useFlexProcessing = false
+): Promise<{ isTattoo: boolean; confidence: number }> {
   const base64 = await bufferToBase64(buffer);
-  const confidence = await classifySingleImage(base64, 0, 1);
+  const confidence = await classifySingleImage(base64, 0, 1, 0, useFlexProcessing);
   return {
     isTattoo: confidence >= TATTOO_CONFIDENCE_THRESHOLD,
     confidence,
