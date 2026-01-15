@@ -42,12 +42,15 @@ export function getUserCountry(): string | null {
 
 /**
  * Check if user is in a GDPR region (EU/EEA/UK/CH)
- * If country unknown, defaults to true (safer - show banner)
+ * If country unknown, defaults to false (track by default)
+ *
+ * Rationale: Most traffic is non-EU. Only restrict tracking when we
+ * positively identify EU/EEA/UK/CH users. DNT/GPC still respected.
  */
 export function isGDPRRegion(): boolean {
   const country = getUserCountry()
-  // If no geo data, be conservative and assume GDPR applies
-  if (!country) return true
+  // If no geo data, assume non-GDPR (track by default)
+  if (!country) return false
   return GDPR_COUNTRY_CODES.has(country.toUpperCase())
 }
 
