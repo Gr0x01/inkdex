@@ -67,6 +67,7 @@ export const WideDesktop: Story = {
 /**
  * Instagram Post URL detected - shows "IG Post" badge
  * Purple/pink gradient badge appears when post URL is pasted
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithInstagramPostBadge: Story = {
   args: {
@@ -82,10 +83,11 @@ export const WithInstagramPostBadge: Story = {
 /**
  * Instagram Profile URL detected - shows "@username" badge
  * Badge displays truncated username for long handles
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithInstagramProfileBadge: Story = {
   args: {
-    forceTextQuery: 'https://instagram.com/tattooartist',
+    forceTextQuery: '@tattooartist',
     forceInstagramDetection: {
       type: 'profile',
       id: 'tattooartist',
@@ -96,10 +98,11 @@ export const WithInstagramProfileBadge: Story = {
 
 /**
  * Instagram Profile with long username - shows truncated badge
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithLongInstagramUsername: Story = {
   args: {
-    forceTextQuery: 'https://instagram.com/verylongusernamehere',
+    forceTextQuery: '@verylongusernamehere',
     forceInstagramDetection: {
       type: 'profile',
       id: 'verylongusernamehere',
@@ -139,10 +142,11 @@ export const WithError: Story = {
 /**
  * GDPR location error - shows warning with bypass button
  * Appears when an artist's bio indicates they're in a GDPR-protected country
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithGDPRError: Story = {
   args: {
-    forceTextQuery: 'https://instagram.com/londontattooartist',
+    forceTextQuery: '@londontattooartist',
     forceInstagramDetection: {
       type: 'profile',
       id: 'londontattooartist',
@@ -272,6 +276,7 @@ export const WithHeroContext: Story = {
 
 /**
  * All search patterns comparison - shows all input types side by side
+ * User's text becomes the tag content with gradient background
  */
 export const AllSearchPatterns: Story = {
   render: () => (
@@ -296,7 +301,7 @@ export const AllSearchPatterns: Story = {
         <div>
           <p className="text-white/60 text-sm mb-2 font-mono">Instagram Profile URL</p>
           <UnifiedSearchBar
-            forceTextQuery="https://instagram.com/blackworktattoo"
+            forceTextQuery="@blackworktattoo"
             forceInstagramDetection={{
               type: 'profile',
               id: 'blackworktattoo',
@@ -325,7 +330,7 @@ export const AllSearchPatterns: Story = {
         <div>
           <p className="text-white/60 text-sm mb-2 font-mono">GDPR Location Error</p>
           <UnifiedSearchBar
-            forceTextQuery="https://instagram.com/berlintattoo"
+            forceTextQuery="@berlintattoo"
             forceInstagramDetection={{
               type: 'profile',
               id: 'berlintattoo',

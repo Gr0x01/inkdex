@@ -70,6 +70,7 @@ export const Tablet: Story = {
 /**
  * Instagram Post URL detected - shows "IG Post" badge
  * Compact purple/pink gradient badge
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithInstagramPostBadge: Story = {
   render: () => (
@@ -88,12 +89,13 @@ export const WithInstagramPostBadge: Story = {
 
 /**
  * Instagram Profile URL detected - shows "@username" badge
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithInstagramProfileBadge: Story = {
   render: () => (
     <div className="max-w-2xl">
       <NavbarSearch
-        forceTextQuery="https://instagram.com/tattooartist"
+        forceTextQuery="@tattooartist"
         forceInstagramDetection={{
           type: 'profile',
           id: 'tattooartist',
@@ -142,12 +144,13 @@ export const WithError: Story = {
 /**
  * GDPR location error - shows warning with bypass button
  * Appears when an artist's bio indicates they're in a GDPR-protected country
+ * Note: Input is cleared when Instagram is detected (tag replaces text)
  */
 export const WithGDPRError: Story = {
   render: () => (
     <div className="max-w-2xl pb-16">
       <NavbarSearch
-        forceTextQuery="https://instagram.com/londontattooartist"
+        forceTextQuery="@londontattooartist"
         forceInstagramDetection={{
           type: 'profile',
           id: 'londontattooartist',
@@ -334,6 +337,7 @@ export const WithSurroundingUI: Story = {
 
 /**
  * All search patterns comparison - shows all input types side by side
+ * User's text becomes the tag content with gradient background
  */
 export const AllSearchPatterns: Story = {
   render: () => (
@@ -358,7 +362,7 @@ export const AllSearchPatterns: Story = {
         <div>
           <p className="text-gray-500 text-sm mb-2 font-mono">Instagram Profile URL</p>
           <NavbarSearch
-            forceTextQuery="https://instagram.com/blackworktattoo"
+            forceTextQuery="@blackworktattoo"
             forceInstagramDetection={{
               type: 'profile',
               id: 'blackworktattoo',
@@ -387,7 +391,7 @@ export const AllSearchPatterns: Story = {
         <div className="pb-16">
           <p className="text-gray-500 text-sm mb-2 font-mono">GDPR Location Error</p>
           <NavbarSearch
-            forceTextQuery="https://instagram.com/berlintattoo"
+            forceTextQuery="@berlintattoo"
             forceInstagramDetection={{
               type: 'profile',
               id: 'berlintattoo',
