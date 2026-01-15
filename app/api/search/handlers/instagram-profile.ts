@@ -27,6 +27,9 @@ import type { SearchedArtistData } from '@/types/search'
 export { RateLimitError } from './instagram-post'
 import { RateLimitError } from './instagram-post'
 
+// Constants
+const MIN_IMAGES_FOR_DB_PATH = 3
+
 /**
  * Validation error for Instagram profile searches
  */
@@ -101,29 +104,24 @@ export async function handleInstagramProfileSearch(
   const username = detectedUrl.id
   const supabaseService = createServiceClient()
 
-  // Step 1: Check if artist exists by handle (simple query, no image requirement)
+  // Check if artist exists with sufficient images (single query)
   console.log(`[Profile Search] Checking DB for @${username}...`)
-  const { data: artistRecord } = await supabaseService
-    .from('artists')
-    .select('id, name, slug')
-    .eq('instagram_handle', username)
-    .single()
-
-  // Step 2: If artist exists, check if they have enough images with embeddings
-  const existingArtist = artistRecord
-    ? await getArtistByInstagramHandle(username)
-    : null
+  const existingArtist = await getArtistByInstagramHandle(username)
 
   // === DB PATH: Use existing embeddings ===
   if (
     existingArtist &&
     existingArtist.portfolio_images &&
-    existingArtist.portfolio_images.length >= 3
+    existingArtist.portfolio_images.length >= MIN_IMAGES_FOR_DB_PATH
   ) {
     return handleDbPath(existingArtist, username)
   }
 
   // === SCRAPE PATH: Fetch from Instagram ===
+  // Artist may exist but have insufficient images
+  const artistRecord = existingArtist
+    ? { id: existingArtist.id, name: existingArtist.name, slug: existingArtist.slug }
+    : null
   const bypassGdprCheck = parsed.data.bypass_gdpr_check ?? false
   return handleScrapePath(username, artistRecord, supabaseService, bypassGdprCheck)
 }
@@ -351,7 +349,9 @@ async function handleScrapePath(
   if (!artistRecord) {
     console.log(`[Profile Search] Creating new artist @${username}...`)
     try {
-      const slug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      // Add short timestamp suffix to prevent slug collisions (artist_123 vs artist.123)
+      const baseSlug = username.toLowerCase().replace(/[^a-z0-9]/g, '-')
+      const slug = `${baseSlug}-${Date.now().toString(36).slice(-4)}`
 
       const { data: newArtist, error: artistError } = await supabaseService
         .from('artists')
@@ -399,9 +399,11 @@ async function handleScrapePath(
         }
       } else if (artistError) {
         console.error(`[Profile Search] Failed to create artist:`, artistError.message)
+        console.warn(`[Profile Search] WARNING: Images scraped for @${username} will not be saved (no artist record)`)
       }
     } catch (createError) {
       console.error(`[Profile Search] Error creating artist:`, createError)
+      console.warn(`[Profile Search] WARNING: Images scraped for @${username} will not be saved (no artist record)`)
     }
   }
 
@@ -429,15 +431,33 @@ async function handleScrapePath(
       if (saveResult.success) {
         console.log(`[Profile Search] Images saved to temp, processing in background...`)
 
-        // Fire-and-forget: process images in background
-        processArtistImages(artistId)
-          .then((result) => {
+        // Background processing with job status tracking
+        const currentArtistId = artistId // Capture for closure
+        processArtistImages(currentArtistId)
+          .then(async (result) => {
             console.log(
               `[Profile Search] Background processing complete: ${result.imagesProcessed} images`
             )
+            // Update job status to completed
+            await supabaseService
+              .from('pipeline_jobs')
+              .update({ status: 'completed', completed_at: new Date().toISOString() })
+              .eq('artist_id', currentArtistId)
+              .eq('job_type', 'scrape_single')
+              .eq('status', 'running')
           })
-          .catch((err) => {
+          .catch(async (err) => {
             console.error(`[Profile Search] Background processing failed:`, err)
+            // Update job status to failed for potential retry
+            await supabaseService
+              .from('pipeline_jobs')
+              .update({
+                status: 'failed',
+                error_message: err instanceof Error ? err.message : 'Unknown error',
+              })
+              .eq('artist_id', currentArtistId)
+              .eq('job_type', 'scrape_single')
+              .eq('status', 'running')
           })
       } else {
         console.warn(`[Profile Search] Failed to save images: ${saveResult.error}`)

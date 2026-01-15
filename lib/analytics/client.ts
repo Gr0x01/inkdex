@@ -1,26 +1,11 @@
 /**
  * Client-Side Analytics Utilities
- * Helper functions for tracking events from the browser
+ * All events tracked via PostHog (source of truth)
  */
 
 'use client'
 
 import { capturePostHog } from './posthog'
-
-/**
- * Get persistent session ID from sessionStorage
- * Creates a new ID if one doesn't exist
- */
-function getSessionId(): string {
-  if (typeof window === 'undefined') return ''
-
-  let sessionId = sessionStorage.getItem('inkdex_session_id')
-  if (!sessionId) {
-    sessionId = `${Date.now()}-${Math.random().toString(36).substring(2)}`
-    sessionStorage.setItem('inkdex_session_id', sessionId)
-  }
-  return sessionId
-}
 
 /**
  * Track a link click event (Instagram, booking, website)
@@ -33,19 +18,6 @@ export function trackClick(
   artistId: string,
   artistSlug?: string
 ): void {
-  const sessionId = getSessionId()
-
-  // Fire-and-forget - don't block user interaction
-  fetch('/api/analytics/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, artistId, sessionId }),
-  }).catch((err) => {
-    // Silently fail - don't break UX
-    console.warn('[Analytics] Click tracking failed:', err)
-  })
-
-  // PostHog event
   capturePostHog(type === 'instagram_click' ? 'Instagram Click' : 'Booking Click', {
     artist_id: artistId,
     artist_slug: artistSlug,
@@ -58,22 +30,6 @@ export function trackClick(
  * @param artistId - Artist UUID
  */
 export function trackImageView(imageId: string, artistId: string): void {
-  const sessionId = getSessionId()
-
-  fetch('/api/analytics/track', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      type: 'image_view',
-      imageId,
-      artistId,
-      sessionId,
-    }),
-  }).catch((err) => {
-    console.warn('[Analytics] Image view tracking failed:', err)
-  })
-
-  // PostHog event
   capturePostHog('Image View', {
     image_id: imageId,
     artist_id: artistId,

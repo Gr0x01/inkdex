@@ -44,59 +44,54 @@ export interface SearchAppearance {
 }
 
 /**
+ * Convert days to period string for cache lookup
+ */
+function daysToPeriod(days: number | null): '7d' | '30d' | '90d' | 'all' {
+  if (days === null) return 'all'
+  if (days <= 7) return '7d'
+  if (days <= 30) return '30d'
+  if (days <= 90) return '90d'
+  return 'all'
+}
+
+/**
  * Get aggregated analytics summary for time range
+ * Reads from pre-computed analytics_cache table (populated by daily PostHog sync).
+ *
  * @param artistId - Artist UUID
  * @param days - Number of days to look back (7, 30, 90, or null for all time)
- * @returns Aggregated metrics
+ * @returns Aggregated metrics (zeros if no data)
  */
 export async function getArtistAnalytics(
   artistId: string,
   days: number | null = 30
 ): Promise<AnalyticsSummary> {
   const supabase = await createClient()
+  const period = daysToPeriod(days)
 
-  let query = supabase
-    .from('artist_analytics')
-    .select('profile_views, image_views, instagram_clicks, booking_link_clicks, search_appearances')
+  const { data, error } = await supabase
+    .from('analytics_cache')
+    .select('profile_views, image_views, instagram_clicks, booking_clicks, search_appearances')
     .eq('artist_id', artistId)
+    .eq('period', period)
+    .single()
 
-  if (days !== null) {
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
-    query = query.gte('date', startDate.toISOString().split('T')[0])
-  }
-
-  const { data, error } = await query
-
-  if (error) {
+  if (error && error.code !== 'PGRST116') {
+    // PGRST116 = no rows returned (not an error, just no data yet)
     console.error('[Analytics] Error fetching artist analytics:', error)
-    throw error
   }
 
-  // Aggregate results
-  const summary = (data || []).reduce(
-    (acc, row) => ({
-      profileViews: acc.profileViews + (row.profile_views || 0),
-      imageViews: acc.imageViews + (row.image_views || 0),
-      instagramClicks: acc.instagramClicks + (row.instagram_clicks || 0),
-      bookingClicks: acc.bookingClicks + (row.booking_link_clicks || 0),
-      searchAppearances: acc.searchAppearances + (row.search_appearances || 0),
-      totalEngagement: acc.totalEngagement +
-        (row.profile_views || 0) +
-        (row.instagram_clicks || 0) +
-        (row.booking_link_clicks || 0),
-    }),
-    {
-      profileViews: 0,
-      imageViews: 0,
-      instagramClicks: 0,
-      bookingClicks: 0,
-      searchAppearances: 0,
-      totalEngagement: 0,
-    }
-  )
-
-  return summary
+  return {
+    profileViews: data?.profile_views || 0,
+    imageViews: data?.image_views || 0,
+    instagramClicks: data?.instagram_clicks || 0,
+    bookingClicks: data?.booking_clicks || 0,
+    searchAppearances: data?.search_appearances || 0,
+    totalEngagement:
+      (data?.profile_views || 0) +
+      (data?.instagram_clicks || 0) +
+      (data?.booking_clicks || 0),
+  }
 }
 
 /**

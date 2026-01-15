@@ -2165,27 +2165,6 @@ export type Database = {
           state: string
         }[]
       }
-      increment_booking_click: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_image_view: { Args: { p_image_id: string }; Returns: undefined }
-      increment_instagram_click: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_pipeline_progress: {
-        Args: { failed_delta: number; processed_delta: number; run_id: string }
-        Returns: undefined
-      }
-      increment_profile_view: {
-        Args: { p_artist_id: string }
-        Returns: undefined
-      }
-      increment_search_appearances: {
-        Args: { p_artist_ids: string[] }
-        Returns: undefined
-      }
       is_gdpr_country: { Args: { country_code: string }; Returns: boolean }
       log_email_send: {
         Args: {

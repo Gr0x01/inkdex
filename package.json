@@ -84,6 +84,7 @@
     "pg": "^8.16.3",
     "postgres": "^3.4.8",
     "posthog-js": "^1.318.1",
+    "posthog-node": "^5.21.0",
     "puppeteer": "^24.34.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
