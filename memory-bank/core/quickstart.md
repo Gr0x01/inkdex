@@ -1,10 +1,15 @@
 ---
-Last-Updated: 2026-01-14
+Last-Updated: 2026-01-15
 Maintainer: RB
 Status: Launched - International Expansion
 ---
 
 # Quickstart: Inkdex
+
+## ⚠️ CRITICAL: Canonical URL is `https://inkdex.io` (non-www)
+- **Vercel:** `inkdex.io` is PRIMARY domain
+- **DO NOT** add redirects to next.config.js without checking Vercel domain config first
+- See `operations.md` for incident history (site went down twice from redirect loops)
 
 ## Current Status
 - **Phase**: Launched - All 15 phases complete + International
@@ -75,6 +80,11 @@ npx tsx scripts/discovery/tavily-artist-discovery-v2.ts  # Tavily web discovery 
 npx tsx scripts/seo/generate-city-content.ts              # GPT-4.1 SEO content generation
 npm run scrape-instagram # ScrapingDog Instagram portfolio scraping
 npm run generate-embeddings # Modal.com CLIP embedding generation
+
+# Bio Location Extraction (GPT-4.1-nano)
+npx tsx scripts/maintenance/extract-bio-locations.ts          # Extract missing locations
+npx tsx scripts/maintenance/extract-bio-locations.ts --all    # Re-extract ALL (~$0.09)
+npx tsx scripts/maintenance/extract-bio-locations.ts --dry-run --limit 50  # Test first
 
 # Database
 npx supabase db push     # Push schema migrations

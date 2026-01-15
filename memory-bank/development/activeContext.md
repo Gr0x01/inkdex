@@ -1,10 +1,148 @@
 ---
-Last-Updated: 2026-01-14
+Last-Updated: 2026-01-15
 Maintainer: RB
 Status: Launched - Production
 ---
 
 # Active Context: Inkdex
+
+## PostHog Analytics Migration (Jan 15, 2026) ✅
+
+**Goal:** Make PostHog the single source of truth for analytics, replacing the dual-write DB system.
+
+**Why:**
+- Old system: Client → `/api/analytics/track` → Redis dedup → Supabase tables → Dashboard (slow aggregation)
+- New system: Client → PostHog → Daily cron sync → `analytics_cache` table → Dashboard (fast pre-computed)
+
+**Architecture:**
+```
+Client events → PostHog (source of truth)
+                    ↓
+              Daily cron (5am UTC)
+                    ↓
+              analytics_cache table (pre-aggregated by period)
+                    ↓
+              Pro dashboard (single row lookup)
+```
+
+**What was built:**
+1. **PostHog sync cron** (`/api/cron/sync-posthog-analytics`)
+   - Queries PostHog HogQL for event counts grouped by artist_id
+   - Syncs 4 periods: 7d, 30d, 90d, all
+   - Events: Profile Viewed, Instagram Click, Booking Click, Search Result Clicked
+   - Security: Event whitelist, input validation, 30s timeout, proper auth
+
+2. **analytics_cache table** - Pre-computed aggregates per artist per period
+   - Backfilled 7,484 rows from existing `artist_analytics` table
+   - PostHog sync updates daily
+
+3. **Updated dashboard queries** (`lib/analytics/queries.ts`)
+   - `getArtistAnalytics()` reads from cache (single row lookup vs aggregation)
+
+**What was removed:**
+- `/api/analytics/track` endpoint (deleted)
+- `lib/redis/deduplication.ts` (deleted - PostHog handles dedup)
+- Dual-write from client code
+- `increment_analytics` RPC function (dropped from DB)
+- Stale types from `types/database.ts`
+
+**Files Changed:**
+- `app/api/cron/sync-posthog-analytics/route.ts` - NEW: Daily sync cron
+- `lib/analytics/server.ts` - NEW: Server-side PostHog client
+- `lib/analytics/client.ts` - Simplified to PostHog-only
+- `lib/analytics/queries.ts` - Reads from analytics_cache
+- `components/analytics/AnalyticsTracker.tsx` - Simplified to PostHog-only
+- `vercel.json` - Added cron schedule
+
+**Note:** `artist_analytics` table still exists (used by `getAnalyticsTimeSeries()` for daily charts). Can be deprecated later.
+
+---
+
+## Stateless Search URLs (Jan 15, 2026) ✅
+
+**Goal:** Support direct `/search?q=fine+line` URLs for ad campaigns without database writes.
+
+**Why:** Ad campaigns need consistent, shareable search URLs that work immediately without storing state in DB.
+
+**How it works:**
+- `/search?q=fine+line` - Generate embedding on-the-fly, run vector search
+- `/search?id={uuid}` - Existing flow (DB lookup) still works
+- Optional filters: `&country=us&region=tx&city=austin`
+
+**Files Changed:**
+- `app/search/page.tsx` - Accept `q` param, generate embedding if no `id`
+- `app/api/search/query/route.ts` - NEW: Programmatic search API
+- `components/search/SearchResultsGrid.tsx` - Handle both flows
+
+**Tracking:** Searches tracked via PostHog (no `searches` table write for stateless queries)
+
+---
+
+## Bio Location Extraction - GPT-4.1-nano Migration (Jan 15, 2026) ✅
+
+**Goal:** Replace regex-based bio location extraction with GPT-4.1-nano for better accuracy on messy Instagram bios.
+
+**Why:** The old regex + dictionary approach only knew ~116 US cities. GPT understands:
+- Abbreviations: NYC, LA, ATX, PDX, CHI, NOLA, BK
+- Patterns: "📍Austin", "Based in NYC", "Austin-based", "@ Seattle"
+- International cities: Mumbai, Toronto, Sydney, etc.
+
+**Cost:** ~$0.0000275 per extraction ($0.09 for 3,179 artists)
+
+**Results (full re-extraction):**
+| Category | Count |
+|----------|-------|
+| Updated locations | 1,526 |
+| New locations | 4 |
+| No location in bio | 1,213 |
+| GDPR skipped | 436 |
+| Errors | 0 |
+
+**Files Changed:**
+- `lib/instagram/bio-location-extractor.ts` - Complete rewrite to use GPT-4.1-nano
+- `app/api/search/handlers/instagram-profile.ts` - Updated to `await extractLocationFromBio()`
+- `scripts/maintenance/extract-bio-locations.ts` - New batch script (moved from archive)
+- `scripts/maintenance/validate-bio-extraction.ts` - Validation script
+
+**Key Changes:**
+1. `extractLocationFromBio()` is now **async** (breaking change for callers)
+2. Returns `null` if GPT fails after 3 retries (no regex fallback)
+3. `checkBioForGDPR()` still available as fast regex check for filtering
+4. Batch script supports `--all` flag to re-extract existing locations
+
+**Commands:**
+```bash
+# Dry run
+npx tsx scripts/maintenance/extract-bio-locations.ts --dry-run --limit 100
+
+# Process artists missing locations
+npx tsx scripts/maintenance/extract-bio-locations.ts
+
+# Re-extract ALL artists (updates existing)
+npx tsx scripts/maintenance/extract-bio-locations.ts --all --concurrency 30
+
+# Validate against known locations
+npx tsx scripts/maintenance/validate-bio-extraction.ts --limit 50 --show-mismatches
+```
+
+**Model Notes:**
+- **gpt-4.1-nano** works with `response_format: { type: 'json_object' }`
+- **gpt-5-nano** does NOT support structured JSON output (returns empty)
+- gpt-4.1-nano: $0.10/1M input, $0.025/1M output
+
+---
+
+## ⚠️ INCIDENT: Redirect Loop - Site Down (Jan 15, 2026) - RESOLVED
+
+**What happened:** Added www → non-www redirect in next.config.js, but Vercel domain config had www.inkdex.io as PRIMARY. The two redirects fought each other causing an infinite loop.
+
+**Fix:** Changed Vercel domain config to make `inkdex.io` (non-www) PRIMARY.
+
+**Canonical URL:** `https://inkdex.io` (non-www)
+
+**Prevention:** See `operations.md` - CRITICAL section at top. Never touch redirects without checking both Vercel AND next.config.js.
+
+---
 
 ## Google Search Console - India/Pakistan Indexing (Jan 14, 2026) 🔄
 
@@ -861,10 +999,10 @@ python3 scripts/styles/train-classifier.py
 
 ## GDPR/Privacy Compliance
 
-**Status:** Implemented (pending migration deployment)
+**Status:** Implemented and deployed
 
 **Two-Layer Defense:**
-1. **Discovery Pipeline:** Bio location extractor detects EU cities/countries → artists skipped before insertion
+1. **Discovery Pipeline:** GPT-4.1-nano extracts location → `isGDPRCountry()` check → artists skipped before insertion
 2. **Search Filtering:** SQL functions exclude artists with EU `country_code` in `artist_locations`
 
 **Countries Filtered (32):**
@@ -872,7 +1010,7 @@ python3 scripts/styles/train-classifier.py
 
 **Key Files:**
 - `/lib/constants/countries.ts` - `GDPR_COUNTRY_CODES` set + `isGDPRCountry()` helper
-- `/lib/instagram/bio-location-extractor.ts` - `checkBioForGDPR()`, EU city/country detection
+- `/lib/instagram/bio-location-extractor.ts` - GPT-4.1-nano extraction + `checkBioForGDPR()` for fast regex filtering
 - `/scripts/discovery/*.ts` - GDPR filtering before artist insertion
 - `/supabase/migrations/20260111_007_filter_eu_artists_gdpr.sql` - SQL function updates
 

@@ -1,10 +1,22 @@
 ---
-Last-Updated: 2026-01-14 (Tailwind v4 migration)
+Last-Updated: 2026-01-15
 Maintainer: RB
 Status: Launched
 ---
 
 # Technology Stack
+
+## Domain Configuration
+
+**Canonical URL:** `https://inkdex.io` (non-www)
+
+| Setting | Value |
+|---------|-------|
+| Vercel Primary Domain | `inkdex.io` |
+| www redirect | Handled by both Vercel + next.config.js |
+| NEXT_PUBLIC_APP_URL | `https://inkdex.io` |
+
+⚠️ **WARNING:** See `operations.md` before touching any redirect config. Site went down twice from redirect loops.
 
 ## Core Stack
 

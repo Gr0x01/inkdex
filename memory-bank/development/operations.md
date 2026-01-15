@@ -1,10 +1,41 @@
 ---
-Last-Updated: 2026-01-12
+Last-Updated: 2026-01-15
 Maintainer: RB
 Status: Active Guidelines (VPS/Instaloader removed - now using ScrapingDog)
 ---
 
 # Operations Guide
+
+## ⚠️ CRITICAL: Domain & Redirect Configuration
+
+**Canonical URL:** `https://inkdex.io` (non-www)
+
+**DO NOT touch redirects without checking BOTH:**
+1. **Vercel Dashboard** → Settings → Domains → Which is PRIMARY?
+2. **next.config.js** → `redirects()` function
+
+**Current Setup (Jan 15, 2026):**
+- Vercel: `inkdex.io` is PRIMARY (redirects www → non-www)
+- next.config.js: Also has www → non-www redirect (belt and suspenders)
+
+**INCIDENT HISTORY:**
+| Date | What Happened | Downtime |
+|------|---------------|----------|
+| Jan 11 | Added www→non-www redirect, but Vercel had www as primary → LOOP | ~30 min |
+| Jan 11 | Removed redirect, aligned with Vercel (www primary) | Fixed |
+| Jan 15 | Re-added redirect without checking Vercel → LOOP AGAIN | ~15 min |
+| Jan 15 | Changed Vercel to non-www primary | Fixed |
+
+**THE RULE:** Vercel domain config and next.config.js redirects MUST point the same direction. If they fight, you get an infinite redirect loop and the site goes DOWN.
+
+**Before ANY redirect changes:**
+```bash
+# Check current behavior
+curl -I https://www.inkdex.io/  # Should 308 → inkdex.io
+curl -I https://inkdex.io/      # Should return 200
+```
+
+---
 
 ## Quality Gates
 
@@ -519,7 +550,9 @@ npx tsx scripts/styles/compute-artist-profiles.ts --clear
 **Two-layer defense:**
 
 1. **Discovery Filter:** `lib/instagram/bio-location-extractor.ts`
-   - Rejects EU/EEA/UK/CH artists during discovery
+   - Uses GPT-4.1-nano to extract location from bio
+   - Rejects EU/EEA/UK/CH artists during discovery via `isGDPRCountry()` check
+   - Fast `checkBioForGDPR()` regex available for quick pre-filtering
 
 2. **Search Filter:** `supabase/functions/search_functions.sql`
    - Excludes GDPR countries from all search results
