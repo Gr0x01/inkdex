@@ -10,6 +10,7 @@
 import { ApifyClient } from 'apify-client';
 import { InstagramError, ERROR_MESSAGES } from './post-fetcher';
 import { fetchProfileWithScrapingDog } from './scrapingdog-client';
+import { normalizeInstagramHandle } from '@/lib/utils/slug';
 
 // Extend error messages for profile-specific errors
 export const PROFILE_ERROR_MESSAGES = {
@@ -82,8 +83,7 @@ export async function fetchInstagramProfileImages(
     );
   }
 
-  // Remove @ prefix if present
-  const normalizedUsername = username.replace(/^@/, '').toLowerCase().trim();
+  const normalizedUsername = normalizeInstagramHandle(username);
 
   // Validate username format
   if (!isValidUsername(normalizedUsername)) {

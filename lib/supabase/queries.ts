@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
+import { normalizeInstagramHandle } from '@/lib/utils/slug'
 import type { StyleMatch } from '@/lib/search/style-classifier'
 
 /**
@@ -1339,11 +1340,11 @@ export async function getArtistByInstagramHandle(handle: string) {
     throw new Error('Invalid Instagram handle: must be a non-empty string')
   }
 
-  // Remove @ prefix if present
-  const normalizedHandle = handle.replace(/^@/, '')
+  // Normalize handle (lowercase, remove @, trim)
+  const normalizedHandle = normalizeInstagramHandle(handle)
 
   // Validate format (alphanumeric + dots/underscores, 1-30 chars)
-  const INSTAGRAM_HANDLE_REGEX = /^[a-zA-Z0-9._]{1,30}$/
+  const INSTAGRAM_HANDLE_REGEX = /^[a-z0-9._]{1,30}$/
   if (!INSTAGRAM_HANDLE_REGEX.test(normalizedHandle)) {
     throw new Error(
       'Invalid Instagram handle format: must be 1-30 characters (alphanumeric, dots, underscores only)'

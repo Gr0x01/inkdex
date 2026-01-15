@@ -12,6 +12,7 @@ import axios from 'axios';
 import { mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { fetchInstagramProfileImages, InstagramProfileData } from './profile-fetcher';
+import { normalizeInstagramHandle } from '@/lib/utils/slug';
 
 /** UUID validation regex */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -311,8 +312,7 @@ export async function classifyTattooArtist(
   username: string
 ): Promise<ClassifierResult> {
   try {
-    // Remove @ prefix if present
-    const normalizedUsername = username.replace(/^@/, '').toLowerCase().trim();
+    const normalizedUsername = normalizeInstagramHandle(username);
 
     console.log(`[Classifier] Classifying @${normalizedUsername}...`);
 

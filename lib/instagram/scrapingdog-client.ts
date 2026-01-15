@@ -9,6 +9,7 @@
 
 import { InstagramError } from './post-fetcher';
 import { InstagramPostMetadata, InstagramProfileData, PROFILE_ERROR_MESSAGES } from './profile-fetcher';
+import { normalizeInstagramHandle } from '@/lib/utils/slug';
 
 const BASE_URL = 'https://api.scrapingdog.com/instagram';
 const REQUEST_TIMEOUT_MS = 30000; // 30 seconds
@@ -102,7 +103,7 @@ export async function fetchProfileWithScrapingDog(
     throw new InstagramError('Username is required', 'INVALID_URL');
   }
 
-  const normalizedUsername = username.replace(/^@/, '').toLowerCase().trim();
+  const normalizedUsername = normalizeInstagramHandle(username);
 
   if (!isValidUsername(normalizedUsername)) {
     throw new InstagramError('Invalid Instagram username format', 'INVALID_URL');

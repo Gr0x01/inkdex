@@ -15,6 +15,7 @@ import {
   fetchOutreachRecords,
 } from '@/lib/airtable/client'
 import { env } from '@/lib/config/env'
+import { normalizeInstagramHandle } from '@/lib/utils/slug'
 
 const requestSchema = z.object({
   since: z.string().datetime().optional(),
@@ -67,9 +68,9 @@ export async function POST(request: NextRequest) {
     // Process each record
     for (const record of airtableRecords) {
       const { fields } = record
-      const handle = fields.instagram_handle
+      const rawHandle = fields.instagram_handle
 
-      if (!handle) {
+      if (!rawHandle) {
         results.errors.push({
           handle: 'unknown',
           error: 'Record missing instagram_handle',
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
       }
 
       results.processed++
+
+      // Normalize handle for case-insensitive lookup
+      const handle = normalizeInstagramHandle(rawHandle)
 
       try {
         // Find artist by instagram_handle

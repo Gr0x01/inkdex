@@ -8,6 +8,37 @@
  */
 
 /**
+ * Normalize Instagram handle for database lookups and API calls.
+ *
+ * Instagram handles are case-insensitive (Chou_tatt == chou_tatt).
+ * This function normalizes handles to lowercase for consistent DB queries.
+ *
+ * @param handle - Instagram handle (with or without @ prefix)
+ * @returns Normalized handle (lowercase, no @, trimmed)
+ * @throws Error if handle is empty after normalization
+ *
+ * @example
+ * ```typescript
+ * normalizeInstagramHandle('@Chou_tatt')   // 'chou_tatt'
+ * normalizeInstagramHandle('DuH.Tattoos')  // 'duh.tattoos'
+ * normalizeInstagramHandle('  @INK_ART ')  // 'ink_art'
+ * ```
+ */
+export function normalizeInstagramHandle(handle: string): string {
+  if (!handle) {
+    throw new Error('Instagram handle cannot be empty')
+  }
+
+  const normalized = handle.trim().replace(/^@+/, '').toLowerCase()
+
+  if (!normalized) {
+    throw new Error(`Instagram handle "${handle}" is empty after normalization`)
+  }
+
+  return normalized
+}
+
+/**
  * Generate a valid slug from an Instagram handle
  *
  * Instagram handles are globally unique, making them ideal for slugs.
