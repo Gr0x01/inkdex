@@ -48,6 +48,24 @@ export async function getAdminUser() {
 }
 
 /**
+ * Create a static-safe Supabase client (no cookies).
+ * Use this for public queries during static generation (build time).
+ * Does NOT have auth context - only use for public data.
+ */
+export function createStaticClient() {
+  return createSupabaseClient(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+}
+
+/**
  * Create a Supabase admin client with service role key.
  * Use this for admin operations that need to bypass RLS.
  * IMPORTANT: Only use in API routes that verify admin access first!

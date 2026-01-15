@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createStaticClient } from '@/lib/supabase/server'
 import { getImageUrl } from '@/lib/utils/images'
 import { normalizeInstagramHandle } from '@/lib/utils/slug'
 import type { StyleMatch } from '@/lib/search/style-classifier'
@@ -417,12 +417,11 @@ export async function getArtistsByCity(city: string) {
 
 /**
  * Get all style seeds (for SEO landing pages)
- * Note: Not using unstable_cache() here because createClient() uses cookies()
- * Page-level ISR (revalidate: 86400) handles caching instead
+ * Uses createStaticClient() to avoid cookies() for static generation compatibility
  */
 // Wrapped with cache() to deduplicate calls within a single request
 export const getStyleSeeds = cache(async () => {
-  const supabase = await createClient()
+  const supabase = createStaticClient()
 
   const { data, error } = await supabase
     .from('style_seeds')
