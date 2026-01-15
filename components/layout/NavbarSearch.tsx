@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import SearchError from '@/components/search/SearchError'
 import styles from '@/components/home/ShimmerSearch.module.css'
@@ -425,7 +426,7 @@ export default function NavbarSearch({
               role="alert"
             >
               <p className="font-body text-xs text-paper/90">
-                Artist in <strong>{displayGdprError.detectedCountry}</strong> requires consent. <a href="/add-artist" className="underline hover:text-white">Claim profile</a>
+                Artist in <strong>{displayGdprError.detectedCountry}</strong> requires consent. <Link href="/add-artist" className="underline hover:text-white">Claim profile</Link>
               </p>
               <button
                 type="button"

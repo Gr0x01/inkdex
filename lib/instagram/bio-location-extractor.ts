@@ -136,7 +136,7 @@ export async function extractLocationFromBio(bio: string | undefined): Promise<E
  * Synchronous version for backward compatibility - uses regex only
  * @deprecated Use extractLocationFromBio (async) instead
  */
-export function extractLocationFromBioSync(bio: string | undefined): ExtractedLocation | null {
+export function extractLocationFromBioSync(_bio: string | undefined): ExtractedLocation | null {
   console.warn('[BioExtractor] extractLocationFromBioSync is deprecated. Use async extractLocationFromBio instead.');
   // Return null - sync extraction no longer supported
   return null;

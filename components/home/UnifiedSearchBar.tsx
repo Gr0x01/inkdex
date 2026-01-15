@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import SearchError from '@/components/search/SearchError'
 import styles from './ShimmerSearch.module.css'
@@ -488,7 +489,7 @@ export default function UnifiedSearchBar({
                 role="alert"
               >
                 <p className="font-body text-sm text-paper/90">
-                  This artist appears to be in <strong>{displayGdprError.detectedCountry}</strong> and requires their consent to be listed. If this is you, <a href="/add-artist" className="underline hover:text-white">claim your profile</a>.
+                  This artist appears to be in <strong>{displayGdprError.detectedCountry}</strong> and requires their consent to be listed. If this is you, <Link href="/add-artist" className="underline hover:text-white">claim your profile</Link>.
                 </p>
                 <button
                   type="button"
