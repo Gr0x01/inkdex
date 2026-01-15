@@ -806,11 +806,14 @@ export async function getStateWithCities(state: string) {
   }
 
   // Transform to expected format (display_name from consolidated function)
-  const cities = ((data || []) as { display_name: string; artist_count: number }[]).map((row) => ({
-    name: row.display_name,
-    slug: row.display_name.toLowerCase().replace(/\s+/g, '-'),
-    artistCount: row.artist_count,
-  }))
+  // Filter out rows with null display_name to avoid invalid sitemap URLs
+  const cities = ((data || []) as { display_name: string | null; artist_count: number }[])
+    .filter((row): row is { display_name: string; artist_count: number } => row.display_name !== null)
+    .map((row) => ({
+      name: row.display_name,
+      slug: row.display_name.toLowerCase().replace(/\s+/g, '-'),
+      artistCount: row.artist_count,
+    }))
 
   // Calculate total
   const total = cities.reduce((sum, city) => sum + city.artistCount, 0)
@@ -1423,12 +1426,15 @@ export async function getCitiesWithCounts(
   }
 
   // Map consolidated function output to expected format
-  return (data || []).map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
-    city: row.display_name,
-    region: row.region_code,
-    country_code: row.country_code,
-    artist_count: row.artist_count,
-  }))
+  // Filter out rows with null display_name to avoid invalid sitemap URLs
+  return (data || [])
+    .filter((row: { display_name: string | null }) => row.display_name !== null)
+    .map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
+      city: row.display_name,
+      region: row.region_code,
+      country_code: row.country_code,
+      artist_count: row.artist_count,
+    }))
 }
 
 /**
@@ -1454,9 +1460,9 @@ export async function getRegionsWithCounts(
   }
 
   // Map consolidated function output to expected format
-  return (data || []).map((row: { location_code: string; display_name: string; artist_count: number }) => ({
+  return (data || []).map((row: { location_code: string; display_name: string | null; artist_count: number }) => ({
     region: row.location_code,
-    region_name: row.display_name,
+    region_name: row.display_name ?? row.location_code ?? 'Unknown',
     artist_count: row.artist_count,
   }))
 }
@@ -1516,12 +1522,15 @@ export async function getAllCitiesWithMinArtists(minArtistCount: number = 3): Pr
   }
 
   // Map consolidated function output to expected format
-  return (data || []).map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
-    city: row.display_name.split(', ')[0], // "City, State" -> "City"
-    region: row.region_code,
-    country_code: row.country_code,
-    artist_count: row.artist_count,
-  }))
+  // Filter out rows with null display_name to avoid invalid sitemap URLs
+  return (data || [])
+    .filter((row: { display_name: string | null }) => row.display_name !== null)
+    .map((row: { display_name: string; region_code: string; country_code: string; artist_count: number }) => ({
+      city: row.display_name.split(', ')[0], // "City, State" -> "City"
+      region: row.region_code,
+      country_code: row.country_code,
+      artist_count: row.artist_count,
+    }))
 }
 
 /**

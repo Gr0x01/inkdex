@@ -14,7 +14,18 @@ let redis: Redis | null = null
  */
 export function getRedisClient(): Redis | null {
   if (redis) {
-    return redis
+    // Store status once to avoid race conditions in concurrent invocations
+    const status = redis.status
+
+    // Return healthy or connecting instances
+    if (status === 'ready' || status === 'connecting' || status === 'connect') {
+      return redis
+    }
+
+    // Dead/closed connection - clean up before creating new one
+    console.log(`[Redis] Cleaning up stale connection (status: ${status})`)
+    redis.disconnect()
+    redis = null
   }
 
   const redisUrl = process.env.REDIS_URL
