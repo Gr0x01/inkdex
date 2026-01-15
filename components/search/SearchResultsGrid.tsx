@@ -7,7 +7,10 @@ import { trackSearchConversion } from '@/lib/analytics/conversions'
 import type { SearchType } from '@/lib/analytics/events'
 
 interface SearchResultsGridProps {
-  searchId: string
+  /** Search ID for DB-backed searches (mutually exclusive with queryText) */
+  searchId?: string | null
+  /** Query text for stateless searches (mutually exclusive with searchId) */
+  queryText?: string | null
   initialResults: SearchResult[]
   totalCount: number
   filters: {
@@ -30,6 +33,7 @@ const BATCH_SIZE = 20
 
 export default function SearchResultsGrid({
   searchId,
+  queryText,
   initialResults,
   totalCount,
   filters,
@@ -51,6 +55,12 @@ export default function SearchResultsGrid({
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
 
+    // Need either searchId or queryText to paginate
+    if (!searchId && !queryText) {
+      console.warn('[SearchResultsGrid] No searchId or queryText for pagination')
+      return
+    }
+
     // Cancel previous request if still pending
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -70,7 +80,16 @@ export default function SearchResultsGrid({
       if (filters.region) params.set('region', filters.region)
       if (filters.city) params.set('city', filters.city)
 
-      const response = await fetch(`/api/search/${searchId}?${params}`, {
+      // Use stateless query endpoint if queryText provided, otherwise use searchId
+      let endpoint: string
+      if (queryText) {
+        params.set('q', queryText)
+        endpoint = `/api/search/query?${params}`
+      } else {
+        endpoint = `/api/search/${searchId}?${params}`
+      }
+
+      const response = await fetch(endpoint, {
         signal: abortControllerRef.current.signal,
       })
 
@@ -106,7 +125,7 @@ export default function SearchResultsGrid({
       setLoading(false)
       abortControllerRef.current = null
     }
-  }, [searchId, results.length, filters, excludeArtistId, searchedArtistId, loading, hasMore])
+  }, [searchId, queryText, results.length, filters, excludeArtistId, searchedArtistId, loading, hasMore])
 
   // Keep loadMoreRef in sync
   useEffect(() => {
@@ -180,7 +199,7 @@ export default function SearchResultsGrid({
         city_filter: filters.city || undefined,
         is_first_search: !hasSearchedBefore,
         time_to_search_ms: timeToSearchMs,
-        search_id: searchId,
+        search_id: searchId || undefined, // undefined for stateless searches
       })
 
       // Mark that user has searched
@@ -200,7 +219,7 @@ export default function SearchResultsGrid({
               key={artist.artist_id}
               artist={artist}
               resultPosition={index + 1}
-              searchId={searchId}
+              searchId={searchId || undefined}
             />
           ))}
         </div>

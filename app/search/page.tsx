@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- Search result types vary */
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { headers } from 'next/headers'
 import LocationFilter from '@/components/search/LocationFilter'
 import ClearFiltersButton from '@/components/search/ClearFiltersButton'
 import { StickyFilterBar } from '@/components/search/StickyFilterBar'
@@ -8,6 +9,8 @@ import SearchResultsGrid from '@/components/search/SearchResultsGrid'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { createClient } from '@/lib/supabase/server'
 import { searchArtistsWithStyleBoost } from '@/lib/supabase/queries'
+import { generateTextEmbedding } from '@/lib/embeddings/hybrid-client'
+import { trackSearchCompletedServer, generateAnonymousId, flushPostHog } from '@/lib/analytics/server'
 import type { StyleMatch } from '@/lib/search/style-classifier'
 import { getImageUrl } from '@/lib/utils/images'
 import { slugToName } from '@/lib/utils/location'
@@ -16,6 +19,7 @@ import type { SearchResult, SearchedArtistData } from '@/types/search'
 interface SearchPageProps {
   searchParams: Promise<{
     id?: string
+    q?: string // Stateless text query
     country?: string
     region?: string
     city?: string
@@ -23,63 +27,99 @@ interface SearchPageProps {
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const { id, country, region, city } = await searchParams
+  const { id, q, country, region, city } = await searchParams
 
-  // Require search ID
-  if (!id) {
+  // Require either search ID or query text
+  if (!id && !q) {
     notFound()
   }
 
   // Initial page load - fetch first batch
   const limit = 20
 
-  // Fetch search from database (direct access, no HTTP request)
-  const supabase = await createClient()
-
-  const { data: search, error: searchError } = await supabase
-    .from('searches')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (searchError || !search) {
-    notFound()
-  }
-
-  // Parse embedding
+  // Variables for both modes
   let embedding: number[]
-  try {
-    embedding = JSON.parse(search.embedding)
-  } catch (error) {
-    console.error('Failed to parse embedding:', error)
-    throw new Error('Invalid embedding format')
-  }
-
-  // Parse detected styles for style-weighted search
   let detectedStyles: StyleMatch[] | null = null
-  if (search.detected_styles) {
-    try {
-      detectedStyles = typeof search.detected_styles === 'string'
-        ? JSON.parse(search.detected_styles)
-        : search.detected_styles
-    } catch (error) {
-      console.error('Failed to parse detected_styles:', error)
-      // Continue without style weighting
+  let isColorQuery: boolean | null = null
+  let excludeArtistId: string | null = null
+  let searchType: string
+  let searchedArtistData: SearchedArtistData | null = null
+  let queryText: string | null = null
+  let instagramUsername: string | null = null
+  let instagramPostId: string | null = null
+  let isStateless = false
+
+  if (q && !id) {
+    // ═══════════════════════════════════════════════════════════════
+    // STATELESS MODE: Generate embedding on-the-fly, no DB write
+    // Perfect for ad traffic and shareable URLs
+    // ═══════════════════════════════════════════════════════════════
+    isStateless = true
+    queryText = q.trim()
+
+    // Validate query
+    if (queryText.length < 3 || queryText.length > 200) {
+      notFound()
     }
+
+    // Enhance query for better CLIP understanding
+    const enhancedQuery = queryText.toLowerCase().includes('tattoo')
+      ? queryText
+      : `${queryText} tattoo`
+
+    // Generate CLIP embedding (deterministic - same query = same results)
+    embedding = await generateTextEmbedding(enhancedQuery)
+    searchType = 'text'
+
+  } else {
+    // ═══════════════════════════════════════════════════════════════
+    // DB-BACKED MODE: Fetch search from database
+    // ═══════════════════════════════════════════════════════════════
+    const supabase = await createClient()
+
+    const { data: search, error: searchError } = await supabase
+      .from('searches')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (searchError || !search) {
+      notFound()
+    }
+
+    // Parse embedding
+    try {
+      embedding = JSON.parse(search.embedding)
+    } catch (error) {
+      console.error('Failed to parse embedding:', error)
+      throw new Error('Invalid embedding format')
+    }
+
+    // Parse detected styles for style-weighted search
+    if (search.detected_styles) {
+      try {
+        detectedStyles = typeof search.detected_styles === 'string'
+          ? JSON.parse(search.detected_styles)
+          : search.detected_styles
+      } catch (error) {
+        console.error('Failed to parse detected_styles:', error)
+        // Continue without style weighting
+      }
+    }
+
+    // Get is_color for color-weighted search
+    isColorQuery = search.is_color ?? null
+
+    // Extract artist_id_source for exclusion (similar_artist searches)
+    excludeArtistId = search.artist_id_source || null
+
+    // Get search type and searched artist data (for profile searches)
+    searchType = search.query_type as string
+    searchedArtistData = search.searched_artist as SearchedArtistData | null
+    queryText = search.query_text as string | null
+    instagramUsername = search.instagram_username as string | null
+    instagramPostId = search.instagram_post_id as string | null
   }
-
-  // Get is_color for color-weighted search
-  const isColorQuery: boolean | null = search.is_color ?? null
-
-  // Extract artist_id_source for exclusion (similar_artist searches)
-  const excludeArtistId = search.artist_id_source || null
-
-  // Get search type and searched artist data (for profile searches)
-  const searchType = search.query_type as string
-  const searchedArtistData = search.searched_artist as SearchedArtistData | null
-  const queryText = search.query_text as string | null
-  const instagramUsername = search.instagram_username as string | null
-  const instagramPostId = search.instagram_post_id as string | null
 
   // Parse location filters - convert slugs to proper format for DB query
   const countryFilter = country?.toUpperCase() || null
@@ -98,6 +138,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     queryStyles: detectedStyles,
     isColorQuery,
   })
+
+  // Track stateless searches in PostHog (after search completes so we have actual count)
+  if (isStateless) {
+    const headersList = await headers()
+    const distinctId = generateAnonymousId(headersList)
+    void trackSearchCompletedServer(distinctId, {
+      search_type: 'text',
+      result_count: totalCount,
+      is_first_search: false, // Can't determine server-side
+      source: 'direct',
+    })
+    // Flush immediately in serverless to ensure event is sent before function terminates
+    void flushPostHog()
+  }
 
   // Map results to SearchResult format
   const allResults: SearchResult[] = (Array.isArray(rawResults) ? rawResults : []).map((result: any) => ({
@@ -163,27 +217,31 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   // Track search appearances with details (fire-and-forget)
+  // Skip for stateless searches - no DB record to track against
   // Exclude searched artist from tracking if it's a pending artist (not in DB yet)
-  const trackableArtists = artists.filter(a => !a.artist_id.startsWith('pending-'))
-  if (trackableArtists.length > 0) {
-    void (async () => {
-      try {
-        const appearancesData = trackableArtists.map((artist, index) => ({
-          artist_id: artist.artist_id,
-          rank: index + 1,
-          similarity: artist.similarity,
-          boosted_score: artist.similarity,
-          image_count: artist.matching_images?.length || 3
-        }))
+  if (!isStateless && id) {
+    const supabase = await createClient()
+    const trackableArtists = artists.filter(a => !a.artist_id.startsWith('pending-'))
+    if (trackableArtists.length > 0) {
+      void (async () => {
+        try {
+          const appearancesData = trackableArtists.map((artist, index) => ({
+            artist_id: artist.artist_id,
+            rank: index + 1,
+            similarity: artist.similarity,
+            boosted_score: artist.similarity,
+            image_count: artist.matching_images?.length || 3
+          }))
 
-        await supabase.rpc('track_search_appearances_with_details', {
-          p_search_id: id,
-          p_appearances: appearancesData
-        })
-      } catch (err) {
-        console.error('[Search] Tracking failed:', err)
-      }
-    })()
+          await supabase.rpc('track_search_appearances_with_details', {
+            p_search_id: id,
+            p_appearances: appearancesData
+          })
+        } catch (err) {
+          console.error('[Search] Tracking failed:', err)
+        }
+      })()
+    }
   }
 
   // Adjust total count if we added a searched artist
@@ -314,7 +372,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="overflow-visible shrink-0 flex items-center gap-2">
               <ClearFiltersButton />
               <ErrorBoundary fallback={<div className="text-xs text-ink/40">Filter unavailable</div>}>
-                <LocationFilter searchId={id} />
+                <LocationFilter searchId={isStateless ? undefined : id} />
               </ErrorBoundary>
             </div>
           </div>
@@ -335,7 +393,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         {/* Artist Grid with Infinite Scroll */}
         <SearchResultsGrid
-          searchId={id}
+          searchId={isStateless ? null : id}
+          queryText={isStateless ? q : null}
           initialResults={artists}
           totalCount={displayTotalCount}
           filters={{
