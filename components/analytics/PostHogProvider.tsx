@@ -38,7 +38,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   // Initialize PostHog once on mount
   useEffect(() => {
-    if (!IS_PRODUCTION) return
+    // Skip in dev mode or when running production builds locally
+    if (!IS_PRODUCTION || window.location.hostname === 'localhost') return
     if (!isValidPostHogKey(POSTHOG_KEY)) {
       if (POSTHOG_KEY) {
         console.error(
@@ -74,7 +75,7 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
 
   // Handle session replay consent toggle
   useEffect(() => {
-    if (!IS_PRODUCTION || !isInitialized) return
+    if (!IS_PRODUCTION || !isInitialized || window.location.hostname === 'localhost') return
 
     const handleConsentChange = () => {
       if (hasAnalyticsConsent()) {
@@ -97,8 +98,9 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isInitialized])
 
-  // In development or if not initialized, just render children without provider
-  if (!IS_PRODUCTION || !isValidPostHogKey(POSTHOG_KEY)) {
+  // In development, localhost, or if not initialized, just render children without provider
+  const isLocalhost = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  if (!IS_PRODUCTION || isLocalhost || !isValidPostHogKey(POSTHOG_KEY)) {
     return <>{children}</>
   }
 
