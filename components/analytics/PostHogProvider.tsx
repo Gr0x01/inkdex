@@ -62,8 +62,8 @@ export function PostHogProvider({ children }: { children: React.ReactNode }) {
       // Session recording starts disabled, enabled via consent
       disable_session_recording: true,
       session_recording: {
-        maskAllInputs: true,
-        maskTextSelector: '.ph-mask, [data-ph-mask]',
+        maskAllInputs: false, // Allow seeing search queries - no sensitive data
+        maskTextSelector: '.ph-mask, [data-ph-mask]', // Manually mask sensitive fields with this class
         blockSelector: '.ph-no-capture, [data-ph-no-capture]',
       },
       enable_recording_console_log: true,
