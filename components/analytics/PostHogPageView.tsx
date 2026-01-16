@@ -8,16 +8,20 @@
  * on initial page load, not subsequent client-side navigations.
  *
  * This component should be included in the root layout, wrapped by PostHogProvider.
+ *
+ * Performance optimization:
+ * - Uses custom usePostHogInstance hook instead of posthog-js/react
+ * - This avoids bundling posthog-js (~80KB) in the initial bundle
  */
 
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
-import { usePostHog } from 'posthog-js/react'
+import { usePostHogInstance } from './PostHogProvider'
 
 function PostHogPageViewInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const posthog = usePostHog()
+  const posthog = usePostHogInstance()
 
   useEffect(() => {
     // Skip if posthog not ready or no pathname

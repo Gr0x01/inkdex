@@ -15,7 +15,7 @@ function MockArtistCard({ className = '' }: { className?: string }) {
         <div className="relative w-full max-w-[200px] mx-auto">
           <div className="relative w-full aspect-3/4 border-2 border-ink overflow-hidden">
             <Image
-              src="/images/example-artist.png"
+              src="/images/example-artist.webp"
               alt="Example artist profile"
               fill
               className="object-cover"

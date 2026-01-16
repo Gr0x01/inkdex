@@ -18,7 +18,7 @@ export default function ProArtistCardMock() {
           <div className="relative flex-1 bg-gray-100">
             <div className="absolute inset-0">
               <Image
-                src="/images/pro-showcase-tattoo.png"
+                src="/images/pro-showcase-tattoo.webp"
                 alt="Pro artist portfolio showcase"
                 fill
                 className="object-cover"

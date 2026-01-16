@@ -9,6 +9,9 @@ import { PostHogProvider } from '@/components/analytics/PostHogProvider'
 import { PostHogPageView } from '@/components/analytics/PostHogPageView'
 import { GeoHydrator } from '@/components/analytics/GeoHydrator'
 
+// Supabase project URL for preconnect
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+
 // Font configurations for "Inkdex" design system
 // Optimized: reduced weights to minimize font file downloads
 const playfairDisplay = Playfair_Display({
@@ -78,6 +81,17 @@ export default async function RootLayout({
       lang="en"
       className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
+      <head>
+        {/* Preload hero image for faster LCP */}
+        <link rel="preload" as="image" href="/images/hero-poster.webp" type="image/webp" fetchPriority="high" />
+        {/* Preconnect to Supabase for faster API/image requests */}
+        {SUPABASE_URL && (
+          <>
+            <link rel="preconnect" href={SUPABASE_URL} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={SUPABASE_URL} />
+          </>
+        )}
+      </head>
       <body className="">
         <PostHogProvider>
           <GeoHydrator country={country} />
