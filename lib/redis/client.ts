@@ -1,6 +1,8 @@
 /**
  * Redis Client Singleton
  * Provides a single Redis connection for the application
+ *
+ * Optimized for serverless (Vercel) where connections go stale between invocations
  */
 
 import Redis from 'ioredis'
@@ -17,40 +19,45 @@ export function getRedisClient(): Redis | null {
     // Store status once to avoid race conditions in concurrent invocations
     const status = redis.status
 
-    // Return healthy or connecting instances
-    if (status === 'ready' || status === 'connecting' || status === 'connect') {
+    // Only return if truly ready - don't return connecting connections
+    // as they may never complete in serverless cold starts
+    if (status === 'ready') {
       return redis
     }
 
-    // Dead/closed connection - clean up before creating new one
-    console.log(`[Redis] Cleaning up stale connection (status: ${status})`)
-    redis.disconnect()
+    // Any other state (connecting, connect, close, end, wait, reconnecting)
+    // means we need to clean up and start fresh for serverless reliability
+    try {
+      redis.disconnect()
+    } catch {
+      // Ignore disconnect errors on stale connections
+    }
     redis = null
   }
 
   const redisUrl = process.env.REDIS_URL
 
   if (!redisUrl) {
-    console.warn('[Redis] REDIS_URL not set, Redis features disabled')
+    // Only warn once, not on every cold start
     return null
   }
 
   redis = new Redis(redisUrl, {
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: 1,        // Fail fast in serverless (was 3)
+    connectTimeout: 5000,            // 5s connection timeout
+    commandTimeout: 3000,            // 3s per command timeout
     enableReadyCheck: true,
+    lazyConnect: false,              // Connect immediately
     retryStrategy(times) {
-      if (times > 3) {
-        console.error('[Redis] Max retries reached, giving up')
-        return null // Stop retrying
+      if (times > 1) {
+        // In serverless, fail fast - don't retry multiple times
+        return null
       }
-      const delay = Math.min(times * 100, 3000)
-      console.log(`[Redis] Retry attempt ${times}, waiting ${delay}ms`)
-      return delay
+      return 100 // Single quick retry
     },
-    reconnectOnError(err) {
-      console.error('[Redis] Connection error:', err.message)
-      // Reconnect on connection errors
-      return true
+    reconnectOnError() {
+      // Don't auto-reconnect in serverless - let next request create fresh connection
+      return false
     },
   })
 
