@@ -69,11 +69,23 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
   - Tools: Write, Read, MultiEdit, Bash, Grep, Glob
   - Focus: Modern frameworks, bundle optimization, browser testing
 
-- **ui-designer**: Visionary UI designer for rapid, implementable interfaces  
+- **ui-designer**: Visionary UI designer for rapid, implementable interfaces
   - Use for: Interface design, design systems, visual aesthetics
   - Expertise: Modern design trends, responsive layouts
   - Tools: Write, Read, MultiEdit, WebSearch, WebFetch
   - Focus: Component library integration, user experience
+
+- **instagram-curator**: Instagram content strategist for dual accounts
+  - Use for: Reel scripting, content calendars, growth strategy
+  - Accounts: @vibing.with.ra (personal brand), @inkdexio (product)
+  - Tools: Read, Write, Grep, Glob, WebSearch, WebFetch
+  - Focus: 2026 algorithm optimization, builder storytelling, DM-shareable content
+
+- **growth-hacker**: Rapid user acquisition, viral loops, and data-driven growth experiments
+  - Use for: Growth strategy, A/B testing, channel optimization, conversion funnels, viral mechanics
+  - Expertise: AARRR metrics, product-led growth, experimentation frameworks, automation
+  - Tools: Write, Read, MultiEdit, Bash, Grep, Glob, WebSearch, WebFetch, Playwright
+  - Data: DataForSEO (via scripts), Tavily (via scripts), PostHog analytics
 
 ### Delegation Triggers
 1. **Automatic Review**: After implementing features or fixes, delegate to `code-reviewer`
@@ -82,6 +94,8 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
 4. **UI Design & Systems**: For interface design, visual improvements, or design system work, delegate to `ui-designer`
 5. **Complex Research**: Use general-purpose subagent for multi-step investigations
 6. **Reference Generation**: Use subagents to create documentation or architectural diagrams
+7. **Marketing Content**: For reel ideas, content calendars, or Instagram strategy, delegate to `instagram-curator`
+8. **Growth & Acquisition**: For growth experiments, viral loops, conversion optimization, or channel strategy, delegate to `growth-hacker`
 
 ### Integration Workflow
 - **NEW BACKEND FEATURES**: 
@@ -90,7 +104,9 @@ Always adjust the metadata header (`Last-Updated`, `Maintainer`) when you edit a
   3. Measure performance impact
   4. Delegate to code-reviewer → Address feedback
 - **FRONTEND FEATURES**: Use frontend-developer → Implement → Test → code-reviewer
-- **UI DESIGN**: Use ui-designer → Create mockups/wireframes → frontend-developer → code-reviewer  
+- **UI DESIGN**: Use ui-designer → Create mockups/wireframes → frontend-developer → code-reviewer
+- **MARKETING CONTENT**: Use instagram-curator → Script reels → Add to reel-ideas.md
+- **GROWTH EXPERIMENTS**: Use growth-hacker → Design experiment → Implement tracking → Analyze results
 - **ALL CHANGES**: Complete implementation → Run quality checks → Delegate to code-reviewer → Address feedback
 - Document significant subagent recommendations in memory bank
 

@@ -1,10 +1,53 @@
 ---
-Last-Updated: 2026-01-15
+Last-Updated: 2026-01-16
 Maintainer: RB
 Status: Launched - Production
 ---
 
 # Active Context: Inkdex
+
+## Canada / Australia / New Zealand Expansion (Jan 16, 2026) ✅
+
+**Goal:** Add Tier 1 English-speaking countries to capture high-value markets with shared language/culture.
+
+**Results:**
+| Country | Cities | Artists |
+|---------|--------|---------|
+| Canada (CA) | 10 | ~1,200 |
+| Australia (AU) | 8 | ~1,000 |
+| New Zealand (NZ) | 3 | ~500 |
+| **Total** | 21 | ~2,700 new |
+
+**Cities Added:**
+- **Canada:** Toronto, Vancouver, Montreal, Calgary, Edmonton, Ottawa, Winnipeg, Halifax, Victoria, Quebec City
+- **Australia:** Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Newcastle
+- **New Zealand:** Auckland, Wellington, Christchurch
+
+**URL Structure:**
+- Canada: `/ca/{province-code}/{city}` (e.g., `/ca/on/toronto`, `/ca/bc/vancouver`)
+- Australia: `/au/{state-code}/{city}` (e.g., `/au/nsw/sydney`, `/au/vic/melbourne`)
+- New Zealand: `/nz/{region-code}/{city}` (e.g., `/nz/auk/auckland`, `/nz/wgn/wellington`)
+
+**Files Changed:**
+- `scripts/discovery/tavily-artist-discovery-v2.ts` - Added 21 cities with country_code
+- `scripts/discovery/query-generator.ts` - Added neighborhoods for Toronto, Vancouver, Montreal, Sydney, Melbourne, Brisbane, Auckland
+- `lib/constants/cities.ts` - Added `CANADA_CITIES`, `CANADA_PROVINCES`, `AUSTRALIA_CITIES`, `AUSTRALIA_STATES`, `NEW_ZEALAND_CITIES`, `NEW_ZEALAND_REGIONS`
+
+**Discovery Script Improvements:**
+- Simplified duplicate handling: error code 23505 (unique violation) silently skipped
+- Removed pre-load of 17K handles (unnecessary - query caching handles dedup)
+- Faster processing: sleep reduced 100ms → 50ms, progress logging every 50
+
+**Cost:** $0 Tavily credits (all queries cached from first run)
+
+**Next Steps:**
+1. Run Instagram scraper: `npm run scrape-instagram`
+2. Generate embeddings: `python3 scripts/embeddings/dual_gpu_embeddings.py`
+3. Tag styles: `npx tsx scripts/styles/tag-images-ml.ts --concurrency 200`
+4. Compute artist profiles: `npx tsx scripts/styles/compute-artist-profiles.ts`
+5. Submit new pages to Google Search Console
+
+---
 
 ## PostHog Analytics Migration (Jan 15, 2026) ✅
 
@@ -273,9 +316,9 @@ https://inkdex.io/pk/is
 
 ## Current State
 
-**Platform:** Production - 116 cities, 16,324 artists, 99,258 images with embeddings
+**Platform:** Production - 147 cities, ~20,000 artists, 99,258 images with embeddings
 
-**Live Cities:** 116 cities across all 50 states + DC (see quickstart.md for full list)
+**Live Cities:** 147 cities (116 US + 10 CA + 8 AU + 3 NZ + 6 IN + 4 PK) - see quickstart.md for full list
 
 **Style System:** ML classifier (sklearn logistic regression) trained on 15k GPT-labeled images
 

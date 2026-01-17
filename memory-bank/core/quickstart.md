@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-15
+Last-Updated: 2026-01-16
 Maintainer: RB
 Status: Launched - International Expansion
 ---
@@ -13,10 +13,10 @@ Status: Launched - International Expansion
 
 ## Current Status
 - **Phase**: Launched - All 15 phases complete + International
-- **Version**: 1.1.0 (International Launch)
+- **Version**: 1.2.0 (Tier 1 English Expansion)
 - **Environment**: Production
-- **Scale**: 126 cities (116 US + 10 International), 17,250 artists, 99,258 images with embeddings
-- **Countries**: 42 (US, Canada, India, Pakistan, Australia, Mexico, Brazil, Argentina, Japan, + 33 more)
+- **Scale**: 147 cities (116 US + 31 International), ~20,000 artists, 99,258 images with embeddings
+- **Countries**: 45 (US, Canada, Australia, New Zealand, India, Pakistan, Mexico, Brazil, Argentina, Japan, + 35 more)
 
 ## Project Summary
 Inkdex - tattoo artist discovery platform where users search in *their language* (images, vibes, plain descriptions). Visual search platform that solves "I have Pinterest screenshots but don't know tattoo terminology" problem.
@@ -45,13 +45,19 @@ Inkdex - tattoo artist discovery platform where users search in *their language*
 - **Pakistan (PK):** Karachi, Lahore, Islamabad, Rawalpindi (232 artists)
 - URL format: `/in/mh/mumbai`, `/pk/sd/karachi`
 
+**Tier 1 English Expansion (Jan 16, 2026):**
+- **Canada (CA):** Toronto, Vancouver, Montreal, Calgary, Edmonton, Ottawa, Winnipeg, Halifax, Victoria, Quebec City (~1,200 artists)
+- **Australia (AU):** Sydney, Melbourne, Brisbane, Perth, Adelaide, Gold Coast, Canberra, Newcastle (~1,000 artists)
+- **New Zealand (NZ):** Auckland, Wellington, Christchurch (~500 artists)
+- URL format: `/ca/on/toronto`, `/au/nsw/sydney`, `/nz/auk/auckland`
+
 **Total Platform Scale:**
-- **Cities**: 126 (116 US + 6 India + 4 Pakistan)
-- **Artists**: 17,250
-- **Countries**: 42
-- **States/Regions**: 51 US + 6 India + 3 Pakistan
+- **Cities**: 147 (116 US + 10 CA + 8 AU + 3 NZ + 6 IN + 4 PK)
+- **Artists**: ~20,000
+- **Countries**: 45
+- **States/Regions**: 51 US + 10 CA + 8 AU + 2 NZ + 6 IN + 3 PK
 - **SEO Content**: 116 US cities with full editorial content
-- **Discovery Cost**: ~$328 (Tavily API)
+- **Discovery Cost**: ~$360 (Tavily API)
 - **SEO Generation Cost**: ~$2.14 (GPT-4.1)
 
 ## Key Commands
@@ -190,6 +196,7 @@ NEXT_PUBLIC_APP_URL=
 - **Monthly (96 cities)**: ~$12-20 (storage + re-scraping + Redis)
 
 ## Next Immediate Steps
-1. Monitor production for issues
-2. Continue marketing/artist outreach
-3. International expansion via ScrapingDog API
+1. Run Instagram scraper for CA/AU/NZ: `npm run scrape-instagram`
+2. Generate embeddings: `python3 scripts/embeddings/dual_gpu_embeddings.py`
+3. Tag styles: `npx tsx scripts/styles/tag-images-ml.ts --concurrency 200`
+4. Submit new pages to Google Search Console (limit: 10/day)

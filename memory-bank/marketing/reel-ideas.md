@@ -262,8 +262,39 @@ Add new ideas here as they come up:
 
 **Source:** `activeContext.md` - Stateless Search URLs (Jan 15, 2026)
 
--
--
+---
+
+### 16. "I built the feature but forgot to plug it in"
+**Status:** Idea
+**Hook:** "My site was full of selfies and promo graphics. I built tattoo detection... and forgot to use it."
+**Story:**
+- Built image classification during scraping pipeline
+- Forgot to actually wire it up to filter during ingestion
+- Result: 180k images, ~11% were non-tattoos (selfies, promo graphics, lifestyle photos)
+- Fix: GPT-5-mini vision + flex pricing to clean up the mess
+- Ran 10k batches, manually verified accuracy
+- 100% accuracy across 11k+ manual reviews
+
+**Numbers:**
+- 180,000 images to classify
+- $90 total cost (flex pricing = 50% off standard)
+- 100% accuracy on flagged images (0 false positives after 11k reviews)
+- ~6 hours per 10k batch
+- ~11% non-tattoo content identified and removed
+
+**Visual Elements:**
+- Terminal running the batch job with progress logs
+- Admin panel review screen showing flagged images
+- Before/after search results quality
+- Cost breakdown graphic ($0.0005/image)
+
+**Why it works:**
+- Relatable "I built it but forgot to plug it in" moment
+- Shows honest mistake → quick fix
+- Real production AI use (not just demos)
+- Concrete numbers make it credible
+
+**Source:** Session with Claude - GPT-5-mini Flex Cleanup (Jan 15, 2026)
 
 ---
 
