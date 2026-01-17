@@ -59,6 +59,7 @@ export default function MasonryPortfolioGrid({
                 sizes="(max-width: 640px) 100vw, 50vw"
                 className="w-full h-auto object-cover"
                 loading={index < 6 ? 'eager' : 'lazy'}
+                priority={index === 0}
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
                 quality={75}

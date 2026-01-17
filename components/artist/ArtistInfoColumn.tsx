@@ -126,6 +126,7 @@ export default function ArtistInfoColumn({
               alt={`${artist.name} profile`}
               sizes="200px"
               placeholderSize="lg"
+              priority
             />
           </div>
 

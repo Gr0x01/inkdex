@@ -3,12 +3,15 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ProfilePlaceholder } from './ProfilePlaceholder'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 interface ProfileImageProps {
   src: string | null | undefined
   alt: string
   fill?: boolean
   sizes?: string
+  priority?: boolean
+  quality?: number
   className?: string
   placeholderSize?: 'sm' | 'md' | 'lg'
 }
@@ -24,6 +27,8 @@ export function ProfileImage({
   alt,
   fill = true,
   sizes = '200px',
+  priority = false,
+  quality = 75,
   className = 'object-cover',
   placeholderSize = 'md',
 }: ProfileImageProps) {
@@ -41,6 +46,10 @@ export function ProfileImage({
       alt={alt}
       fill={fill}
       sizes={sizes}
+      priority={priority}
+      quality={quality}
+      placeholder="blur"
+      blurDataURL={BLUR_DATA_URL}
       className={className}
       onError={() => setHasError(true)}
     />
