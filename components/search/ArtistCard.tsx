@@ -9,6 +9,7 @@ import { ProBadge } from '@/components/badges/ProBadge'
 import { FeaturedBadge } from '@/components/badges/FeaturedBadge'
 import { capturePostHog } from '@/lib/analytics/posthog'
 import { EVENTS } from '@/lib/analytics/events'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 /**
  * Format follower count for display
@@ -197,6 +198,8 @@ export default function ArtistCard({
               loading="lazy"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover group-hover:scale-[1.01] transition-transform duration-slow"
+              placeholder="blur"
+              blurDataURL={BLUR_DATA_URL}
             />
 
             {/* Featured badge on image - show on mobile/tablet, hide on lg+ for Pro/Featured (shown in details instead) */}
@@ -230,6 +233,8 @@ export default function ArtistCard({
                   loading="lazy"
                   className="rounded-full object-cover shrink-0"
                   onError={() => setProfileImageError(true)}
+                  placeholder="blur"
+                  blurDataURL={BLUR_DATA_URL}
                 />
               )}
               <h3 className="font-heading text-sm font-bold text-ink tracking-tight truncate min-w-0">
@@ -316,6 +321,8 @@ export default function ArtistCard({
                         loading="lazy"
                         className="rounded-full object-cover shrink-0"
                         onError={() => setProfileImageError(true)}
+                        placeholder="blur"
+                        blurDataURL={BLUR_DATA_URL}
                       />
                     )}
                     <h3 className="font-heading text-base lg:text-xl font-bold text-ink tracking-tight truncate">
@@ -378,6 +385,8 @@ export default function ArtistCard({
                       loading="lazy"
                       className="rounded-full object-cover shrink-0"
                       onError={() => setProfileImageError(true)}
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
                     />
                   )}
                   <h3 className="font-heading text-sm sm:text-base font-bold text-ink tracking-tight truncate min-w-0">

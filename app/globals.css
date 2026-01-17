@@ -381,6 +381,12 @@
       grid-template-columns: 1fr 2fr 1fr;
     }
   }
+
+  /* Content Visibility - Performance optimization for below-fold content */
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -3,6 +3,7 @@ import BioInterstitial from './BioInterstitial'
 import RelatedArtists from './RelatedArtists'
 import ClaimProfileCTA from './ClaimProfileCTA'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 interface PortfolioImage {
   id: string
@@ -58,6 +59,8 @@ export default function PortfolioGrid({
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 className="object-cover"
                 loading={index < 6 ? 'eager' : 'lazy'}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
 
               {/* Instagram icon overlay */}

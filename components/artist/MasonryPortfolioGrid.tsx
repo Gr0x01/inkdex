@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { getPortfolioImageUrl } from '@/lib/utils/images'
 import { sanitizeCaption } from '@/lib/utils/sanitize'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 interface PortfolioImage {
   id: string
@@ -43,7 +44,7 @@ export default function MasonryPortfolioGrid({
             href={image.instagram_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block relative break-inside-avoid mb-2"
+            className={`group block relative break-inside-avoid mb-2 ${index >= 6 ? 'content-auto' : ''}`}
           >
             {/* Image Container */}
             <div className="relative overflow-hidden bg-gray-100 border border-gray-300 transition-all duration-medium group-hover:border-ink group-hover:shadow-lg">
@@ -53,11 +54,14 @@ export default function MasonryPortfolioGrid({
                   image.post_caption ||
                   `${artistName}'s tattoo work ${index + 1}`
                 }
-                width={1280}
-                height={1280}
+                width={640}
+                height={640}
                 sizes="(max-width: 640px) 100vw, 50vw"
                 className="w-full h-auto object-cover"
                 loading={index < 6 ? 'eager' : 'lazy'}
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+                quality={75}
               />
 
               {/* Hover Overlay with Caption */}

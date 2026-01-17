@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { getArtistFeaturedImageUrl } from '@/lib/utils/images'
 import { sanitizeText } from '@/lib/utils/sanitize'
 import { getPrimaryLocation, ArtistLocationData } from '@/lib/utils/location'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 interface ArtistHeroProps {
   artist: {
@@ -53,6 +54,9 @@ export default function ArtistHero({ artist, featuredImage }: ArtistHeroProps) {
             priority
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
+            quality={80}
           />
         </div>
 

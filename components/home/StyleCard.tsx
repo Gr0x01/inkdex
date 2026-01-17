@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { trackSearchStarted } from '@/lib/analytics/posthog'
+import { BLUR_DATA_URL } from '@/lib/constants/images'
 
 interface StyleCardProps {
   styleName: string
@@ -65,6 +66,8 @@ export default function StyleCard({ styleName: _styleName, displayName, imageUrl
         loading="lazy"
         sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
         className="object-cover transition-transform duration-700 group-hover:scale-110"
+        placeholder="blur"
+        blurDataURL={BLUR_DATA_URL}
       />
 
       {/* Overlay gradient */}
