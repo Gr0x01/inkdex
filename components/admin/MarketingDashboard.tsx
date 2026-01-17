@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Upload, Download, ExternalLink } from 'lucide-react';
+import { RefreshCw, Upload, Download, ExternalLink, MessageCircle } from 'lucide-react';
 import StatsCard from './StatsCard';
 import OutreachFunnel from './OutreachFunnel';
 import AdminSelect from './AdminSelect';
@@ -63,6 +63,12 @@ export default function MarketingDashboard() {
   const [followerRange, setFollowerRange] = useState('5k-10k');
   const [limit, setLimit] = useState('10');
   const [lastAction, setLastAction] = useState<string | null>(null);
+
+  // DM Outreach states
+  const [dmPushLoading, setDmPushLoading] = useState(false);
+  const [dmFollowerRange, setDmFollowerRange] = useState('10k-25k');
+  const [dmLimit, setDmLimit] = useState('20');
+  const [dmLastAction, setDmLastAction] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -144,6 +150,41 @@ export default function MarketingDashboard() {
       setLastAction(`Error: ${err instanceof Error ? err.message : 'Sync failed'}`);
     } finally {
       setPullLoading(false);
+    }
+  };
+
+  const handleDmPush = async () => {
+    const range = FOLLOWER_RANGES.find((r) => r.value === dmFollowerRange);
+    if (!range) return;
+
+    setDmPushLoading(true);
+    setDmLastAction(null);
+
+    try {
+      const res = await fetch('/api/admin/airtable/push-dm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          criteria: {
+            minFollowers: range.min,
+            maxFollowers: range.max,
+            limit: parseInt(dmLimit),
+          },
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `Request failed: ${res.status}`);
+      }
+
+      setDmLastAction(`✓ ${data.pushed || 0} artists pushed with DM text`);
+      await fetchData();
+    } catch (err) {
+      setDmLastAction(`Error: ${err instanceof Error ? err.message : 'DM Push failed'}`);
+    } finally {
+      setDmPushLoading(false);
     }
   };
 
@@ -231,6 +272,52 @@ export default function MarketingDashboard() {
                 value={stats.recent.postedLast7Days}
                 compact
               />
+            </div>
+          </div>
+
+          {/* DM Outreach Section */}
+          <div className="bg-paper border border-emerald-200 p-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+              <div className="flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-mono text-emerald-700 uppercase tracking-wider">
+                  DM Outreach (Pro Trial)
+                </span>
+              </div>
+              <AdminSelect
+                value={dmFollowerRange}
+                onChange={setDmFollowerRange}
+                options={FOLLOWER_RANGES.map((r) => ({ value: r.value, label: r.label }))}
+                className="w-28"
+              />
+              <AdminSelect
+                value={dmLimit}
+                onChange={setDmLimit}
+                options={LIMIT_OPTIONS}
+                className="w-16"
+              />
+              <button
+                onClick={handleDmPush}
+                disabled={dmPushLoading}
+                className="h-[30px] flex items-center gap-1.5 px-3 bg-emerald-600 text-white text-[13px] font-body
+                         hover:bg-emerald-700 transition-colors disabled:opacity-50"
+              >
+                {dmPushLoading ? (
+                  <RefreshCw className="w-3 h-3 animate-spin" />
+                ) : (
+                  <MessageCircle className="w-3 h-3" />
+                )}
+                Push DM Candidates
+              </button>
+              {dmLastAction ? (
+                <span className={`text-[12px] font-body ${dmLastAction.startsWith('Error') ? 'text-status-error' : 'text-emerald-600'}`}>
+                  {dmLastAction}
+                </span>
+              ) : (
+                <span className="text-[11px] text-gray-400 font-body">
+                  Personalized DM ready to copy-paste in Airtable
+                </span>
+              )}
             </div>
           </div>
 

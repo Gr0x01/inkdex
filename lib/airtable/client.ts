@@ -48,6 +48,7 @@ export interface AirtableOutreachFields {
   priority?: string
   caption?: string    // AI-generated Instagram caption
   hashtags?: string   // AI-generated hashtags (space-separated)
+  dm_text?: string    // Pre-filled DM message for outreach
 }
 
 export interface AirtableOutreachRecord {
@@ -340,6 +341,7 @@ export async function batchUpsertRecords(
               image_3: record.image_3,
               image_4: record.image_4,
               featured: record.featured, // Sync featured status from DB
+              dm_text: record.dm_text, // Sync DM text for outreach
             },
           })
         } else {

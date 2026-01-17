@@ -267,10 +267,10 @@ export default function ArtistDetailView({
     setAirtablePushResult(null);
 
     try {
-      const response = await fetch('/api/admin/airtable/push', {
+      const response = await fetch('/api/admin/airtable/push-dm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artistIds: [artist.id] }),
+        body: JSON.stringify({ artistId: artist.id }),
       });
 
       const data = await response.json();
