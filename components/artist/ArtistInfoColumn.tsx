@@ -1,6 +1,7 @@
 'use client'
 
 import ClaimProfileButton from './ClaimProfileButton'
+import ArtistShareButton from './ArtistShareButton'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { ProfileImage } from '@/components/ui/ProfileImage'
 import { trackClick } from '@/lib/analytics/client'
@@ -347,6 +348,14 @@ export default function ArtistInfoColumn({
               Website
             </a>
           )}
+
+          {/* Share Button */}
+          <ArtistShareButton
+            artistSlug={artist.slug}
+            artistHandle={artist.instagram_handle}
+            artistName={artist.name}
+            city={primaryLocation?.city}
+          />
         </div>
 
         {/* Bio - Prominent, supports paragraphs */}

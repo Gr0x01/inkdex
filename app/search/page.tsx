@@ -6,6 +6,7 @@ import LocationFilter from '@/components/search/LocationFilter'
 import ClearFiltersButton from '@/components/search/ClearFiltersButton'
 import { StickyFilterBar } from '@/components/search/StickyFilterBar'
 import SearchResultsGrid from '@/components/search/SearchResultsGrid'
+import SearchResultsHeader from '@/components/search/SearchResultsHeader'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { createClient } from '@/lib/supabase/server'
 import { searchArtistsWithStyleBoost } from '@/lib/supabase/queries'
@@ -381,15 +382,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
       {/* CONTENT */}
       <div className="container mx-auto px-4 md:px-6 py-8">
-        {/* Results count */}
-        <div className="mb-6">
-          <p className="text-sm font-mono text-ink/60">
-            {displayTotalCount} {displayTotalCount === 1 ? 'artist' : 'artists'} found
-            {cityFilter && ` in ${cityFilter}`}
-            {!cityFilter && regionFilter && ` in ${regionFilter}`}
-            {!cityFilter && !regionFilter && countryFilter && ` in ${countryFilter}`}
-          </p>
-        </div>
+        {/* Results count + Share button */}
+        <SearchResultsHeader
+          totalCount={displayTotalCount}
+          queryText={queryText}
+          cityFilter={cityFilter}
+          regionFilter={regionFilter}
+          countryFilter={countryFilter}
+        />
 
         {/* Artist Grid with Infinite Scroll */}
         <SearchResultsGrid
