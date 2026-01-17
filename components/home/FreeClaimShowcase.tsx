@@ -84,16 +84,16 @@ function MockArtistCard({ className = '' }: { className?: string }) {
 
 const FREE_BENEFITS = [
   {
-    title: 'Own your presence',
-    description: 'Control how you appear in searches',
+    title: 'Control your profile',
+    description: 'Edit bio, location, and how you appear',
   },
   {
-    title: 'Add a booking link',
-    description: 'Point clients directly to your system',
+    title: 'Add your booking link',
+    description: 'Send clients straight to your calendar',
   },
   {
-    title: 'Showcase 20 images',
-    description: 'Curate your best portfolio pieces',
+    title: 'Curate 20 images',
+    description: 'Pin your strongest work to the top',
   },
 ]
 
@@ -134,14 +134,14 @@ export default function FreeClaimShowcase() {
               className="font-display leading-[1.1] tracking-tight mb-4"
               style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)' }}
             >
-              You're Already on Inkdex.
+              Clients Are Already
               <br />
-              <span className="text-gray-400">Claim Your Profile.</span>
+              <span className="text-gray-400">Searching for You.</span>
             </h2>
 
             {/* Description */}
             <p className="font-body text-base text-gray-600 leading-relaxed mb-6">
-              Clients are discovering you through our search—claim your free profile to control your&nbsp;presence
+              Your Instagram portfolio is indexed on Inkdex. When clients upload reference images that match your style, you show up. Claim your profile to control how they find&nbsp;you.
             </p>
 
             {/* Benefits List */}

@@ -4,28 +4,28 @@ import { PRICING } from '@/lib/pricing/config'
 
 const PRO_BENEFITS = [
   {
-    title: 'Auto-sync Instagram',
-    description: 'Portfolio updates daily, automatically',
+    title: 'Priority search ranking',
+    description: 'Appear higher when clients search your style',
+  },
+  {
+    title: 'Auto Instagram sync',
+    description: 'New posts go live on Inkdex automatically',
+  },
+  {
+    title: '100 portfolio images',
+    description: '5x more discoverable work than free',
+  },
+  {
+    title: 'Multi-city presence',
+    description: 'Guest spots? Show up in 20 locations',
   },
   {
     title: 'Auto style tagging',
-    description: 'Get categorized in the right searches',
-  },
-  {
-    title: 'Maxed portfolio',
-    description: '100 images vs 20 on free',
-  },
-  {
-    title: 'Priority placement',
-    description: 'Appear higher in results',
-  },
-  {
-    title: 'Multi-location support',
-    description: 'Show up in up to 20 cities',
+    description: 'Appear in the right style searches',
   },
   {
     title: 'Analytics dashboard',
-    description: 'Track views and engagement',
+    description: 'See which work drives the most views',
   },
 ]
 
@@ -54,14 +54,14 @@ export default function ProShowcase() {
               className="font-display leading-[1.1] tracking-tight mb-4"
               style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)' }}
             >
-              Turn Your Profile Into
+              More Visibility.
               <br />
-              <span className="text-gray-400">a Client Magnet.</span>
+              <span className="text-gray-400">More Bookings.</span>
             </h2>
 
             {/* Description */}
             <p className="font-body text-base text-gray-600 leading-relaxed mb-6">
-              Unlock tools that save time and help you book more appointments
+              Pro artists rank higher when clients search. Your newest Instagram posts sync automatically. Less maintenance, more&nbsp;appointments.
             </p>
 
             {/* Benefits Grid - 1 column on mobile, 2 on tablet+ */}
