@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { PostHogProvider } from '@/components/analytics/PostHogProvider'
 import { PostHogPageView } from '@/components/analytics/PostHogPageView'
+import { ReferralTracker } from '@/components/analytics/ReferralTracker'
 import { GeoHydrator } from '@/components/analytics/GeoHydrator'
 
 // Supabase project URL for preconnect
@@ -96,6 +97,7 @@ export default async function RootLayout({
         <PostHogProvider>
           <GeoHydrator country={country} />
           <PostHogPageView />
+          <ReferralTracker />
           <ConditionalLayout>
             {children}
           </ConditionalLayout>
