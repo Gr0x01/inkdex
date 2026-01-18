@@ -15,7 +15,6 @@
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { isGDPRCountry } from '../../lib/constants/countries';
 
 dotenv.config({ path: '.env.local' });
 
@@ -190,11 +189,6 @@ async function saveLocation(
     return { success: false, action: 'no_location' };
   }
 
-  // Skip GDPR countries
-  if (location.country_code && isGDPRCountry(location.country_code)) {
-    return { success: false, action: 'gdpr' };
-  }
-
   if (dryRun) {
     return { success: true, action: 'dry_run' };
   }
@@ -302,7 +296,6 @@ async function main() {
     inserted: 0,
     updated: 0,
     noLocation: 0,
-    gdpr: 0,
     errors: 0,
   };
 
@@ -324,12 +317,6 @@ async function main() {
           break;
         case 'no_location':
           stats.noLocation++;
-          break;
-        case 'gdpr':
-          stats.gdpr++;
-          if (result.location?.country_code) {
-            countryCount[result.location.country_code] = (countryCount[result.location.country_code] || 0) + 1;
-          }
           break;
         case 'updated':
           stats.updated++;
@@ -355,7 +342,7 @@ async function main() {
 
     process.stdout.write(
       `\rProcessed ${stats.processed}/${artists.length} ` +
-      `(${stats.inserted} new, ${stats.updated} updated, ${stats.noLocation} no-loc, ${stats.gdpr} GDPR) ` +
+      `(${stats.inserted} new, ${stats.updated} updated, ${stats.noLocation} no-loc) ` +
       `[${rate.toFixed(1)}/s, ETA: ${Math.round(eta)}s]`
     );
   }
@@ -368,7 +355,6 @@ async function main() {
   console.log(`New locations: ${stats.inserted}`);
   console.log(`Updated locations: ${stats.updated}`);
   console.log(`No location found: ${stats.noLocation}`);
-  console.log(`Skipped (GDPR): ${stats.gdpr}`);
   console.log(`Errors: ${stats.errors}`);
   console.log('');
 
@@ -377,8 +363,7 @@ async function main() {
     console.log('Country distribution:');
     const sorted = Object.entries(countryCount).sort((a, b) => b[1] - a[1]);
     for (const [country, count] of sorted.slice(0, 15)) {
-      const gdprTag = isGDPRCountry(country) ? ' (GDPR)' : '';
-      console.log(`  ${country}: ${count}${gdprTag}`);
+      console.log(`  ${country}: ${count}`);
     }
     console.log('');
   }

@@ -5,7 +5,6 @@ import { generateImageEmbedding } from '@/lib/embeddings/hybrid-client'
 import { aggregateEmbeddings } from '@/lib/embeddings/aggregate'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import { extractLocationFromBio } from '@/lib/instagram/bio-location-extractor'
-import { getCountryName } from '@/lib/constants/countries'
 import { classifyQueryStyles } from '@/lib/search/style-classifier'
 import { analyzeImageColor } from '@/lib/search/color-analyzer'
 import { parseDbEmbeddings } from '@/lib/search/parse-embeddings'
@@ -39,26 +38,6 @@ export class InstagramProfileValidationError extends Error {
     super(message)
     this.name = 'InstagramProfileValidationError'
     this.status = status
-  }
-}
-
-/**
- * Error for GDPR country detection - allows user to bypass
- */
-export class GDPRLocationError extends Error {
-  status: number
-  code: string
-  detectedCountry: string
-
-  constructor(countryCode: string) {
-    const countryName = getCountryName(countryCode) || countryCode
-    super(
-      `This artist appears to be located in ${countryName} which requires consent.`
-    )
-    this.name = 'GDPRLocationError'
-    this.status = 451 // HTTP 451: Unavailable For Legal Reasons
-    this.code = 'GDPR_LOCATION_DETECTED'
-    this.detectedCountry = countryName
   }
 }
 
@@ -122,8 +101,7 @@ export async function handleInstagramProfileSearch(
   const artistRecord = existingArtist
     ? { id: existingArtist.id, name: existingArtist.name, slug: existingArtist.slug }
     : null
-  const bypassGdprCheck = parsed.data.bypass_gdpr_check ?? false
-  return handleScrapePath(username, artistRecord, supabaseService, bypassGdprCheck)
+  return handleScrapePath(username, artistRecord, supabaseService)
 }
 
 /**
@@ -240,8 +218,7 @@ async function handleDbPath(
 async function handleScrapePath(
   username: string,
   artistRecord: { id: string; name: string; slug: string } | null,
-  supabaseService: ReturnType<typeof createServiceClient>,
-  bypassGdprCheck: boolean = false
+  supabaseService: ReturnType<typeof createServiceClient>
 ): Promise<SearchInput> {
   // Artist may exist but have no images, or may not exist at all
   if (artistRecord) {
@@ -260,21 +237,6 @@ async function handleScrapePath(
 
   // Extract location from bio using GPT-4.1-nano
   const extractedLocation = await extractLocationFromBio(profileData.bio)
-
-  // Check for GDPR country (only for new artists, not existing ones)
-  if (!artistRecord && extractedLocation?.isGDPR) {
-    if (!bypassGdprCheck) {
-      console.log(
-        `[Profile Search] GDPR country detected for @${username}: ${extractedLocation.countryCode}`
-      )
-      throw new GDPRLocationError(extractedLocation.countryCode || 'EU')
-    } else {
-      // Audit log: User bypassed GDPR check (claiming location is incorrect)
-      console.log(
-        `[Profile Search] GDPR BYPASS: User proceeded with @${username} despite ${extractedLocation.countryCode} detection`
-      )
-    }
-  }
 
   if (extractedLocation) {
     console.log(
@@ -372,8 +334,8 @@ async function handleScrapePath(
         artistId = newArtist.id
         console.log(`[Profile Search] Created artist ${artistId}`)
 
-        // Insert location if we extracted a US city (skip GDPR locations - if bypassed, user said location was wrong)
-        if (extractedLocation && extractedLocation.city && !extractedLocation.isGDPR) {
+        // Insert location if we extracted a city
+        if (extractedLocation && extractedLocation.city) {
           try {
             const { error: locationError } = await supabaseService
               .from('artist_locations')

@@ -2,11 +2,9 @@
  * Bio Location Extractor
  *
  * Extracts location information from Instagram bios using GPT-4.1-nano.
- * Also provides fast regex-based GDPR detection for filtering.
  */
 
 import OpenAI from 'openai';
-import { isGDPRCountry } from '@/lib/constants/countries';
 
 // Lazy-load OpenAI client
 let openaiClient: OpenAI | null = null;
@@ -28,7 +26,7 @@ export interface ExtractedLocation {
   citySlug: string | null;
   stateCode: string | null;
   countryCode: string | null;  // ISO 3166-1 alpha-2 (e.g., 'US', 'GB', 'DE')
-  isGDPR: boolean;
+  region?: string | null;  // Alias for state (used by some callers)
   confidence: 'high' | 'medium' | 'low';
   rawMatch: string;
 }
@@ -118,15 +116,14 @@ export async function extractLocationFromBio(bio: string | undefined): Promise<E
   }
 
   const countryCode = gptResult.country_code?.toUpperCase() || null;
-  const isGDPR = countryCode ? isGDPRCountry(countryCode) : false;
 
   return {
     city: gptResult.city,
     state: gptResult.region,  // Map 'region' to 'state' for backward compatibility
+    region: gptResult.region,  // Also expose as region for callers that expect it
     citySlug: gptResult.city ? gptResult.city.toLowerCase().replace(/\s+/g, '-') : null,
     stateCode: gptResult.region?.toUpperCase() || null,
     countryCode,
-    isGDPR,
     confidence: gptResult.confidence || 'medium',
     rawMatch: bio.substring(0, 100),
   };
@@ -140,82 +137,6 @@ export function extractLocationFromBioSync(_bio: string | undefined): ExtractedL
   console.warn('[BioExtractor] extractLocationFromBioSync is deprecated. Use async extractLocationFromBio instead.');
   // Return null - sync extraction no longer supported
   return null;
-}
-
-// ============================================================================
-// GDPR Detection (Fast regex-based check for filtering)
-// ============================================================================
-
-/**
- * Major cities in GDPR countries for fast regex-based detection
- */
-const GDPR_CITIES = new Set([
-  // UK
-  'london', 'manchester', 'birmingham', 'leeds', 'glasgow', 'liverpool', 'bristol', 'edinburgh',
-  // Germany
-  'berlin', 'munich', 'münchen', 'hamburg', 'frankfurt', 'cologne', 'köln', 'düsseldorf', 'stuttgart',
-  // France
-  'paris', 'marseille', 'lyon', 'toulouse', 'bordeaux', 'lille',
-  // Netherlands
-  'amsterdam', 'rotterdam', 'utrecht',
-  // Spain
-  'madrid', 'barcelona', 'valencia', 'seville',
-  // Italy
-  'rome', 'roma', 'milan', 'milano', 'naples', 'florence', 'venice',
-  // Others
-  'brussels', 'vienna', 'wien', 'zurich', 'zürich', 'geneva', 'warsaw', 'krakow', 'dublin',
-  'prague', 'praha', 'budapest', 'athens', 'stockholm', 'copenhagen', 'oslo', 'helsinki',
-  'lisbon', 'lisboa', 'porto',
-]);
-
-const GDPR_COUNTRY_NAMES = new Set([
-  'uk', 'u.k.', 'united kingdom', 'england', 'scotland', 'wales', 'britain',
-  'germany', 'deutschland', 'france', 'netherlands', 'holland', 'spain', 'españa',
-  'italy', 'italia', 'portugal', 'belgium', 'austria', 'österreich',
-  'switzerland', 'suisse', 'schweiz', 'poland', 'polska', 'ireland',
-  'czech republic', 'czechia', 'hungary', 'greece', 'sweden', 'sverige',
-  'denmark', 'danmark', 'norway', 'norge', 'finland', 'suomi',
-]);
-
-/**
- * Fast regex-based check for GDPR location indicators.
- * Use this for quick filtering before full GPT extraction.
- *
- * @param bio - Instagram bio text
- * @returns Object with isGDPR flag
- */
-export function checkBioForGDPR(bio: string | undefined): { isGDPR: boolean; countryCode: string | null } {
-  if (!bio) {
-    return { isGDPR: false, countryCode: null };
-  }
-
-  const normalized = bio.toLowerCase();
-
-  // Check for GDPR city names
-  for (const city of GDPR_CITIES) {
-    const regex = new RegExp(`\\b${city}\\b`, 'i');
-    if (regex.test(normalized)) {
-      return { isGDPR: true, countryCode: null }; // Don't bother mapping city->country for quick check
-    }
-  }
-
-  // Check for GDPR country names
-  for (const country of GDPR_COUNTRY_NAMES) {
-    const regex = new RegExp(`\\b${country.replace(/\./g, '\\.')}\\b`, 'i');
-    if (regex.test(normalized)) {
-      return { isGDPR: true, countryCode: null };
-    }
-  }
-
-  // Check for EU flag emojis
-  const euFlags = ['🇬🇧', '🇩🇪', '🇫🇷', '🇳🇱', '🇪🇸', '🇮🇹', '🇵🇹', '🇧🇪', '🇦🇹', '🇨🇭', '🇵🇱', '🇮🇪', '🇸🇪', '🇩🇰', '🇳🇴', '🇫🇮'];
-  for (const flag of euFlags) {
-    if (bio.includes(flag)) {
-      return { isGDPR: true, countryCode: null };
-    }
-  }
-
-  return { isGDPR: false, countryCode: null };
 }
 
 /**

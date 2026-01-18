@@ -2,7 +2,7 @@
 -- VECTOR SEARCH FUNCTIONS
 -- ============================================================================
 -- Main vector similarity search functions for artist discovery.
--- Depends on: _shared/gdpr.sql, _shared/location_filter.sql
+-- Depends on: _shared/location_filter.sql
 --
 -- Functions:
 --   - search_artists: Unified vector search with style + color boosts
@@ -117,7 +117,7 @@ BEGIN
   candidate_artists AS (
     SELECT DISTINCT ri_artist_id FROM threshold_images
   ),
-  -- Step 4: Filter artists (GDPR, location, deleted, blacklisted)
+  -- Step 4: Filter artists (location, deleted, blacklisted)
   filtered_artists AS (
     SELECT DISTINCT ON (a.id)
            a.id as fa_id,
@@ -140,10 +140,6 @@ BEGIN
     LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.deleted_at IS NULL
       AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
-      AND (
-        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE  -- is_gdpr_blocked=FALSE means whitelisted
-        OR a.claimed_by_user_id IS NOT NULL  -- Claimed = implicit consent
-      )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   -- Step 5: Calculate style boost per artist (simplified - no taxonomy)
@@ -340,10 +336,6 @@ BEGIN
     WHERE a.id != source_artist_id
       AND a.deleted_at IS NULL
       AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
-      AND (
-        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-        OR a.claimed_by_user_id IS NOT NULL
-      )
       AND matches_location_filter(al.city, al.region, al.country_code, city_filter, region_filter, country_filter)
   ),
   artist_embeddings AS (
@@ -380,7 +372,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION find_related_artists IS
-  'Find artists with similar style based on average portfolio embedding. Excludes EU/GDPR artists for compliance.';
+  'Find artists with similar style based on average portfolio embedding.';
 
 
 -- ============================================
@@ -471,10 +463,6 @@ BEGIN
     LEFT JOIN artist_pipeline_state aps ON aps.artist_id = a.id
     WHERE a.deleted_at IS NULL
       AND COALESCE(aps.scraping_blacklisted, FALSE) = FALSE  -- Exclude blacklisted artists
-      AND (
-        COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
-        OR a.claimed_by_user_id IS NOT NULL
-      )
   ),
   -- Step 3: Aggregate by country
   country_counts AS (

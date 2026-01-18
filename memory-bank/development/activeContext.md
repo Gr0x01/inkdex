@@ -1,10 +1,99 @@
 ---
-Last-Updated: 2026-01-16
+Last-Updated: 2026-01-17
 Maintainer: RB
 Status: Launched - Production
 ---
 
 # Active Context: Inkdex
+
+## Growth Features: Share Buttons, OG Images, Referral Tracking (Jan 17, 2026) ✅
+
+**Goal:** Enable viral sharing and track referral attribution.
+
+**What was built:**
+
+1. **Share Buttons** (committed `28d3f23`)
+   - `ShareButton.tsx` - Reusable component with Web Share API (mobile) + clipboard fallback
+   - `SearchResultsHeader.tsx` - Search page header with share button
+   - `ArtistShareButton.tsx` - Full-width CTA on artist profiles
+   - Design: Sharp edges, mono typography, ink/paper hover states (Inkdex editorial aesthetic)
+
+2. **Dynamic OG Images** (committed `28d3f23`)
+   - `app/search/opengraph-image.tsx` - Generates social preview for search shares
+   - Shows query text in quotes (e.g., `"fine line"`) with "Search Results For" heading
+   - Uses existing OG font/style infrastructure from `lib/og/`
+
+3. **Referral Tracking** (uncommitted)
+   - `ReferralTracker.tsx` - Captures `?ref=` and `?utm_*` params on first visit
+   - Stores in PostHog with `$set_once` (first-touch attribution)
+   - Fires "Referral Landed" event
+   - Handles PostHog lazy loading race condition (waits for posthog to load)
+   - sessionStorage error handling for private browsing
+
+4. **Pro Trial Page** (uncommitted)
+   - `/for-artists/ambassadors` - "Mention us. Get Pro free." landing page
+   - 3 months Pro per mention (renewable up to 4x/year)
+   - No follower minimum - active tattoo account qualifies
+   - Visual layout: Side-by-side deal cards, 2x2 benefits grid, horizontal steps, example posts
+
+**Code Review Fixes:**
+- XSS: Sanitized query params in OG image + share content
+- Hydration: useState + useEffect for client-side URL
+- PostHog API: Changed to `$set_once` for first-touch attribution
+- Accessibility: Added aria-labels to buttons
+- sessionStorage: Added try-catch for private browsing
+
+**Key Files:**
+- `components/ui/ShareButton.tsx` - Reusable share component
+- `components/search/SearchResultsHeader.tsx` - Search header with share
+- `components/artist/ArtistShareButton.tsx` - Artist profile share
+- `app/search/opengraph-image.tsx` - Dynamic OG for search
+- `components/analytics/ReferralTracker.tsx` - Referral/UTM tracking
+- `app/for-artists/ambassadors/page.tsx` - Pro trial page
+
+---
+
+## Ad Performance Analysis & ReferralTracker Fix (Jan 17, 2026) ✅
+
+**Goal:** Analyze paid ad performance and fix broken attribution tracking.
+
+**Problem Found:** `ReferralTracker` component wasn't firing "Referral Landed" events due to race condition with PostHog lazy loading.
+
+**Root Cause:** PostHog is null on initial mount. The useEffect ran before PostHog loaded, and `hasTracked.current` was potentially set to true before tracking actually happened, blocking retries.
+
+**Fix Applied:**
+- Added `if (!posthog) return` early in the effect
+- Since `posthog` is in the dependency array, effect re-runs when PostHog loads
+- Commits: `72d9db6` (component fix) + `ddc5a08` (add to layout)
+
+**Verification:** "Referral Landed" event now fires correctly with UTM params captured.
+
+**Ad Performance Analysis (Jan 9-16):**
+
+| Channel | Spent | Clicks | Users | Profile Views | Cost/Profile |
+|---------|-------|--------|-------|---------------|--------------|
+| Google Ads | $58.82 | 181 | 12 | 3 | $19.61 |
+| Reddit Ads | $39.63 | 35 | 24 | 0* | ∞ |
+| BetaList | FREE | - | 29 | 5 | $0 |
+| Google Organic | FREE | - | 54 | 30 | $0 |
+
+**Key Insights:**
+- Google Ads: 93% click loss (181 clicks → 12 users) - likely bot clicks or ad blockers
+- Reddit: Better click-to-user rate (68%) but users don't convert
+- Free traffic (organic, BetaList) significantly outperforms paid
+
+**Decision:** Pause all paid ads until proper attribution data collected (~1 week).
+
+**User Insight for Future Strategy:**
+> "It's hard to be in the moment between looking for tattoos vs looking for artists. I think people don't wait till they have a full idea before finding an artist."
+
+This suggests Reddit ads may be hitting inspiration browsers not ready to convert. Future strategy should target intent signals or nurture with remarketing.
+
+**Key Files:**
+- `components/analytics/ReferralTracker.tsx` - Fixed race condition
+- `app/layout.tsx` - Added ReferralTracker to root layout
+
+---
 
 ## Canada / Australia / New Zealand Expansion (Jan 16, 2026) ✅
 

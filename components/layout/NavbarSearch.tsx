@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import SearchError from '@/components/search/SearchError'
 import styles from '@/components/home/ShimmerSearch.module.css'
@@ -20,8 +19,6 @@ interface NavbarSearchProps {
   forceError?: string | null
   /** Force text query value - for Storybook only */
   forceTextQuery?: string | null
-  /** Force GDPR error state - for Storybook only */
-  forceGdprError?: { message: string; detectedCountry: string } | null
 }
 
 /**
@@ -35,7 +32,6 @@ export default function NavbarSearch({
   forceImagePreview = null,
   forceError = null,
   forceTextQuery = null,
-  forceGdprError = null,
 }: NavbarSearchProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -54,17 +50,12 @@ export default function NavbarSearch({
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [gdprError, setGdprError] = useState<{
-    message: string
-    detectedCountry: string
-  } | null>(null)
 
   // Storybook overrides - combine forced state with internal state
   const displayImagePreview = forceImagePreview ?? imagePreview
   const displayError = forceError ?? error
   const displayTextQuery = forceTextQuery ?? textQuery
   const displayInstagramDetection = forceInstagramDetection ?? detectedInstagramUrl
-  const displayGdprError = forceGdprError ?? gdprError
 
   // Combined loading state (for Storybook testing)
   const isLoading = forceLoading || isSubmitting
@@ -168,7 +159,7 @@ export default function NavbarSearch({
     }
   }
 
-  const performSearch = async (bypassGdprCheck = false) => {
+  const performSearch = async () => {
     // Validate: at least one input method
     const hasImage = imageFile !== null
     const hasText = textQuery.trim().length >= 3
@@ -223,7 +214,6 @@ export default function NavbarSearch({
           body: JSON.stringify({
             type: 'instagram_profile',
             instagram_url: detectedInstagramUrl!.originalUrl,
-            bypass_gdpr_check: bypassGdprCheck,
           }),
         })
       } else {
@@ -239,17 +229,6 @@ export default function NavbarSearch({
 
       if (!response.ok) {
         const errorData = await response.json()
-
-        // Handle GDPR location detection error
-        if (errorData.code === 'GDPR_LOCATION_DETECTED') {
-          setGdprError({
-            message: errorData.error,
-            detectedCountry: errorData.detectedCountry,
-          })
-          setIsSubmitting(false)
-          return
-        }
-
         throw new Error(errorData.error || 'Search failed')
       }
 
@@ -269,7 +248,6 @@ export default function NavbarSearch({
       setImagePreview('')
       setTextQuery('')
       setError(null)
-      setGdprError(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -285,13 +263,7 @@ export default function NavbarSearch({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setGdprError(null)
-    await performSearch(false)
-  }
-
-  const handleGdprBypass = async () => {
-    setGdprError(null)
-    await performSearch(true)
+    await performSearch()
   }
 
   const canSubmit = (
@@ -308,7 +280,7 @@ export default function NavbarSearch({
   return (
     <form onSubmit={handleSubmit} className="relative w-full">
       <div className="flex items-start gap-0">
-        {/* Input Column - contains input field and GDPR error below it */}
+        {/* Input Column */}
         <div className="flex-1 flex flex-col">
           {/* Input Field Container */}
           <div
@@ -416,25 +388,6 @@ export default function NavbarSearch({
             <SearchError message={displayError} variant="inline" />
           )}
           </div>
-
-          {/* GDPR Location Error - inside input column */}
-          {displayGdprError && !isSubmitting && (
-            <div
-              className="mt-1 bg-ink/95 backdrop-blur-sm px-4 py-2 animate-fade-in flex items-center justify-between gap-3 shadow-lg"
-              role="alert"
-            >
-              <p className="font-body text-xs text-paper/90">
-                Artist in <strong>{displayGdprError.detectedCountry}</strong> requires consent. <Link href="/add-artist" className="underline hover:text-white">Claim profile</Link>
-              </p>
-              <button
-                type="button"
-                onClick={handleGdprBypass}
-                className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-ink text-xs font-medium transition-colors shrink-0"
-              >
-                Proceed
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Search Button - Separate, next to input */}

@@ -1,17 +1,14 @@
 /**
  * Cookie Consent Manager
  *
- * Core logic for GDPR/CCPA-compliant cookie consent system
- * Uses localStorage for consent storage (GDPR-exempt, simplest approach)
+ * Core logic for cookie consent system
+ * Uses localStorage for consent storage
  * Respects DNT (Do Not Track) and GPC (Global Privacy Control) headers
  *
- * Geo-targeting (Jan 2026):
- * - EU/EEA/UK/CH visitors: Show consent banner, require opt-in
- * - Non-EU visitors: Auto-consent to analytics, no banner
+ * Jan 2026: Auto-consent to analytics for all visitors (no consent banner)
  */
 
 import type { CookieConsent, ConsentUpdate } from './types'
-import { GDPR_COUNTRY_CODES } from '@/lib/constants/countries'
 
 /** localStorage key for consent storage */
 const CONSENT_KEY = 'inkdex_cookie_consent'
@@ -41,17 +38,11 @@ export function getUserCountry(): string | null {
 }
 
 /**
- * Check if user is in a GDPR region (EU/EEA/UK/CH)
- * If country unknown, defaults to false (track by default)
- *
- * Rationale: Most traffic is non-EU. Only restrict tracking when we
- * positively identify EU/EEA/UK/CH users. DNT/GPC still respected.
+ * Check if user is in a GDPR region
+ * @deprecated Always returns false - GDPR filtering removed Jan 2026
  */
 export function isGDPRRegion(): boolean {
-  const country = getUserCountry()
-  // If no geo data, assume non-GDPR (track by default)
-  if (!country) return false
-  return GDPR_COUNTRY_CODES.has(country.toUpperCase())
+  return false
 }
 
 /**
@@ -153,42 +144,23 @@ export function saveConsent(analytics: boolean): void {
  *
  * Logic:
  * - DNT/GPC enabled → false (respect browser preference)
- * - Non-GDPR region → true (auto-consent)
- * - GDPR region → check explicit consent
+ * - Otherwise → true (auto-consent)
  */
 export function hasAnalyticsConsent(): boolean {
   // Respect DNT/GPC headers (auto-deny)
   if (isDoNotTrack()) return false
 
-  // Non-GDPR regions: auto-consent to analytics
-  if (!isGDPRRegion()) return true
-
-  // GDPR regions: require explicit consent
-  const consent = getConsent()
-  return consent?.analytics === true
+  // Auto-consent to analytics
+  return true
 }
 
 /**
  * Should we show the cookie consent banner?
  *
- * Returns true only if:
- * - User is in GDPR region (EU/EEA/UK/CH)
- * - No consent exists yet
- * - DNT is NOT enabled
- *
- * Non-GDPR visitors never see the banner.
+ * Always returns false - consent banner removed Jan 2026
  */
 export function needsConsentBanner(): boolean {
-  if (typeof window === 'undefined') return false // SSR safety
-
-  // Non-GDPR regions: never show banner
-  if (!isGDPRRegion()) return false
-
-  // If DNT enabled, respect it silently (no banner)
-  if (isDoNotTrack()) return false
-
-  // GDPR region: show banner if no consent exists
-  return getConsent() === null
+  return false
 }
 
 /**

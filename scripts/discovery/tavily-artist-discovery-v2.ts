@@ -9,17 +9,17 @@
  * - Target: 200-300 artists per city
  */
 
+// Load environment variables BEFORE any other imports (some modules validate env on load)
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../types/database.types';
 import { generateQueriesForCity, getQueryStats } from './query-generator';
 import { generateSlugFromInstagram } from '../../lib/utils/slug';
 import { notifyArtistCreated } from '../../lib/seo/indexnow';
-
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 
 const TAVILY_API_KEY = process.env.TAAVILY_API;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -69,22 +69,55 @@ interface CityConfig {
 
 const CITIES: CityConfig[] = [
   // ============================================================================
-  // India - Tier 1 Metros (Jan 2026)
+  // Canada - Major Cities (Jan 2026)
   // ============================================================================
-  { name: 'Mumbai', state: 'MH', slug: 'mumbai', country_code: 'IN' },
-  { name: 'Delhi', state: 'DL', slug: 'delhi', country_code: 'IN' },
-  { name: 'Bangalore', state: 'KA', slug: 'bangalore', country_code: 'IN' },
-  { name: 'Kolkata', state: 'WB', slug: 'kolkata', country_code: 'IN' },
-  { name: 'Hyderabad', state: 'TG', slug: 'hyderabad', country_code: 'IN' },
-  { name: 'Chennai', state: 'TN', slug: 'chennai', country_code: 'IN' },
+  { name: 'Toronto', state: 'ON', slug: 'toronto', country_code: 'CA' },
+  { name: 'Vancouver', state: 'BC', slug: 'vancouver', country_code: 'CA' },
+  { name: 'Montreal', state: 'QC', slug: 'montreal', country_code: 'CA' },
+  { name: 'Calgary', state: 'AB', slug: 'calgary', country_code: 'CA' },
+  { name: 'Edmonton', state: 'AB', slug: 'edmonton', country_code: 'CA' },
+  { name: 'Ottawa', state: 'ON', slug: 'ottawa', country_code: 'CA' },
+  { name: 'Winnipeg', state: 'MB', slug: 'winnipeg', country_code: 'CA' },
+  { name: 'Quebec City', state: 'QC', slug: 'quebec-city', country_code: 'CA' },
+  { name: 'Hamilton', state: 'ON', slug: 'hamilton', country_code: 'CA' },
+  { name: 'Victoria', state: 'BC', slug: 'victoria', country_code: 'CA' },
 
   // ============================================================================
-  // Pakistan - Major Cities (Jan 2026)
+  // Australia - Major Cities (Jan 2026)
   // ============================================================================
-  { name: 'Karachi', state: 'SD', slug: 'karachi', country_code: 'PK' },
-  { name: 'Lahore', state: 'PB', slug: 'lahore', country_code: 'PK' },
-  { name: 'Islamabad', state: 'IS', slug: 'islamabad', country_code: 'PK' },
-  { name: 'Rawalpindi', state: 'PB', slug: 'rawalpindi', country_code: 'PK' },
+  { name: 'Sydney', state: 'NSW', slug: 'sydney', country_code: 'AU' },
+  { name: 'Melbourne', state: 'VIC', slug: 'melbourne', country_code: 'AU' },
+  { name: 'Brisbane', state: 'QLD', slug: 'brisbane', country_code: 'AU' },
+  { name: 'Perth', state: 'WA', slug: 'perth', country_code: 'AU' },
+  { name: 'Adelaide', state: 'SA', slug: 'adelaide', country_code: 'AU' },
+  { name: 'Gold Coast', state: 'QLD', slug: 'gold-coast', country_code: 'AU' },
+  { name: 'Newcastle', state: 'NSW', slug: 'newcastle', country_code: 'AU' },
+  { name: 'Canberra', state: 'ACT', slug: 'canberra', country_code: 'AU' },
+
+  // ============================================================================
+  // New Zealand - Major Cities (Jan 2026)
+  // ============================================================================
+  { name: 'Auckland', state: 'AUK', slug: 'auckland', country_code: 'NZ' },
+  { name: 'Wellington', state: 'WGN', slug: 'wellington', country_code: 'NZ' },
+  { name: 'Christchurch', state: 'CAN', slug: 'christchurch', country_code: 'NZ' },
+
+  // ============================================================================
+  // India - Tier 1 Metros (Jan 2026) - COMPLETED
+  // ============================================================================
+  // { name: 'Mumbai', state: 'MH', slug: 'mumbai', country_code: 'IN' },
+  // { name: 'Delhi', state: 'DL', slug: 'delhi', country_code: 'IN' },
+  // { name: 'Bangalore', state: 'KA', slug: 'bangalore', country_code: 'IN' },
+  // { name: 'Kolkata', state: 'WB', slug: 'kolkata', country_code: 'IN' },
+  // { name: 'Hyderabad', state: 'TG', slug: 'hyderabad', country_code: 'IN' },
+  // { name: 'Chennai', state: 'TN', slug: 'chennai', country_code: 'IN' },
+
+  // ============================================================================
+  // Pakistan - Major Cities (Jan 2026) - COMPLETED
+  // ============================================================================
+  // { name: 'Karachi', state: 'SD', slug: 'karachi', country_code: 'PK' },
+  // { name: 'Lahore', state: 'PB', slug: 'lahore', country_code: 'PK' },
+  // { name: 'Islamabad', state: 'IS', slug: 'islamabad', country_code: 'PK' },
+  // { name: 'Rawalpindi', state: 'PB', slug: 'rawalpindi', country_code: 'PK' },
 ];
 
 // ============================================================================
@@ -281,7 +314,7 @@ async function discoverArtistsForCity(
               name: extractArtistName(result.title),
               instagramHandle: handle,
               instagramUrl: `https://instagram.com/${handle}`,
-              city: city.name,  // Use proper city name for database (e.g., "Austin", not "Austin, TX")
+              city: city.name,
               discoverySource: `tavily_${category}`,
               discoveryQuery: query,
               score: result.score,
@@ -303,7 +336,6 @@ async function discoverArtistsForCity(
   console.log(`   Total queries: ${stats.total}`);
   console.log(`   Executed: ${uncachedQueries.length}`);
   console.log(`   Cached (skipped): ${queriesCached}`);
-  console.log(`   Estimated cost: $${totalCost.toFixed(2)}`);
   console.log(`\n✅ Discovery complete for ${city.name}: ${discovered.size} unique artists`);
 
   return Array.from(discovered.values());
@@ -322,32 +354,18 @@ async function saveArtistsToDatabase(
   let inserted = 0;
   let skipped = 0;
   const insertedSlugs: string[] = [];
+  const cityConfig = CITIES.find(c => c.slug === citySlug);
 
   for (const artist of artists) {
-    const { data: existing } = await supabase
-      .from('artists')
-      .select('id, instagram_handle')
-      .eq('instagram_handle', artist.instagramHandle)
-      .single();
-
-    if (existing) {
-      skipped++;
-      continue;
-    }
-
     let slug: string;
     try {
       slug = generateSlugFromInstagram(artist.instagramHandle);
     } catch (slugError: any) {
-      console.error(`   ❌ Invalid Instagram handle @${artist.instagramHandle}: ${slugError.message}`);
       skipped++;
       continue;
     }
 
-    // Find the corresponding city config to get state code
-    const cityConfig = CITIES.find(c => c.slug === citySlug);
-
-    // Insert artist
+    // Insert artist (duplicates silently skipped via unique constraint)
     const { data: artistData, error } = await supabase.from('artists').insert({
       name: artist.name,
       slug,
@@ -358,36 +376,40 @@ async function saveArtistsToDatabase(
       instagram_private: false,
     }).select('id').single();
 
-    if (error) {
-      console.error(`   ❌ Error inserting @${artist.instagramHandle}: ${error.message}`);
-    } else {
-      // Insert into artist_locations (single source of truth for location data)
-      if (artistData?.id && artist.city && cityConfig?.state) {
-        const { error: locError } = await supabase.from('artist_locations').insert({
-          artist_id: artistData.id,
-          city: artist.city,
-          region: cityConfig.state,
-          country_code: cityConfig.country_code,
-          location_type: 'city',
-          is_primary: true,
-          display_order: 0,
-        });
-        if (locError && locError.code !== '23505') {
-          console.warn(`   ⚠️ Warning: Could not insert location for @${artist.instagramHandle}: ${locError.message}`);
-        }
-      }
-
-      inserted++;
-      insertedSlugs.push(slug);
-      if (inserted % 10 === 0) {
-        console.log(`   ✅ Inserted ${inserted} artists...`);
-      }
+    // 23505 = unique violation (duplicate) - silently skip
+    if (error?.code === '23505') {
+      skipped++;
+      continue;
     }
 
-    await sleep(100);
+    if (error) {
+      console.error(`   ❌ Error inserting @${artist.instagramHandle}: ${error.message}`);
+      continue;
+    }
+
+    // Insert location for new artist
+    if (artistData?.id && artist.city && cityConfig?.state) {
+      await supabase.from('artist_locations').insert({
+        artist_id: artistData.id,
+        city: artist.city,
+        region: cityConfig.state,
+        country_code: cityConfig.country_code,
+        location_type: 'city',
+        is_primary: true,
+        display_order: 0,
+      });
+    }
+
+    inserted++;
+    insertedSlugs.push(slug);
+    if (inserted % 50 === 0) {
+      console.log(`   ✅ Inserted ${inserted} artists...`);
+    }
+
+    await sleep(50);
   }
 
-  console.log(`   ✅ Complete: ${inserted} inserted, ${skipped} skipped`);
+  console.log(`   ✅ Complete: ${inserted} inserted, ${skipped} duplicates`);
 
   return { inserted, skipped, insertedSlugs };
 }
@@ -425,7 +447,7 @@ async function main() {
         console.log(`\n📊 ${city.name} Summary:`);
         console.log(`   Discovered: ${artists.length}`);
         console.log(`   Inserted: ${inserted}`);
-        console.log(`   Skipped: ${skipped}`);
+        console.log(`   Duplicates: ${skipped}`);
 
         return { discovered: artists.length, inserted, skipped, insertedSlugs };
       } catch (error: any) {
@@ -448,7 +470,7 @@ async function main() {
   console.log(`${'='.repeat(60)}`);
   console.log(`Total Discovered: ${totalStats.discovered}`);
   console.log(`Total Inserted: ${totalStats.inserted}`);
-  console.log(`Total Skipped (duplicates): ${totalStats.skipped}`);
+  console.log(`Total Duplicates: ${totalStats.skipped}`);
 
   // Notify IndexNow about new artists
   if (allInsertedSlugs.length > 0 && process.env.INDEXNOW_KEY) {

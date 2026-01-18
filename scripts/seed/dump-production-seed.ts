@@ -173,7 +173,6 @@ async function main() {
       .from('artists')
       .select('*')
       .is('deleted_at', null)
-      .eq('is_gdpr_blocked', false)
       .order('follower_count', { ascending: false, nullsFirst: false })
       .range(offset, offset + limit - 1);
 

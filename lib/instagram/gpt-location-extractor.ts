@@ -9,13 +9,11 @@
  */
 
 import OpenAI from 'openai';
-import { isGDPRCountry } from '@/lib/constants/countries';
 
 export interface GPTExtractedLocation {
   city: string | null;
   stateCode: string | null; // region/state/province code
   countryCode: string | null; // ISO 3166-1 alpha-2
-  isGDPR: boolean;
   confidence: 'high' | 'medium' | 'low';
 }
 
@@ -86,7 +84,6 @@ export async function extractLocationWithGPT(
     city: result.city || null,
     stateCode: result.region || null,
     countryCode: result.country_code || null,
-    isGDPR: result.country_code ? isGDPRCountry(result.country_code) : false,
     confidence: result.confidence || 'low',
   };
 }

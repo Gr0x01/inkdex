@@ -142,30 +142,6 @@ export const WithError: Story = {
 };
 
 /**
- * GDPR location error - shows warning with bypass button
- * Appears when an artist's bio indicates they're in a GDPR-protected country
- * Note: Input is cleared when Instagram is detected (tag replaces text)
- */
-export const WithGDPRError: Story = {
-  render: () => (
-    <div className="max-w-2xl pb-16">
-      <NavbarSearch
-        forceTextQuery="@londontattooartist"
-        forceInstagramDetection={{
-          type: 'profile',
-          id: 'londontattooartist',
-          originalUrl: 'https://instagram.com/londontattooartist',
-        }}
-        forceGdprError={{
-          message: 'This artist appears to be located in United Kingdom which requires consent.',
-          detectedCountry: 'United Kingdom',
-        }}
-      />
-    </div>
-  ),
-};
-
-/**
  * In navbar context - simulates actual placement
  */
 export const InNavbarContext: Story = {
@@ -386,22 +362,6 @@ export const AllSearchPatterns: Story = {
         <div className="pb-8">
           <p className="text-gray-500 text-sm mb-2 font-mono">Error State</p>
           <NavbarSearch forceError="Rate limit exceeded. Please try again." />
-        </div>
-
-        <div className="pb-16">
-          <p className="text-gray-500 text-sm mb-2 font-mono">GDPR Location Error</p>
-          <NavbarSearch
-            forceTextQuery="@berlintattoo"
-            forceInstagramDetection={{
-              type: 'profile',
-              id: 'berlintattoo',
-              originalUrl: 'https://instagram.com/berlintattoo',
-            }}
-            forceGdprError={{
-              message: 'This artist appears to be located in Germany which requires consent.',
-              detectedCountry: 'Germany',
-            }}
-          />
         </div>
       </div>
     </div>

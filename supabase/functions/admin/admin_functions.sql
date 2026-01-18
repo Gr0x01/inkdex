@@ -90,7 +90,6 @@ BEGIN
     INNER JOIN artists a ON a.id = bpa.ba_artist_id
     INNER JOIN artist_locations al ON al.artist_id = a.id AND al.is_primary = TRUE
     WHERE a.deleted_at IS NULL
-      AND COALESCE(a.is_gdpr_blocked, FALSE) = FALSE
   )
   SELECT
     fa.fa_artist_id,
@@ -340,8 +339,7 @@ BEGIN
      FROM artist_locations al
      INNER JOIN artists a ON a.id = al.artist_id
      WHERE a.deleted_at IS NULL
-       AND al.country_code IS NOT NULL
-       AND NOT is_gdpr_country(al.country_code))::bigint AS country_count;
+       AND al.country_code IS NOT NULL)::bigint AS country_count;
 END;
 $$;
 
@@ -352,9 +350,6 @@ COMMENT ON FUNCTION get_homepage_stats IS
 -- ============================================
 -- Performance Indexes
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_artists_not_gdpr_blocked
-ON artists(id) WHERE is_gdpr_blocked = FALSE OR is_gdpr_blocked IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_artist_locations_artist_primary
 ON artist_locations(artist_id) WHERE is_primary = TRUE;
 

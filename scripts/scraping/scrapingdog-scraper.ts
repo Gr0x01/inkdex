@@ -27,7 +27,6 @@ import { fetchProfileWithScrapingDog } from '../../lib/instagram/scrapingdog-cli
 import { InstagramError } from '../../lib/instagram/post-fetcher';
 import { filterTattooImages } from '../../lib/instagram/tattoo-filter';
 import { extractLocationFromBio } from '../../lib/instagram/bio-location-extractor';
-import { isGDPRCountry } from '../../lib/constants/countries';
 
 // Configuration
 const TEMP_DIR = '/tmp/instagram';
@@ -281,6 +280,22 @@ function isPermanentError(errorMessage: string): boolean {
 }
 
 /**
+ * Check if error indicates account is deleted/gone (should auto-blacklist)
+ * These accounts won't come back, unlike private accounts which might go public later
+ */
+function isDeletedAccountError(errorMessage: string): boolean {
+  const deletedPatterns = [
+    'does not exist',
+    'deleted',
+    'not found',
+    'user not found',
+    'page not found',
+  ];
+  const lowerError = errorMessage.toLowerCase();
+  return deletedPatterns.some((pattern) => lowerError.includes(pattern));
+}
+
+/**
  * Update scraping job status with retry logic
  */
 async function updateScrapingJob(
@@ -317,6 +332,24 @@ async function updateScrapingJob(
     } else {
       // Failure - check if permanent or retryable
       const isPermanent = errorMessage ? isPermanentError(errorMessage) : false;
+      const isDeleted = errorMessage ? isDeletedAccountError(errorMessage) : false;
+
+      // Auto-blacklist deleted accounts - they won't come back
+      if (isDeleted) {
+        await supabase
+          .from('artist_pipeline_state')
+          .upsert({
+            artist_id: artistId,
+            pipeline_status: 'rejected',
+            scraping_blacklisted: true,
+            blacklist_reason: 'Auto-blacklisted: account deleted or not found',
+            last_error: errorMessage || 'Account deleted',
+            permanent_failure: true,
+            updated_at: new Date().toISOString(),
+          });
+        console.log(`    🚫 Auto-blacklisted (account deleted)`);
+        return;
+      }
 
       // Get current retry count
       const { data: currentState } = await supabase
@@ -375,41 +408,38 @@ async function updateArtistMetadata(
   if (bio) {
     try {
       const location = await extractLocationFromBio(bio);
-      if (location?.city && location?.country_code) {
-        // Skip GDPR countries
-        if (!isGDPRCountry(location.country_code)) {
-          // Check if artist already has a primary location
-          const { data: existing } = await supabase
-            .from('artist_locations')
-            .select('id')
-            .eq('artist_id', artistId)
-            .eq('is_primary', true)
-            .single();
+      if (location?.city && location?.countryCode) {
+        // Check if artist already has a primary location
+        const { data: existing } = await supabase
+          .from('artist_locations')
+          .select('id')
+          .eq('artist_id', artistId)
+          .eq('is_primary', true)
+          .single();
 
-          if (existing) {
-            // Update existing location
-            await supabase
-              .from('artist_locations')
-              .update({
-                city: location.city,
-                region: location.region,
-                country_code: location.country_code,
-              })
-              .eq('id', existing.id);
-          } else {
-            // Insert new location
-            await supabase
-              .from('artist_locations')
-              .insert({
-                artist_id: artistId,
-                city: location.city,
-                region: location.region,
-                country_code: location.country_code,
-                location_type: 'city',
-                is_primary: true,
-                display_order: 0,
-              });
-          }
+        if (existing) {
+          // Update existing location
+          await supabase
+            .from('artist_locations')
+            .update({
+              city: location.city,
+              region: location.region,
+              country_code: location.countryCode,
+            })
+            .eq('id', existing.id);
+        } else {
+          // Insert new location
+          await supabase
+            .from('artist_locations')
+            .insert({
+              artist_id: artistId,
+              city: location.city,
+              region: location.region,
+              country_code: location.countryCode,
+              location_type: 'city',
+              is_primary: true,
+              display_order: 0,
+            });
         }
       }
     } catch (error) {

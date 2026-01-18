@@ -18,7 +18,7 @@ import OpenAI from 'openai'
 import * as dotenv from 'dotenv'
 import * as path from 'path'
 import { createClient } from '@supabase/supabase-js'
-import { getCountryName, isGDPRCountry } from '../../lib/constants/countries'
+import { getCountryName } from '../../lib/constants/countries'
 
 dotenv.config({ path: path.join(__dirname, '../../.env.local') })
 
@@ -151,7 +151,7 @@ If you're not certain about specific details, keep the content accurate but gene
 }
 
 async function getCountriesWithArtists(): Promise<Array<{ country_code: string; artist_count: number }>> {
-  // Query countries with artists (excluding GDPR and US which uses city-level content)
+  // Query countries with artists (excluding US which uses city-level content)
   // Uses consolidated get_location_counts function
   const { data, error } = await supabase.rpc('get_location_counts', {
     p_grouping: 'countries'
@@ -162,10 +162,10 @@ async function getCountriesWithArtists(): Promise<Array<{ country_code: string; 
     return []
   }
 
-  // Filter out US (has city-level content) and GDPR countries
+  // Filter out US (has city-level content)
   // Map location_code to country_code for downstream compatibility
   return (data || [])
-    .filter((c: { location_code: string }) => c.location_code !== 'US' && !isGDPRCountry(c.location_code))
+    .filter((c: { location_code: string }) => c.location_code !== 'US')
     .map((c: { location_code: string; artist_count: number }) => ({
       country_code: c.location_code,
       artist_count: c.artist_count
@@ -225,7 +225,7 @@ async function main() {
 
   // Get countries with artists
   const countriesWithArtists = await getCountriesWithArtists()
-  console.log(`\n📊 Found ${countriesWithArtists.length} non-US, non-GDPR countries with artists`)
+  console.log(`\n📊 Found ${countriesWithArtists.length} non-US countries with artists`)
 
   // Get existing content
   const existingContent = await getExistingContent()

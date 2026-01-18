@@ -11,7 +11,6 @@ import {
 import {
   handleInstagramProfileSearch,
   InstagramProfileValidationError,
-  GDPRLocationError,
   PROFILE_ERROR_MESSAGES,
 } from './handlers/instagram-profile'
 import { handleSimilarArtistSearch, SimilarArtistError } from './handlers/similar-artist'
@@ -88,19 +87,6 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof InstagramProfileValidationError) {
       return NextResponse.json({ error: error.message }, { status: error.status })
-    }
-
-    // Handle GDPR location detection - allows user to bypass
-    if (error instanceof GDPRLocationError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          code: error.code,
-          detectedCountry: error.detectedCountry,
-          canBypass: true,
-        },
-        { status: error.status }
-      )
     }
 
     if (error instanceof SimilarArtistError) {

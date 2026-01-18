@@ -420,7 +420,6 @@ export type Database = {
           featured_expires_at: string | null
           filter_non_tattoo_content: boolean | null
           follower_count: number | null
-          gdpr_consent: boolean | null
           google_place_id: string | null
           id: string
           instagram_handle: string
@@ -428,7 +427,6 @@ export type Database = {
           instagram_private: boolean | null
           instagram_url: string | null
           is_featured: boolean | null
-          is_gdpr_blocked: boolean | null
           is_pro: boolean | null
           is_test_account: boolean | null
           name: string
@@ -460,7 +458,6 @@ export type Database = {
           featured_expires_at?: string | null
           filter_non_tattoo_content?: boolean | null
           follower_count?: number | null
-          gdpr_consent?: boolean | null
           google_place_id?: string | null
           id?: string
           instagram_handle: string
@@ -468,7 +465,6 @@ export type Database = {
           instagram_private?: boolean | null
           instagram_url?: string | null
           is_featured?: boolean | null
-          is_gdpr_blocked?: boolean | null
           is_pro?: boolean | null
           is_test_account?: boolean | null
           name: string
@@ -500,7 +496,6 @@ export type Database = {
           featured_expires_at?: string | null
           filter_non_tattoo_content?: boolean | null
           follower_count?: number | null
-          gdpr_consent?: boolean | null
           google_place_id?: string | null
           id?: string
           instagram_handle?: string
@@ -508,7 +503,6 @@ export type Database = {
           instagram_private?: boolean | null
           instagram_url?: string | null
           is_featured?: boolean | null
-          is_gdpr_blocked?: boolean | null
           is_pro?: boolean | null
           is_test_account?: boolean | null
           name?: string
@@ -2121,6 +2115,14 @@ export type Database = {
           region: string
         }[]
       }
+      get_countries_with_counts: {
+        Args: never
+        Returns: {
+          artist_count: number
+          country_code: string
+          country_name: string
+        }[]
+      }
       get_decrypted_token: {
         Args: { p_encryption_key: string; p_user_id: string }
         Returns: string
@@ -2241,7 +2243,6 @@ export type Database = {
         Args: { failed_delta: number; processed_delta: number; run_id: string }
         Returns: undefined
       }
-      is_gdpr_country: { Args: { country_code: string }; Returns: boolean }
       log_email_send: {
         Args: {
           p_artist_id: string

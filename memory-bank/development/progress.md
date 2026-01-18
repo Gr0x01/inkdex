@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-14
+Last-Updated: 2026-01-17
 Maintainer: RB
 Status: Launched - All 15 Phases Complete + ML Style Classifier + International
 ---
@@ -71,6 +71,17 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 3 (Jan 17, 2026)
+- **Ad Performance Analysis & ReferralTracker Fix** ✅
+  - Analyzed $98.45 paid ad spend (Google $58.82 + Reddit $39.63)
+  - Found critical bug: ReferralTracker race condition with PostHog lazy loading
+  - "Referral Landed" events weren't firing (0 events captured)
+  - Fix: Added early return when PostHog null, effect re-runs when loaded
+  - Verified fix working: UTM params now captured correctly
+  - Key insight: Google Ads 93% click loss, Reddit users don't convert
+  - Decision: Pause paid ads, collect baseline organic data for 1 week
+  - Key files: `components/analytics/ReferralTracker.tsx`, `app/layout.tsx`
 
 ### Week 3 (Jan 14, 2026)
 - **India + Pakistan Expansion** ✅

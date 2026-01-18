@@ -7,7 +7,6 @@
 --
 -- Functions are split into domain folders for maintainability:
 --
---   _shared/gdpr.sql              - is_gdpr_country() helper
 --   _shared/location_filter.sql   - matches_location_filter() helper
 --   search/vector_search.sql      - 4 vector search functions (SOURCE OF TRUTH)
 --   location/location_counts.sql  - 4 location count functions
@@ -18,11 +17,10 @@
 --
 -- TO APPLY CHANGES:
 --   Run files in Supabase SQL Editor in this order:
---   1. _shared/gdpr.sql
---   2. _shared/location_filter.sql
---   3. search/vector_search.sql
---   4. location/location_counts.sql
---   5. admin/admin_functions.sql
+--   1. _shared/location_filter.sql
+--   2. search/vector_search.sql
+--   3. location/location_counts.sql
+--   4. admin/admin_functions.sql
 --
 -- Last Updated: 2026-01-07
 -- ============================================================================
@@ -31,10 +29,6 @@
 -- ============================================================================
 -- FUNCTION SIGNATURES (for quick reference)
 -- ============================================================================
-
--- _shared/gdpr.sql:
---   is_gdpr_country(country_code TEXT) → BOOLEAN
---     Returns true if country is in EU/EEA/UK/CH (GDPR-covered)
 
 -- _shared/location_filter.sql:
 --   matches_location_filter(p_city, p_region, p_country_code, city_filter, region_filter, country_filter) → BOOLEAN
