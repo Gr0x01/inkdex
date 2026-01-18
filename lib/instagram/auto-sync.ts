@@ -303,6 +303,8 @@ export async function syncArtistPortfolio(
           pinned_position: null,
           hidden: false,
           manually_added: false,
+          is_tattoo: true, // Image passed classification filter
+          tattoo_confidence: 1.0, // Classified as tattoo by GPT
         };
       });
 

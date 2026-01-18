@@ -46,6 +46,8 @@ export interface ProcessImageInput {
   importSource: 'manual_import' | 'oauth_sync' | 'profile_search' | 'recommendation' | 'scrape';
   manuallyAdded?: boolean;
   autoSynced?: boolean;
+  isTattoo?: boolean | null; // Pre-classified tattoo status
+  tattooConfidence?: number | null; // Classification confidence
 }
 
 export interface ProcessImageResult {
@@ -234,6 +236,8 @@ export async function processImageComplete(input: ProcessImageInput): Promise<Pr
     importSource,
     manuallyAdded,
     autoSynced,
+    isTattoo,
+    tattooConfidence,
   } = input;
 
   const supabase = getSupabase();
@@ -314,6 +318,8 @@ export async function processImageComplete(input: ProcessImageInput): Promise<Pr
         is_pinned: false,
         pinned_position: null,
         hidden: false,
+        is_tattoo: isTattoo ?? null,
+        tattoo_confidence: tattooConfidence ?? null,
       })
       .select('id')
       .single();

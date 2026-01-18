@@ -423,6 +423,8 @@ export async function POST(request: NextRequest) {
       status: 'active',
       manually_added: false, // Auto-imported, not manually selected
       import_source: 'oauth_onboarding',
+      is_tattoo: true, // Image was classified as tattoo during fetch
+      tattoo_confidence: 1.0, // Passed GPT classification
       // Note: embeddings will be generated asynchronously after this completes
       // Storage paths will be populated by image processing pipeline
     }));

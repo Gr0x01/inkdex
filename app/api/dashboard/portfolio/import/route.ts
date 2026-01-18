@@ -286,6 +286,8 @@ export async function POST(request: NextRequest) {
             importSource: 'manual_import' as const,
             manuallyAdded: true,
             autoSynced: false,
+            isTattoo: true, // Artist manually selected these images
+            tattooConfidence: 1.0,
           }));
 
           // Process with controlled concurrency (2 at a time to be safe on memory)
