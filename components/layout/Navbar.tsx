@@ -28,6 +28,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
+  const mobileSearchButtonRef = useRef<HTMLButtonElement>(null)
 
   // Get navbar visibility from context (shared with other sticky elements)
   const { isNavbarHidden, isCompact: _isCompact } = useNavbarVisibility()
@@ -49,9 +50,10 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
     mobileMenuButtonRef.current?.focus()
   }
 
-  // Close mobile search
+  // Close mobile search and return focus
   const closeMobileSearch = () => {
     setIsMobileSearchOpen(false)
+    mobileSearchButtonRef.current?.focus()
   }
 
   return (
@@ -102,6 +104,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
             {/* Mobile Search Trigger - Bold, prominent CTA */}
             {!isMobileSearchOpen && (
               <button
+                ref={mobileSearchButtonRef}
                 onClick={() => {
                   setIsMobileSearchOpen(true)
                   setIsMobileMenuOpen(false)
@@ -166,6 +169,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
