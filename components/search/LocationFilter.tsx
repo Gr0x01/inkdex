@@ -88,7 +88,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         for (const r of regions) {
           const stateName = US_STATE_NAME_MAP.get(r.code) || r.code
           flattened.push({
-            value: `region-${r.code}`,
+            value: `region-${r.country}-${r.code}`,
             label: `${stateName} (${r.count})`,
             type: 'region',
             country: r.country,
@@ -101,7 +101,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         for (const c of cities) {
           const cityName = c.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
           flattened.push({
-            value: `city-${c.slug}`,
+            value: `city-${c.country}-${c.region}-${c.slug}`,
             label: `${cityName} (${c.count})`,
             type: 'city',
             country: c.country,
@@ -131,7 +131,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         for (const r of regionsRes) {
           const stateName = US_STATE_NAME_MAP.get(r.region) || r.region_name
           flattened.push({
-            value: `region-${r.region}`,
+            value: `region-US-${r.region}`,
             label: `${stateName} (${r.artist_count})`,
             type: 'region',
             country: 'US',
@@ -142,7 +142,7 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         // Add cities
         for (const c of citiesRes) {
           flattened.push({
-            value: `city-${c.city}`,
+            value: `city-${c.country_code}-${c.region}-${c.city}`,
             label: `${c.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
             type: 'city',
             country: c.country_code,
@@ -215,8 +215,8 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
 
   // Get current selected value
   const getCurrentValue = (): string | null => {
-    if (currentCity) return `city-${currentCity}`
-    if (currentRegion) return `region-${currentRegion}`
+    if (currentCity && currentCountry && currentRegion) return `city-${currentCountry}-${currentRegion}-${currentCity}`
+    if (currentRegion && currentCountry) return `region-${currentCountry}-${currentRegion}`
     if (currentCountry) return `country-${currentCountry}`
     return null
   }
@@ -236,10 +236,12 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
     } else if (option.type === 'region') {
       updateFilters({ country: option.country || '', region: option.region || '', city: '' })
     } else if (option.type === 'city') {
+      // Extract city slug from value format: city-{country}-{region}-{slug}
+      const citySlug = value.replace(`city-${option.country}-${option.region}-`, '')
       updateFilters({
         country: option.country || '',
         region: option.region || '',
-        city: value.replace('city-', '')
+        city: citySlug
       })
     }
   }
