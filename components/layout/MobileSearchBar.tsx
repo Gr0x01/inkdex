@@ -241,7 +241,7 @@ export default function MobileSearchBar() {
 
   return (
     <div
-      className={`fixed left-0 right-0 z-40 md:hidden bg-ink/90 backdrop-blur-xl border-t border-white/10 transition-all duration-300 ease-out ${
+      className={`fixed left-0 right-0 z-40 md:hidden bg-ink/90 backdrop-blur-xl border-t border-white/10 transition-all duration-300 ease-out after:absolute after:left-0 after:right-0 after:top-full after:h-[200px] after:bg-ink/90 after:backdrop-blur-xl ${
         shouldShow
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-full pointer-events-none'
