@@ -9,6 +9,8 @@ import { trackSearchStarted } from '@/lib/analytics/posthog'
 import type { SearchType } from '@/lib/analytics/events'
 
 interface NavbarSearchProps {
+  /** Auto-focus the input on mount */
+  autoFocus?: boolean
   /** Force loading state - for Storybook only */
   forceLoading?: boolean
   /** Force Instagram detection state - for Storybook only */
@@ -27,6 +29,7 @@ interface NavbarSearchProps {
  * Features: All 4 input methods (image, text, IG post, IG profile) in compact form
  */
 export default function NavbarSearch({
+  autoFocus = false,
   forceLoading = false,
   forceInstagramDetection = null,
   forceImagePreview = null,
@@ -36,6 +39,17 @@ export default function NavbarSearch({
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textInputRef = useRef<HTMLInputElement>(null)
+
+  // Auto-focus input when requested (e.g., mobile search expansion)
+  useEffect(() => {
+    if (autoFocus && textInputRef.current) {
+      // Small delay to ensure DOM is ready and animations complete
+      const timer = setTimeout(() => {
+        textInputRef.current?.focus()
+      }, 150)
+      return () => clearTimeout(timer)
+    }
+  }, [autoFocus])
 
   // Form state
   const [imageFile, setImageFile] = useState<File | null>(null)

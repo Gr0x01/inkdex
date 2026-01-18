@@ -98,28 +98,28 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
           </nav>
 
           {/* Mobile Actions - Search + Menu */}
-          <div className="lg:hidden flex items-center gap-2">
-            {/* Mobile Search Trigger */}
+          <div className="lg:hidden flex items-center gap-3">
+            {/* Mobile Search Trigger - Bold, prominent CTA */}
             {!isMobileSearchOpen && (
               <button
                 onClick={() => {
                   setIsMobileSearchOpen(true)
                   setIsMobileMenuOpen(false)
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-ink/5 hover:bg-ink/10 border border-ink/20 transition-all duration-150 active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 bg-ink text-paper hover:bg-ink/90 active:bg-ink/80 transition-all duration-150 active:scale-[0.98]"
                 aria-label="Open search"
               >
                 <svg
-                  className="w-4 h-4 text-ink/60"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
                   aria-hidden="true"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span className="font-mono text-xs font-medium text-ink/70 uppercase tracking-wide">Search</span>
+                <span className="font-mono text-xs font-bold uppercase tracking-widest">Search</span>
               </button>
             )}
 
@@ -128,7 +128,7 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
               <button
                 ref={mobileMenuButtonRef}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="cursor-pointer p-1 transition-all duration-fast active:scale-95"
+                className="cursor-pointer p-2 hover:bg-ink/5 transition-all duration-fast active:scale-95"
                 aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-navigation"
@@ -151,29 +151,29 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
             )}
           </div>
 
-          {/* Mobile Search Expanded - Replaces navbar content */}
+          {/* Mobile Search Expanded - Full navbar takeover */}
           {isMobileSearchOpen && (
-            <div className="lg:hidden absolute inset-x-0 top-0 h-20 bg-paper flex items-center px-4 gap-3 animate-fade-in z-20">
-              {/* Close Button */}
+            <div className="lg:hidden absolute inset-0 bg-paper flex items-center px-4 gap-2 z-20">
+              {/* Close Button - Subtle but accessible */}
               <button
                 onClick={closeMobileSearch}
-                className="shrink-0 p-2 hover:bg-ink/5 transition-colors"
+                className="shrink-0 w-10 h-10 flex items-center justify-center hover:bg-ink/5 active:bg-ink/10 transition-colors"
                 aria-label="Close search"
               >
                 <svg
-                  className="w-5 h-5 text-ink"
+                  className="w-5 h-5 text-ink/70"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                   strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
 
-              {/* Search Input - Full width */}
+              {/* Search Input - Full width, auto-focused */}
               <div className="flex-1 min-w-0">
-                <NavbarSearch />
+                <NavbarSearch autoFocus />
               </div>
             </div>
           )}
