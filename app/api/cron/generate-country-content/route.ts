@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
 import { env } from '@/lib/config/env'
-import { getCountryName, isGDPRCountry } from '@/lib/constants/countries'
+import { getCountryName } from '@/lib/constants/countries'
 
 // Limit countries per cron run to control costs (~$0.10/country)
 const MAX_COUNTRIES_PER_RUN = 5
@@ -110,10 +110,10 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Filter: exclude US (has city content), GDPR countries
+    // Filter: exclude US (has city content)
     // location_code contains country_code from get_location_counts
     const eligibleCountries = (countriesWithArtists as CountryWithCount[] || [])
-      .filter((c) => c.location_code !== 'US' && !isGDPRCountry(c.location_code))
+      .filter((c) => c.location_code !== 'US')
 
     // Get existing content
     const { data: existingContent } = await supabase
