@@ -6,6 +6,7 @@ import { detectInstagramUrl } from '@/lib/instagram/url-detector'
 import { trackSearchStarted } from '@/lib/analytics/posthog'
 import type { SearchType } from '@/lib/analytics/events'
 import { useNavbarVisibility } from '@/components/layout/NavbarContext'
+import styles from '@/components/home/ShimmerSearch.module.css'
 
 /**
  * Sticky mobile search bar - fixed at bottom of screen on mobile only.
@@ -253,7 +254,9 @@ export default function MobileSearchBar() {
     >
       <div className="px-4 py-2">
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-center h-12 bg-paper/95 border border-ink/10 shadow-sm">
+          <div className={`relative flex items-center h-12 bg-paper/95 shadow-sm ${isSubmitting ? '' : 'border border-ink/10'}`}>
+            {/* Loading Glow Effect */}
+            {isSubmitting && <div className={styles.loadingGlow} style={{ borderRadius: 0 }} />}
             {/* Left: Search Icon or Image Preview */}
             {imagePreview ? (
               <div className="relative w-9 h-9 ml-2 shrink-0 group">
