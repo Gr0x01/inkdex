@@ -156,11 +156,11 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
 
           {/* Mobile Search Expanded - Full navbar takeover */}
           {isMobileSearchOpen && (
-            <div className="lg:hidden absolute inset-0 bg-paper flex items-center px-4 gap-2 z-20">
-              {/* Close Button - Subtle but accessible */}
+            <div className="lg:hidden absolute inset-0 bg-paper flex items-center gap-2 z-20">
+              {/* Close Button - Compact to preserve alignment */}
               <button
                 onClick={closeMobileSearch}
-                className="shrink-0 w-10 h-10 flex items-center justify-center hover:bg-ink/5 active:bg-ink/10 transition-colors"
+                className="shrink-0 w-8 h-8 -ml-1 flex items-center justify-center hover:bg-ink/5 active:bg-ink/10 transition-colors"
                 aria-label="Close search"
               >
                 <svg
