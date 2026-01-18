@@ -27,6 +27,9 @@ function PostHogPageViewInner() {
     // Skip if posthog not ready or no pathname
     if (!posthog || !pathname) return
 
+    // Exclude admin pages from analytics
+    if (pathname.startsWith('/admin')) return
+
     // Build full URL for accurate tracking
     let url = window.origin + pathname
     const search = searchParams.toString()
