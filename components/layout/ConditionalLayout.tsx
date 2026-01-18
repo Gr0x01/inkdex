@@ -3,7 +3,8 @@ import NavbarWithAuth from '@/components/layout/NavbarWithAuth';
 import Footer from '@/components/layout/Footer';
 import { CookieBanner } from '@/components/consent/CookieBanner';
 import { NavbarVisibilityProvider } from '@/components/layout/NavbarContext';
-import MobileSearchBar from '@/components/layout/MobileSearchBar';
+// MobileSearchBar removed - search now integrated into top navbar (iOS Safari bottom gap issue)
+// import MobileSearchBar from '@/components/layout/MobileSearchBar';
 import { createClient } from '@/lib/supabase/server';
 
 interface ConditionalLayoutProps {
@@ -62,7 +63,6 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
       {children}
       <Footer statesWithArtists={statesForFooter} countriesWithArtists={countriesForFooter} />
       <CookieBanner />
-      <MobileSearchBar />
     </NavbarVisibilityProvider>
   );
 }

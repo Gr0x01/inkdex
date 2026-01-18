@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import NavbarSearch from '@/components/layout/NavbarSearch'
 import NavbarLocationSelect from '@/components/layout/NavbarLocationSelect'
 import { NavbarUserMenu, NavbarUserMenuMobile } from '@/components/layout/NavbarUserMenu'
@@ -26,15 +26,32 @@ interface NavbarProps {
  */
 export default function Navbar({ user = null, isPro = false, artistSlug = null }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
 
   // Get navbar visibility from context (shared with other sticky elements)
   const { isNavbarHidden, isCompact: _isCompact } = useNavbarVisibility()
 
+  // Close mobile search on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMobileSearchOpen) {
+        setIsMobileSearchOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isMobileSearchOpen])
+
   // Close mobile menu and return focus
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
     mobileMenuButtonRef.current?.focus()
+  }
+
+  // Close mobile search
+  const closeMobileSearch = () => {
+    setIsMobileSearchOpen(false)
   }
 
   return (
@@ -80,33 +97,86 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
             <NavbarUserMenu user={user} isPro={isPro} artistSlug={artistSlug} />
           </nav>
 
-          {/* Mobile Actions (Menu Toggle Only) */}
-          <div className="lg:hidden flex items-center gap-4">
-            {/* Mobile Menu Toggle */}
-            <button
-              ref={mobileMenuButtonRef}
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="cursor-pointer p-1 transition-all duration-fast active:scale-95"
-              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-navigation"
-            >
-              <svg
-                className="w-5 h-5 text-ink"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                aria-hidden="true"
+          {/* Mobile Actions - Search + Menu */}
+          <div className="lg:hidden flex items-center gap-2">
+            {/* Mobile Search Trigger */}
+            {!isMobileSearchOpen && (
+              <button
+                onClick={() => {
+                  setIsMobileSearchOpen(true)
+                  setIsMobileMenuOpen(false)
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-ink/5 hover:bg-ink/10 border border-ink/20 transition-all duration-150 active:scale-95"
+                aria-label="Open search"
               >
-                {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
-            </button>
+                <svg
+                  className="w-4 h-4 text-ink/60"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="font-mono text-xs font-medium text-ink/70 uppercase tracking-wide">Search</span>
+              </button>
+            )}
+
+            {/* Mobile Menu Toggle */}
+            {!isMobileSearchOpen && (
+              <button
+                ref={mobileMenuButtonRef}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="cursor-pointer p-1 transition-all duration-fast active:scale-95"
+                aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-navigation"
+              >
+                <svg
+                  className="w-5 h-5 text-ink"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  aria-hidden="true"
+                >
+                  {isMobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            )}
           </div>
+
+          {/* Mobile Search Expanded - Replaces navbar content */}
+          {isMobileSearchOpen && (
+            <div className="lg:hidden absolute inset-x-0 top-0 h-20 bg-paper flex items-center px-4 gap-3 animate-fade-in z-20">
+              {/* Close Button */}
+              <button
+                onClick={closeMobileSearch}
+                className="shrink-0 p-2 hover:bg-ink/5 transition-colors"
+                aria-label="Close search"
+              >
+                <svg
+                  className="w-5 h-5 text-ink"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Search Input - Full width */}
+              <div className="flex-1 min-w-0">
+                <NavbarSearch />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
