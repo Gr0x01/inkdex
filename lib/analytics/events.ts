@@ -7,6 +7,9 @@
 
 // Event name constants
 export const EVENTS = {
+  // Referral/Attribution
+  REFERRAL_LANDED: 'Referral Landed',
+
   // Search funnel
   SEARCH_STARTED: 'Search Started',
   SEARCH_COMPLETED: 'Search Completed',
@@ -41,9 +44,20 @@ export type EventName = (typeof EVENTS)[keyof typeof EVENTS]
 export type SearchType = 'image' | 'text' | 'instagram_post' | 'instagram_profile' | 'similar_artist'
 
 // Search source - where the search was initiated from
-export type SearchSource = 'hero' | 'navbar' | 'quick_pill' | 'style_card' | 'similar_artist' | 'direct'
+export type SearchSource = 'hero' | 'navbar' | 'mobile_sticky' | 'quick_pill' | 'style_card' | 'similar_artist' | 'direct'
 
 // Event property types
+export interface ReferralLandedProperties {
+  referral_source?: string // ?ref= parameter
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
+  landing_page: string
+  referrer?: string // document.referrer
+}
+
 export interface SearchStartedProperties {
   search_type: SearchType
   source: SearchSource
@@ -150,4 +164,10 @@ export interface UserPropertiesSetOnce {
   first_profile_view_at?: string
   first_visit_at?: string
   acquisition_source?: 'organic' | 'social' | 'direct' | 'unknown'
+  // Referral attribution (first-touch)
+  referral_source?: string
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  landing_page?: string
 }

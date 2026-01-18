@@ -39,8 +39,8 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
 
   return (
     <header
-      className={`navbar-sticky bg-paper border-b-2 border-ink/10 ${isNavbarHidden ? 'navbar-hidden' : ''}`}
-      data-navbar-hidden={isNavbarHidden}
+      className={`navbar-sticky bg-paper border-b-2 border-ink/10 ${isNavbarHidden && !isMobileMenuOpen ? 'navbar-hidden' : ''}`}
+      data-navbar-hidden={isNavbarHidden && !isMobileMenuOpen}
     >
       {/* Top decorative line */}
       <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-transparent via-ink/20 to-transparent" aria-hidden="true" />
@@ -123,11 +123,6 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
         aria-hidden={!isMobileMenuOpen}
       >
         <div className="py-3 px-4 bg-paper relative">
-          {/* Mobile Search Bar - Only show on mobile, hidden at md+ where navbar search appears */}
-          <div className="relative z-10 md:hidden mb-2">
-            <NavbarSearch />
-          </div>
-
           {/* Browse Locations - Searchable Select */}
           <div className="relative z-10 mb-4">
             <div className="editorial-mobile-link font-bold text-gray-900 mb-2">

@@ -6,11 +6,15 @@ import { useScrollDirection } from '@/hooks/useScrollDirection';
 interface NavbarContextValue {
   isNavbarHidden: boolean;
   isCompact: boolean; // True when scrolled past threshold (mobile shrinks)
+  isHeroSearchVisible: boolean; // True when homepage hero search is in viewport
+  setHeroSearchVisible: (visible: boolean) => void;
 }
 
 const NavbarContext = createContext<NavbarContextValue>({
   isNavbarHidden: false,
   isCompact: false,
+  isHeroSearchVisible: false,
+  setHeroSearchVisible: () => {},
 });
 
 /**
@@ -21,6 +25,7 @@ export function NavbarVisibilityProvider({ children }: { children: ReactNode }) 
   const scrollDirection = useScrollDirection({ threshold: 50, topOffset: 10 });
   const isNavbarHidden = scrollDirection === 'down';
   const [isCompact, setIsCompact] = useState(false);
+  const [isHeroSearchVisible, setHeroSearchVisible] = useState(false);
 
   // Track scroll position to determine compact mode
   useEffect(() => {
@@ -37,7 +42,7 @@ export function NavbarVisibilityProvider({ children }: { children: ReactNode }) 
   }, []);
 
   return (
-    <NavbarContext.Provider value={{ isNavbarHidden, isCompact }}>
+    <NavbarContext.Provider value={{ isNavbarHidden, isCompact, isHeroSearchVisible, setHeroSearchVisible }}>
       {children}
     </NavbarContext.Provider>
   );

@@ -7,6 +7,7 @@ import SearchError from '@/components/search/SearchError'
 import styles from './ShimmerSearch.module.css'
 import { trackSearchStarted } from '@/lib/analytics/posthog'
 import type { SearchSource, SearchType } from '@/lib/analytics/events'
+import { useNavbarVisibility } from '@/components/layout/NavbarContext'
 
 interface UnifiedSearchBarProps {
   /** Search source for analytics tracking */
@@ -34,6 +35,8 @@ export default function UnifiedSearchBar({
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const { setHeroSearchVisible } = useNavbarVisibility()
 
   // Form state
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -97,6 +100,19 @@ export default function UnifiedSearchBar({
       }
     }
   }, [imagePreview])
+
+  // Report hero search visibility to context for MobileSearchBar
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroSearchVisible(entry.isIntersecting),
+      { threshold: 0.1 } // 10% visible = consider "visible"
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [setHeroSearchVisible])
 
   // Detect Instagram URLs in text input - style as tag when detected
   useEffect(() => {
@@ -326,7 +342,7 @@ export default function UnifiedSearchBar({
   ) && !isLoading
 
   return (
-    <div className="w-full" id="search">
+    <div ref={containerRef} className="w-full" id="search">
       <form onSubmit={handleSubmit} className="relative">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Input Column - contains input field and any errors below it */}

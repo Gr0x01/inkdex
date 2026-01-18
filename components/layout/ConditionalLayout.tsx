@@ -1,10 +1,9 @@
 import { headers } from 'next/headers';
 import NavbarWithAuth from '@/components/layout/NavbarWithAuth';
 import Footer from '@/components/layout/Footer';
-import { SearchProvider } from '@/components/search/SearchProvider';
-import GlobalSearchModal from '@/components/search/GlobalSearchModal';
 import { CookieBanner } from '@/components/consent/CookieBanner';
 import { NavbarVisibilityProvider } from '@/components/layout/NavbarContext';
+import MobileSearchBar from '@/components/layout/MobileSearchBar';
 import { createClient } from '@/lib/supabase/server';
 
 interface ConditionalLayoutProps {
@@ -58,14 +57,12 @@ export default async function ConditionalLayout({ children }: ConditionalLayoutP
 
   // All other pages get the full site layout
   return (
-    <SearchProvider>
-      <NavbarVisibilityProvider>
-        <NavbarWithAuth />
-        <GlobalSearchModal />
-        {children}
-        <Footer statesWithArtists={statesForFooter} countriesWithArtists={countriesForFooter} />
-        <CookieBanner />
-      </NavbarVisibilityProvider>
-    </SearchProvider>
+    <NavbarVisibilityProvider>
+      <NavbarWithAuth />
+      {children}
+      <Footer statesWithArtists={statesForFooter} countriesWithArtists={countriesForFooter} />
+      <CookieBanner />
+      <MobileSearchBar />
+    </NavbarVisibilityProvider>
   );
 }
