@@ -17,6 +17,9 @@ import { getImageUrl } from '@/lib/utils/images'
 import { slugToName } from '@/lib/utils/location'
 import type { SearchResult, SearchedArtistData } from '@/types/search'
 
+// Never cache search results - they depend on embeddings and filters
+export const dynamic = 'force-dynamic'
+
 interface SearchPageProps {
   searchParams: Promise<{
     id?: string

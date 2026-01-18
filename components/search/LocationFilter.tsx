@@ -161,12 +161,18 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
     }
   }, [searchId, hasFetched, loading])
 
+  // Reset cache when searchId changes (new search = new location counts)
+  useEffect(() => {
+    setHasFetched(false)
+    setFlatLocations([])
+  }, [searchId])
+
   // Fetch locations on mount if a filter is already applied (so we can display the selected value)
   useEffect(() => {
     if ((currentCountry || currentRegion || currentCity) && !hasFetched) {
       fetchLocations()
     }
-  }, [])
+  }, [currentCountry, currentRegion, currentCity, hasFetched, fetchLocations])
 
   // Update URL with debouncing
   const updateFilters = useCallback((updates: {
