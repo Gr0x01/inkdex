@@ -13,13 +13,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://inkdex.io'
   const supabase = await createClient()
 
-  // Fetch all artist slugs
+  // Fetch artists with at least 1 portfolio image (exclude thin content from sitemap)
   const { data: artists } = await supabase
-    .from('artists')
-    .select('slug, updated_at')
+    .rpc('get_artists_with_images_for_sitemap')
 
   const artistUrls: MetadataRoute.Sitemap =
-    artists?.map((artist) => ({
+    (artists as { slug: string; updated_at: string }[] | null)?.map((artist) => ({
       url: `${baseUrl}/artist/${artist.slug}`,
       lastModified: artist.updated_at
         ? new Date(artist.updated_at)

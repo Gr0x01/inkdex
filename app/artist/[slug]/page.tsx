@@ -112,6 +112,8 @@ export async function generateMetadata({
   return {
     title,
     description,
+    // Don't index artists with no portfolio images (thin content)
+    ...(imageCount === 0 && { robots: { index: false, follow: true } }),
     openGraph: {
       title,
       description,
