@@ -2,7 +2,6 @@
 
 import ClaimProfileButton from './ClaimProfileButton'
 import ArtistShareButton from './ArtistShareButton'
-import AdminDmPushButton from './AdminDmPushButton'
 import { ProBadge } from '@/components/badges/ProBadge'
 import { ProfileImage } from '@/components/ui/ProfileImage'
 import { trackClick } from '@/lib/analytics/client'
@@ -357,12 +356,6 @@ export default function ArtistInfoColumn({
             artistHandle={artist.instagram_handle}
             artistName={artist.name}
             city={primaryLocation?.city}
-          />
-
-          {/* Admin: DM Campaign Push (only visible to admins) */}
-          <AdminDmPushButton
-            artistId={artist.id}
-            artistHandle={artist.instagram_handle}
           />
         </div>
 
