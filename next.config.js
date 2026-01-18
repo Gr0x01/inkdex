@@ -84,21 +84,8 @@ const nextConfig = {
       },
     ]
   },
-  async rewrites() {
-    return [
-      // PostHog reverse proxy - routes through our domain to avoid ad blockers
-      // Static assets (JS SDK, etc.)
-      {
-        source: '/ingest/static/:path*',
-        destination: 'https://us-assets.i.posthog.com/static/:path*',
-      },
-      // Event capture and API requests
-      {
-        source: '/ingest/:path*',
-        destination: 'https://us.i.posthog.com/:path*',
-      },
-    ]
-  },
+  // PostHog reverse proxy moved to app/ingest/[[...path]]/route.ts
+  // Route handler allows explicit IP forwarding (rewrites don't forward X-Forwarded-For correctly)
 }
 
 module.exports = nextConfig
