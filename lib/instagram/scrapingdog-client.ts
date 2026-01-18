@@ -173,26 +173,35 @@ export async function fetchProfileWithScrapingDog(
 
     console.log(`[ScrapingDog] Found ${profile.followers_count} followers, ${mediaItems.length} posts in response`);
 
-    // Filter to images only and map to our format
+    // Extract posts (both images and video thumbnails)
     const extractedPosts: InstagramPostMetadata[] = [];
+    let imageCount = 0;
+    let videoCount = 0;
 
     for (const item of mediaItems) {
-      if (item.is_video) continue;
-      if (!item.shortcode || !item.display_url) continue;
+      if (!item.shortcode) continue;
+
+      // For videos, use thumbnail URL; for images, use display_url
+      const imageUrl = item.is_video ? item.thumbnail : item.display_url;
+
+      // Skip if no usable image URL
+      if (!imageUrl) continue;
 
       extractedPosts.push({
         shortcode: item.shortcode,
         url: `https://www.instagram.com/p/${item.shortcode}/`,
-        displayUrl: item.display_url,
+        displayUrl: imageUrl,
         caption: item.caption || null,
         timestamp: item.timestamp ? new Date(item.timestamp * 1000).toISOString() : null,
         likesCount: item.likes ?? null,
+        isFromVideo: item.is_video,
       });
 
+      if (item.is_video) videoCount++; else imageCount++;
       if (extractedPosts.length >= limit) break;
     }
 
-    // Validate minimum post count (need at least 1 image for visual search)
+    // Validate minimum post count (need at least 1 post for visual search)
     if (extractedPosts.length < 1) {
       throw new InstagramError(
         PROFILE_ERROR_MESSAGES.INSUFFICIENT_POSTS,
@@ -200,7 +209,7 @@ export async function fetchProfileWithScrapingDog(
       );
     }
 
-    console.log(`[ScrapingDog] Extracted ${extractedPosts.length} image posts`);
+    console.log(`[ScrapingDog] Extracted ${extractedPosts.length} posts (${imageCount} images, ${videoCount} video thumbnails)`);
 
     return {
       posts: extractedPosts,

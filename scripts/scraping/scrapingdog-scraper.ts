@@ -538,6 +538,7 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFil
       likes: number;
       is_tattoo: boolean | null;
       tattoo_confidence: number | null;
+      is_from_video: boolean;
     }> = [];
 
     for (const img of downloadedImages) {
@@ -553,6 +554,7 @@ async function scrapeArtist(artist: PendingArtist, profileOnly: boolean, skipFil
         likes: img.post.likesCount || 0,
         is_tattoo: classification?.isTattoo ?? null,
         tattoo_confidence: classification?.confidence ?? null,
+        is_from_video: img.post.isFromVideo || false,
       });
     }
 
@@ -632,6 +634,29 @@ async function updatePipelineProgress(
 /**
  * Main scraping workflow
  */
+/**
+ * Get artists by specific handles (for targeted scraping)
+ */
+async function getArtistsByHandles(handles: string[]): Promise<PendingArtist[]> {
+  const { data, error } = await supabase
+    .from('artists')
+    .select('id, instagram_handle, name')
+    .in('instagram_handle', handles)
+    .is('deleted_at', null)
+    .neq('instagram_private', true);
+
+  if (error) {
+    console.error('Failed to fetch artists by handles:', error);
+    return [];
+  }
+
+  return (data || []).map((a) => ({
+    id: a.id,
+    instagram_handle: a.instagram_handle!,
+    name: a.name || a.instagram_handle!,
+  }));
+}
+
 async function main(): Promise<void> {
   // Parse arguments
   const args = process.argv.slice(2);
@@ -639,6 +664,8 @@ async function main(): Promise<void> {
   const skipFilter = args.includes('--no-filter');
   const limitArg = args.find((a) => a.startsWith('--limit'));
   const limit = limitArg ? parseInt(limitArg.split('=')[1] || args[args.indexOf('--limit') + 1]) : undefined;
+  const handlesArg = args.find((a) => a.startsWith('--handles'));
+  const handles = handlesArg ? (handlesArg.split('=')[1] || args[args.indexOf('--handles') + 1])?.split(',') : undefined;
 
   // Use lower concurrency when filter enabled (memory + GPT rate limits)
   const concurrency = skipFilter ? CONCURRENCY_DEFAULT : CONCURRENCY_WITH_FILTER;
@@ -650,6 +677,7 @@ async function main(): Promise<void> {
   console.log(`Mode: ${profileOnly ? 'Profile images only' : 'Full portfolio'}`);
   console.log(`Tattoo filter: ${skipFilter ? 'DISABLED' : 'ENABLED (GPT)'}`);
   if (limit) console.log(`Limit: ${limit} artists`);
+  if (handles) console.log(`Handles filter: ${handles.length} handles`);
   console.log('');
 
   // Create temp directory
@@ -657,9 +685,14 @@ async function main(): Promise<void> {
 
   // Get pending artists
   console.log('Fetching pending artists...');
-  const artists = profileOnly
-    ? await getArtistsNeedingProfileImages(limit)
-    : await getPendingArtists(limit);
+  let artists: PendingArtist[];
+  if (handles && handles.length > 0) {
+    artists = await getArtistsByHandles(handles);
+  } else if (profileOnly) {
+    artists = await getArtistsNeedingProfileImages(limit);
+  } else {
+    artists = await getPendingArtists(limit);
+  }
 
   if (artists.length === 0) {
     console.log('No artists to scrape.');

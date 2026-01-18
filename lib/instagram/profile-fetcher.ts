@@ -15,7 +15,7 @@ import { normalizeInstagramHandle } from '@/lib/utils/slug';
 // Extend error messages for profile-specific errors
 export const PROFILE_ERROR_MESSAGES = {
   ...ERROR_MESSAGES,
-  INSUFFICIENT_POSTS: "This profile only has videos. Visual search needs at least one image post.",
+  INSUFFICIENT_POSTS: "This profile has no public posts with images or video thumbnails.",
   NO_POSTS: "This profile has no public posts.",
   SCRAPING_FAILED: "Couldn't fetch images from this profile. Try uploading an image directly.",
   APIFY_ERROR: "Instagram profile scraping service temporarily unavailable. Try again in a few minutes.",
@@ -25,10 +25,11 @@ export const PROFILE_ERROR_MESSAGES = {
 export interface InstagramPostMetadata {
   shortcode: string;        // Instagram shortcode (e.g., "ABC123def_-")
   url: string;              // Full Instagram URL (https://instagram.com/p/{shortcode}/)
-  displayUrl: string;       // CDN image URL for downloading
+  displayUrl: string;       // CDN image URL for downloading (or thumbnail URL for videos)
   caption: string | null;
   timestamp: string | null; // ISO 8601
   likesCount: number | null;
+  isFromVideo?: boolean;    // True if this is a video thumbnail (Reel)
 }
 
 export interface InstagramProfileData {
@@ -189,18 +190,17 @@ async function fetchWithApify(
       );
     }
 
-    // Extract posts with full metadata
+    // Extract posts with full metadata (both images and video thumbnails)
     const extractedPosts: InstagramPostMetadata[] = [];
+    let imageCount = 0;
+    let videoCount = 0;
 
     for (const post of posts) {
-      // Skip videos
-      if (post.type === 'Video') {
-        continue;
-      }
-
-      // Must have shortcode and displayUrl
       const shortcode = post.shortCode;
+      const isVideo = post.type === 'Video';
       const displayUrl = post.displayUrl;
+
+      // Must have shortcode and displayUrl (Apify provides thumbnail in displayUrl for videos)
       if (!shortcode || !displayUrl) {
         continue;
       }
@@ -212,13 +212,18 @@ async function fetchWithApify(
         caption: post.caption || null,
         timestamp: post.timestamp || null,
         likesCount: post.likesCount ?? null,
+        isFromVideo: isVideo,
       });
+
+      if (isVideo) videoCount++; else imageCount++;
 
       // Stop if we have enough posts
       if (extractedPosts.length >= limit) {
         break;
       }
     }
+
+    console.log(`[Apify] Extracted ${extractedPosts.length} posts (${imageCount} images, ${videoCount} video thumbnails)`);
 
     // Validate minimum post count (need at least 1 image for visual search)
     if (extractedPosts.length < 1) {
@@ -227,8 +232,6 @@ async function fetchWithApify(
         'INSUFFICIENT_POSTS'
       );
     }
-
-    console.log(`[Apify] Extracted ${extractedPosts.length} posts with metadata`);
 
     return {
       posts: extractedPosts,

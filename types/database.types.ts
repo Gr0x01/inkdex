@@ -1138,6 +1138,7 @@ export type Database = {
           instagram_post_id: string
           instagram_url: string
           is_color: boolean | null
+          is_from_video: boolean | null
           is_pinned: boolean | null
           is_tattoo: boolean | null
           likes_count: number | null
@@ -1166,6 +1167,7 @@ export type Database = {
           instagram_post_id: string
           instagram_url: string
           is_color?: boolean | null
+          is_from_video?: boolean | null
           is_pinned?: boolean | null
           is_tattoo?: boolean | null
           likes_count?: number | null
@@ -1194,6 +1196,7 @@ export type Database = {
           instagram_post_id?: string
           instagram_url?: string
           is_color?: boolean | null
+          is_from_video?: boolean | null
           is_pinned?: boolean | null
           is_tattoo?: boolean | null
           likes_count?: number | null

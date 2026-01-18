@@ -78,6 +78,7 @@ interface ImageMetadata {
   likes: number;
   is_tattoo?: boolean | null;
   tattoo_confidence?: number | null;
+  is_from_video?: boolean;
 }
 
 /**
@@ -310,6 +311,7 @@ async function processArtistImages(artistId: string, artistDir: string): Promise
             is_color: isColor,  // Color classification
             is_tattoo: meta.is_tattoo ?? null,  // Tattoo classification
             tattoo_confidence: meta.tattoo_confidence ?? null,
+            is_from_video: meta.is_from_video ?? false,  // Reel thumbnail
           });
 
         if (dbError) {
