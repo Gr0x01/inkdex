@@ -1,7 +1,7 @@
 ---
-Last-Updated: 2026-01-17
+Last-Updated: 2026-01-18
 Maintainer: RB
-Status: Launched - All 15 Phases Complete + ML Style Classifier + International
+Status: Launched - All 15 Phases Complete + ML Style Classifier + International + EU Expansion
 ---
 
 # Progress Log: Inkdex
@@ -10,14 +10,14 @@ Status: Launched - All 15 Phases Complete + ML Style Classifier + International
 
 | Metric | Value |
 |--------|-------|
-| Countries | 42 |
-| Cities | 126 (116 US + 6 India + 4 Pakistan) |
-| States/Regions | 51 US + 6 India + 3 Pakistan |
-| Artists | 17,250 |
-| Images | 99,258 (with embeddings) |
+| Countries | 56 (14 EU countries added) |
+| Cities | 154 (116 US + 6 India + 4 Pakistan + 27 EU + 1 other) |
+| States/Regions | 51 US + 6 India + 3 Pakistan + 14 EU |
+| Artists | 20,643 (+3,211 EU) |
+| Images | 99,258 (with embeddings) - EU images processing |
 | Color Profiles | 10,704 artists |
 | Display Styles | 11 (added japanese + anime) |
-| Static Pages | ~3,500+ |
+| Static Pages | ~4,000+ |
 
 ## Launch Milestone
 
@@ -29,8 +29,8 @@ All 15 implementation phases complete:
 - Pro tier ($15/mo) with Stripe integration
 - Admin panel with pipeline control
 - Multi-location support (international)
-- GDPR compliance (EU artist filtering)
 - 20 styles with averaged seed embeddings
+- EU expansion enabled (GDPR filtering removed Jan 18)
 
 ---
 
@@ -71,6 +71,31 @@ All 15 implementation phases complete:
 ---
 
 ## Development Timeline
+
+### Week 3 (Jan 18, 2026)
+- **PostHog IP Forwarding Fix** ✅
+  - Fixed IP-based filtering in PostHog (wasn't working due to Next.js rewrite header issues)
+  - Replaced `next.config.js` rewrites with route handler at `app/ingest/[[...path]]/route.ts`
+  - Route handler explicitly forwards real client IP via `x-forwarded-for` header
+  - Added SSRF protection, 10s timeout, CORS restrictions, graceful error handling
+  - Key commit: `3f8f54d`
+- **EU Expansion - 27 Cities** 🔄
+  - Added 27 EU cities across 14 countries to discovery script
+  - Countries: DE (6), GB (7), FR (3), NL (2), ES (2), IT (2), AT, CZ, IE, BE, DK, SE, PT, PL
+  - Discovery results: 3,825 discovered, 3,211 inserted, 614 duplicates
+  - Scraping in progress: 84 German artists now searchable (Berlin: 82)
+  - Fixed `region: null` data issue that was breaking URL routing (e.g., `/de/null/berlin`)
+  - Cost: ~$150 Tavily credits
+  - Key file: `scripts/discovery/tavily-artist-discovery-v2.ts`
+- **GDPR Filtering Removal - EU Expansion** ✅
+  - Removed all GDPR/EU artist filtering to enable EU market expansion
+  - Strategic decision: EU artists can now be discovered, scraped, and shown in search
+  - 27 files changed across SQL, TypeScript, and UI components
+  - Dropped `is_gdpr_blocked` and `gdpr_consent` columns from artists table
+  - Deleted `is_gdpr_country()` SQL helper and `GDPR_COUNTRY_CODES` TypeScript constants
+  - Fixed broken `get_location_counts()` function in production (was referencing dropped function)
+  - Tested with Berlin discovery: 182 artists successfully added
+  - Key commits: `224b821` (27 files), `39b8ef8` (cron fix)
 
 ### Week 3 (Jan 17, 2026)
 - **Ad Performance Analysis & ReferralTracker Fix** ✅

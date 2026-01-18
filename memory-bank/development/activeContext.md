@@ -1,10 +1,181 @@
 ---
-Last-Updated: 2026-01-17
+Last-Updated: 2026-01-18
 Maintainer: RB
 Status: Launched - Production
 ---
 
 # Active Context: Inkdex
+
+## PostHog IP Forwarding Fix (Jan 18, 2026) ✅
+
+**Goal:** Fix IP-based filtering in PostHog which wasn't working due to Next.js rewrites not forwarding client IP.
+
+**Problem:** PostHog saw Vercel's server IP instead of real client IP because Next.js rewrites have [known issues](https://github.com/vercel/next.js/issues/57397) with X-Forwarded-For header forwarding. This broke IP blocking for filtering admin traffic from analytics.
+
+**Solution:** Replaced `next.config.js` rewrites with a route handler that explicitly forwards the client IP.
+
+**Implementation:**
+- Created `app/ingest/[[...path]]/route.ts` - PostHog proxy route handler
+- Removed rewrite rules from `next.config.js`
+- PostHog client config unchanged (still uses `api_host: '/ingest'`)
+
+**Route Handler Features:**
+- Extracts real client IP from `x-forwarded-for` header (first IP in chain)
+- Forwards IP via `x-forwarded-for` and `x-real-ip` headers to PostHog
+- SSRF protection: validates paths (no `..` or `//`), only allows known PostHog paths
+- 10-second request timeout with AbortController
+- CORS restricted to `inkdex.io` origins (+ localhost in dev)
+- OPTIONS preflight handled locally for faster response
+- Graceful error handling (502 on fetch failure, doesn't break user experience)
+
+**Key Files:**
+- `app/ingest/[[...path]]/route.ts` - NEW: Route handler for PostHog proxy
+- `next.config.js` - Removed PostHog rewrite rules
+
+**Commit:** `3f8f54d`
+
+**Verification:**
+1. Deploy to Vercel (auto-deploys on push)
+2. Visit inkdex.io to trigger PostHog event
+3. Check PostHog → Live Events → events should show real client IP
+4. IP blocking in PostHog dashboard should now work
+
+---
+
+## Sticky Mobile Search Bar (Jan 18, 2026) ✅
+
+**Goal:** Improve mobile search accessibility - 80% of traffic is mobile but search was hidden in hamburger menu.
+
+**What was built:**
+- `MobileSearchBar.tsx` - Sticky search bar fixed at bottom of screen on mobile
+- Dark `bg-ink` background strip with light `bg-paper` input field
+- Orange GO button matching hero style
+- Fully functional: text input, image upload, Instagram URL detection
+- Animates in/out with slide + fade transition (300ms ease-out)
+
+**Smart Visibility:**
+- Only shows on mobile (<768px)
+- Hides when homepage hero search is visible (IntersectionObserver)
+- Appears when hero scrolls out of view
+- Always visible on non-homepage pages
+
+**Architecture:**
+- Extended `NavbarContext` with `isHeroSearchVisible` state
+- `UnifiedSearchBar` reports visibility via IntersectionObserver
+- `MobileSearchBar` consumes context + checks pathname
+
+**Other Changes:**
+- Removed duplicate search from mobile menu (navbar)
+- Fixed navbar staying visible when mobile menu is open while scrolled
+
+**Key Files:**
+- `components/layout/MobileSearchBar.tsx` - NEW
+- `components/layout/NavbarContext.tsx` - Added hero visibility state
+- `components/home/UnifiedSearchBar.tsx` - Added IntersectionObserver
+- `components/layout/Navbar.tsx` - Removed mobile search, fixed menu visibility
+
+**Commit:** `91e9b99`
+
+---
+
+## GDPR Removal - EU Market Expansion (Jan 18, 2026) ✅
+
+**Goal:** Remove all GDPR-based artist filtering to enable EU market expansion.
+
+**Why:** GDPR filtering was blocking ~500M potential users in Europe. After legal review, decided to proceed with discovery/display of public Instagram profiles (same as any search engine).
+
+**What was removed (27 files changed, -1076 lines):**
+
+1. **Database Layer**
+   - Dropped `is_gdpr_blocked` column from `artists` table
+   - Dropped `is_gdpr_country(text)` SQL function
+   - Removed GDPR checks from `search_artists()` function
+   - Removed GDPR checks from `get_location_counts()` function
+   - Migration: `20260118_001_remove_gdpr_filtering.sql`
+
+2. **TypeScript Constants**
+   - Removed `GDPR_COUNTRY_CODES` Set from `lib/constants/countries.ts`
+   - Removed `isGDPRCountry()` function
+   - Removed GDPR detection from `lib/instagram/bio-location-extractor.ts`
+
+3. **API Layer**
+   - Removed `bypass_gdpr_check` parameter from search schemas
+   - Removed GDPR error handling from Instagram profile search handler
+   - Removed GDPR skip logic from search route
+
+4. **UI Components**
+   - Removed GDPR error states from `NavbarSearch.tsx`
+   - Removed GDPR error states from `UnifiedSearchBar.tsx`
+   - Removed GDPR error stories from Storybook
+   - Simplified `consent-manager.ts` (`isGDPRRegion()` now returns `false`)
+
+5. **Scripts**
+   - Removed GDPR filtering from `scrapingdog-scraper.ts`
+   - Removed GDPR filtering from `tavily-artist-discovery-v2.ts`
+   - Removed GDPR filtering from `extract-bio-locations.ts`
+   - Removed GDPR filter from `dump-production-seed.ts`
+
+**Verification:**
+- Ran Berlin discovery: **182 EU artists successfully added**
+- `get_location_counts('countries')` works without GDPR function
+- Type check passes
+- CI passes
+
+**Key Commits:**
+- `224b821` - refactor: remove all GDPR filtering for EU artists (27 files)
+- `39b8ef8` - fix: remove isGDPRCountry import from cron route
+
+---
+
+## EU Expansion - 27 Cities (Jan 18, 2026) 🔄 IN PROGRESS
+
+**Goal:** Expand into European market after GDPR filtering removal.
+
+**Cities Added (27 total across 14 countries):**
+- **Germany (6):** Berlin, Munich, Hamburg, Frankfurt, Cologne, Düsseldorf
+- **UK (7):** London, Manchester, Birmingham, Edinburgh, Glasgow, Bristol, Brighton
+- **France (3):** Paris, Lyon, Marseille
+- **Netherlands (2):** Amsterdam, Rotterdam
+- **Spain (2):** Barcelona, Madrid
+- **Italy (2):** Rome, Milan
+- **Other (5):** Vienna (AT), Prague (CZ), Dublin (IE), Brussels (BE), Copenhagen (DK), Stockholm (SE), Lisbon (PT), Warsaw (PL)
+
+**Discovery Results:**
+- 3,825 artists discovered
+- 3,211 inserted (new)
+- 614 duplicates (already in DB)
+- Cost: ~$150 Tavily credits
+
+**Scraping Status (as of Jan 18):**
+| Status | Count |
+|--------|-------|
+| Complete (searchable) | 3,115 |
+| Pending Embeddings | 358 |
+| In Progress | 469 |
+| Pending Scrape | 2,996 |
+| Rejected (video-only) | 176 |
+| Failed | 95 |
+
+**Searchable EU Countries:**
+- 🇩🇪 Germany: 84 artists (Berlin: 82)
+- 🇪🇸 Spain: 1 artist
+- 🇫🇷 France: 1 artist
+- More countries will be searchable as scraping completes
+
+**Data Quality Fixes:**
+- Fixed `region: null` for EU cities (was breaking URL routing like `/de/null/berlin`)
+- Berlin, Copenhagen, Prague, Brussels, Vienna, Dublin, Birmingham, Lyon, Warsaw, Milan all have proper regions now
+
+**Key Files:**
+- `scripts/discovery/tavily-artist-discovery-v2.ts` - Added 27 EU cities with country codes
+
+**Next Steps:**
+1. ⏳ Wait for scraper to complete (~3,000 remaining)
+2. Embeddings will be auto-generated via cron
+3. Submit EU pages to Google Search Console
+4. Monitor search quality for EU results
+
+---
 
 ## Growth Features: Share Buttons, OG Images, Referral Tracking (Jan 17, 2026) ✅
 
