@@ -39,6 +39,9 @@ export default async function Home() {
 
   return (
     <>
+      {/* Preload hero poster image for faster LCP (homepage only) */}
+      <link rel="preload" as="image" href="/images/hero-poster.webp" type="image/webp" fetchPriority="high" />
+
       {/* Organization Schema */}
       <script
         type="application/ld+json"

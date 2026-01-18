@@ -258,8 +258,17 @@ export default async function ArtistPage({
         }
       : null
 
+  // Get LCP image URL for preload (profile image is above the fold on mobile)
+  const lcpImageUrl = getProfileImageUrl(artist)
+  const shouldPreloadLcp = lcpImageUrl !== '/placeholder-tattoo.svg'
+
   return (
     <>
+      {/* Preload LCP image (artist profile photo - above fold on mobile) */}
+      {shouldPreloadLcp && (
+        <link rel="preload" as="image" href={lcpImageUrl} fetchPriority="high" />
+      )}
+
       {/* Analytics Tracking */}
       <AnalyticsTracker type="profile_view" artistId={artist.id} artistSlug={artist.slug} />
 

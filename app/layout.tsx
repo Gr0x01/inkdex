@@ -83,8 +83,6 @@ export default async function RootLayout({
       className={`${playfairDisplay.variable} ${libreBaskerville.variable} ${jetbrainsMono.variable} ${crimsonPro.variable}`}
     >
       <head>
-        {/* Preload hero image for faster LCP */}
-        <link rel="preload" as="image" href="/images/hero-poster.webp" type="image/webp" fetchPriority="high" />
         {/* Preconnect to Supabase for faster API/image requests */}
         {SUPABASE_URL && (
           <>
