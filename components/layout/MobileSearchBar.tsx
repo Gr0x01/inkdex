@@ -240,7 +240,7 @@ export default function MobileSearchBar() {
 
   return (
     <div
-      className={`fixed left-0 right-0 z-40 md:hidden bg-ink transition-all duration-300 ease-out ${
+      className={`fixed left-0 right-0 z-40 md:hidden bg-ink/90 backdrop-blur-xl border-t border-white/10 transition-all duration-300 ease-out ${
         shouldShow
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-full pointer-events-none'
@@ -253,7 +253,7 @@ export default function MobileSearchBar() {
     >
       <div className="px-4 py-2">
         <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-center h-12 bg-paper border-2 border-ink/20">
+          <div className="flex items-center h-12 bg-paper/95 border border-ink/10 shadow-sm">
             {/* Left: Search Icon or Image Preview */}
             {imagePreview ? (
               <div className="relative w-9 h-9 ml-2 shrink-0 group">
@@ -298,8 +298,8 @@ export default function MobileSearchBar() {
                   placeholder={detectedInstagramUrl && !imagePreview ? '' : 'Search artists, styles...'}
                   maxLength={200}
                   className={detectedInstagramUrl && !imagePreview
-                    ? 'bg-transparent text-sm font-body text-white font-bold outline-none w-auto'
-                    : 'w-full bg-transparent text-sm font-body text-ink placeholder:text-ink/40 outline-none'
+                    ? 'bg-transparent text-base font-body text-white font-bold outline-none w-auto'
+                    : 'w-full bg-transparent text-base font-body text-ink placeholder:text-ink/40 outline-none'
                   }
                   data-testid="mobile-search-input"
                 />
