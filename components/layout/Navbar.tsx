@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useMemo, useRef, useEffect } from 'react'
-import { CITIES, type City } from '@/lib/constants/cities'
-import { buildCityUrl } from '@/lib/utils/city-helpers'
+import { useState, useRef } from 'react'
 import NavbarSearch from '@/components/layout/NavbarSearch'
+import NavbarLocationSelect from '@/components/layout/NavbarLocationSelect'
 import { NavbarUserMenu, NavbarUserMenuMobile } from '@/components/layout/NavbarUserMenu'
 import { useNavbarVisibility } from '@/components/layout/NavbarContext'
 
@@ -21,83 +20,16 @@ interface NavbarProps {
 }
 
 /**
- * Shared city link component for consistency between desktop and mobile
- */
-function CityLink({
-  city,
-  onClick,
-  className = "editorial-dropdown-item group"
-}: {
-  city: City
-  onClick?: () => void
-  className?: string
-}) {
-  return (
-    <Link
-      key={city.slug}
-      href={buildCityUrl(city.state, city.slug)}
-      className={className}
-      role="menuitem"
-      onClick={onClick}
-    >
-      <span className="font-semibold">{city.name}</span>
-      <span className="font-mono text-xs font-medium text-gray-400 ml-1.5 group-hover:text-gray-600 transition-colors">
-        {city.state}
-      </span>
-    </Link>
-  )
-}
-
-/**
  * Global navigation header - Editorial Magazine Masthead
  * Design: "Inkdex v2.0" - Refined editorial aesthetic
  * Features: Magazine-style masthead + sophisticated dropdown + global search + user menu
  */
 export default function Navbar({ user = null, isPro = false, artistSlug = null }: NavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const dropdownButtonRef = useRef<HTMLButtonElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
 
   // Get navbar visibility from context (shared with other sticky elements)
   const { isNavbarHidden, isCompact: _isCompact } = useNavbarVisibility()
-
-  // Memoize sorted cities - only compute once
-  const sortedCities = useMemo(
-    () => [...CITIES].sort((a, b) => a.name.localeCompare(b.name)),
-    []
-  )
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!isDropdownOpen) return
-
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        dropdownButtonRef.current &&
-        !dropdownButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isDropdownOpen])
-
-  // Handle dropdown keyboard navigation
-  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      setIsDropdownOpen(!isDropdownOpen)
-    } else if (e.key === 'Escape') {
-      setIsDropdownOpen(false)
-      dropdownButtonRef.current?.focus()
-    }
-  }
 
   // Close mobile menu and return focus
   const closeMobileMenu = () => {
@@ -132,53 +64,8 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
 
           {/* Desktop Navigation - Editorial Style */}
           <nav className="hidden lg:flex items-center gap-4 xl:gap-6 shrink-0" aria-label="Main navigation">
-            {/* Browse Dropdown - Editorial */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                ref={dropdownButtonRef}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                onKeyDown={handleDropdownKeyDown}
-                className="editorial-nav-link flex items-center gap-2 cursor-pointer relative"
-                aria-label="Browse cities"
-                aria-haspopup="true"
-                aria-expanded={isDropdownOpen}
-              >
-                <span className="relative z-10">Browse</span>
-                <svg
-                  className={`w-3 h-3 transition-transform duration-medium ${
-                    isDropdownOpen ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-ink transform scale-x-0 group-hover:scale-x-100 transition-transform duration-medium origin-left" />
-              </button>
-
-              {/* Editorial Dropdown Menu */}
-              <div
-                className={`editorial-dropdown-menu ${isDropdownOpen ? 'editorial-dropdown-menu-open' : ''}`}
-                role="menu"
-              >
-                {/* Decorative top border */}
-                <div className="absolute top-0 left-4 right-4 h-[2px] bg-linear-to-r from-transparent via-ink/30 to-transparent" aria-hidden="true" />
-
-                <div className="p-1">
-                  {/* Flat Alphabetical City List */}
-                  {sortedCities.map((city) => (
-                    <CityLink
-                      key={city.slug}
-                      city={city}
-                      onClick={() => setIsDropdownOpen(false)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            {/* Browse Locations - Searchable Select */}
+            <NavbarLocationSelect variant="desktop" />
 
             {/* Add Artist Link */}
             <Link
@@ -241,21 +128,12 @@ export default function Navbar({ user = null, isPro = false, artistSlug = null }
             <NavbarSearch />
           </div>
 
-          {/* Browse Cities Section */}
-          <div className="relative z-10">
-            <div className="editorial-mobile-link font-bold text-gray-900 cursor-default">
-              Browse Cities
+          {/* Browse Locations - Searchable Select */}
+          <div className="relative z-10 mb-4">
+            <div className="editorial-mobile-link font-bold text-gray-900 mb-2">
+              Browse Locations
             </div>
-            <div className="pl-2">
-              {sortedCities.map((city) => (
-                <CityLink
-                  key={city.slug}
-                  city={city}
-                  className="block editorial-mobile-link text-gray-600 hover:text-ink transition-colors text-sm"
-                  onClick={closeMobileMenu}
-                />
-              ))}
-            </div>
+            <NavbarLocationSelect variant="mobile" onNavigate={closeMobileMenu} />
           </div>
 
           {/* Add Artist Link */}

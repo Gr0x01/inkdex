@@ -60,6 +60,10 @@ export const US_STATES: USState[] = [
   { code: 'WI', name: 'Wisconsin' },
   { code: 'WY', name: 'Wyoming' },
   { code: 'DC', name: 'District of Columbia' },
+  // Territories
+  { code: 'PR', name: 'Puerto Rico' },
+  // Special cases (data quality)
+  { code: 'NYC', name: 'New York City' },
 ] as const;
 
 // Helper to get state name from code
