@@ -68,15 +68,19 @@ export default async function AdminArtistDetailPage({ params }: Props) {
     }
   );
 
-  // Fetch artist with primary location from artist_locations
+  // Fetch artist with all locations from artist_locations
   const { data: artist, error: artistError } = await serviceClient
     .from('artists')
     .select(`
       *,
       artist_locations!left (
+        id,
         city,
         region,
-        is_primary
+        country_code,
+        location_type,
+        is_primary,
+        display_order
       )
     `)
     .eq('id', id)
@@ -97,6 +101,28 @@ export default async function AdminArtistDetailPage({ params }: Props) {
     city: primaryLocation?.city || null,
     state: primaryLocation?.region || null,
   };
+
+  // Transform all locations for the editor component
+  interface ArtistLocation {
+    id: string;
+    city: string | null;
+    region: string | null;
+    country_code: string;
+    location_type: string;
+    is_primary: boolean;
+    display_order: number | null;
+  }
+  const transformedLocations = Array.isArray(artist.artist_locations)
+    ? (artist.artist_locations as ArtistLocation[]).map((loc, i) => ({
+        id: loc.id,
+        city: loc.city,
+        region: loc.region,
+        countryCode: loc.country_code,
+        locationType: loc.location_type as 'city' | 'region' | 'country',
+        isPrimary: loc.is_primary,
+        displayOrder: loc.display_order ?? i,
+      }))
+    : [];
 
   // Fetch all portfolio images
   const { data: images, error: imagesError } = await serviceClient
@@ -187,6 +213,7 @@ export default async function AdminArtistDetailPage({ params }: Props) {
       initialStyles={stylesData || []}
       initialPipelineState={pipelineState}
       initialScrapingHistory={scrapingHistory || []}
+      initialLocations={transformedLocations}
     />
   );
 }

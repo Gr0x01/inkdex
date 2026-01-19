@@ -18,6 +18,7 @@ export type AuditAction =
   | 'artist.unblacklist'
   | 'artist.bulk_blacklist'
   | 'artist.rescrape'
+  | 'artist.locations_updated'
   | 'admin.login'
   | 'admin.logout'
   | 'pipeline.trigger'

@@ -17,7 +17,6 @@ import {
   Star,
   Trash2,
   ExternalLink,
-  MapPin,
   Image as ImageIcon,
   Instagram,
   Eye,
@@ -29,6 +28,7 @@ import {
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import ArtistImageGrid from './ArtistImageGrid';
 import ScrapingStatusCard from './ScrapingStatusCard';
+import AdminLocationEditor, { Location } from './AdminLocationEditor';
 
 interface Artist {
   id: string;
@@ -104,6 +104,7 @@ interface ArtistDetailViewProps {
   initialStyles: StyleProfile[];
   initialPipelineState: PipelineState | null;
   initialScrapingHistory: ScrapingJob[];
+  initialLocations: Location[];
 }
 
 export default function ArtistDetailView({
@@ -114,12 +115,14 @@ export default function ArtistDetailView({
   initialStyles,
   initialPipelineState,
   initialScrapingHistory,
+  initialLocations,
 }: ArtistDetailViewProps) {
   const [artist, setArtist] = useState(initialArtist);
   const [images, setImages] = useState(initialImages);
   const [imageCount, setImageCount] = useState(initialImageCount);
   const [analytics] = useState(initialAnalytics);
   const [styles] = useState(initialStyles);
+  const [locations, setLocations] = useState<Location[]>(initialLocations);
   const [updating, setUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -383,7 +386,7 @@ export default function ArtistDetailView({
         </div>
 
         {/* Artist Info Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 border-b border-ink/10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 border-b border-ink/10">
           {/* Name */}
           <div className="px-6 py-3 border-r border-ink/10">
             <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
@@ -391,23 +394,6 @@ export default function ArtistDetailView({
             </div>
             <div className="text-sm text-ink font-medium">
               {artist.name}
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="px-6 py-3 border-r border-ink/10">
-            <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
-              Location
-            </div>
-            <div className="text-sm text-ink font-medium">
-              {artist.city && artist.state ? (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                  {artist.city}, {artist.state}
-                </span>
-              ) : (
-                <span className="text-gray-400">—</span>
-              )}
             </div>
           </div>
 
@@ -450,6 +436,16 @@ export default function ArtistDetailView({
               </span>
             </div>
           </div>
+        </div>
+
+        {/* Locations Section */}
+        <div className="px-6 py-4 border-b border-ink/10">
+          <AdminLocationEditor
+            artistId={artist.id}
+            isPro={artist.is_pro}
+            initialLocations={locations}
+            onLocationsUpdated={setLocations}
+          />
         </div>
 
         {/* Action Controls */}
