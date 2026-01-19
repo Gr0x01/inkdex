@@ -3,11 +3,16 @@
  *
  * Generates pin content from portfolio images for Pinterest marketing.
  * Outputs CSV for bulk upload (Pinterest native or Tailwind/Later).
+ * Prioritizes high-engagement content (likes + follower count).
  *
  * Usage:
- *   npx tsx scripts/marketing/generate-pinterest-pins.ts --limit 100
- *   npx tsx scripts/marketing/generate-pinterest-pins.ts --style fine-line --limit 50
- *   npx tsx scripts/marketing/generate-pinterest-pins.ts --all-styles --limit 500
+ *   npx tsx scripts/marketing/generate-pinterest-pins.ts --limit=100
+ *   npx tsx scripts/marketing/generate-pinterest-pins.ts --style=fine-line --limit=50
+ *   npx tsx scripts/marketing/generate-pinterest-pins.ts --min-followers=10000 --min-likes=500
+ *   npx tsx scripts/marketing/generate-pinterest-pins.ts --include-bw  # Include black & white
+ *   npx tsx scripts/marketing/generate-pinterest-pins.ts --ai-captions  # GPT-4o-mini generated titles/descriptions
+ *
+ * Defaults: min-followers=2000, min-likes=50, color-only (except fine-line)
  */
 
 import * as dotenv from 'dotenv';
@@ -16,6 +21,7 @@ import * as fs from 'fs';
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 
 import { createClient } from '@supabase/supabase-js';
+import OpenAI from 'openai';
 
 // Target styles - feminine/colorful focus (from actual database styles)
 const PINTEREST_STYLES = [
@@ -61,21 +67,31 @@ const STYLE_CONFIG: Record<string, { displayName: string; hashtags: string[]; vi
   },
 };
 
-// Pin description templates - rotate for variety
+// Pin description templates - rotate for variety (no city dependency)
 const DESCRIPTION_TEMPLATES = [
   `Love this {style} tattoo? Find artists who create similar work on Inkdex. Upload any reference image and discover your perfect artist match.`,
-  `Looking for {style} tattoo inspiration? This {vibe} piece is by {artist} in {city}. Find more artists like this on Inkdex.`,
   `{style} tattoo goals! ✨ Want something similar? Inkdex helps you find artists by uploading any tattoo image you love.`,
-  `This {vibe} {style} tattoo is everything! Find artists near you who can create your dream piece on Inkdex.`,
+  `This {vibe} {style} tattoo is everything! Find artists who can create your dream piece on Inkdex.`,
   `Saved this {style} tattoo? Now find the artist! Inkdex lets you search by image to discover tattoo artists who match your style.`,
+  `Looking for {style} tattoo inspiration? Inkdex helps you find artists who create similar work.`,
 ];
 
-// Title templates
+// Description templates that include city (only used when city is known)
+const DESCRIPTION_TEMPLATES_WITH_CITY = [
+  `Looking for {style} tattoo inspiration? This {vibe} piece is by {artist} in {city}. Find more artists like this on Inkdex.`,
+  `{style} tattoo by {artist} in {city}. Find artists who create similar work on Inkdex.`,
+];
+
+// Title templates (no city dependency)
 const TITLE_TEMPLATES = [
   `{style} Tattoo Inspiration`,
   `{style} Tattoo Ideas`,
   `Beautiful {style} Tattoo`,
   `{style} Tattoo by {artist}`,
+];
+
+// Title templates with city (only used when city is known)
+const TITLE_TEMPLATES_WITH_CITY = [
   `{style} Tattoo in {city}`,
 ];
 
@@ -92,17 +108,91 @@ interface PinData {
   style: string;
 }
 
+/**
+ * Generate AI-powered title and description for a pin using GPT-5-nano vision (Responses API)
+ */
+async function generateAICaption(
+  openai: OpenAI,
+  imageUrl: string,
+  style: string,
+  styleConfig: { displayName: string; vibe: string },
+): Promise<{ title: string; description: string }> {
+  try {
+    // GPT-5 uses the Responses API with different syntax
+    const response = await (openai as any).responses.create({
+      model: 'gpt-5-nano',
+      input: [
+        {
+          role: 'developer',
+          content: `You write short, engaging Pinterest pin titles and descriptions for tattoo inspiration content.
+Style: casual, inspiring, relatable. Like a friend sharing cool tattoo finds.
+Never use "stunning", "breathtaking", or overly salesy language.
+Always mention Inkdex naturally as the place to find similar artists.`,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'input_text',
+              text: `Write a Pinterest title (max 8 words) and description (2 sentences max) for this ${styleConfig.displayName} tattoo.
+The vibe is ${styleConfig.vibe}.
+
+Return JSON only: {"title": "...", "description": "..."}`,
+            },
+            {
+              type: 'input_image',
+              image_url: imageUrl,
+            },
+          ],
+        },
+      ],
+    });
+
+    const content = response.output_text || '';
+    // Extract JSON from response (handle markdown code blocks)
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return {
+        title: parsed.title || `${styleConfig.displayName} Tattoo Inspiration`,
+        description: parsed.description || `Love this ${styleConfig.vibe} piece? Find artists who create similar work on Inkdex.`,
+      };
+    }
+  } catch (error) {
+    console.warn(`AI caption failed for image, using template: ${error}`);
+  }
+
+  // Fallback to template
+  return {
+    title: `${styleConfig.displayName} Tattoo Inspiration`,
+    description: `Love this ${styleConfig.vibe} piece? Find artists who create similar work on Inkdex.`,
+  };
+}
+
 async function generatePins(options: {
   limit: number;
   style?: string;
   minFollowers?: number;
+  minLikes?: number;
   colorOnly?: boolean;
+  useAI?: boolean;
 }): Promise<PinData[]> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase credentials. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+  }
+
+  // Initialize OpenAI if using AI captions
+  let openai: OpenAI | null = null;
+  if (options.useAI) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      throw new Error('Missing OPENAI_API_KEY for AI captions');
+    }
+    openai = new OpenAI({ apiKey: openaiKey });
+    console.log('AI captions enabled (gpt-5-nano)');
   }
 
   const supabase = createClient(supabaseUrl, supabaseKey);
@@ -151,13 +241,14 @@ async function generatePins(options: {
 
       const imageIds = taggedImages.map(t => t.image_id);
 
-      // Fetch images with artist info
+      // Fetch images with artist info, prioritized by engagement
       let query = supabase
         .from('portfolio_images')
         .select(`
           id,
           storage_thumb_640,
           is_color,
+          likes_count,
           artists!inner (
             id, slug, name, instagram_handle, follower_count
           )
@@ -165,8 +256,14 @@ async function generatePins(options: {
         .in('id', imageIds)
         .eq('status', 'active')
         .not('storage_thumb_640', 'is', null)
-        .gte('artists.follower_count', options.minFollowers || 1000)
+        .gte('artists.follower_count', options.minFollowers || 2000)
+        .order('likes_count', { ascending: false, nullsFirst: false })
         .limit(pinsPerStyle * 2);
+
+      // Apply minimum likes filter
+      if (options.minLikes) {
+        query = query.gte('likes_count', options.minLikes);
+      }
 
       // Apply color filter unless style allows B&W
       if (options.colorOnly !== false && !config.allowBW) {
@@ -192,42 +289,87 @@ async function generatePins(options: {
 
       const locationMap = new Map((locations || []).map(l => [l.artist_id, l]));
 
-      // Process images
+      // Process images - prepare data first
+      const imagesToProcess = (imgData || [])
+        .filter((img: any) => img.artists)
+        .slice(0, pinsPerStyle)
+        .map((img: any) => {
+          const artist = img.artists as any;
+          const location = locationMap.get(artist.id);
+          return {
+            img,
+            artist,
+            city: location?.city || 'Unknown',
+            artistName: artist.name || artist.instagram_handle,
+            imageUrl: `${supabaseUrl}/storage/v1/object/public/portfolio-images/${img.storage_thumb_640}`,
+          };
+        });
+
+      // Generate AI captions in parallel if enabled
+      let aiCaptions: Map<string, { title: string; description: string }> = new Map();
+      if (openai && imagesToProcess.length > 0) {
+        console.log(`  Generating ${imagesToProcess.length} AI captions in parallel...`);
+        const captionPromises = imagesToProcess.map(async ({ imageUrl }) => {
+          const caption = await generateAICaption(openai!, imageUrl, style, config);
+          return { imageUrl, caption };
+        });
+        const results = await Promise.all(captionPromises);
+        results.forEach(({ imageUrl, caption }) => aiCaptions.set(imageUrl, caption));
+      }
+
+      // Build pins
       let count = 0;
-      for (const img of imgData || []) {
-        if (count >= pinsPerStyle) break;
+      for (const { img, artist, city, artistName, imageUrl } of imagesToProcess) {
+        const hasCity = city && city !== 'Unknown';
 
-        const artist = img.artists as any;
-        if (!artist) continue;
+        // Generate title and description
+        let description: string;
+        let title: string;
 
-        const location = locationMap.get(artist.id);
-        const city = location?.city || 'Unknown';
-        const artistName = artist.name || artist.instagram_handle;
+        if (openai && aiCaptions.has(imageUrl)) {
+          // Use AI-generated captions
+          const aiCaption = aiCaptions.get(imageUrl)!;
+          title = aiCaption.title;
+          description = aiCaption.description;
+        } else if (hasCity && count % 3 === 0) {
+          // Use city template occasionally when city is known
+          const cityTemplateIndex = count % DESCRIPTION_TEMPLATES_WITH_CITY.length;
+          description = DESCRIPTION_TEMPLATES_WITH_CITY[cityTemplateIndex]
+            .replace(/{style}/g, config.displayName)
+            .replace(/{vibe}/g, config.vibe)
+            .replace(/{artist}/g, artistName)
+            .replace(/{city}/g, city);
 
-        const imageUrl = `${supabaseUrl}/storage/v1/object/public/portfolio-images/${img.storage_thumb_640}`;
+          title = TITLE_TEMPLATES_WITH_CITY[0]
+            .replace(/{style}/g, config.displayName)
+            .replace(/{city}/g, city);
+        } else {
+          // Use generic templates
+          const templateIndex = count % DESCRIPTION_TEMPLATES.length;
+          const titleIndex = count % TITLE_TEMPLATES.length;
 
-        const templateIndex = count % DESCRIPTION_TEMPLATES.length;
-        const titleIndex = count % TITLE_TEMPLATES.length;
+          description = DESCRIPTION_TEMPLATES[templateIndex]
+            .replace(/{style}/g, config.displayName)
+            .replace(/{vibe}/g, config.vibe)
+            .replace(/{artist}/g, artistName);
 
-        const description = DESCRIPTION_TEMPLATES[templateIndex]
-          .replace(/{style}/g, config.displayName)
-          .replace(/{vibe}/g, config.vibe)
-          .replace(/{artist}/g, artistName)
-          .replace(/{city}/g, city);
+          title = TITLE_TEMPLATES[titleIndex]
+            .replace(/{style}/g, config.displayName)
+            .replace(/{artist}/g, artistName);
+        }
 
-        const title = TITLE_TEMPLATES[titleIndex]
-          .replace(/{style}/g, config.displayName)
-          .replace(/{artist}/g, artistName)
-          .replace(/{city}/g, city);
-
-        const hashtags = [
+        // Build hashtags - only include city hashtag if we have a real city
+        const baseHashtags = [
           'tattoo',
           'tattooinspo',
           'tattooideas',
           'inkdex',
           ...config.hashtags,
-          city.toLowerCase().replace(/\s+/g, '') + 'tattoo',
-        ].map(h => `#${h}`).join(' ');
+        ];
+        if (hasCity) {
+          baseHashtags.push(city.toLowerCase().replace(/\s+/g, '') + 'tattoo');
+        }
+        const hashtags = baseHashtags.map(h => `#${h}`).join(' ');
 
         pins.push({
           imageUrl,
@@ -271,28 +413,56 @@ async function generatePins(options: {
 
       const imageUrl = `${supabaseUrl}/storage/v1/object/public/portfolio-images/${img.storage_thumb_640}`;
 
-      const templateIndex = count % DESCRIPTION_TEMPLATES.length;
-      const titleIndex = count % TITLE_TEMPLATES.length;
+      const hasCity = city && city !== 'Unknown';
 
-      const description = DESCRIPTION_TEMPLATES[templateIndex]
-        .replace(/{style}/g, config.displayName)
-        .replace(/{vibe}/g, config.vibe)
-        .replace(/{artist}/g, artistName)
-        .replace(/{city}/g, city);
+      // Generate title and description
+      let description: string;
+      let title: string;
 
-      const title = TITLE_TEMPLATES[titleIndex]
-        .replace(/{style}/g, config.displayName)
-        .replace(/{artist}/g, artistName)
-        .replace(/{city}/g, city);
+      if (openai) {
+        // Use AI-generated captions
+        const aiCaption = await generateAICaption(openai, imageUrl, style, config);
+        title = aiCaption.title;
+        description = aiCaption.description;
+      } else if (hasCity && count % 3 === 0) {
+        // Use city template occasionally when city is known
+        const cityTemplateIndex = count % DESCRIPTION_TEMPLATES_WITH_CITY.length;
+        description = DESCRIPTION_TEMPLATES_WITH_CITY[cityTemplateIndex]
+          .replace(/{style}/g, config.displayName)
+          .replace(/{vibe}/g, config.vibe)
+          .replace(/{artist}/g, artistName)
+          .replace(/{city}/g, city);
 
-      const hashtags = [
+        title = TITLE_TEMPLATES_WITH_CITY[0]
+          .replace(/{style}/g, config.displayName)
+          .replace(/{city}/g, city);
+      } else {
+        // Use generic templates
+        const templateIndex = count % DESCRIPTION_TEMPLATES.length;
+        const titleIndex = count % TITLE_TEMPLATES.length;
+
+        description = DESCRIPTION_TEMPLATES[templateIndex]
+          .replace(/{style}/g, config.displayName)
+          .replace(/{vibe}/g, config.vibe)
+          .replace(/{artist}/g, artistName);
+
+        title = TITLE_TEMPLATES[titleIndex]
+          .replace(/{style}/g, config.displayName)
+          .replace(/{artist}/g, artistName);
+      }
+
+      // Build hashtags - only include city hashtag if we have a real city
+      const baseHashtags = [
         'tattoo',
         'tattooinspo',
         'tattooideas',
         'inkdex',
         ...config.hashtags,
-        city.toLowerCase().replace(/\s+/g, '') + 'tattoo',
-      ].map(h => `#${h}`).join(' ');
+      ];
+      if (hasCity) {
+        baseHashtags.push(city.toLowerCase().replace(/\s+/g, '') + 'tattoo');
+      }
+      const hashtags = baseHashtags.map(h => `#${h}`).join(' ');
 
       pins.push({
         imageUrl,
@@ -317,23 +487,25 @@ async function generatePins(options: {
 }
 
 function exportToCSV(pins: PinData[], outputPath: string): void {
-  // Pinterest bulk upload CSV format
+  // Pinterest bulk upload CSV format (official column names)
   const headers = [
-    'Image URL',
     'Title',
+    'Media URL',
+    'Pinterest board',
     'Description',
     'Link',
-    'Board',
-    'Publish Date', // Leave empty for immediate
+    'Publish date',
+    'Keywords',
   ];
 
   const rows = pins.map(pin => [
-    pin.imageUrl,
     pin.title,
-    `${pin.description}\n\n${pin.hashtags}`,
-    pin.link,
+    pin.imageUrl,
     pin.board,
-    '', // Publish date - empty for now
+    pin.description,
+    pin.link,
+    '', // Publish date - empty for immediate
+    pin.hashtags.replace(/#/g, ''), // Keywords without # symbols
   ]);
 
   const csvContent = [
@@ -360,22 +532,30 @@ async function main() {
   const style = styleArg ? styleArg.split('=')[1] : undefined;
 
   const minFollowersArg = args.find(a => a.startsWith('--min-followers='));
-  const minFollowers = minFollowersArg ? parseInt(minFollowersArg.split('=')[1]) : 1000;
+  const minFollowers = minFollowersArg ? parseInt(minFollowersArg.split('=')[1]) : 2000;
+
+  const minLikesArg = args.find(a => a.startsWith('--min-likes='));
+  const minLikes = minLikesArg ? parseInt(minLikesArg.split('=')[1]) : 50;
 
   const colorOnly = !args.includes('--include-bw');
+  const useAI = args.includes('--ai-captions');
 
   console.log('Pinterest Pin Generator');
   console.log('=======================');
   console.log(`Limit: ${limit}`);
   console.log(`Style: ${style || 'all feminine styles'}`);
   console.log(`Min followers: ${minFollowers}`);
+  console.log(`Min likes: ${minLikes}`);
   console.log(`Color only: ${colorOnly}`);
+  console.log(`AI captions: ${useAI}`);
 
   const pins = await generatePins({
     limit,
     style,
     minFollowers,
+    minLikes,
     colorOnly,
+    useAI,
   });
 
   if (pins.length === 0) {
