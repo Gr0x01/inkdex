@@ -348,16 +348,6 @@
     flex-shrink: 0;
   }
 
-  /* Hide Scrollbar */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
   /* Section Backgrounds */
   .bg-light {
     background-color: var(--paper-white);
