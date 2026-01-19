@@ -6,6 +6,38 @@ import Select from '@/components/ui/Select'
 import { US_STATES } from '@/lib/constants/states'
 import { isValidCountryCode, isValidRegion, isValidCitySlug } from '@/lib/utils/location'
 
+// Country name lookup
+const COUNTRY_NAMES: Record<string, string> = {
+  US: 'United States',
+  CA: 'Canada',
+  AU: 'Australia',
+  NZ: 'New Zealand',
+  GB: 'United Kingdom',
+  DE: 'Germany',
+  FR: 'France',
+  ES: 'Spain',
+  IT: 'Italy',
+  NL: 'Netherlands',
+  BE: 'Belgium',
+  AT: 'Austria',
+  CH: 'Switzerland',
+  SE: 'Sweden',
+  NO: 'Norway',
+  DK: 'Denmark',
+  FI: 'Finland',
+  IE: 'Ireland',
+  PT: 'Portugal',
+  PL: 'Poland',
+  CZ: 'Czech Republic',
+  IN: 'India',
+  PK: 'Pakistan',
+  JP: 'Japan',
+  KR: 'South Korea',
+  BR: 'Brazil',
+  MX: 'Mexico',
+  AR: 'Argentina',
+}
+
 interface LocationFilterProps {
   /** Search ID to filter locations by matching artists */
   searchId?: string
@@ -71,25 +103,30 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         const data = await res.json()
         const flattened: FlatLocationOption[] = []
 
-        // Add "United States" if we have US results
-        const hasUSResults = data.regions?.length > 0 || data.cities?.length > 0
-        if (hasUSResults) {
-          const usCount = data.countries?.find((c: { code: string }) => c.code === 'US')?.count
+        // Add ALL countries (sorted by count, descending)
+        const countries = (data.countries || []).sort((a: { count: number }, b: { count: number }) => b.count - a.count)
+        for (const country of countries) {
+          const countryName = COUNTRY_NAMES[country.code] || country.code
           flattened.push({
-            value: 'country-US',
-            label: usCount ? `United States (${usCount})` : 'United States',
+            value: `country-${country.code}`,
+            label: `${countryName} (${country.count})`,
             type: 'country',
-            country: 'US'
+            country: country.code
           })
         }
 
         // Add regions/states (sorted by count)
+        // Group by country for better organization
         const regions = (data.regions || []).sort((a: { count: number }, b: { count: number }) => b.count - a.count)
         for (const r of regions) {
-          const stateName = US_STATE_NAME_MAP.get(r.code) || r.code
+          // For US, use state name; for others, use region code
+          const regionName = r.country === 'US'
+            ? (US_STATE_NAME_MAP.get(r.code) || r.code)
+            : r.code
+          const countryPrefix = r.country !== 'US' ? ` (${COUNTRY_NAMES[r.country] || r.country})` : ''
           flattened.push({
             value: `region-${r.country}-${r.code}`,
-            label: `${stateName} (${r.count})`,
+            label: `${regionName}${countryPrefix} (${r.count})`,
             type: 'region',
             country: r.country,
             region: r.code
@@ -100,9 +137,11 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
         const cities = (data.cities || []).sort((a: { count: number }, b: { count: number }) => b.count - a.count)
         for (const c of cities) {
           const cityName = c.slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          // Add country context for non-US cities
+          const countryContext = c.country !== 'US' ? `, ${COUNTRY_NAMES[c.country] || c.country}` : ''
           flattened.push({
             value: `city-${c.country}-${c.region}-${c.slug}`,
-            label: `${cityName} (${c.count})`,
+            label: `${cityName}${countryContext} (${c.count})`,
             type: 'city',
             country: c.country,
             region: c.region
@@ -111,39 +150,34 @@ export default function LocationFilter({ searchId }: LocationFilterProps) {
 
         setFlatLocations(flattened)
       } else {
-        // No searchId - fall back to fetching all locations
-        const [regionsRes, citiesRes] = await Promise.all([
-          fetch('/api/locations/regions?country=US').then(r => r.json()),
-          fetch('/api/cities/with-counts?country=US&min_count=1').then(r => r.json())
+        // No searchId - fall back to fetching all locations (all countries)
+        const [countriesRes, citiesRes] = await Promise.all([
+          fetch('/api/locations/countries?with_artists=true').then(r => r.ok ? r.json() : []),
+          fetch('/api/cities/with-counts?min_count=1').then(r => r.ok ? r.json() : [])
         ])
 
         const flattened: FlatLocationOption[] = []
 
-        // Add United States
-        flattened.push({
-          value: 'country-US',
-          label: 'United States',
-          type: 'country',
-          country: 'US'
-        })
-
-        // Add regions
-        for (const r of regionsRes) {
-          const stateName = US_STATE_NAME_MAP.get(r.region) || r.region_name
+        // Add all countries (API returns { code, name, artist_count })
+        const sortedCountries = (countriesRes || []).sort((a: { artist_count: number }, b: { artist_count: number }) => b.artist_count - a.artist_count)
+        for (const country of sortedCountries) {
+          const countryName = COUNTRY_NAMES[country.code] || country.name || country.code
           flattened.push({
-            value: `region-US-${r.region}`,
-            label: `${stateName} (${r.artist_count})`,
-            type: 'region',
-            country: 'US',
-            region: r.region
+            value: `country-${country.code}`,
+            label: `${countryName} (${country.artist_count})`,
+            type: 'country',
+            country: country.code
           })
         }
 
-        // Add cities
-        for (const c of citiesRes) {
+        // Add cities (sorted by count)
+        const sortedCities = (citiesRes || []).sort((a: { artist_count: number }, b: { artist_count: number }) => b.artist_count - a.artist_count)
+        for (const c of sortedCities) {
+          const cityName = c.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+          const countryContext = c.country_code !== 'US' ? `, ${COUNTRY_NAMES[c.country_code] || c.country_code}` : ''
           flattened.push({
             value: `city-${c.country_code}-${c.region}-${c.city}`,
-            label: `${c.city.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} (${c.artist_count})`,
+            label: `${cityName}${countryContext} (${c.artist_count})`,
             type: 'city',
             country: c.country_code,
             region: c.region
