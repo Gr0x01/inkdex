@@ -165,6 +165,7 @@ export function generateQueriesForCity(
  */
 function getCityNeighborhoods(cityName: string): string[] {
   const neighborhoods: Record<string, string[]> = {
+    // US Cities
     Austin: [
       'Downtown',
       'South Austin',
@@ -195,6 +196,71 @@ function getCityNeighborhoods(cityName: string): string[] {
       'Virginia Highland',
       'Old Fourth Ward',
       'Inman Park',
+    ],
+    // Canada
+    Toronto: [
+      'Downtown Toronto',
+      'Queen West',
+      'Kensington Market',
+      'Parkdale',
+      'Leslieville',
+      'The Annex',
+      'Liberty Village',
+      'Ossington',
+    ],
+    Vancouver: [
+      'Downtown Vancouver',
+      'Gastown',
+      'Commercial Drive',
+      'Main Street',
+      'Kitsilano',
+      'Mount Pleasant',
+      'East Vancouver',
+    ],
+    Montreal: [
+      'Downtown Montreal',
+      'Plateau Mont-Royal',
+      'Mile End',
+      'Old Montreal',
+      'Hochelaga',
+      'Villeray',
+      'Saint-Henri',
+    ],
+    // Australia
+    Sydney: [
+      'Surry Hills',
+      'Newtown',
+      'Bondi',
+      'Marrickville',
+      'Redfern',
+      'Darlinghurst',
+      'Paddington',
+      'Inner West',
+    ],
+    Melbourne: [
+      'Fitzroy',
+      'Collingwood',
+      'Brunswick',
+      'St Kilda',
+      'Richmond',
+      'Northcote',
+      'Preston',
+      'South Yarra',
+    ],
+    Brisbane: [
+      'Fortitude Valley',
+      'West End',
+      'South Brisbane',
+      'New Farm',
+      'Paddington',
+    ],
+    // New Zealand
+    Auckland: [
+      'Ponsonby',
+      'Grey Lynn',
+      'K Road',
+      'Newmarket',
+      'Mt Eden',
     ],
   };
 

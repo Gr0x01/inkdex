@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Play, Image, Cpu, Database } from 'lucide-react';
-import StatsCard from './StatsCard';
+import { RefreshCw, Play, Image, Cpu, Database, ArrowRight, ArrowDown } from 'lucide-react';
 import PipelineRunsTable from './PipelineRunsTable';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import FailedScrapingPanel from './FailedScrapingPanel';
@@ -317,45 +316,18 @@ export default function PipelineDashboard() {
 
       {status && (
         <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <StatsCard
-              label="Total Artists"
-              value={status.artists.total}
-              compact
-            />
-            <StatsCard
-              label="Need Scraping"
-              value={status.artists.withoutImages}
-              variant={status.artists.withoutImages > 0 ? 'warning' : 'default'}
-              compact
-            />
-            <StatsCard
-              label="Total Images"
-              value={status.images.total}
-              compact
-            />
-            <StatsCard
-              label="Failed Jobs"
-              value={status.scrapingJobs.failed}
-              variant={status.scrapingJobs.failed > 0 ? 'error' : 'default'}
-              compact
-            />
-          </div>
-
-          {/* Pipeline Stage Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            {/* Need Scraping Card */}
-            <div className="bg-paper border border-ink/10 p-3">
+          {/* Pipeline Flow: SCRAPE → EMBED → READY */}
+          <div className="flex flex-col lg:flex-row lg:items-stretch gap-3 lg:gap-0">
+            {/* SCRAPE Card */}
+            <div className="flex-1 bg-paper border border-ink/10 p-4">
               <div className="flex items-center gap-1.5 mb-2">
-                <Image className="w-3.5 h-3.5 text-gray-500" />
-                <h3 className="font-heading text-[13px] font-semibold text-ink">Need Images</h3>
+                <Image className="w-4 h-4 text-gray-500" />
+                <h3 className="font-heading text-xs font-semibold text-ink uppercase tracking-wide">Scrape</h3>
               </div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <MetricItem label="Need Scraping" value={status.artists.withoutImages} />
-                <MetricItem label="Blacklisted" value={status.artists.blacklisted} />
-                <MetricItem label="Have Images" value={status.artists.withImages} />
-              </div>
+              <p className="text-3xl font-heading font-bold text-ink tabular-nums mb-1">
+                {status.artists.withoutImages.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500 font-body mb-4">artists need images</p>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -363,85 +335,85 @@ export default function PipelineDashboard() {
                   onChange={(e) => setScrapingLimit(Math.max(1, Math.min(10000, parseInt(e.target.value) || 100)))}
                   min={1}
                   max={10000}
-                  className="w-20 px-2 py-1 text-[11px] font-mono border border-ink/20 bg-paper text-ink
+                  className="w-20 px-2 py-1.5 text-xs font-mono border border-ink/20 bg-paper text-ink
                            focus:outline-none focus:border-ink/40"
                   title="Number of artists to scrape"
                 />
                 <button
                   onClick={() => requestTriggerJob('scraping')}
                   disabled={triggering === 'scraping' || status.artists.withoutImages === 0}
-                  className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-ink text-paper text-xs font-body
                            hover:bg-ink/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {triggering === 'scraping' ? (
-                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                    <RefreshCw className="w-3 h-3 animate-spin" />
                   ) : (
-                    <Play className="w-2.5 h-2.5" />
+                    <Play className="w-3 h-3" />
                   )}
-                  Start Scraping
+                  Start
                 </button>
               </div>
             </div>
 
-            {/* Need Embeddings Card */}
-            <div className="bg-paper border border-ink/10 p-3">
+            {/* Arrow: SCRAPE → EMBED */}
+            <div className="flex items-center justify-center px-3 py-2 lg:py-0">
+              <ArrowRight className="hidden lg:block w-5 h-5 text-gray-300" />
+              <ArrowDown className="block lg:hidden w-5 h-5 text-gray-300" />
+            </div>
+
+            {/* EMBED Card */}
+            <div className="flex-1 bg-paper border border-ink/10 p-4">
               <div className="flex items-center gap-1.5 mb-2">
-                <Cpu className="w-3.5 h-3.5 text-gray-500" />
-                <h3 className="font-heading text-[13px] font-semibold text-ink">Need Embeddings</h3>
+                <Cpu className="w-4 h-4 text-gray-500" />
+                <h3 className="font-heading text-xs font-semibold text-ink uppercase tracking-wide">Embed</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <MetricItem label="Images" value={status.images.withoutEmbeddings} />
-                <MetricItem label="Total" value={status.images.total} />
-              </div>
+              <p className="text-3xl font-heading font-bold text-ink tabular-nums mb-1">
+                {status.images.withoutEmbeddings.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500 font-body mb-4">images need embeddings</p>
               <button
                 onClick={() => requestTriggerJob('embeddings')}
                 disabled={triggering === 'embeddings' || status.images.withoutEmbeddings === 0}
-                className="flex items-center gap-1 px-2 py-1 bg-ink text-paper text-[11px] font-body
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-ink text-paper text-xs font-body
                          hover:bg-ink/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {triggering === 'embeddings' ? (
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                  <RefreshCw className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Play className="w-2.5 h-2.5" />
+                  <Play className="w-3 h-3" />
                 )}
-                Generate Embeddings
+                Generate
               </button>
             </div>
 
-            {/* Searchable Card */}
-            <div className="bg-paper border border-ink/10 p-3">
+            {/* Arrow: EMBED → READY */}
+            <div className="flex items-center justify-center px-3 py-2 lg:py-0">
+              <ArrowRight className="hidden lg:block w-5 h-5 text-gray-300" />
+              <ArrowDown className="block lg:hidden w-5 h-5 text-gray-300" />
+            </div>
+
+            {/* READY Card */}
+            <div className="flex-1 bg-paper border border-ink/10 p-4">
               <div className="flex items-center gap-1.5 mb-2">
-                <Database className="w-3.5 h-3.5 text-gray-500" />
-                <h3 className="font-heading text-[13px] font-semibold text-ink">Searchable</h3>
+                <Database className="w-4 h-4 text-status-success" />
+                <h3 className="font-heading text-xs font-semibold text-ink uppercase tracking-wide">Ready</h3>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <MetricItem label="With Embeddings" value={status.images.withEmbeddings} />
-                <MetricItem
-                  label="Coverage"
-                  value={
-                    status.images.total > 0
-                      ? `${((status.images.withEmbeddings / status.images.total) * 100).toFixed(1)}%`
-                      : '—'
-                  }
-                />
-              </div>
+              <p className="text-3xl font-heading font-bold text-status-success tabular-nums mb-1">
+                {status.images.withEmbeddings.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-500 font-body">
+                searchable ({status.images.total > 0 ? ((status.images.withEmbeddings / status.images.total) * 100).toFixed(1) : '0'}% coverage)
+              </p>
             </div>
           </div>
 
-          {/* Scraping Jobs Summary */}
-          <div className="bg-paper border border-ink/10 p-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-heading text-[13px] font-semibold text-ink">
-                Scraping Jobs
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2">
-              <MetricItem label="Total" value={status.scrapingJobs.total} />
-              <MetricItem label="Pending" value={status.scrapingJobs.pending} />
-              <MetricItem label="Running" value={status.scrapingJobs.running} />
-              <MetricItem label="Completed" value={status.scrapingJobs.completed} />
-              <MetricItem label="Failed" value={status.scrapingJobs.failed} />
-            </div>
+          {/* Secondary Stats */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-body text-gray-500">
+            <span>{status.artists.withImages.toLocaleString()} have images</span>
+            <span className="text-gray-300">•</span>
+            <span>{status.artists.blacklisted.toLocaleString()} blacklisted</span>
+            <span className="text-gray-300">•</span>
+            <span>{status.artists.total.toLocaleString()} total artists</span>
           </div>
 
           {/* Failed Scraping Panel */}
@@ -478,18 +450,6 @@ export default function PipelineDashboard() {
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
       />
-    </div>
-  );
-}
-
-// Helper component for metrics (matches MiningDashboard pattern)
-function MetricItem({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className="text-[13px] font-heading font-semibold text-ink tabular-nums">
-        {typeof value === 'number' ? value.toLocaleString() : value}
-      </p>
     </div>
   );
 }

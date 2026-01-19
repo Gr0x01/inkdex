@@ -316,7 +316,7 @@ def main():
             orchestrator.run_local_gpu(
                 offset=images_4080,
                 max_batches=batches_a2000,
-                parallel=4
+                parallel=2  # Reduced from 4 to lower laptop CPU/network load
             )
 
             # Wait for Windows GPU to complete before exiting
@@ -337,7 +337,7 @@ def main():
         orchestrator.run_local_gpu(
             offset=0,
             max_batches=batches_all,
-            parallel=4
+            parallel=2  # Reduced from 4 to lower laptop CPU/network load
         )
 
     print("\n" + "="*60)

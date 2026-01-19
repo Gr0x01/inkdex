@@ -1522,3 +1522,75 @@ export type IndiaCity = typeof INDIA_CITIES[number]
 export type IndiaState = typeof INDIA_STATES[number]
 export type PakistanCity = typeof PAKISTAN_CITIES[number]
 export type PakistanProvince = typeof PAKISTAN_PROVINCES[number]
+
+// ============================================================================
+// International Cities - Canada
+// ============================================================================
+
+export const CANADA_CITIES = [
+  { name: 'Toronto', slug: 'toronto', state: 'ON', fullName: 'Toronto, Ontario' },
+  { name: 'Vancouver', slug: 'vancouver', state: 'BC', fullName: 'Vancouver, British Columbia' },
+  { name: 'Montreal', slug: 'montreal', state: 'QC', fullName: 'Montreal, Quebec' },
+  { name: 'Calgary', slug: 'calgary', state: 'AB', fullName: 'Calgary, Alberta' },
+  { name: 'Edmonton', slug: 'edmonton', state: 'AB', fullName: 'Edmonton, Alberta' },
+  { name: 'Ottawa', slug: 'ottawa', state: 'ON', fullName: 'Ottawa, Ontario' },
+  { name: 'Winnipeg', slug: 'winnipeg', state: 'MB', fullName: 'Winnipeg, Manitoba' },
+  { name: 'Quebec City', slug: 'quebec-city', state: 'QC', fullName: 'Quebec City, Quebec' },
+  { name: 'Hamilton', slug: 'hamilton', state: 'ON', fullName: 'Hamilton, Ontario' },
+  { name: 'Victoria', slug: 'victoria', state: 'BC', fullName: 'Victoria, British Columbia' },
+] as const
+
+export const CANADA_PROVINCES = [
+  { name: 'Ontario', code: 'ON', slug: 'ontario', cities: ['toronto', 'ottawa', 'hamilton'] },
+  { name: 'British Columbia', code: 'BC', slug: 'british-columbia', cities: ['vancouver', 'victoria'] },
+  { name: 'Quebec', code: 'QC', slug: 'quebec', cities: ['montreal', 'quebec-city'] },
+  { name: 'Alberta', code: 'AB', slug: 'alberta', cities: ['calgary', 'edmonton'] },
+  { name: 'Manitoba', code: 'MB', slug: 'manitoba', cities: ['winnipeg'] },
+] as const
+
+// ============================================================================
+// International Cities - Australia
+// ============================================================================
+
+export const AUSTRALIA_CITIES = [
+  { name: 'Sydney', slug: 'sydney', state: 'NSW', fullName: 'Sydney, New South Wales' },
+  { name: 'Melbourne', slug: 'melbourne', state: 'VIC', fullName: 'Melbourne, Victoria' },
+  { name: 'Brisbane', slug: 'brisbane', state: 'QLD', fullName: 'Brisbane, Queensland' },
+  { name: 'Perth', slug: 'perth', state: 'WA', fullName: 'Perth, Western Australia' },
+  { name: 'Adelaide', slug: 'adelaide', state: 'SA', fullName: 'Adelaide, South Australia' },
+  { name: 'Gold Coast', slug: 'gold-coast', state: 'QLD', fullName: 'Gold Coast, Queensland' },
+  { name: 'Newcastle', slug: 'newcastle', state: 'NSW', fullName: 'Newcastle, New South Wales' },
+  { name: 'Canberra', slug: 'canberra', state: 'ACT', fullName: 'Canberra, Australian Capital Territory' },
+] as const
+
+export const AUSTRALIA_STATES = [
+  { name: 'New South Wales', code: 'NSW', slug: 'new-south-wales', cities: ['sydney', 'newcastle'] },
+  { name: 'Victoria', code: 'VIC', slug: 'victoria', cities: ['melbourne'] },
+  { name: 'Queensland', code: 'QLD', slug: 'queensland', cities: ['brisbane', 'gold-coast'] },
+  { name: 'Western Australia', code: 'WA', slug: 'western-australia', cities: ['perth'] },
+  { name: 'South Australia', code: 'SA', slug: 'south-australia', cities: ['adelaide'] },
+  { name: 'Australian Capital Territory', code: 'ACT', slug: 'australian-capital-territory', cities: ['canberra'] },
+] as const
+
+// ============================================================================
+// International Cities - New Zealand
+// ============================================================================
+
+export const NEW_ZEALAND_CITIES = [
+  { name: 'Auckland', slug: 'auckland', state: 'AUK', fullName: 'Auckland, Auckland Region' },
+  { name: 'Wellington', slug: 'wellington', state: 'WGN', fullName: 'Wellington, Wellington Region' },
+  { name: 'Christchurch', slug: 'christchurch', state: 'CAN', fullName: 'Christchurch, Canterbury' },
+] as const
+
+export const NEW_ZEALAND_REGIONS = [
+  { name: 'Auckland Region', code: 'AUK', slug: 'auckland-region', cities: ['auckland'] },
+  { name: 'Wellington Region', code: 'WGN', slug: 'wellington-region', cities: ['wellington'] },
+  { name: 'Canterbury', code: 'CAN', slug: 'canterbury', cities: ['christchurch'] },
+] as const
+
+export type CanadaCity = typeof CANADA_CITIES[number]
+export type CanadaProvince = typeof CANADA_PROVINCES[number]
+export type AustraliaCity = typeof AUSTRALIA_CITIES[number]
+export type AustraliaState = typeof AUSTRALIA_STATES[number]
+export type NewZealandCity = typeof NEW_ZEALAND_CITIES[number]
+export type NewZealandRegion = typeof NEW_ZEALAND_REGIONS[number]

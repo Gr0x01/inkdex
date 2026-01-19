@@ -1362,7 +1362,7 @@ export async function getArtistByInstagramHandle(handle: string) {
       name,
       slug,
       instagram_handle,
-      portfolio_images!inner (
+      portfolio_images!left (
         id,
         embedding,
         status,
@@ -1377,8 +1377,6 @@ export async function getArtistByInstagramHandle(handle: string) {
       )
     `)
     .eq('instagram_handle', normalizedHandle)
-    .eq('portfolio_images.status', 'active')
-    .not('portfolio_images.embedding', 'is', null)
     .single()
 
   if (error) {

@@ -46,8 +46,8 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 // Processing config
-const BATCH_SIZE = 50; // Images per batch
-const CONCURRENCY = 25; // Parallel GPT calls (within rate limits)
+const BATCH_SIZE = 100; // Images per batch
+const CONCURRENCY = 100; // Parallel GPT calls (gentler on Supabase)
 const LOG_INTERVAL = 100; // Log progress every N images
 
 interface ParsedArgs {

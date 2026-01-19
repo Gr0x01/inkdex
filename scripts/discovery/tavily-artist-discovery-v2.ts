@@ -69,6 +69,64 @@ interface CityConfig {
 
 const CITIES: CityConfig[] = [
   // ============================================================================
+  // Germany - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Berlin', state: 'Berlin', slug: 'berlin', country_code: 'DE' },
+  { name: 'Munich', state: 'Bavaria', slug: 'munich', country_code: 'DE' },
+  { name: 'Hamburg', state: 'Hamburg', slug: 'hamburg', country_code: 'DE' },
+  { name: 'Frankfurt', state: 'Hesse', slug: 'frankfurt', country_code: 'DE' },
+  { name: 'Cologne', state: 'North Rhine-Westphalia', slug: 'cologne', country_code: 'DE' },
+  { name: 'Düsseldorf', state: 'North Rhine-Westphalia', slug: 'dusseldorf', country_code: 'DE' },
+
+  // ============================================================================
+  // United Kingdom - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'London', state: 'England', slug: 'london', country_code: 'GB' },
+  { name: 'Manchester', state: 'England', slug: 'manchester', country_code: 'GB' },
+  { name: 'Birmingham', state: 'England', slug: 'birmingham', country_code: 'GB' },
+  { name: 'Edinburgh', state: 'Scotland', slug: 'edinburgh', country_code: 'GB' },
+  { name: 'Glasgow', state: 'Scotland', slug: 'glasgow', country_code: 'GB' },
+  { name: 'Bristol', state: 'England', slug: 'bristol', country_code: 'GB' },
+  { name: 'Brighton', state: 'England', slug: 'brighton', country_code: 'GB' },
+
+  // ============================================================================
+  // France - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Paris', state: 'Île-de-France', slug: 'paris', country_code: 'FR' },
+  { name: 'Lyon', state: 'Auvergne-Rhône-Alpes', slug: 'lyon', country_code: 'FR' },
+  { name: 'Marseille', state: 'Provence-Alpes-Côte d\'Azur', slug: 'marseille', country_code: 'FR' },
+
+  // ============================================================================
+  // Netherlands - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Amsterdam', state: 'North Holland', slug: 'amsterdam', country_code: 'NL' },
+  { name: 'Rotterdam', state: 'South Holland', slug: 'rotterdam', country_code: 'NL' },
+
+  // ============================================================================
+  // Spain - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Barcelona', state: 'Catalonia', slug: 'barcelona', country_code: 'ES' },
+  { name: 'Madrid', state: 'Community of Madrid', slug: 'madrid', country_code: 'ES' },
+
+  // ============================================================================
+  // Italy - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Milan', state: 'Lombardy', slug: 'milan', country_code: 'IT' },
+  { name: 'Rome', state: 'Lazio', slug: 'rome', country_code: 'IT' },
+
+  // ============================================================================
+  // Other EU Countries - EU Expansion (Jan 2026)
+  // ============================================================================
+  { name: 'Vienna', state: 'Vienna', slug: 'vienna', country_code: 'AT' },
+  { name: 'Prague', state: 'Prague', slug: 'prague', country_code: 'CZ' },
+  { name: 'Dublin', state: 'Leinster', slug: 'dublin', country_code: 'IE' },
+  { name: 'Brussels', state: 'Brussels-Capital', slug: 'brussels', country_code: 'BE' },
+  { name: 'Copenhagen', state: 'Capital Region', slug: 'copenhagen', country_code: 'DK' },
+  { name: 'Stockholm', state: 'Stockholm', slug: 'stockholm', country_code: 'SE' },
+  { name: 'Lisbon', state: 'Lisbon', slug: 'lisbon', country_code: 'PT' },
+  { name: 'Warsaw', state: 'Masovian', slug: 'warsaw', country_code: 'PL' },
+
+  // ============================================================================
   // Canada - Major Cities (Jan 2026)
   // ============================================================================
   { name: 'Toronto', state: 'ON', slug: 'toronto', country_code: 'CA' },

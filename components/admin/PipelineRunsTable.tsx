@@ -240,38 +240,38 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
               {/* Expanded details */}
               {expandedId === run.id && (
                 <tr className="bg-gray-50/30">
-                  <td colSpan={7} className="px-2 py-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                        <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
+                  <td colSpan={7} className="px-3 py-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-start">
+                      <DetailItem label="Triggered By" value={run.triggeredBy.split('@')[0]} />
+                      <DetailItem
+                        label="Success"
+                        value={run.processedItems - run.failedItems}
+                      />
+                      {run.processedItems > 0 && (
                         <DetailItem
-                          label="Success"
-                          value={run.processedItems - run.failedItems}
+                          label="Success Rate"
+                          value={`${Math.round(((run.processedItems - run.failedItems) / run.processedItems) * 100)}%`}
                         />
-                        {run.processedItems > 0 && (
-                          <DetailItem
-                            label="Success Rate"
-                            value={`${Math.round(((run.processedItems - run.failedItems) / run.processedItems) * 100)}%`}
-                          />
-                        )}
-                        {/* Heartbeat indicator for running jobs */}
-                        {run.status === 'running' && (
-                          <div>
-                            <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
-                              <Heart className={`w-2 h-2 ${run.isStale ? 'text-status-error' : 'text-status-success animate-pulse'}`} />
-                              Heartbeat
-                            </p>
-                            <p className={`text-[13px] font-heading font-semibold tabular-nums ${run.isStale ? 'text-status-error' : 'text-ink'}`}>
-                              {run.lastHeartbeatAt
-                                ? formatDate(run.lastHeartbeatAt)
-                                : 'No heartbeat yet'}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      )}
+                      {/* Heartbeat indicator for running jobs */}
+                      {run.status === 'running' && (
+                        <div>
+                          <p className="font-mono text-[9px] text-gray-500 uppercase tracking-wider flex items-center gap-1">
+                            <Heart className={`w-2 h-2 ${run.isStale ? 'text-status-error' : 'text-status-success animate-pulse'}`} />
+                            Heartbeat
+                          </p>
+                          <p className={`text-[13px] font-heading font-semibold tabular-nums ${run.isStale ? 'text-status-error' : 'text-ink'}`}>
+                            {run.lastHeartbeatAt
+                              ? formatDate(run.lastHeartbeatAt)
+                              : 'No heartbeat yet'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
 
-                      {/* Cancel button */}
-                      {(run.status === 'pending' || run.status === 'running') && (
+                    {/* Cancel button - right aligned */}
+                    {(run.status === 'pending' || run.status === 'running') && (
+                      <div className="flex justify-end mt-3">
                         <button
                           onClick={(e) => handleCancel(run.id, e)}
                           disabled={cancelling === run.id}
@@ -290,12 +290,12 @@ export default function PipelineRunsTable({ runs, loading, onCancel }: PipelineR
                             </>
                           )}
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
 
                     {run.errorMessage && (
-                      <div className="mt-2 p-2 bg-status-error/10 border border-status-error/20">
-                        <p className="text-status-error text-[12px] font-body">{run.errorMessage}</p>
+                      <div className="mt-3 p-2 bg-status-error/10 border border-status-error/20">
+                        <p className="text-status-error text-xs font-body">{run.errorMessage}</p>
                       </div>
                     )}
                   </td>

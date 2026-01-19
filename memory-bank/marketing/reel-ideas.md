@@ -1,5 +1,5 @@
 ---
-Last-Updated: 2026-01-15
+Last-Updated: 2026-01-17
 Maintainer: RB
 Status: Active
 ---
@@ -87,6 +87,107 @@ Running list of content ideas based on Inkdex development stories.
 - ScrapingDog: 50 concurrent requests, ~$90/mo for 66k profiles
 
 **Source:** `activeContext.md` - ScrapingDog Migration (Jan 11, 2026)
+
+---
+
+## Content Series: Style Twins (@inkdexio)
+
+A **repeatable content format** showcasing Inkdex's unique visual search by finding pairs of artists with eerily similar styles.
+
+### Why It Works
+- Comparison format is inherently shareable ("look how similar these artists are")
+- DM shares are top algorithm signal
+- Showcases what makes Inkdex unique (no competitor has visual search)
+- Easy to batch-create (use Style Matches tool)
+
+### Optimal Duration: 25-35 seconds
+
+Under 30s hits the "short-form sweet spot" for completion rate.
+
+### Reel Structure: The Reveal Format
+
+| Section | Time | What Happens | Text Overlay |
+|---------|------|--------------|--------------|
+| **Hook** | 0-3s | Side-by-side similar tattoos | "Wait... different artists?" |
+| **Artist A** | 3-8s | Show 2-3 of their images | "@artist1 - Los Angeles" |
+| **Artist B** | 8-15s | Show 2-3 matching images | "@artist2 - Miami" |
+| **Twist** | 15-20s | Quick alternating cuts | "Found using visual search" |
+| **Value** | 20-28s | Screen recording of Inkdex search | "Upload any tattoo. Find artists who match." |
+| **CTA** | 28-30s | Logo + call to action | "Link in bio" |
+
+### Hook Options (first 3s = 80% of performance)
+
+- **"Same artist?" → "Different coasts."**
+- **"I found this artist's twin"**
+- **"2 artists. 2,000 miles apart. Same exact style."**
+- **"They've never met but they tattoo the same"**
+
+### Cover Image Formula
+
+- **Size:** 1080x1350px (4:5 ratio)
+- **Layout:** Split - Artist A's work | Artist B's work
+- **Text:** "[STYLE] TWINS" (e.g., "FINE LINE TWINS", "BLACKWORK TWINS")
+- **Tool:** Canva with consistent template for series look
+
+### Batch Variations
+
+| Variation | Example |
+|-----------|---------|
+| Style-Based | "Fine Line Twins" / "Blackwork Twins" / "Realism Twins" |
+| Geography Flip | "LA vs NYC" / "US vs Australia" |
+| Follower Contrast | "100K vs 10K - same quality" (discovery angle) |
+| Subject-Based | "Dragon Artists" / "Floral Specialists" |
+| City Rivals | "Two Austin fine line artists you need to know" |
+
+### Finding Twins (CLI)
+
+```bash
+# Fine line artists, high follower seed
+npx tsx scripts/marketing/find-style-matches.ts --style fine-line --min-followers 50000
+
+# Blackwork artists, mid-tier
+npx tsx scripts/marketing/find-style-matches.ts --style blackwork --min-followers 10000 --max-followers 50000
+
+# Traditional, smaller accounts (discovery angle)
+npx tsx scripts/marketing/find-style-matches.ts --style traditional --min-followers 5000 --max-followers 20000
+```
+
+Or use Admin Panel: `/admin/marketing` → Style Matches panel
+
+### Non-Videographer Workflow
+
+1. **Find twins** using admin panel or CLI script
+2. **Download** 3-4 best images from each artist's Inkdex portfolio
+3. **Record** 10-second screen capture of visual search in action
+4. **Open CapCut** (free app) on phone
+5. **Import** all images + screen recording
+6. **Add transitions** (simple cuts or cross-dissolves)
+7. **Add text** using CapCut's built-in text tool
+8. **Add audio** from CapCut's trending audio library
+9. **Create cover** in Canva (split image template)
+10. **Export** and upload to Instagram
+
+**Time per reel once templated: ~20-30 minutes**
+
+### Caption Template
+
+```
+These two artists have never met, but their style is nearly identical.
+
+@artistA (Los Angeles) x @artistB (Miami)
+
+Found them both using visual search on Inkdex. Upload any tattoo photo and find artists who tattoo that exact vibe.
+
+Both taking bookings. Link in bio.
+
+#tattoo #[style]tattoo #tattooartist #tattooideas #inked
+```
+
+### CTA Options (Optimized for DM Shares)
+
+- "Send this to someone who needs a [style] artist"
+- "Tag your friend getting their first tattoo"
+- "DM this to your tattoo-obsessed friend"
 
 ---
 
@@ -238,6 +339,38 @@ Running list of content ideas based on Inkdex development stories.
 ## Ideas Backlog
 
 Add new ideas here as they come up:
+
+### 17. "I asked AI to roast my growth strategy"
+**Status:** Idea
+**Hook:** "I listed everything I've tried to get users. Then I asked AI to tell me what's actually working."
+**Story:**
+- Listed current efforts: Reddit posts, BetaList, Google Ads, Reddit Ads, SEO
+- Fed it all to a growth-hacker AI subagent
+- Got back a brutally honest assessment + prioritized action plan
+
+**What it told me:**
+- BetaList = one-time spike, stop investing
+- Google Ads = expensive CPCs, shift to style-specific keywords
+- Reddit Ads = need organic credibility FIRST, then ads amplify
+- **Missing:** No viral loop, no Pinterest/TikTok, no creator partnerships
+- **Biggest gap:** Search results aren't shareable (URLs exist but no prompt to share)
+
+**The "oh fuck" moment:**
+- "Offer Pro ($15/mo) to artists in exchange for one post"
+- Their 10K followers are EXACTLY my target audience
+- Cost: $0. Value: 100-500 warm visitors per artist.
+
+**Visual:** Screen recording scrolling through the AI analysis, highlight the ICE-scored recommendations
+
+**Why it works:**
+- Relatable "I've tried everything" struggle
+- AI as honest consultant (no ego, no BS)
+- Concrete next steps, not vague advice
+- The "Pro for a post" reveal is a genuine lightbulb moment
+
+**Source:** Growth-hacker subagent session (Jan 17, 2026)
+
+---
 
 ### 15. "I cut 2 clicks from my conversion funnel"
 **Status:** Idea

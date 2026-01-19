@@ -87,13 +87,22 @@ export async function handleInstagramProfileSearch(
   console.log(`[Profile Search] Checking DB for @${username}...`)
   const existingArtist = await getArtistByInstagramHandle(username)
 
+  // Filter to only active images with embeddings (query now uses left join)
+  const activeImagesWithEmbeddings = existingArtist?.portfolio_images?.filter(
+    (img) => img.status === 'active' && img.embedding != null
+  ) || []
+
   // === DB PATH: Use existing embeddings ===
   if (
     existingArtist &&
-    existingArtist.portfolio_images &&
-    existingArtist.portfolio_images.length >= MIN_IMAGES_FOR_DB_PATH
+    activeImagesWithEmbeddings.length >= MIN_IMAGES_FOR_DB_PATH
   ) {
-    return handleDbPath(existingArtist, username)
+    // Pass filtered images to handler
+    const artistWithFilteredImages = {
+      ...existingArtist,
+      portfolio_images: activeImagesWithEmbeddings,
+    }
+    return handleDbPath(artistWithFilteredImages, username)
   }
 
   // === SCRAPE PATH: Fetch from Instagram ===
