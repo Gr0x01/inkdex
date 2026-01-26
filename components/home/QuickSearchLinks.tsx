@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CITIES } from '@/lib/constants/cities'
 import { trackSearchStarted } from '@/lib/analytics/posthog'
+import { useDetectUserCity } from '@/lib/hooks/useDetectUserCity'
 
 // Style options to rotate through
 const STYLE_OPTIONS = [
@@ -18,47 +18,17 @@ const FALLBACK_CITIES = ['denver', 'new-york', 'chicago']
 export default function QuickSearchLinks() {
   const router = useRouter()
   const [loadingIndex, setLoadingIndex] = useState<number | null>(null)
-  const [userCity, setUserCity] = useState<{ name: string; slug: string } | null>(null)
-
-  // Detect user's city after initial paint (deferred to avoid blocking LCP)
-  useEffect(() => {
-    const detectCity = async () => {
-      try {
-        // Use free IP geolocation (no API key needed)
-        const res = await fetch('https://ip-api.com/json/?fields=city,regionName')
-        if (!res.ok) return
-
-        const data = await res.json()
-        if (!data.city) return
-
-        // Try to match to our supported cities
-        const cityLower = data.city.toLowerCase()
-        const match = CITIES.find(
-          (c) => c.name.toLowerCase() === cityLower || c.slug === cityLower
-        )
-
-        if (match) {
-          setUserCity({ name: match.name, slug: match.slug })
-        }
-      } catch {
-        // Silently fail - will use fallback cities
-      }
-    }
-
-    // Defer geolocation to avoid blocking initial paint
-    const timeoutId = setTimeout(detectCity, 2000)
-    return () => clearTimeout(timeoutId)
-  }, [])
+  const { detectedCity } = useDetectUserCity()
 
   // Build the quick searches based on detected city
   const quickSearches = STYLE_OPTIONS.map((style, index) => {
-    if (userCity) {
+    if (detectedCity) {
       // Use detected city for all searches
-      const cityDisplay = userCity.name === 'New York' ? 'NYC' : userCity.name
+      const cityDisplay = detectedCity.name === 'New York' ? 'NYC' : detectedCity.name
       return {
         label: `${style.label} in ${cityDisplay}`,
         query: style.query,
-        city: userCity.slug,
+        city: detectedCity.slug,
       }
     }
     // Fallback: different city per style
@@ -87,7 +57,15 @@ export default function QuickSearchLinks() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'text', text: query }),
       })
+      if (!response.ok) {
+        setLoadingIndex(null)
+        return
+      }
       const data = await response.json()
+      if (!data.searchId) {
+        setLoadingIndex(null)
+        return
+      }
       router.push(`/search?id=${data.searchId}&city=${city}`)
     } catch {
       setLoadingIndex(null)

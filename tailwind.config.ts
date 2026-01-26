@@ -145,6 +145,7 @@ const config: Config = {
       animation: {
         'fade-up': 'fade-up 0.5s ease-out',
         'fade-in': 'fade-in 0.3s ease-out',
+        'fade-in-fast': 'fade-in 0.15s ease-out',
         'scale-in': 'scale-in 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
         'shimmer': 'shimmer 2s linear infinite',
       },

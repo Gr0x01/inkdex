@@ -1594,3 +1594,18 @@ export type AustraliaCity = typeof AUSTRALIA_CITIES[number]
 export type AustraliaState = typeof AUSTRALIA_STATES[number]
 export type NewZealandCity = typeof NEW_ZEALAND_CITIES[number]
 export type NewZealandRegion = typeof NEW_ZEALAND_REGIONS[number]
+
+// ============================================================================
+// Combined City List for Geolocation Matching
+// ============================================================================
+
+export const ALL_SUPPORTED_CITIES = [
+  ...CITIES,
+  ...INDIA_CITIES,
+  ...PAKISTAN_CITIES,
+  ...CANADA_CITIES,
+  ...AUSTRALIA_CITIES,
+  ...NEW_ZEALAND_CITIES,
+] as const
+
+export type AllSupportedCity = typeof ALL_SUPPORTED_CITIES[number]

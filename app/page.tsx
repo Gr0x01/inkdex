@@ -1,4 +1,4 @@
-import UnifiedSearchBar from '@/components/home/UnifiedSearchBar'
+import HeroSearchWithCity from '@/components/home/HeroSearchWithCity'
 import StyleExplorer from '@/components/home/StyleExplorer'
 import VisualSearchPromo from '@/components/home/VisualSearchPromo'
 import FreeClaimShowcase from '@/components/home/FreeClaimShowcase'
@@ -96,10 +96,10 @@ export default async function Home() {
                 textShadow: '0 4px 20px rgba(0, 0, 0, 0.7)'
               }}
             >
-              INSTAGRAM HAS YOUR ARTIST.
+              SEARCH INSTAGRAM'S
               <br />
               <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>
-                WE HELP YOU FIND&nbsp;THEM.
+                TATTOO&nbsp;ARTISTS.
               </span>
             </h1>
 
@@ -111,13 +111,13 @@ export default async function Home() {
                 textShadow: '0 2px 12px rgba(0, 0, 0, 0.8)'
               }}
             >
-              Upload a reference image or describe what you're looking for. We'll scan tattoo portfolios to find artists whose work match your style.
+              Upload your reference image. Tell us your city. We'll show you artists whose work matches—then send you straight to their Instagram to book.
             </p>
           </div>
 
-          {/* Search Bar - Full width with 1rem padding on mobile, max-w-3xl on desktop */}
+          {/* Search Bar with City Filter - Full width with 1rem padding on mobile, max-w-3xl on desktop */}
           <div className="px-4 md:max-w-3xl md:mx-auto animate-fade-up" style={{ animationDelay: '200ms' }}>
-            <UnifiedSearchBar />
+            <HeroSearchWithCity />
           </div>
 
           {/* Quick Search Examples */}

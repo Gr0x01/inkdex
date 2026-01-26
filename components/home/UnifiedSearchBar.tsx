@@ -12,6 +12,8 @@ import { useNavbarVisibility } from '@/components/layout/NavbarContext'
 interface UnifiedSearchBarProps {
   /** Search source for analytics tracking */
   source?: SearchSource
+  /** City slug to filter results by */
+  cityFilter?: string | null
   /** Force loading state - for Storybook only */
   forceLoading?: boolean
   /** Force Instagram detection state - for Storybook only */
@@ -26,6 +28,7 @@ interface UnifiedSearchBarProps {
 
 export default function UnifiedSearchBar({
   source = 'hero',
+  cityFilter = null,
   forceLoading = false,
   forceInstagramDetection = null,
   forceImagePreview = null,
@@ -167,6 +170,7 @@ export default function UnifiedSearchBar({
     trackSearchStarted({
       search_type: 'image',
       source,
+      city_filter: cityFilter ?? undefined,
     })
 
     try {
@@ -190,7 +194,10 @@ export default function UnifiedSearchBar({
         URL.revokeObjectURL(preview)
       }
 
-      router.push(`/search?id=${data.searchId}`)
+      const searchUrl = cityFilter
+        ? `/search?id=${data.searchId}&city=${cityFilter}`
+        : `/search?id=${data.searchId}`
+      router.push(searchUrl)
     } catch (err) {
       console.error('Search error:', err)
       setError(
@@ -258,6 +265,7 @@ export default function UnifiedSearchBar({
       search_type: searchType,
       source,
       query_preview: hasText ? textQuery.trim().slice(0, 50) : undefined,
+      city_filter: cityFilter ?? undefined,
     })
 
     setIsSubmitting(true)
@@ -314,7 +322,10 @@ export default function UnifiedSearchBar({
         URL.revokeObjectURL(imagePreview)
       }
 
-      router.push(`/search?id=${data.searchId}`)
+      const searchUrl = cityFilter
+        ? `/search?id=${data.searchId}&city=${cityFilter}`
+        : `/search?id=${data.searchId}`
+      router.push(searchUrl)
     } catch (err) {
       console.error('Search error:', err)
       setError(
