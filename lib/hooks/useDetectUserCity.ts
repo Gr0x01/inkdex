@@ -21,18 +21,50 @@ interface CachedCity {
 // even if multiple components use this hook during the same page session
 let sharedPromise: Promise<DetectedCity | null> | null = null
 
+// Common city name variations that ipapi.co might return differently
+const CITY_NAME_ALIASES: Record<string, string> = {
+  'saint louis': 'st. louis',
+  'saint paul': 'st. paul',
+  'nyc': 'new york',
+  'new york city': 'new york',
+  'la': 'los angeles',
+  'sf': 'san francisco',
+  'dc': 'washington',
+  'washington dc': 'washington',
+  'fort worth': 'fort worth',
+  'ft worth': 'fort worth',
+  'ft. worth': 'fort worth',
+  'philly': 'philadelphia',
+  'vegas': 'las vegas',
+  'nola': 'new orleans',
+}
+
+function normalizeCity(name: string): string {
+  // Normalize: lowercase, trim, replace hyphens with spaces (handles "Los-Angeles" edge case)
+  const lower = name.toLowerCase().trim().replace(/-/g, ' ')
+  return CITY_NAME_ALIASES[lower] ?? lower
+}
+
 async function fetchCityInternal(): Promise<DetectedCity | null> {
   try {
-    const res = await fetch('https://ipapi.co/json/')
+    // Add timeout to prevent hanging on slow/unresponsive API
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout
+
+    const res = await fetch('https://ipapi.co/json/', {
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+
     if (!res.ok) return null
 
     const data = await res.json()
     if (!data.city) return null
 
-    // Try to match to our supported cities
-    const cityLower = data.city.toLowerCase()
+    // Try to match to our supported cities with normalized names
+    const normalizedCity = normalizeCity(data.city)
     const match = ALL_SUPPORTED_CITIES.find(
-      (c) => c.name.toLowerCase() === cityLower || c.slug === cityLower
+      (c) => normalizeCity(c.name) === normalizedCity || c.slug === normalizedCity
     )
 
     if (match) {

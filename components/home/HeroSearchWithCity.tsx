@@ -140,14 +140,32 @@ export default function HeroSearchWithCity({
   }, [isPickerOpen])
 
   // Calculate dropdown position synchronously when opening
+  // Includes bounds checking to keep dropdown within viewport
   const handlePickerToggle = () => {
     if (!isPickerOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect()
       const dropdownWidth = 256 // w-64 = 16rem = 256px
-      setDropdownPosition({
-        top: rect.bottom + 8,
-        left: rect.left + rect.width / 2 - dropdownWidth / 2, // center it
-      })
+      const dropdownHeight = 320 // max-h-64 (256px) + search input (~64px)
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      const padding = 8 // min distance from viewport edge
+
+      // Calculate centered horizontal position
+      let left = rect.left + rect.width / 2 - dropdownWidth / 2
+
+      // Clamp to horizontal viewport bounds
+      const minLeft = padding
+      const maxLeft = viewportWidth - dropdownWidth - padding
+      left = Math.max(minLeft, Math.min(left, maxLeft))
+
+      // Calculate vertical position - prefer below, flip above if overflow
+      let top = rect.bottom + 8
+      if (top + dropdownHeight > viewportHeight - padding) {
+        // Position above the button if it would overflow bottom
+        top = Math.max(padding, rect.top - dropdownHeight - 8)
+      }
+
+      setDropdownPosition({ top, left })
     }
     setIsPickerOpen(!isPickerOpen)
   }
